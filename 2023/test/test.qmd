@@ -1,0 +1,190 @@
+---
+title: "Exploring Institutional Trust in New Zealand Pre/Post COVID-19 Pandemic" 
+subtitle: "New Zealand Attitudes and Values Study: Years 2019-2022 N = 42,681"
+date: 2023-03-23
+
+---
+
+## NZAVS Report on Institutional Trust Pre/Post COVID
+
+This report delves into the changes in institutional trust among New Zealanders from the pre-pandemic period in 2019 to 2022.
+
+The New Zealand Attitudes and Values Study uses a two-item scale to measure **Trust in Science**
+
+-   "I have a high degree of confidence in the scientific community."[@nisbet2015]
+
+-   "Our society places too much emphasis on science."(reverse coded) 
+
+We average these scores to form a single score [@hartman2017]. ^[We do not blindly adhere to the standard measurement approaches in psychometrics.  It might be preferable to work with single items instead of the averaged score. See [@vanderweele2022] for more information on this point.]
+These items were introduced in NZAVS Wave 11 (2019 - 2020) ^[We must be cautious: causal identification requires contrasting outcomes under different exposures.  Because all were exposed to the COVID-19 pandemic, these contrasts are not identified without the strong assumption that there were no pre-existing trends in the acceptance of science before the COVID-19 pandemic struck.]
+
+Previous research using a propensity score design reported on changes in Trust in Science during the first three weeks of New Zealand's COVID lockdown in March and April 2020 [@sibley2020].
+
+**COVID-19 Government response** [@marques2022]
+
+-   "I trust the Government to make sensible decisions about how to best manage COVID-19 in New Zealand."
+-   "The New Zealand government response to COVID-19."
+
+**Trust in politicians** [@sibley2020]
+
+-   "Politicians in New Zealand can generally be trusted."
+
+**Institutional trust in police** [@tyler2005]
+
+-   "People's basic rights are well protected by the New Zealand Police."
+-   "There are many things about the New Zealand Police and its policies that need to be changed."
+-   "The New Zealand Police care about the well-being of everyone they deal with."
+
+**General tendency to believe in conspiracies**[@lantian2016]
+
+-   "I think that the official version of major world events given by authorities often hides the truth."
+
+### Sample responses: years 2019-2020: Pre-Covid, Lockdown, Post-Lockdown
+
+```{r setup}
+#| include: false
+#| echo: false
+#| warning: false
+  # html:
+  #   code-fold: false
+  #   html-math-method: katex
+  #   self-contained: true
+  # docx: 
+  #   geometry:
+  #     - top=30mm
+  #     - left=20mm
+  #     - heightrounded
+
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+
+# if you run mlim for imputation, comment out the source file and run these libraries
+# library(tidyverse)
+# library(table1)
+# library(kableExtra)
+# library(mlim)
+# read functions
+
+# for mice functions see: https://amices.org/mice/
+
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+
+# read data
+
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/time13"
+  )
+
+# for saving models
+push_mods <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/bcausal/mods"
+  )
+
+#| label: fig-boxplot-COVID-LAB
+#| column: page-left
+#| fig-cap: "Boxplot for Covid Risk Exaggerated attitudes: NZAVS Time 12 & NZAVS Time 13"
+#| #| label: fig-meaningless
+#| fig-cap: A meaningless scatterplot
+#| fig-width: 5
+#| fig-height: 5
+#| fig-align: center
+#| out-width: 50%
+#| echo: false
+#| include: false
+```
+
+```{r read-data}
+# read data
+dat <- arrow::read_parquet(pull_path)
+
+# sometimes arrow objects give me trouble
+dat <- as.data.frame(dat)
+
+
+# create covid timeline variables, select waves of interest. 
+dt <- dat |>
+  data.frame() |>
+# create covid timeline 
+ mutate(covid_condition = as.factor(ifelse(
+    TSCORE < 3922,
+    "pre_covid",
+    ifelse(TSCORE >= 3922 &
+             TSCORE <= 3954, "lockdown",
+           "post_lockdown")
+  ))) |> 
+  mutate(covid_condition = factor(covid_condition, levels = c("pre_covid", "lockdown", "post_lockdown"))) |> # order levels
+  # select waves
+  dplyr::filter(Wave == 2019| Wave == 2020| Wave == 2021) |>
+    dplyr::filter(
+      (Wave == 2019  &
+         YearMeasured  == 1 & !is.na(covid_condition)) |
+      (Wave == 2020) |
+      (Wave == 2021)) |>  
+  group_by(Id) |> 
+  # inclusion criteria, all those who participated in 2019
+  dplyr::mutate(org2019 = ifelse(Wave == 2019 &
+                                   YearMeasured == 1, 1, 0)) |>  # creating an indicator for the first wave
+  dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) |>  # Hack
+  dplyr::filter(hold19 > 0) |> # hack to enable repeat of baselin
+  fill(w_GendAgeEuro, .direction = "down") |> # weights are all for 2018. Fill if missing
+  ungroup() |>
+  droplevels() |>
+  mutate(time = as.numeric(Wave) - 1) |>
+  arrange(Id, time) |>
+  select(
+    Id,
+    covid_condition,
+    YearMeasured,
+    COVID19.Timeline,
+    w_GendAgeEuro, # survey weights for PATT
+    time,
+    TSCORE,
+    Wave,
+    Partner,
+    Euro,
+    EthCat,
+    GenCohort,
+    # Gender3,
+    Male,
+    SampleFrame,
+    NZSEI13,
+    NZDep2018,
+    Rural_GCH2018,
+    REGC_2022,
+    CONSCIENTIOUSNESS,
+    OPENNESS,
+    HONESTY_HUMILITY,
+    EXTRAVERSION,
+    NEUROTICISM,
+    AGREEABLENESS,
+    edu_n,
+    Employed,
+    BornNZ,
+    Pol.Orient,
+    Pol.Wing,
+    Parent,
+    Relid,
+    SDO,
+    RWA,
+    ConspiracyBeliefs,
+    SCIENCE.TRUST,
+    POLICE.TRUST,
+    COVID.TrustGovtResponse,
+    Pol.PoliticianTrust#,
+  # ScienceTrust01, # individual item
+  # ScienceTrust02r  # individual item
+  ) |> 
+  rename(
+  Conspiracy_Beliefs  = ConspiracyBeliefs,
+  Trust_in_Science =  SCIENCE.TRUST,
+  Trust_in_Politicians = Pol.PoliticianTrust,
+  Trust_in_Police = POLICE.TRUST,
+  Trust_in_Govt_Covid_Response = COVID.TrustGovtResponse, 
+  ) |> 
+  droplevels() |> 
+  arrange(Id,Wave)
+
+```
+
