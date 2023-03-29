@@ -1,0 +1,706 @@
+---
+title: "Who are the NFDS"
+subtitle: "An OutcomeWide Study"
+abstract: |
+  Who are the NFDs anyway?
+keywords:
+  - Religious Change
+  - Christianity
+  - Denominations
+date: last-modified
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| label: load-libraries
+#| echo: false
+#| include: false
+# author:
+#   - name: Authors TBA
+#     affiliation: TBA
+#   - name: Chris G Sibley
+#     orcid: 0000-0002-4064-8800
+#     affiliation: University of Auckland,  New Zealand
+#   - name: Joseph Bulbulia
+#     orcid: 0000-0002-5861-2056
+#     affiliation: Victoria University of Wellington, New Zealand
+#     email: joseph.bulbulia@vuw.ac.nz
+#{{< pagebreak >}}
+#libraries and functions
+# read libraries
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+
+# read functions
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+
+# # read local functions
+# source(here::here("scripts","functions","funs_here.R"))
+
+# read data
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/time13a"
+  )
+
+# for saving models
+push_mods <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/00drafts/who-nfds"
+  )
+
+library(janitor)
+
+# read data: note that you need use the arrow package
+dat <- arrow::read_parquet(pull_path)
+
+dat <- dat |> as_tibble()
+
+# count unique individuals
+skimr::n_unique(dat$Id)
+
+
+# more robust option for counting:
+length(unique(dat$Id))
+
+# participants by wave,
+dat |>
+  filter(YearMeasured == 1) |>
+  droplevels() |>
+  arrange(Wave) |>
+  group_by(Wave) |>
+  count()
+
+# create a table summary
+library(gtsummary)
+
+# df <- dat |>
+#   filter(Wave == 2016 & YearMeasured==1 | Wave == 2017 & YearMeasured==1) |>
+#   select(KESSLER6, Pets.coded.catdog_factor, Wave)
+# # Summarize means of Kessler6 by Pets_coded and wave
+# tbl_summary(df,
+#             by = Pets.coded.catdog_factor,
+#             missing = "no",
+#             statistic = list(all_continuous() ~ "{mean} ({sd})")) %>%
+#   add_p(by = Wave, p = "none")
+
+
+dt <- dat |>
+  dplyr::filter((Wave == 2016  & YearMeasured  == 1) |
+                  (Wave == 2017  &
+                     YearMeasured  == 1) |
+                  (Wave == 2018))  |>  # Eligibility criteria
+  group_by(Id) |>
+  dplyr::mutate(k_16 =  ifelse(Wave == 2016 &
+                                 YearMeasured == 1 &
+                                 Christian == 1, 1, 0)) |>   # creating an indicator for the first wave
+  dplyr::mutate(h_16 = mean(k_16, na.rm = TRUE)) |>   # Hack
+  dplyr::mutate(k_17 =  ifelse(Wave == 2017 &
+                                 YearMeasured == 1 &
+                                 Christian == 1, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people to deconvert
+  dplyr::mutate(h_17 = mean(k_17, na.rm = TRUE)) |>  # Hack
+  dplyr::filter(h_16 > 0) |>  # hack to enable repeat of baseline
+  dplyr::filter(h_17 > 0) |>  # hack to enable repeat of baseline
+  ungroup() |>
+  droplevels() |> 
+  mutate(Euro = if_else(EthCat == 1, 1, 0)) |>
+  select(
+    # Age,
+    Id,
+    YearMeasured,
+    #SampleFrame, # how long in study
+    #w_GendAgeEuro, not estimating PATE
+    Wave,
+    BornNZ,
+    Edu,
+    Euro,
+    Employed,
+    # Gender3,
+    GenCohort,
+    # EthCat,
+    #Household.INC, not reliable
+    KESSLER6,
+    NZDep2013,
+    NZSEI13,
+    Partner,
+    Parent,
+    Pol.Orient,
+    #  Pol.Wing,
+    Rural_GCH2018,
+    #  REGC_2022,
+    #  SDO,
+    RWA,
+    AGREEABLENESS,
+    CONSCIENTIOUSNESS,
+    
+    EXTRAVERSION,
+    HONESTY_HUMILITY,
+    OPENNESS,
+    NEUROTICISM,
+    Religion.Scripture,
+    Religion.Church,
+    Religion.Prayer,
+    Believe.God,
+    Believe.Spirit,
+    Believe.Spirit,
+    Believe.God,
+    Perc.Religious.Discrim,
+    religious_identification,
+    Spiritual.Identification,
+    Christian_nfd,
+    Christian
+  ) |>
+  arrange(Id, Wave) |>
+  mutate(
+    Religion.Church = ifelse(Religion.Church > 8, 8, Religion.Church),
+    # to avoid unstable models
+    Religion.Scripture = ifelse(Religion.Scripture > 8, 8, Religion.Scripture),
+    # to avoid unstable models
+    Religion.Prayer = ifelse(Religion.Prayer > 8, 8, Religion.Prayer)
+  ) |> # to avoid unstable models
+  group_by(Id) |>
+  mutate(nfd_became_17 =  # exposure
+           ifelse(
+             ((Wave == 2017 & Christian_nfd == 1) &
+               (Wave == 2017 & lag(Christian_nfd == 0))), 1, 0))|>
+  mutate(nfd_lost_17 =  # exposure
+           ifelse(
+             ((Wave == 2017 & Christian_nfd == 0) &
+               (Wave == 2017 & lag(Christian_nfd == 1))), 1, 0))|>
+  ungroup() |> 
+  janitor::clean_names() |> # make names consistent
+  rename(religion_believe_god = believe_god) |> 
+  rename(religion_believe_spirit = believe_spirit) |> 
+  rename(religion_perceive_religious_discrim = perc_religious_discrim) |> 
+  rename(religion_identification = religious_identification) |> 
+  rename(religion_spiritual_identification = spiritual_identification) # make so all religion vars start with religion
+
+  
+# make so all religion vars start with religion
+# make so all religion vars start with religion |> 
+
+
+colnames(dt)
+
+table(dt$nfd_became_17)
+table(dt$nfd_lost_17)
+table(dt$wave)
+
+## check numbers of those changed
+ds <- dt |>
+  filter(year_measured == 1 &
+           wave == 2016 | year_measured == 1 & wave == 2017) |>
+  select(id, christian_nfd) |>
+  mutate(christian_nfd = as.numeric(christian_nfd) - 1)
+
+# check: finds same numbers
+msm::statetable.msm(round(christian_nfd, 0), id, data = ds) |>
+  kbl() |>
+  kable_paper(full_width = F)
+
+dt_mice <- dt |> 
+  select(-c(id, year_measured, christian))
+
+# prepare data for mice imputation. 
+mice:::find.collinear(dt_mice)
+
+# check consistent n's
+table(dt_mice$wave)
+
+  
+#table
+# functions for table
+my_render_cont <- function(x) {
+  with(stats.apply.rounding(stats.default(x), digits=3), c("",
+                                                           "Mean (SD)"=sprintf("%s (&plusmn; %s)", MEAN, SD)))
+}
+
+my_render_cat <- function(x) {
+  c("", sapply(stats.default(x), function(y) with(y,
+                                                  sprintf("%d (%0.0f %%)", FREQ, PCT))))
+}
+
+
+
+# get control vars
+
+
+# baseline wave
+# do only for baseline wave
+dt_mice_b <- dt_mice |> 
+  filter(wave == 2016) |> 
+  mutate(as.factor( rural_gch2018))
+
+cvars = dt_mice_b |>
+  dplyr::select(!starts_with("religion_"))|>
+  dplyr::select(!starts_with("nfd_")) |> 
+  dplyr::select(- wave) |>
+  colnames()
+cvars
+# make into an equation
+
+output_string <- paste(cvars, collapse = "+")
+# formula_string <- paste("~", output_string, "|wave")
+
+formula_string <- paste("~", output_string)
+formula_obj <- as.formula(formula_string)
+
+c_tab <-
+  table1::table1(
+    formula_obj,
+    data = dt_mice_b,
+    overall = FALSE,
+    render.continuous = my_render_cont,
+    render.categorical = my_render_cat
+  )
+
+# make demographic table html
+c_tab
+
+# make demographic tablem markdown
+c_tab |> 
+  as.data.frame() |> 
+  kbl(format = "markdown")
+
+# do only for baseline wave
+dt_mice_b <- dt_mice |> 
+  filter(wave == 2016) |> 
+  mutate(as.factor( rural_gch2018))
+
+
+
+# new table
+c_tab_b <- table1::table1(formula_obj, data = dt_mice_b, overall = FALSE,
+                             render.continuous = my_render_cont,
+    render.categorical = my_render_cat)
+
+# make demographic table html
+c_tab_b
+
+# make demographic tablem markdown
+c_tab_b |> 
+  as.data.frame() |> 
+  kbl(format = "markdown")
+
+
+# view
+naniar::vis_miss(dt_mice, warn_large_data = FALSE)
+
+## Impute missing variables
+mice_attacks_prejudice <- mice::mice(dt_mice, m = 10)
+
+# save imputations
+saveRDS(mice_attacks_prejudice,
+        here::here(push_mods, "mice_attacks_prejudice"))
+
+# recall imputations if needed
+mice_attacks_prejudice <-
+  readRDS(here::here(push_mods, "mice_attacks_prejudice"))
+
+
+# check mi model
+outlist2 <-
+  row.names(mice_attacks_prejudice)[mice_attacks_prejudice$outflux < 0.5]
+length(outlist2)
+
+# checks. We do not impute with weights: area of current research
+
+head(mice_attacks_prejudice$loggedEvents, 10)
+
+# data warangling
+
+mc  <- mice::complete(mice_attacks_prejudice, "long", inc = T)
+
+vnames <- rownames(mc)
+
+cnames <- rownames(mc)
+
+length(vnames)/41566 #(11 datasets)
+
+newdat <- data.frame( rep( dt_19_noe$t0_w_GendAgeEuro, 11))
+colnames(newdat ) <- "weights"
+head(newdat)
+length( newdat$weights ) == length( cnames)
+
+
+mc_v <- bind_cols(newdat, mc ) |>
+  relocate("weights", .before = "t0_Partner")
+
+# checks out
+head( mc_v[, 1:4])
+head( dt_19_noe[, 1:4])
+
+skimr::skim(mc_v)
+
+
+
+N <- nrow(dt_19_noe) # number of ids
+N2 = 2 * N # made long so need 2 x N
+
+# checks
+mc_v$.id
+head(mc_v)
+
+
+# create variables in z score -- NOT WORKING FOR IPTW AT MOMENT
+mc_vv <- mc_v %>%
+  dplyr::mutate(Id = as.factor(rep(1:N, 11))) |> # need ids
+  pivot_longer(
+    cols = starts_with("t"),
+    names_to = c("time", ".value"),
+    names_pattern = "t(\\d+)_(.*)"
+  ) |>
+  relocate("time", .after = "Id") |>
+  arrange(.imp, Id, time)  |>
+  group_by(.imp, Id) |>
+  fill(c(!starts_with("t0_Warm.") |
+           !starts_with("t1_Warm.")), .direction = "down") |> # create baselines
+  ungroup() |>
+  select(-.id) |>
+  mutate(.id = rep(1:N2, 11)) |>  # new id needed  for mice
+  data.frame()
+
+dim(mc_vv)
+head(mc_vv)
+head(mc_vv[, 27:36]) ## looks good
+# Get data into shape
+
+ml <- mc_vv %>%
+  dplyr::mutate(across(starts_with("Warm."), ~ scale(.x), .names = "{col}_z")) %>%
+  # select(-c(.imp_z, .id_z)) |>
+  mutate_if(is.matrix, as.vector) %>%
+  as.mids()
+
+# Confirm that ml is of class "mids"
+class(ml)
+
+
+mf <- mice::complete(ml, "long", inc = TRUE)
+
+saveRDS(ml, here::here(push_mods, "at-mice-ml"))
+saveRDS(mf, here::here(push_mods, "at-mice-mf"))
+
+ml <- readRDS(here::here(push_mods, "at-mice-ml"))
+mf <- readRDS(here::here(push_mods, "at-mice-mf"))
+
+
+
+```
+
+```{r}
+#| label: fig-meaningless
+#| fig-cap: A meaningless scatterplot
+#| fig-width: 5
+#| fig-height: 5
+#| fig-align: center
+#| out-width: 50%
+#| echo: false
+#| include: false
+
+# just for reference
+plot(runif(25), runif(25))
+```
+
+## Introduction
+
+Who are the NFDs anyway?[@sibley2012]
+
+## Method
+
+### Questions related to religion are as follows
+
+#### Belief in God
+
+Using one item from Eurobarometer (2005), we asked participants "Do you believe in a God" (1 = Yes, 0 = No) [@eurobarometer2005b].
+
+#### Belief in Sprituality
+
+Using one item from Eurobarometer (2005), we asked participants "Do you believe in some form of spirit or lifeforce? (1 = Yes, 0 = No) [@eurobarometer2005b].
+
+#### Religion Affiliation
+
+Participants were asked to indicate their religion identification ("Do you identify with a religion and/or spiritual group?") on a binary response (1 = Yes, 0 = No). We then asked "What religion or spiritual group?" These questions are used in the New Zealand Census.
+
+#### Religious Identification
+
+If participants answered *yes* to "Do you identify with a religion and/or spiritual group? we asked"How important is your religion to how you see yourself?" (1 = Not important, 7 = Very important). Those participants who were not religious were imputed a score of "1".
+
+
+#### Frequency of Church Attendence
+
+If participants answered *yes* to "Do you identify with a religion and/or spiritual group?" we measured their frequency of church attendance using one item from @sibley2012: "how many times did you attend a church or place of worship in the last month?". Those participants who were not religious were imputed a score of "0".
+
+#### Spiritual Identification
+
+Spiritual identification was measured using one item ("I identify as a spiritual person.") from @postmes_single-item_2013. Participants indicated their agreement with this item (1 = Strongly Disagree to 7 = Strongly Agree).
+
+
+#### Frequency of Prayer
+
+If participants answered *yes* to "Do you identify with a religion and/or spiritual group?" we measured their frequency of prayer by asking "how many times did you pray in the last week?" Those participants who were not religious were imputed a score of "0" [@Bulbulia_2015] .
+
+#### Frequency of Scripture Reading
+
+If participants answered *yes* to "Do you identify with a religion and/or spiritual group?" we measured their frequency of scripture reading by asking "how many times did you read religious scripture in the last week?" Those participants who were not religious were imputed a score of "0" [@bulbulia2016].
+
+
+#### Perceived Discrimination -- Religion
+
+"I feel that I am often discriminated against because of my religious/spiritual beliefs." (1 = Strongly Disagree to 7 = Strongly Agree). (Developed for the NZAVS, Time 7 - time 14)
+
+
+
+## Descriptive statistics
+
+```{r}
+
+```
+
+
+### Analytic approach
+
+We next leveraged longitudinal data to investigate whether changing from transiting from a Christian denomination to a Christian NFD affiliation affect people's religious behaviors. That is, we used the longitudinal features of NZAVS data collection to evalutate the causal question of whether becoming a Christian NFD makes somebody less religious.[@eurobarometer2005b]
+
+### Selection criteria.
+
+1.  We selected people who participated in both the NZAVS 2016 and 2017 waves.
+2.  Christian at baseline, not NFD.
+3.  Christian at baseline + 1, either NFD or not NFD.
+4.  Outcomes are all the variables in the NZAVS that measure religion and spirituality.
+5.  Missing data multiply imputed (to adjust for sampling bias).
+6.  Control for baseline confounders
+7.  Estimation by Inverse probability weighting and G-computation.
+5.  Recover the **Average Treatment Effect in the Treated**.
+
+[^1]: We note that this coefficient is simply the time effect in the conditional analysis. We use G-computation for consistency with other NZAVS outcome-wide studies
+
+### Sample
+
+|                                        | Time 10 (baseline) |
+|:---------------------------------------|:-------------------|
+|                                        | (N=10787)          |
+| **Male**                               |                    |
+| Male                                   | 4003 (37 %)        |
+| Not_male                               | 6784 (63 %)        |
+| **Cohort**                             |                    |
+| Gen_Silent: born\< 1946                | 714 (7 %)          |
+| Gen Boomers: born \>= 1946 & b.\< 1965 | 5229 (48 %)        |
+| GenX: born \>=1961 & b.\< 1981         | 3311 (31 %)        |
+| GenY: born \>=1981 & b.\< 1996         | 1421 (13 %)        |
+| GenZ: born \>= 1996                    | 112 (1 %)          |
+| **NZ-European**                        |                    |
+| No                                     | 2018 (19 %)        |
+| Yes                                    | 8730 (81 %)        |
+| Missing                                | 39 (0.4%)          |
+| **Education**                          |                    |
+| Mean (SD)                              | 5.63 (± 2.66)      |
+| Missing                                | 37 (0.3%)          |
+| **Employed**                           |                    |
+| No                                     | 2714 (25 %)        |
+| Yes                                    | 8064 (75 %)        |
+| Missing                                | 9 (0.1%)           |
+| **NZDep2018**                          |                    |
+| Mean (SD)                              | 4.70 (± 2.73)      |
+| Missing                                | 117 (1.1%)         |
+| **NZSEI13**                            |                    |
+| Mean (SD)                              | 54.9 (± 16.0)      |
+| Missing                                | 56 (0.5%)          |
+| **Rural_GCH2018**                      |                    |
+| 1                                      | 6632 (61 %)        |
+| 2                                      | 2092 (19 %)        |
+| 3                                      | 1254 (12 %)        |
+| 4                                      | 567 (5 %)          |
+| 5                                      | 126 (1 %)          |
+| Missing                                | 116 (1.1%)         |
+| **Born NZ**                            |                    |
+| Mean (SD)                              | 0.800 (± 0.400)    |
+| Missing                                | 18 (0.2%)          |
+| **Parent**                             |                    |
+| No                                     | 2574 (24 %)        |
+| Yes                                    | 8212 (76 %)        |
+| Missing                                | 1 (0.0%)           |
+| **Partner**                            |                    |
+| No                                     | 2576 (24 %)        |
+| Yes                                    | 7903 (73 %)        |
+| Missing                                | 308 (2.9%)         |
+| **Politically_Liberal**                |                    |
+| Mean (SD)                              | 3.57 (± 1.38)      |
+| Missing                                | 497 (4.6%)         |
+| **Left_Wing**                          |                    |
+| Mean (SD)                              | 3.71 (± 1.31)      |
+| Missing                                | 537 (5.0%)         |
+| **Religious_Identification**           |                    |
+| Mean (SD)                              | 1.72 (± 2.58)      |
+| Missing                                | 68 (0.6%)          |
+
+: Sample Statistics (baseline = 2018) {#tbl-sample}
+
+### Description of Changes in Attitudes in Sample Pre-Post Attacks (one year)
+
+The sample consists of 10,878 participants who responded the NZAVS 2016/17 Time 8 survey and who again responded to the NZAVS 2018/19 Time 10 survey.
+
+|                         | Pre Attacks(Time 10) | Post Attacks(Time 11) |
+|:------------------------|:---------------------|:----------------------|
+|                         | (N=10787)            | (N=10787)             |
+| **Warm Muslims**        |                      |                       |
+| Mean (SD)               | 4.09 (1.46)          | 4.35 (1.41)           |
+| Median \[Min, Max\]     | 4.00 \[1.00, 7.00\]  | 4.00 \[1.00, 7.00\]   |
+| Missing                 | 286 (2.7%)           | 1672 (15.5%)          |
+| **Warm Asians**         |                      |                       |
+| Mean (SD)               | 4.54 (1.27)          | 4.64 (1.23)           |
+| Median \[Min, Max\]     | 4.00 \[1.00, 7.00\]  | 4.00 \[1.00, 7.00\]   |
+| Missing                 | 265 (2.5%)           | 1647 (15.3%)          |
+| **Warm Chinese**        |                      |                       |
+| Mean (SD)               | 4.39 (1.34)          | 4.47 (1.32)           |
+| Median \[Min, Max\]     | 4.00 \[1.00, 7.00\]  | 4.00 \[1.00, 7.00\]   |
+| Missing                 | 280 (2.6%)           | 1673 (15.5%)          |
+| **Warm Immigrants**     |                      |                       |
+| Mean (SD)               | 4.54 (1.23)          | 4.64 (1.23)           |
+| Median \[Min, Max\]     | 4.00 \[1.00, 7.00\]  | 4.00 \[1.00, 7.00\]   |
+| Missing                 | 282 (2.6%)           | 1674 (15.5%)          |
+| **Warm Indians**        |                      |                       |
+| Mean (SD)               | 4.31 (1.36)          | 4.42 (1.34)           |
+| Median \[Min, Max\]     | 4.00 \[1.00, 7.00\]  | 4.00 \[1.00, 7.00\]   |
+| Missing                 | 277 (2.6%)           | 1669 (15.5%)          |
+| **Warm Refugees**       |                      |                       |
+| Mean (SD)               | 4.68 (1.34)          | 4.80 (1.31)           |
+| Median \[Min, Max\]     | 5.00 \[1.00, 7.00\]  | 5.00 \[1.00, 7.00\]   |
+| Missing                 | 283 (2.6%)           | 1654 (15.3%)          |
+| **Warm Pacific**        |                      |                       |
+| Mean (SD)               | 4.78 (1.24)          | 4.87 (1.20)           |
+| Median \[Min, Max\]     | 5.00 \[1.00, 7.00\]  | 5.00 \[1.00, 7.00\]   |
+| Missing                 | 265 (2.5%)           | 1654 (15.3%)          |
+| **Warm Maori**          |                      |                       |
+| Mean (SD)               | 5.00 (1.27)          | 5.03 (1.26)           |
+| Median \[Min, Max\]     | 5.00 \[1.00, 7.00\]  | 5.00 \[1.00, 7.00\]   |
+| Missing                 | 270 (2.5%)           | 1660 (15.4%)          |
+| **Warm NZ Euro**        |                      |                       |
+| Mean (SD)               | 5.57 (1.23)          | 5.58 (1.24)           |
+| Median \[Min, Max\]     | 6.00 \[1.00, 7.00\]  | 6.00 \[1.00, 7.00\]   |
+| Missing                 | 282 (2.6%)           | 1659 (15.4%)          |
+| **Warm Elderly**        |                      |                       |
+| Mean (SD)               | 5.52 (1.16)          | 5.51 (1.15)           |
+| Median \[Min, Max\]     | 6.00 \[1.00, 7.00\]  | 6.00 \[1.00, 7.00\]   |
+| Missing                 | 258 (2.4%)           | 1648 (15.3%)          |
+| **Warm Overweight**     |                      |                       |
+| Mean (SD)               | 4.21 (1.37)          | 4.22 (1.38)           |
+| Median \[Min, Max\]     | 4.00 \[1.00, 7.00\]  | 4.00 \[1.00, 7.00\]   |
+| Missing                 | 274 (2.5%)           | 1660 (15.4%)          |
+| **Warm Mental-illness** |                      |                       |
+| Mean (SD)               | 4.60 (1.29)          | 4.64 (1.28)           |
+| Median \[Min, Max\]     | 4.00 \[1.00, 7.00\]  | 4.00 \[1.00, 7.00\]   |
+| Missing                 | 288 (2.7%)           | 1671 (15.5%)          |
+
+: Average warmth ratings before and one-year after attacks {#tbl-warmth}
+
+|                   | Time 10 (baseline) |
+|:------------------|:-------------------|
+|                   | (N=10787)          |
+| AGREEABLENESS     |                    |
+| Mean (SD)         | 5.36 (± 0.968)     |
+| Missing           | 36 (0.3%)          |
+| CONSCIENTIOUSNESS |                    |
+| Mean (SD)         | 5.15 (± 1.01)      |
+| Missing           | 33 (0.3%)          |
+| EXTRAVERSION      |                    |
+| Mean (SD)         | 3.85 (± 1.16)      |
+| Missing           | 33 (0.3%)          |
+| HONESTY_HUMILITY  |                    |
+| Mean (SD)         | 5.51 (± 1.16)      |
+| Missing           | 33 (0.3%)          |
+| NEUROTICISM       |                    |
+| Mean (SD)         | 3.38 (± 1.15)      |
+| Missing           | 36 (0.3%)          |
+| OPENNESS          |                    |
+| Mean (SD)         | 4.95 (± 1.12)      |
+| Missing           | 33 (0.3%)          |
+
+: Personality ratings at baseline. In addition to demographic indicators we also used personality ratings to multiply impute missing values {#tbl-personality}
+
+### Selection Bias
+
+Although the timing of the attacks was random with respect to NAVS data collection, non-response and panel attrition may potentially bias inferences. A simple version of this threat is indicated in @fig-dag. $\dots$. We used both demographic indicators (see @tbl-sample) and personality indicators (see @tbl-personality) when multiply imputing missing responses.
+
+```{tikz}
+#| label: fig-dag
+#| fig-cap: "Causal graph shows potential for selection bias from loss to follow up or non-response. To address this, we multiply impute missing values conditional on the assumption that missing values are random conditional on the imputation model (MAR)."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+  \node [ellipse, draw=white] (A) at (0, 0) {$Attacks$};
+  \node [rectangle, draw=white] (Ac) at (4, 0) {$Acceptance$};
+  \node [rectangle, draw=black] (S) at (8, 0) {$Selection$};
+  \draw [-latex, draw=black] (Ac) to (S);
+  \draw [-latex, bend left] (A) to (S);
+  \draw [-latex, red, dashed] (A) to (Ac);
+\end{tikzpicture}
+
+```
+
+## Results
+
+Causal effect estimates on the difference scale are presented in @fig-results1. Contrasts are presented in standardised response units. Again, these causal effect estimates are modelled as a contrast in (1) expected group attitudes for the entire population prior to the attacks (NZAVS Time 10 pre-attacks) with (2) expected group attitudes for the entire population during the following year weighted by 2018 census data to recover post-stratification estimates. Assuming correct model specification and no measurement error, such contrasts would be unbiased estimates for the intention-to-treat effect for random "assignment" to the attack condition. \[Note: see supplement X for a discussion of the distinction between the per-protocol and intention to treat effects\]. Note that standard errors were obtained both by simulation and the delta method (simulated contrasts are reported here.) As indicated in @fig-results1, we replicate previous findings revealing a strong increase in the acceptance of Muslims. Furthermore, we find evidence for the transference of acceptance to prototypical minorities. We do not find a boost in acceptance for non-prototypical minority groups. Nor do we find acceptance for groups that may be regarded as "negative controls." The exception to this pattern is in evidence of an increase in the acceptance of Pacific peoples. Additionally, we find evidence for acceptance of those with mentally illness.
+
+Before attempting to interpret the naive analysis, however, we must adjust for the possibility of temporal trends (see: @tbl-timeproto, @tbl-timenegcontrol, @tbl-timenonproto.)
+
+![Causal effect estimates on the difference scale. Estimates were modelled with post-stratification survey weights (Age/Gender/NZ European Ethnicity), yeilding a population average treatment effect. However, these naive contrasts do not incorporate pre-attack time trends in minority-group acceptance.](fig_1.jpg){#fig-results1}
+
+![Sensitivity analysis for causal contrasts adjusted for the estimated time trends in minority-group acceptance. Panel (a) presents the "worst case" scenario for increasing acceptance in pre-attack trajectories, implying that the attacks would have increased acceptance for all groups. Panel (b) presents the scenario in which increasing acceptance in pre-attack trajectories adjusted at the mean of the pre-attack trends. Here we find stronger evidence for transference of acceptance to non-prototypical groups. Panel (c) presents the "best case" scenario for increasing acceptance in pre-attack acceptance, implying that the attacks did not increase acceptance as strongly as would appear in the naive analysis](fig_2.jpg){#fig-results2}
+
+@fig-results2 presents a sensitivity analysis for causal effect estimates on the difference scale. Panel (a) presents the "worst case" scenario for increasing acceptance in pre-attack trajectories, implying that the attacks would have increased acceptance for all groups. This finding would be consistent with a strong "Jacidina Effect" (see Discussion.)
+
+Panel (b) presents the scenario in which increasing acceptance in pre-attack trajectories adjusted at the mean of the pre-attack trends. Here we find stronger evidence for the transference of acceptance to non-prototypical groups. Panel (c) presents the "best case" scenario for increasing acceptance in pre-attack acceptance, implying that the attacks did not increase acceptance as strongly as would appear in the naive analysis. Prototypical Attitude Response Theory survives the strongest estimate of the pre-attack increase in acceptance. For this reason our most conservative estimats supports Prototypical Attitude Response Theory. Notably, at every level of the sensitivity analysis, the causal effects of attitudes to Muslims are estimated lower than in the naive analysis. This is because the acceptance of Muslims had been growing more steeply in the years prior to the attacks than had the acceptance of other groups. Notably, we find that as people age, they tend to be less accepting of the elderly and of the dominant NZ European majority.
+
+| Parameter | Muslims           | Indians               |                     Asians | Refugees              |                 Immigrants | Chinese               |
+|:----------|:----------|:----------|----------:|:----------|----------:|:----------|
+| time      | 0.05 (0.04, 0.06) | 0.02 (7.24e-03, 0.03) | 4.55e-03 (-6.34e-03, 0.02) | 0.01 (2.16e-04, 0.03) | 6.38e-03 (-4.39e-03, 0.02) | 0.01 (3.66e-03, 0.02) |
+
+: Estimated annual increase in acceptance for prototypical minority groups. Note that attitudes to refugees were not measured in the 2016/17 NZAVS Wave, rendering estimates for this trajectory less reliable than other estimates. {#tbl-timeproto}
+
+| Parameter   |                  Pacific |           NZ European |                     Maori |
+|:-----------------|-----------------:|-----------------:|------------------:|
+| (Intercept) |      0.004 (-0.02, 0.02) |    0.035 (0.01, 0.06) |       0.011 (-0.01, 0.03) |
+| time        | -0.010 (-0.02, 6.86e-04) | -0.034 (-0.05, -0.02) | -0.016 (-0.03, -4.92e-03) |
+
+: Estimated annual increase in acceptance for non-prototypical groups {#tbl-timenonproto}
+
+| Parameter | Overweight               | Mental Illness          |                   Elderly |
+|:-----------------|:-----------------|:-----------------|------------------:|
+| time      | -0.006 (-0.02, 4.98e-03) | 0.010 (-6.45e-03, 0.03) | -0.023 (-0.04, -7.72e-03) |
+
+: Estimated annual increase in acceptance for negative controls. Note that attitudes to those with Mental Illness were not measured in the 2016/17 NZAVS Wave, rendering estimates for this trajectory less reliable than other estimates {#tbl-timenegcontrol}
+
+## Discussion
+
+Points to consider:
+
+-   Muslim acceptance post attacks is evident whether the pre-attack acceptance trend is bounded at its highest or lowest confidence interval.
+-   Prototypical minority acceptance is also evident whether the pre-attack acceptance trend is bounded at its highest or lowest confidence interval.
+-   The magnitude of prototypical minority acceptance is about half that of the Muslim acceptance post-attack benefit.
+-   At the lower bound of the pre-attack acceptance trajectory, all groups experience a lift in post-attack acceptance. This scenario suggests the potential for a "Jacinda Effect".
+-   However, the complex interplay of social events at that time in New Zealand History remains unclear -- and cannot be disentangled from observed data.$\dots$
+-   At the upper bound of the pre-attack acceptance trajectory, only prototypical minority groups saw a lift in acceptance over and above expectations from the pre-attack trajectory.
+-   Notably, although the confidence intervals for prototypical minorities were reliably above zero on this "best-case" pre-attack trajectory, the confidence intervals between prototypical and non-prototypical minority groups overlapped. We can therefore infer only somewhat weak overall support for prototyping in the attack responses.
+-   This study reveals the potential for psychological science to reframe how popolar understandings of minority groups. In New Zealand Pacific peoples tend to be grouped with Māori peoples. However, the pattern of response to Pacific peoples following the Christchurch attacks is more closely aligned with the prototypical minority group response.
+-   Moreover, the declining acceptance of elderly people and for New Zealand Europeans over time merits further attention. Overall acceptance of these populations remains the highest of all groups. The pattern does not necessarily imply increasing prejudice: it may rather reflect declining affective responses to the familar. Whether and how people naturally become less "warm" to others as we age is another matter for future investigations.
+-   Overall this study reveals both the power and the limitations of longitudinal data to address questions of fundamental interest across the social sciences.
+-   
+
+## Acknowledgments
+
+HERE...
+
+## References
+
+::: {#refs}
+:::
