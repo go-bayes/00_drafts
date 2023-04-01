@@ -16,6 +16,8 @@ editor_options:
 #| label: load-libraries
 #| echo: false
 #| include: false
+#| eval: false
+
 # author:
 #   - name: Authors TBA
 #     affiliation: TBA
@@ -29,6 +31,8 @@ editor_options:
 #{{< pagebreak >}}
 #libraries and functions
 # read libraries
+
+
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
 # read functions
@@ -50,8 +54,6 @@ push_mods <-
     "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/00drafts/who-nfds"
   )
 
-library(janitor)
-
 # read data: note that you need use the arrow package
 dat <- arrow::read_parquet(pull_path)
 
@@ -66,15 +68,18 @@ length(unique(dat$Id))
 
 # participants by wave,
 dat |>
-  filter(YearMeasured == 1) |>
+  filter(YearMeasured == 2018) |>
+    filter(!is.na(Religious)) |> 
   droplevels() |>
-  arrange(Wave) |>
-  group_by(Wave) |>
+  arrange(Wave) |
   count()
 
-# create a table summary
-library(gtsummary)
+dal <- dat |>  filter(YearMeasured == 1 & !is.na(Religious))
 
+table1::table1(data = dal, ~ GenCohort * Male | Wave * Religious,  transpose = FALSE, overall = FALSE)
+
+# create a table summary
+#library(gtsummary)
 # df <- dat |>
 #   filter(Wave == 2016 & YearMeasured==1 | Wave == 2017 & YearMeasured==1) |>
 #   select(KESSLER6, Pets.coded.catdog_factor, Wave)
@@ -85,28 +90,32 @@ library(gtsummary)
 #             statistic = list(all_continuous() ~ "{mean} ({sd})")) %>%
 #   add_p(by = Wave, p = "none")
 
-
-dt <- dat |>
-  dplyr::filter((Wave == 2016  & YearMeasured  == 1) |
-                  (Wave == 2017  &
+#  get data in order
+dt_18 <- dat |>
+  dplyr::filter((Wave == 2018 & YearMeasured  == 1) |
+                  (Wave == 2019  &
                      YearMeasured  == 1) |
-                  (Wave == 2018))  |>  # Eligibility criteria
+                  (Wave == 2020)| (Wave ==2021) ) |>  # Eligibility criteria
   group_by(Id) |>
-  dplyr::mutate(k_16 =  ifelse(Wave == 2016 &
+  dplyr::mutate(k_18 =  ifelse(Wave == 2018 &
                                  YearMeasured == 1 &
                                  Christian == 1, 1, 0)) |>   # creating an indicator for the first wave
-  dplyr::mutate(h_16 = mean(k_16, na.rm = TRUE)) |>   # Hack
-  dplyr::mutate(k_17 =  ifelse(Wave == 2017 &
+  dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
+  dplyr::mutate(k_19 =  ifelse(Wave == 2019 &
                                  YearMeasured == 1 &
                                  Christian == 1, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people to deconvert
-  dplyr::mutate(h_17 = mean(k_17, na.rm = TRUE)) |>  # Hack
-  dplyr::filter(h_16 > 0) |>  # hack to enable repeat of baseline
-  dplyr::filter(h_17 > 0) |>  # hack to enable repeat of baseline
+  dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
+  dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
+  dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
   ungroup() |>
-  droplevels() |> 
+  droplevels() |>
   mutate(Euro = if_else(EthCat == 1, 1, 0)) |>
-  select(
-    # Age,
+  mutate(
+    EthCat = as.factor(EthCat),
+    Believe.Spirit = as.factor(Believe.Spirit),
+    Believe.God = as.factor(Believe.God)
+  ) |>
+  select(# Age,
     Id,
     YearMeasured,
     #SampleFrame, # how long in study
@@ -114,7 +123,7 @@ dt <- dat |>
     Wave,
     BornNZ,
     Edu,
-    Euro,
+    EthCat,
     Employed,
     # Gender3,
     GenCohort,
@@ -129,84 +138,137 @@ dt <- dat |>
     #  Pol.Wing,
     Rural_GCH2018,
     #  REGC_2022,
-    #  SDO,
+    SDO,
     RWA,
     AGREEABLENESS,
     CONSCIENTIOUSNESS,
-    
     EXTRAVERSION,
     HONESTY_HUMILITY,
     OPENNESS,
     NEUROTICISM,
-    Religion.Scripture,
-    Religion.Church,
-    Religion.Prayer,
-    Believe.God,
-    Believe.Spirit,
-    Believe.Spirit,
-    Believe.God,
-    Perc.Religious.Discrim,
-    religious_identification,
-    Spiritual.Identification,
-    Christian_nfd,
-    Christian
+    # Religion.Scripture,
+    # Religion.Church,
+    # Religion.Prayer,
+    # Believe.Spirit,
+    # Believe.God,
+    # Perc.Religious.Discrim,
+    # religious_identification,
+    # Spiritual.Identification,
+    Christian_nfd, 
+    Religious
   ) |>
   arrange(Id, Wave) |>
-  mutate(
-    Religion.Church = ifelse(Religion.Church > 8, 8, Religion.Church),
-    # to avoid unstable models
-    Religion.Scripture = ifelse(Religion.Scripture > 8, 8, Religion.Scripture),
-    # to avoid unstable models
-    Religion.Prayer = ifelse(Religion.Prayer > 8, 8, Religion.Prayer)
-  ) |> # to avoid unstable models
+  # mutate(
+  #   Religion.Church = ifelse(Religion.Church > 8, 8, Religion.Church),
+  #   # to avoid unstable models
+  #   Religion.Scripture = ifelse(Religion.Scripture > 8, 8, Religion.Scripture),
+  #   # to avoid unstable models
+  #   Religion.Prayer = ifelse(Religion.Prayer > 8, 8, Religion.Prayer)
+  # ) |> # to avoid unstable models
   group_by(Id) |>
-  mutate(nfd_became_17 =  # exposure
-           ifelse(
-             ((Wave == 2017 & Christian_nfd == 1) &
-               (Wave == 2017 & lag(Christian_nfd == 0))), 1, 0))|>
-  mutate(nfd_lost_17 =  # exposure
-           ifelse(
-             ((Wave == 2017 & Christian_nfd == 0) &
-               (Wave == 2017 & lag(Christian_nfd == 1))), 1, 0))|>
+  mutate(nfd_became =  # exposure
+           as.factor( ifelse(
+             ((Wave == 2019 & Christian_nfd == 1) &
+               (Wave == 2019 & lag(Christian_nfd == 0))), 1, 0)))|>
+  mutate(nfd_lost =  # exposure
+           as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
+                               (Wave == 2019 & lag(Christian_nfd == 1))
+           ), 1, 0))) |>
+  mutate(nfd_same =  # exposure
+           as.factor(ifelse(((Wave == 2019 & Christian_nfd == 1) &
+                               (Wave == 2019 & lag(Christian_nfd == 1))
+           ), 1, 0))) |>
+  mutate(denom_same =  # exposure
+           as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
+                               (Wave == 2019 & lag(Christian_nfd == 0))
+           ), 1, 0))) |> 
   ungroup() |> 
   janitor::clean_names() |> # make names consistent
-  rename(religion_believe_god = believe_god) |> 
-  rename(religion_believe_spirit = believe_spirit) |> 
-  rename(religion_perceive_religious_discrim = perc_religious_discrim) |> 
-  rename(religion_identification = religious_identification) |> 
-  rename(religion_spiritual_identification = spiritual_identification) # make so all religion vars start with religion
+  # give sensible name
+  mutate(religious_change = case_when(
+    nfd_became == 1 ~ "nfd_became",
+    nfd_lost == 1 ~ "nfd_lost",
+    nfd_same == 1 ~ "nfd_same",
+    denom_same == 1 ~ "denom_same"
+    #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
+  )) |> 
+    mutate(rural_gch2018 = case_when(
+    rural_gch2018 == 1 ~ "High Urban Accessibility",
+    rural_gch2018 == 2 ~ "Medium Urban Accessibility",
+    rural_gch2018 == 3 ~ "Low Urban Accessibility",
+    rural_gch2018 == 4 ~ "Remote",
+    rural_gch2018 == 5 ~ "Very Remote",
+    #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
+  )) |> 
+   mutate(religious_change = factor(
+    religious_change,
+    levels = c(
+      "denom_same",
+      "nfd_same",
+      "nfd_became",
+      "nfd_lost"
+    ),
+    ordered = FALSE
+  )) |> 
+   mutate(rural_gch2018 = factor(
+    rural_gch2018,
+    levels = c(
+      "High Urban Accessibility",
+      "Medium Urban Accessibility",
+      "Low Urban Accessibility",
+      "Remote",
+      "Very Remote"
+    ),
+    ordered = TRUE
+  )) |> 
+  select(-c(nfd_became,nfd_same,nfd_lost,denom_same)) |> 
+  mutate(religious = as.numeric(religious)-1) |> 
+  mutate(religion_secular = ifelse(religious == 1, 0, 1)) |> # need rare outcome for logistic regression
+  select(-religious)
+#|> 
+  # rename(religion_believe_god = believe_god) |> 
+  # rename(religion_believe_spirit = believe_spirit) |> 
+  # rename(religion_perceive_religious_discrim = perc_religious_discrim) |> 
+  # rename(religion_identification = religious_identification) |> 
+  # rename(religion_spiritual_identification = spiritual_identification) |> 
 
-  
-# make so all religion vars start with religion
-# make so all religion vars start with religion |> 
-
-
-colnames(dt)
-
-table(dt$nfd_became_17)
-table(dt$nfd_lost_17)
-table(dt$wave)
+colnames(dt_18)
+table(dt_18$religious_change)
+n_unique(dt_18$id)
+table(dt_18$nfd_became_17)
+table(dt_18$nfd_lost_17)
+table(dt_18$wave)
+table(dt_18$secular)
+table1::table1(~ as.factor(religion_secular) | wave, data = dt_18)
 
 ## check numbers of those changed
-ds <- dt |>
+ds_18 <- dt_18 |>
   filter(year_measured == 1 &
-           wave == 2016 | year_measured == 1 & wave == 2017) |>
+           wave == 2018 | year_measured == 1 & wave == 2019) |>
   select(id, christian_nfd) |>
-  mutate(christian_nfd = as.numeric(christian_nfd) - 1)
+  mutate(christian_nfd = as.numeric(christian_nfd) - 1) # 740
+
+
+
 
 # check: finds same numbers
-msm::statetable.msm(round(christian_nfd, 0), id, data = ds) |>
+msm::statetable.msm(round(christian_nfd, 0), id, data = ds_18) |>
   kbl() |>
   kable_paper(full_width = F)
 
-dt_mice <- dt |> 
-  select(-c(id, year_measured, christian))
+
+dt_18 %>%
+  kbl() %>%
+  kable_paper("hover", full_width = F)
+
+dt_mice_18 <- dt_18 |> 
+  select(-c(id, year_measured,christian_nfd))
 
 # prepare data for mice imputation. 
-mice:::find.collinear(dt_mice)
+mice:::find.collinear(dt_mice_18)
 
 # check consistent n's
-table(dt_mice$wave)
+colnames(dt_mice_18)
 
   
 #table
@@ -228,165 +290,816 @@ my_render_cat <- function(x) {
 
 # baseline wave
 # do only for baseline wave
-dt_mice_b <- dt_mice |> 
-  filter(wave == 2016) |> 
-  mutate(as.factor( rural_gch2018))
+dt_mice_b_18 <- dt_mice_18 |> 
+  filter(wave == 2018) 
 
-cvars = dt_mice_b |>
+cvars_18 = dt_mice_b_18 |>
   dplyr::select(!starts_with("religion_"))|>
+    dplyr::select(!starts_with("religious_"))|>
   dplyr::select(!starts_with("nfd_")) |> 
   dplyr::select(- wave) |>
   colnames()
-cvars
+
+cvars_18
+
+cvars = cvars_18
 # make into an equation
 
-output_string <- paste(cvars, collapse = "+")
-# formula_string <- paste("~", output_string, "|wave")
+output_string_18 <- paste(cvars_18, collapse = "+")
+formula_string_18 <- paste("~", output_string_18, "|wave")
 
-formula_string <- paste("~", output_string)
-formula_obj <- as.formula(formula_string)
+#formula_string <- paste("~", output_string)
+formula_obj_18 <- as.formula(formula_string_18)
 
-c_tab <-
+formula_obj_18
+
+
+c_tab_18 <-
   table1::table1(
-    formula_obj,
-    data = dt_mice_b,
+    formula_obj_18,
+    data = dt_mice_b_18,
     overall = FALSE,
     render.continuous = my_render_cont,
     render.categorical = my_render_cat
   )
 
 # make demographic table html
-c_tab
+c_tab_18
+
+# make demographic tablem markdown
+c_tab_18 |> 
+  as.data.frame() |> 
+  kbl(format = "markdown")
+
+# next for religion variables 
+
+
+rvars_18 = dt_mice_b_18 |>
+  dplyr::select(starts_with("religion_"))|>
+  colnames()
+
+rvars_18
+# make into an equation
+
+output_string_r_18 <- paste(rvars_18, collapse = "+")
+formula_string_r_18 <- paste("~", output_string_r_18, "|wave")
+
+#formula_string <- paste("~", output_string)
+formula_obj_r_18<- as.formula(formula_string_r)
+
+c_tab_r_18 <-
+  table1::table1(
+    formula_obj_r_18,
+    data = dt_mice_b_18,
+    overall = FALSE,
+    render.continuous = my_render_cont,
+    render.categorical = my_render_cat
+  )
+
+# make demographic table html
+c_tab_r_18
 
 # make demographic tablem markdown
 c_tab |> 
   as.data.frame() |> 
   kbl(format = "markdown")
 
-# do only for baseline wave
-dt_mice_b <- dt_mice |> 
-  filter(wave == 2016) |> 
-  mutate(as.factor( rural_gch2018))
-
 
 
 # new table
-c_tab_b <- table1::table1(formula_obj, data = dt_mice_b, overall = FALSE,
+c_tab_b_18 <- table1::table1(formula_obj_18, data = dt_mice_b_18, overall = FALSE,
                              render.continuous = my_render_cont,
     render.categorical = my_render_cat)
 
 # make demographic table html
-c_tab_b
+c_tab_b_18
 
 # make demographic tablem markdown
-c_tab_b |> 
+c_tab_b_18 |> 
   as.data.frame() |> 
   kbl(format = "markdown")
 
+colnames(dt_18)
 
-# view
-naniar::vis_miss(dt_mice, warn_large_data = FALSE)
+# Prepare data for mice
 
-## Impute missing variables
-mice_attacks_prejudice <- mice::mice(dt_mice, m = 10)
+# Prepare data for mice
+# needs to use this pipe : %>%
+
+cvars <- cvars_18
+#rvars <- religion_secular
+
+colnames(dt_prep_18)
+
+cvars
+
+dt_prep_18 <- dt_18 %>%
+  mutate(time = as.numeric(wave) - 1)  %>%
+  select(-c(wave, year_measured, christian_nfd))  %>% 
+  pivot_wider(
+    id_cols = id,
+    names_from = time,
+    values_from = -c(id, time),
+    names_glue = "t{time}_{.value}",
+    names_prefix = "t"
+  ) %>%
+  select(-c(starts_with("t0_religious_change")))  %>% # only exposure year
+  select(-c(starts_with("t2_religious_change")))  %>%
+  select(-c(starts_with("t3_religious_change")))  %>%
+  select(-t0_religion_secular) %>%
+  select(-c((starts_with("t1") | starts_with("t2") | starts_with("t3")) & matches(paste0("(", paste(cvars), ")$"))))|> 
+  select(-c((starts_with("t1") & matches(paste0("(", paste(rvars), ")$")))))  %>%  # outcome vars only at baseline and outcome
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t2_"))  %>%
+  arrange(id)
+
+colnames( dt_prep_18 )
+
+# need to remove id column
+dt_prep_no_id_18 <- dt_prep_18 |> 
+  select(-id)
+
+colnames(dt_prep_no_id_18)
+str(dt_prep_no_id_18)
+# inspect
+dev.off()
+naniar::vis_miss(dt_prep_no_id_18, warn_large_data = FALSE)
+
+# str( dt_19_noe$Id )
+
+# check for collinear vars
+mice:::find.collinear(dt_prep_no_id_18)
+
+## impute missing variables
+mice_gt_18 <- mice::mice(dt_prep_no_id_18, m = 10)
 
 # save imputations
-saveRDS(mice_attacks_prejudice,
-        here::here(push_mods, "mice_attacks_prejudice"))
+saveRDS(mice_gt_18,
+        here::here(push_mods, "mice_gt_18"))
 
 # recall imputations if needed
-mice_attacks_prejudice <-
-  readRDS(here::here(push_mods, "mice_attacks_prejudice"))
+mice_gt_18 <-
+  readRDS(here::here(push_mods, "mice_gt_18"))
 
 
 # check mi model
 outlist2 <-
-  row.names(mice_attacks_prejudice)[mice_attacks_prejudice$outflux < 0.5]
+  row.names(mice_gt_18)[mice_gt_18$outflux < 0.5]
 length(outlist2)
 
 # checks. We do not impute with weights: area of current research
 
-head(mice_attacks_prejudice$loggedEvents, 10)
+head(mice_gt_18$loggedEvents, 10)
 
 # data warangling
 
-mc  <- mice::complete(mice_attacks_prejudice, "long", inc = T)
+mc  <- mice::complete(mice_gt_18, "long", inc = T)
 
 vnames <- rownames(mc)
 
 cnames <- rownames(mc)
 
-length(vnames)/41566 #(11 datasets)
-
-newdat <- data.frame( rep( dt_19_noe$t0_w_GendAgeEuro, 11))
-colnames(newdat ) <- "weights"
-head(newdat)
-length( newdat$weights ) == length( cnames)
+length(vnames)/nrow(dt_prep_no_id_18) #(11 datasets)
 
 
-mc_v <- bind_cols(newdat, mc ) |>
-  relocate("weights", .before = "t0_Partner")
+# if we need weights
+# newdat <- data.frame( rep( dt_prep$t0_w_GendAgeEuro, 11))
+# colnames(newdat ) <- "weights"
+# head(newdat)
+# length( newdat$weights ) == length( cnames)
+# 
+# 
+# mc_v <- bind_cols(newdat, mc ) |>
+#   relocate("weights", .before = "t0_Partner")
 
 # checks out
-head( mc_v[, 1:4])
-head( dt_19_noe[, 1:4])
+
+# comment out if using weights with the above code
+mc_v <- mc
 
 skimr::skim(mc_v)
 
-
-
-N <- nrow(dt_19_noe) # number of ids
-N2 = 2 * N # made long so need 2 x N
+#
+N <- nrow(dt_prep_no_id_18) # number of ids
+N3 = 3 * N # made long so need 3 x N # three waves
 
 # checks
-mc_v$.id
+
 head(mc_v)
 
 
+# only use for long data
 # create variables in z score -- NOT WORKING FOR IPTW AT MOMENT
-mc_vv <- mc_v %>%
-  dplyr::mutate(Id = as.factor(rep(1:N, 11))) |> # need ids
-  pivot_longer(
-    cols = starts_with("t"),
-    names_to = c("time", ".value"),
-    names_pattern = "t(\\d+)_(.*)"
-  ) |>
-  relocate("time", .after = "Id") |>
-  arrange(.imp, Id, time)  |>
-  group_by(.imp, Id) |>
-  fill(c(!starts_with("t0_Warm.") |
-           !starts_with("t1_Warm.")), .direction = "down") |> # create baselines
-  ungroup() |>
-  select(-.id) |>
-  mutate(.id = rep(1:N2, 11)) |>  # new id needed  for mice
-  data.frame()
+# mc_vv <- mc_v %>%
+#   dplyr::mutate(Id = as.factor(rep(1:N, 11))) |> # need ids
+#   pivot_longer(
+#     cols = starts_with("t"),
+#     names_to = c("time", ".value"),
+#     names_pattern = "t(\\d+)_(.*)"
+#   ) |>
+#   relocate("time", .after = "Id") |>
+#   arrange(.imp, Id, time)  |>
+#   group_by(.imp, Id) |>
+#   fill(c(!starts_with("t0_Warm.") |
+#            !starts_with("t1_Warm.")), .direction = "down") |> # create baselines
+#   ungroup() |>
+#   select(-.id) |>
+#   mutate(.id = rep(1:N2, 11)) |>  # new id needed  for mice
+#   data.frame()
+# dim(mc_vv)
+# head(mc_vv)
+# head(mc_vv[, 27:36]) ## looks good
+# # Get data into shape
 
-dim(mc_vv)
-head(mc_vv)
-head(mc_vv[, 27:36]) ## looks good
-# Get data into shape
 
-ml <- mc_vv %>%
-  dplyr::mutate(across(starts_with("Warm."), ~ scale(.x), .names = "{col}_z")) %>%
-  # select(-c(.imp_z, .id_z)) |>
+# ml <- mc_v %>%
+#   dplyr::mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) |>
+#   select(-c(.imp_z, .id_z)) |>
+#   mutate_if(is.matrix, as.vector) %>%
+#   as.mids()
+
+
+mf_18$t1_religious_change
+
+ml_18 <- mc_v %>%
+  mutate(t2_religion_secular = as.factor(t2_religion_secular),
+         t3_religion_secular = as.factor(t3_religion_secular)) |> 
+  mutate(t2_religion_secular = as.factor(t2_religion_secular),
+         t3_religion_secular = as.factor(t3_religion_secular),
+         t1_religious_change_ignore_test = as.numeric(t1_religious_change)) |> 
+  mutate(t1_test = as.factor(ifelse(t1_religious_change == "nfd_same",1, 0)))|> 
+  mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) %>%
+  select(
+    where(is.factor),
+    ends_with("_z"),
+    .imp,
+    .id
+  ) %>%
+   mutate(t2_religion_secular = as.numeric(t2_religion_secular)-1,
+         t3_religion_secular = as.numeric(t3_religion_secular)-1,
+         t1_test = as.numeric(t1_test)-1) |> 
+  select(-c(.imp_z, .id_z)) %>%
+  # dplyr::mutate(across(starts_with("t1_") &
+  #                        where(is.factor), ~ as.integer(.x) - 1)) %>% # make factors numeric and subtract 1
+  # dplyr::mutate(across(starts_with("t2_") &
+  #                        where(is.factor), ~ as.integer(.x) - 1)) %>% # make factors numeric and subtract 1
+  # dplyr::mutate(across(starts_with("t3_") &
+  #                        where(is.factor), ~ as.integer(.x) - 1)) %>% # make factors numeric and subtract 1
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
   mutate_if(is.matrix, as.vector) %>%
   as.mids()
 
 # Confirm that ml is of class "mids"
-class(ml)
+class(ml_18)
+str(ml_18)
+
+mf_18 <- mice::complete(ml_18, "long", inc = TRUE)
+
+str(mf_18)
+colnames(mf_18)
+
+saveRDS(ml_18, here::here(push_mods, "at-mice-ml_18"))
+saveRDS(mf_18, here::here(push_mods, "at-mice-mf_18"))
+
+```
+
+```{r}
+#| eval: false
+
+# outcomewide analysis
+#source(here::here("functions","functions_here.R"))
+
+# read imputed data
+ml_18 <- readRDS(here::here(push_mods, "at-mice-ml_18"))
+
+# longform data if necessary
+mf_18 <- readRDS(here::here(push_mods, "at-mice-mf_18"))
+
+colnames(mf)
+
+# Set exposure 
+X <- "t1_religious_change" # bad name
 
 
-mf <- mice::complete(ml, "long", inc = TRUE)
+# baselin vars ---------------------------------------------------------
 
-saveRDS(ml, here::here(push_mods, "at-mice-ml"))
-saveRDS(mf, here::here(push_mods, "at-mice-mf"))
+baseline_vars = mf_18 |>
+  dplyr::select(-c(.imp,
+                   .id,
+                  # id
+                  # time, if df is long
+                  # weights, if weights are used
+                  )) |> # include?
+  dplyr::select(starts_with("t0")) |> colnames()
+baseline_vars
 
-ml <- readRDS(here::here(push_mods, "at-mice-ml"))
-mf <- readRDS(here::here(push_mods, "at-mice-mf"))
+outcome_vars = mf_18 |>
+  dplyr::select(-c(.imp,
+                   .id,
+                  # id
+                  # time, if df is long
+                  # weights, if weights are used
+                  )) |> # include?
+  dplyr::select(starts_with("t2")|starts_with("t3")) |> colnames()
 
+outcome_vars
+
+
+# set X var
+
+# matching function (more approaches in the outcomewide --> scripts --> johnmark --> covid folder)
+# set digits 3
+options(scipen = 999)
+
+# match the datasets to the exposure
+
+## matching formula
+
+
+
+dt_match <- weightthem(
+  as.formula(paste(as.formula(paste(
+    paste(X, "~",
+          paste(baseline_vars, collapse = "+"))
+  )))),
+  ml_18,
+  estimand = "ATE",
+  stabilize = TRUE,
+  method = "ebal"
+  
+)
+
+
+
+match_mi <- function(X, baselinevars, ml, estimand, method) {
+  require(WeightIt)
+  require(MatchThem)
+  dt_match <- weightthem(
+    as.formula(paste(as.formula(paste(
+      paste(X, "~",
+            paste(baseline_vars, collapse = "+"))
+    )))),
+    ml,
+    estimand = estimand,
+    stabilize = TRUE,
+    method = method
+  )
+  dt_match
+}
+
+X <- "t1_religious_change"
+
+dt_match <- match_mi(X, baselinevars = baselinevars, ml = ml_18, estimand = "ATE", method = "ebal")
+
+# dt_test<- match_mi(X = "t1_test", baselinevars = baselinevars, ml = ml_18, estimand = "ATE", method = "ebal")
+
+#saveRDS(dt_match, here::here(push_mods, "dt_match"))
+
+sum <- summary(dt_match)
+plot(sum)
+bal.tab(dt_match)
+dt_match
+
+table(mf_18$t1_religious_change)
+
+# settings 
+dt_match = dt_match # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+
+#family
+family <- "quasibinomial"
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl = 8
+
+# x variable 
+X = "t1_religious_change"
+Y = "t3_religion_secular"
+
+# contrast value  (contrasting same with nfd_same)
+# treat_1 = 1
+# treat_0 = 0
+
+# as specified
+
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+# outcomes
+
+
+
+weighted.models <- with(dt_match,
+                        glm(t3_religion_secular ~ t1_religious_change, family = quasibinomial()))
+
+pooled_summary <- summary(pool(weighted.models))
+pooled_summary
+coef_demom_same <- pooled_summary$estimate[1]
+coef_nfd_same <- pooled_summary$estimate[2]
+coef_nfd_became <- pooled_summary$estimate[3]
+coef_nfd_lost <- pooled_summary$estimate[4]
+coef_nfd_became
+
+# interpret
+round( plogis(coef_demom_same), 3) # prob of denom same
+round( plogis(coef_demom_same + coef_nfd_same), 3) # prob of nfd same
+round( plogis(coef_demom_same + coef_nfd_became), 3) # prob of nfd became
+round( plogis(coef_demom_same + coef_nfd_lost), 3) # prob of denom became
+
+
+# summary(pool(weighted.models, conf.int = TRUE,
+#         exponentiate = TRUE))
+
+  mice::pool(weighted.models, conf.int = TRUE, exponentiate = TRUE)
+
+
+df = dt_match
+
+
+table(mf_18$t1_religious_change)
+
+# df = dt_match
+# Y = "t3_religion_secular"
+# X = "t1_test"
+# baseline_vars = baseline_vars
+# treat_0 = 0
+# treat_1 = 1
+# estimand = "ATT"
+# scale = "RR"
+# nsims = 200
+# cores = 8
+# family = quasibinomial()
+weights = TRUE
+
+
+# 
+# causal_contrast <- function(df, Y, X, baseline_vars = "1", treat_0 = 0, treat_1 = 1,
+#                             estimand = "ATE", scale = "RR", nsims = 200,
+#                             cores = 1, family = binomial(), weights = TRUE) {
+#   
+#   # Load required packages
+#   require("clarify")
+#   require("rlang") # for building dynamic expressions
+#   require("glue") # for easier string manipulation
+#   
+#   # Fit models using the complete datasets (all imputations)
+#   fits <-  lapply(complete(df, "all"), function(d) {
+#     # Set weights variable based on the value of 'weights' argument
+#     weight_var <- if (weights) d$weights else NULL
+#     
+#     glm(
+#       as.formula(paste(
+#         paste(Y, "~", X , "*", "("),
+#         paste(baseline_vars, collapse = "+"),
+#         paste(")")
+#       )),
+#       weights = weight_var,
+#       family = family,
+#       data = d
+#     )
+#   })
+#   
+#   # A `clarify_misim` object
+#   sim.imp <- misim(fits, n = nsims)
+#   
+#   # Build dynamic expression for subsetting
+#   subset_expr <- rlang::expr(!!rlang::sym(X) == !!treat_1)
+#   
+#   # Compute the Average Marginal Effects
+#   if (estimand == "ATT") {
+#     sim_estimand <- sim_ame(sim.imp,
+#                             var = X,
+#                             subset = eval(subset_expr),
+#                             cl = cores,
+#                             verbose = FALSE)
+#   } else { # For ATE
+#     sim_estimand <- sim_ame(sim.imp,
+#                             var = X,
+#                             cl = cores,
+#                             verbose = FALSE)
+#   }
+#   
+#   # Convert sim_estimand to a data frame
+#   sim_estimand_df <- as.data.frame(sim_estimand)
+#   
+#   # Transform the results based on the specified scale
+#   if (scale == "RR") {
+#     sim_estimand_df$RR <- sim_estimand_df[[paste0("E[Y(", treat_1, ")]")]] / sim_estimand_df[[paste0("E[Y(", treat_0, ")]")]]
+#   } else { # For RD
+#     sim_estimand_df$RD <- sim_estimand_df[[paste0("E[Y(", treat_1, ")]")]] - sim_estimand_df[[paste0("E[Y(", treat_0, ")]")]]
+#   }
+#   
+#   # Calculate the desired summary statistics
+#   out <- t(sapply(sim_estimand_df, function(x) {
+#     c(Estimate = round(mean(x), 4), `2.5 %` = round(quantile(x, 0.025), 4), `97.5 %` = round(quantile(x, 0.975), 4))
+#   }))
+#   
+#   # Set the row names of the output to match the desired format
+#   rownames(out) <- colnames(sim_estimand_df)
+#   
+#   # Rename the column names to avoid duplicates
+#   colnames(out) <- c("Estimate", "2.5 %", "97.5 %")
+#   
+#   return(out)
+# }
+
+mod_compare_sames <- causal_contrast(
+  df = dt_match,
+  Y = "t3_religion_secular",
+  X = "t1_religious_change",
+  # X = "t1_test",
+  baseline_vars = baseline_vars,
+  treat_1 = "nfd_same",
+  treat_0 = "denom_same",
+  # treat_1 = 1,
+  estimand = "ATE",
+  scale = "RR",
+  nsims = 1000,
+  cores = cores,
+  family = quasibinomial(),
+  weights = TRUE
+)
+
+# view
+mod_compare_sames
+
+# save
+saveRDS(mod_compare_sames, here::here(push_mods, "mod_compare_sames"))
+mod_compare_sames <- readRDS( here::here(push_mods, "mod_compare_sames"))
+
+
+# model comparing the sames
+mod_compare_sames <- causal_contrast(
+  df = dt_match,
+  Y = "t3_religion_secular",
+  X = "t1_religious_change",
+  # X = "t1_test",
+  baseline_vars = baseline_vars,
+  treat_1 = "nfd_same",
+  treat_0 = "denom_same",
+  # treat_1 = 1,
+  estimand = "ATE",
+  scale = "RR",
+  nsims = 200,
+  cores = cores,
+  family = quasibinomial(),
+  weights = TRUE
+)
+
+
+# compare the changers
+
+mod_compare_changes <- causal_contrast(
+  df = dt_match,
+  Y = "t3_religion_secular",
+  X = "t1_religious_change",
+  # X = "t1_test",
+  baseline_vars = baseline_vars,
+  treat_1 = "nfd_became",
+  treat_0 = "nfd_lost",
+  # treat_1 = 1,
+  estimand = "ATE",
+  scale = "RR",
+  nsims = 1000,
+  cores = 8,
+  family = quasibinomial(),
+  weights = TRUE
+)
+
+saveRDS(mod_compare_changes, here::here(push_mods, "mod_compare_changes"))
+
+mod_compare_changes <- readRDS(here::here(push_mods, "mod_compare_changes"))
+
+mod_compare_changes
+
+t_1<- tab_ate(mod_compare_changes, new_name = "same", type = "RR")
+
+t_1
+t_2 <- tab_ate(mod_compare_changes, new_name = "changed", type = "RR")
+t_2 
+
+t_1
+t_2
+
+tab_rb <-
+  rbind(
+    t_1,
+    t_2
+  )
+
+tab_rb
+
+#tab_cont_df <- as.data.frame(tab_cont)
+
+
+
+group_tab(tab_rb, type = "RR")
+
+
+
+
+# test
+
+mod_test <- gcomp_sim(
+  df = ml_18,  # note change
+  Y = "t3_religion_secular",
+  X = "t1_religious_change",
+  # X = "t1_test",
+  baseline_vars = baseline_vars,
+  treat_1 = "nfd_same",
+  treat_0 = "denom_same",
+  # treat_1 = 1,
+  estimand = "ATE",
+  scale = "RD",
+  nsims = 200,
+  cores = 8,
+  family = quasibinomial(),
+  weights = FALSE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "TEST YET"
+)
+
+mod_test 
+
+#tab_ate(test_again, new_name = "test_function")
+
+
+#ignore results, just testing function
+
+treat_1 = 1
+treat_0 = 0
+df = ml_18
+Y = "t3_religion_secular"
+X = "t1_religious_change_ignore_test_z"
+ baseline_vars = baseline_vars
+scale = "RD"
+weights = FALSE
+family= quasibinomial()
+nsims = 100
+cores = parallel::detectCores ()
+
+# note sorking
+
+mod_test_only_for_code <- causal_contrast(
+  df = dt_match,
+  Y = "t3_religion_secular",
+  X = "t1_religious_change_ignore_test_z",
+  # X = "t1_test",
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  # treat_1 = 1,
+  estimand = "ATE",  # must be ATE for continous treatment
+  scale = "RD",
+  nsims = 100,
+  cores = 10,
+  family = quasibinomial(),
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE
+)
+
+mod_test_only_for_code
+
+tab_ate(mod_test_only_for_code, new_name = "work", type = "RD")
+# rownames(mod_test_only_for_code)<- "RD"
+# mod_test_only_for_code
+
+
+gcomp_sim(
+  df = ml_18,  # note change
+  Y = "t3_religion_secular",
+  X = "t1_religious_change",
+  # X = "t1_test",
+  baseline_vars = baseline_vars,
+  treat_1 = "nfd_same",
+  treat_0 = "denom_same",
+  # treat_1 = 1,
+  estimand = "ATE",
+  scale = "RD",
+  nsims = 200,
+  cores = 8,
+  family = quasibinomial(),
+  weights = FALSE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "TEST YET"
+)
+mod_test_only_for_code
+
+mod_test_only_for_code
+rownames(mod_test_only_for_code) <- "splure"
+mod_test_only_for_code
+tab_ate(mod_test_only_for_code, type = "RD", new_name = "splure")
+
+mod_test_only_for_code2 <- causal_contrast(
+  df = dt_match,
+  Y = "t3_religion_secular",
+  X = "t1_religious_change_ignore_test_z",
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",  # must be ATE for continous treatment
+  scale = "RD",
+  nsims = 100,
+  cores = 10,
+  family = quasibinomial(),
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE
+)
+
+mod_test_only_for_code2
+
+
+
+
+### ASIDE 0
+### ASIDE 
+
+baseline_vars
+
+min = 0
+max =  2
+
+# set full range of X
+x
+
+table()
+
+
+# # range for some graphs
+# minmax <- paste(c(x), sep = ",")
+# minmax
+
+
+# range  of data
+x = min:max
+
+# baseline condition
+r = 0
+
+# focal contrast for X
+f = 1
+
+# number of imputed datasets
+m = 10
+
+# need to correctly subset the models
+p = c(r, f) #
+
+cvars = baseline_vars
+main = "title"
+
+X = "t1_religious_change_ignore_test_z"
+
+# allows splines
+test_again <- gcomp_delta(df, X, Y, baseline_vars, family, m = 10, min = -1, max = 2, r = 0, f = 1, splines = FALSE, delta = 1, sd = 1, new_name = "test_take_2")
+
+test_again
+
+
+test_again2 <- test_again
+
+# works!
+tab_testagain2 <-
+  rbind(
+    test_again,
+    test_again2
+  )
+
+
+tab_rb <-
+  rbind(
+    t_1,
+    t_2
+  )
+
+tab_rb
+
+#tab_cont_df <- as.data.frame(tab_cont)
+
+
+
+group_tab(tab_rb, type = "RR")
+
+
+colnames(tab_cont_df) <- c("E[Y(1)]/E[Y(0)]", "2.5 %", "97.5 %")
+
+tab_cont_df_grouped <- group_tab(tab_cont_df, type = "RR")
 
 
 ```
+
+
+
 
 ```{r}
 #| label: fig-meaningless
@@ -397,11 +1110,296 @@ mf <- readRDS(here::here(push_mods, "at-mice-mf"))
 #| out-width: 50%
 #| echo: false
 #| include: false
+#| eval: false
 
-# just for reference
-plot(runif(25), runif(25))
+# Compare with transitioning out of NFD
+
+
+baseline_vars = mf_18 |>
+  dplyr::select(-c(.imp,
+                   .id,
+                  # id
+                  # time, if df is long
+                  # weights, if weights are used
+                  )) |> # include?
+  dplyr::select(starts_with("t0_")) |> 
+  dplyr::select(-t0_christian_nfd) |> 
+  dplyr::select(!starts_with("t0_religion_religious")) |> colnames()
+
+X <- "t1_nfd_lost_17"
+# 
+# dt_match_lost_18<- weightthem(
+#   as.formula(paste(as.formula(paste(
+#     paste(X, "~",
+#           paste(baseline_vars, collapse = "+"))
+#   )))),
+#   ml_18,
+#   estimand = "ATT",
+#   stabilize = TRUE,
+#   method = "ebal"
+# )
+
+
+match_mi <- function(X, baselinevars, ml, estimand, method) {
+  require(WeightIt)
+  require(MatchThem)
+  dt_match <- weightthem(
+    as.formula(paste(as.formula(paste(
+      paste(X, "~",
+            paste(baseline_vars, collapse = "+"))
+    )))),
+    ml,
+    estimand = estimand,
+    stabilize = TRUE,
+    method = method
+  )
+  dt_match
+}
+
+
+dt_match_lost_18 <- match_mi(X = "t1_nfd_lost_17", baselinevars = baselinevars, ml = ml_18, estimand = "ATT", method = "ebal")
+
+#saveRDS(dt_match, here::here(push_mods, "dt_match"))
+
+sum <- summary(dt_match_lost_18)
+sum
+plot(sum)
+bal.tab(dt_match_lost_18)
+
+
+# settings 
+df = dt_match_lost_18 # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+
+#family
+family <- "binomial"
+
+# bootstrap simulations
+nsims <- 1000
+
+# cores
+cl = 8
+
+# x variable 
+X = "t1_nfd_lost_17"
+
+# contrast value 
+delta = 1
+
+X
+
+# outcomes
+
+
+
+lost_nfd <-
+  contrast_rr(
+    df = df,
+    Y = "t2_religion_religious",
+    X = "t1_nfd_lost_17",
+    baseline_vars = baseline_vars,
+    cl = 8,
+    family = "binomial",
+    delta = 1,
+    nsims = 1000
+  ) 
+
+
+tb_lost_p1 <- tab_ate_rr(lost_nfd, "Religious + 1", delta = 1, sd = 1)
+tb_lost_p1
+
+m_t3_religion_religious <- contrast_rr(dt_match, nsims, Y = "t3_religion_religious", X, baseline_vars, cl,family = "quasibinomial", delta) 
+
+tb_m_t3_religion_religious <- tab_ate_rr(m_t3_religion_religious, "Religious + 2", delta = 1, sd = 1)
+tb_m_t3_religion_religious
+
+
+tab_cont <-
+  rbind(
+    tb_m_t2_religion_religious,
+    tb_m_t3_religion_religious
+  )
+
+
+tab_outcomes <- group_tab_ate_rr(tab_cont) 
+tab_outcomes
+tab_outcomes |> select(-Estimate, - estimate_lab) |> kbl(format = "html", digits = 3) 
+
+tab_outcomes %>%
+  dplyr::select(-Estimate, - estimate_lab) |> 
+    kbl() %>%
+  kable_paper("hover", full_width = F)
+
+
+# For the interpretation of tables. 
+interpret_table(tab_outcomes, "risk_ratio", "ATT")
+
+
+
+#function to make plots
+xlab = "Causal RR Scale"
+x_lim_lo = .5
+x_lim_hi= 1.5
+x_offset = -.5
+
+tab_outcomes
+plot <- group_plot_ate_rr(df = tab_outcomes, title = "", subtitle ="", xlab, ylab = "", x_lim_lo= .5, x_lim_hi = 1.5, x_offset = -.5
+) 
+
+plot
+
+df<- tab_outcomes
+
+title = "One and Two-Year Risk of Religious Disaffiliation After Becoming a Christian NFD"
+subtitle = "NZAVS 2018-2022"
+
+df |> kbl(format = "markdown")
+
+
+
+
+gt_plot <- group_plot_ate_rr(df, title, xlab, ylab, subtitle = "NZAVS 2018-2022",
+                              x_offset= 0, 
+                              x_lim_lo = 0, 
+                              x_lim_hi = 1.5)
+
+gt_plot
+
+
+ggsave(
+  gt_plot,
+  path = here::here(here::here("figs", "gt")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "gt_plot.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+group_plot_ate_rr <- function(df, title, subtitle, xlab, ylab,
+                              x_offset= 0, 
+                              x_lim_lo = 0, 
+                              x_lim_hi = 1.5) {
+  # Convert the title string to a symbol
+  title_sym <- sym(title)
+  # create plot 
+  out <-ggplot(
+    data = df,
+    aes(
+      y = reorder(outcome, `E[Y(1)]/E[Y(0)]`),
+      x = `E[Y(1)]/E[Y(0)]`,
+      xmin = `2.5 %`,
+      xmax = `97.5 %`,
+      group = Estimate, 
+      color = Estimate
+    )
+  ) +
+    geom_errorbarh(aes(color = Estimate), height = .3, position = position_dodge(width = 0.3)) + # Add color to geom_errorbarh
+    geom_point(size = 4, position = position_dodge(width = 0.3)) + # Replace geom_col with geom_point
+    geom_vline(xintercept = 1, linetype = "solid") +
+    theme_classic(base_size = 12) +
+    scale_color_manual(values = c("orange", "black", "dodgerblue")) + # Set custom color scale
+    labs(
+      x = "Causal Risk Ratio",
+      y = " ",
+      title = title,
+      subtitle = subtitle
+    ) +
+    geom_text(
+      aes(x = x_offset, label = estimate_lab), # Display only estimate labels
+      size = 4,
+      hjust = 0,
+      fontface = ifelse(df$Estimate == "not reliable", "plain", "bold")
+    ) +
+        coord_cartesian(xlim = c(x_lim_lo, x_lim_hi)) +
+
+    # coord_fixed(clip = "off", 
+    #             xlim = c(x_lim_lo, x_lim_hi)
+    #             ) + 
+    theme(
+      legend.position = "top",
+      legend.direction = "horizontal",
+      plot.title = element_text(face = "bold", size = 12, hjust = 0), # Align title to the left
+      plot.subtitle = element_text(size = 10, hjust = 0) # Align subtitle to the left
+    )
+  # plot
+  out
+}
+
+    # Use coord_fixed instead of coord_cartesian
+    # theme(
+    #   panel.border = element_blank(),
+    #   axis.line = element_blank(),
+    #   panel.background = element_blank(),
+    #   panel.grid.major = element_blank(),
+    #   panel.grid.minor = element_blank(),
+    #   axis.title.x = element_text(size = 12),  # x-axis label font size
+    #   axis.title.y = element_text(size = 12), # y-axis label font size
+    #   plot.title = element_text(face = "bold", size = 16, hjust = 0),  # increase title font size and align it to the left
+    #   plot.subtitle = element_text(size = 14),  # Increase title font size
+    #   axis.text = element_text(size = 12),  # Increase axis text font size
+    #   plot.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt") # Add space to accommodate text outside the plot area
+    # ) + 
+
+
+# group_plot_ate_rr <- function(df, title, subtitle, xlab, ylab, x_offset, x_lim_lo, x_lim_hi) {
+#   # Convert the title string to a symbol
+#   title_sym <- sym(title)
+#   # create plot 
+#   out <-ggplot(
+#     data = df,
+#     aes(
+#       y = reorder(outcome, `E[Y(1)]/E[Y(0)]`),
+#       x = `E[Y(1)]/E[Y(0)]`,
+#       xmin = `2.5 %`,
+#       xmax = `97.5 %`,
+#       fill = Estimate
+#     )
+#   ) + geom_col(position = position_dodge(width = 0.3)) +
+#     geom_errorbarh(height = .3, position = position_dodge(width = 0.3)) +
+#     geom_vline(xintercept = 1, linetype = "solid") +
+#     geom_vline(
+#       xintercept = c(.5, .75, 1.25, 1.5),
+#       linetype = "twodash",
+#       alpha = .5
+#     ) +
+#     theme_classic(base_size = 10) +
+#     scale_fill_manual(values = c("gray", "orange", "dodgerblue")) + # dodgerblue
+#     labs(
+#       x = xlab,
+#       y = ylab,
+#       title = title,
+#       subtitle = subtitle
+#     )+
+#     #labels so that the graph can also be a table
+#     geom_text(
+#       aes(x = x_offset, label = estimate_lab),
+#       size = 4,
+#       hjust = 0,
+#       fontface = ifelse(df$Estimate == "not reliable", "plain", "bold")
+#     ) +
+#     coord_cartesian(xlim = c(x_lim_lo, x_lim_hi)) +
+#     theme(
+#       panel.border = element_blank(),
+#       axis.line = element_blank(),
+#       panel.background = element_blank(),
+#       panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       axis.title.x = element_text(size = 12),  # x-axis label font size
+#       axis.title.y = element_text(size = 12), # y-axis label font size
+#       plot.title = element_text(face = "bold", size = 16),  # increase title font size
+#       plot.subtitle = element_text(size = 14),  # Increase title font size
+#       axis.text = element_text(size = 12)  # Increase axis text font size
+#     ) + theme(legend.position = "top",  # or "top"
+#               legend.direction = "horizontal")
+#   # plot
+#   out
+# }
+
+
 ```
-
 ## Introduction
 
 Who are the NFDs anyway?[@sibley2012]
@@ -426,7 +1424,6 @@ Participants were asked to indicate their religion identification ("Do you ident
 
 If participants answered *yes* to "Do you identify with a religion and/or spiritual group? we asked"How important is your religion to how you see yourself?" (1 = Not important, 7 = Very important). Those participants who were not religious were imputed a score of "1".
 
-
 #### Frequency of Church Attendence
 
 If participants answered *yes* to "Do you identify with a religion and/or spiritual group?" we measured their frequency of church attendance using one item from @sibley2012: "how many times did you attend a church or place of worship in the last month?". Those participants who were not religious were imputed a score of "0".
@@ -434,7 +1431,6 @@ If participants answered *yes* to "Do you identify with a religion and/or spirit
 #### Spiritual Identification
 
 Spiritual identification was measured using one item ("I identify as a spiritual person.") from @postmes_single-item_2013. Participants indicated their agreement with this item (1 = Strongly Disagree to 7 = Strongly Agree).
-
 
 #### Frequency of Prayer
 
@@ -444,19 +1440,15 @@ If participants answered *yes* to "Do you identify with a religion and/or spirit
 
 If participants answered *yes* to "Do you identify with a religion and/or spiritual group?" we measured their frequency of scripture reading by asking "how many times did you read religious scripture in the last week?" Those participants who were not religious were imputed a score of "0" [@bulbulia2016].
 
-
 #### Perceived Discrimination -- Religion
 
 "I feel that I am often discriminated against because of my religious/spiritual beliefs." (1 = Strongly Disagree to 7 = Strongly Agree). (Developed for the NZAVS, Time 7 - time 14)
-
-
 
 ## Descriptive statistics
 
 ```{r}
 
 ```
-
 
 ### Analytic approach
 
@@ -471,9 +1463,7 @@ We next leveraged longitudinal data to investigate whether changing from transit
 5.  Missing data multiply imputed (to adjust for sampling bias).
 6.  Control for baseline confounders
 7.  Estimation by Inverse probability weighting and G-computation.
-5.  Recover the **Average Treatment Effect in the Treated**.
-
-[^1]: We note that this coefficient is simply the time effect in the conditional analysis. We use G-computation for consistency with other NZAVS outcome-wide studies
+8.  Recover the **Average Treatment Effect in the Treated**.
 
 ### Sample
 
@@ -701,6 +1691,763 @@ Points to consider:
 HERE...
 
 ## References
+
+
+```{r}
+#| eval: false
+
+# for another paper
+
+
+dt <- dat |>
+  dplyr::filter((Wave == 2016  & YearMeasured  == 1) |
+                  (Wave == 2017  &
+                     YearMeasured  == 1) |
+                  (Wave == 2018))  |>  # Eligibility criteria
+  group_by(Id) |>
+  dplyr::mutate(k_16 =  ifelse(Wave == 2016 &
+                                 YearMeasured == 1 &
+                                 Christian == 1, 1, 0)) |>   # creating an indicator for the first wave
+  dplyr::mutate(h_16 = mean(k_16, na.rm = TRUE)) |>   # Hack
+  dplyr::mutate(k_17 =  ifelse(Wave == 2017 &
+                                 YearMeasured == 1 &
+                                 Christian == 1, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people to deconvert
+  dplyr::mutate(h_17 = mean(k_17, na.rm = TRUE)) |>  # Hack
+  dplyr::filter(h_16 > 0) |>  # hack to enable repeat of baseline
+  dplyr::filter(h_17 > 0) |>  # hack to enable repeat of baseline
+  ungroup() |>
+  droplevels() |>
+  mutate(Euro = if_else(EthCat == 1, 1, 0)) |>
+  mutate(
+    EthCat = as.factor(EthCat),
+    Believe.Spirit = as.factor(Believe.Spirit),
+    Believe.God = as.factor(Believe.God)
+  ) |>
+  select(# Age,
+    Id,
+    YearMeasured,
+    #SampleFrame, # how long in study
+    #w_GendAgeEuro, not estimating PATE
+    Wave,
+    BornNZ,
+    Edu,
+    EthCat,
+    Employed,
+    # Gender3,
+    GenCohort,
+    # EthCat,
+    #Household.INC, not reliable
+    KESSLER6,
+    NZDep2013,
+    NZSEI13,
+    Partner,
+    Parent,
+    Pol.Orient,
+    #  Pol.Wing,
+    Rural_GCH2018,
+    #  REGC_2022,
+    #  SDO,
+    RWA,
+    AGREEABLENESS,
+    CONSCIENTIOUSNESS,
+    EXTRAVERSION,
+    HONESTY_HUMILITY,
+    OPENNESS,
+    NEUROTICISM,
+    Religion.Scripture,
+    Religion.Church,
+    Religion.Prayer,
+    Believe.Spirit,
+    Believe.God,
+    Perc.Religious.Discrim,
+    religious_identification,
+    Spiritual.Identification,
+    Christian_nfd, 
+    Religious
+  ) |>
+  arrange(Id, Wave) |>
+  mutate(
+    Religion.Church = ifelse(Religion.Church > 8, 8, Religion.Church),
+    # to avoid unstable models
+    Religion.Scripture = ifelse(Religion.Scripture > 8, 8, Religion.Scripture),
+    # to avoid unstable models
+    Religion.Prayer = ifelse(Religion.Prayer > 8, 8, Religion.Prayer)
+  ) |> # to avoid unstable models
+  group_by(Id) |>
+  mutate(nfd_became_17 =  # exposure
+           as.factor( ifelse(
+             ((Wave == 2017 & Christian_nfd == 1) &
+               (Wave == 2017 & lag(Christian_nfd == 0))), 1, 0)))|>
+  mutate(nfd_lost_17 =  # exposure
+           as.factor(ifelse(
+             ((Wave == 2017 & Christian_nfd == 0) &
+               (Wave == 2017 & lag(Christian_nfd == 1))), 1, 0)))|>
+  ungroup() |> 
+  janitor::clean_names() |> # make names consistent
+  # give sensible name
+  mutate(rural_gch2018 = case_when(
+    rural_gch2018 == 1 ~ "High Urban Accessibility",
+    rural_gch2018 == 2 ~ "Medium Urban Accessibility",
+    rural_gch2018 == 3 ~ "Low Urban Accessibility",
+    rural_gch2018 == 4 ~ "Remote",
+    rural_gch2018 == 5 ~ "Very Remote",
+    #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
+  )) |> 
+   mutate(rural_gch2018 = factor(
+    rural_gch2018,
+    levels = c(
+      "High Urban Accessibility",
+      "Medium Urban Accessibility",
+      "Low Urban Accessibility",
+      "Remote",
+      "Very Remote"
+    ),
+    ordered = TRUE
+  )) |> 
+  rename(religion_believe_god = believe_god) |> 
+  rename(religion_believe_spirit = believe_spirit) |> 
+  rename(religion_perceive_religious_discrim = perc_religious_discrim) |> 
+  rename(religion_identification = religious_identification) |> 
+  rename(religion_spiritual_identification = spiritual_identification) |> 
+  rename(religion_religious = religious)# make so all religion vars start with religion
+# make so all religion vars start with religion
+# make so all religion vars start with religion 
+
+
+
+n_unique(dt$id)
+
+table(dt$nfd_became_17)
+table(dt$nfd_lost_17)
+table(dt$wave)
+
+## check numbers of those changed
+ds <- dt |>
+  filter(year_measured == 1 &
+           wave == 2016 | year_measured == 1 & wave == 2017) |>
+  select(id, christian_nfd) |>
+  mutate(christian_nfd = as.numeric(christian_nfd) - 1)
+
+# check: finds same numbers
+msm::statetable.msm(round(christian_nfd, 0), id, data = ds) |>
+  kbl() |>
+  kable_paper(full_width = F)
+
+dt_mice <- dt |> 
+  select(-c(id, year_measured))
+
+# prepare data for mice imputation. 
+mice:::find.collinear(dt_mice)
+
+# check consistent n's
+table(dt_mice)
+
+  
+#table
+# functions for table
+my_render_cont <- function(x) {
+  with(stats.apply.rounding(stats.default(x), digits=3), c("",
+                                                           "Mean (SD)"=sprintf("%s (&plusmn; %s)", MEAN, SD)))
+}
+
+my_render_cat <- function(x) {
+  c("", sapply(stats.default(x), function(y) with(y,
+                                                  sprintf("%d (%0.0f %%)", FREQ, PCT))))
+}
+
+
+
+# get control vars
+
+
+# baseline wave
+# do only for baseline wave
+dt_mice_b <- dt_mice |> 
+  filter(wave == 2016) 
+
+
+cvars = dt_mice_b |>
+  dplyr::select(!starts_with("religion_"))|>
+  dplyr::select(!starts_with("nfd_")) |> 
+  dplyr::select(- wave) |>
+  colnames()
+
+cvars
+# make into an equation
+
+output_string <- paste(cvars, collapse = "+")
+formula_string <- paste("~", output_string, "|wave")
+
+#formula_string <- paste("~", output_string)
+formula_obj <- as.formula(formula_string)
+
+formula_obj
+colnames(dt_mice_b)
+
+c_tab <-
+  table1::table1(
+    formula_obj,
+    data = dt_mice_b,
+    overall = FALSE,
+    render.continuous = my_render_cont,
+    render.categorical = my_render_cat
+  )
+
+# make demographic table html
+c_tab
+
+# make demographic tablem markdown
+c_tab |> 
+  as.data.frame() |> 
+  kbl(format = "markdown")
+
+# next for religion variables 
+
+
+rvars = dt_mice_b |>
+  dplyr::select(starts_with("religion_"))|>
+  colnames()
+
+rvars
+# make into an equation
+
+output_string_r <- paste(rvars, collapse = "+")
+formula_string_r <- paste("~", output_string_r, "|wave")
+
+#formula_string <- paste("~", output_string)
+formula_obj_r <- as.formula(formula_string_r)
+
+c_tab_r <-
+  table1::table1(
+    formula_obj_r,
+    data = dt_mice_b,
+    overall = FALSE,
+    render.continuous = my_render_cont,
+    render.categorical = my_render_cat
+  )
+
+# make demographic table html
+c_tab_r
+
+# make demographic tablem markdown
+c_tab |> 
+  as.data.frame() |> 
+  kbl(format = "markdown")
+
+
+
+# new table
+c_tab_b <- table1::table1(formula_obj, data = dt_mice_b, overall = FALSE,
+                             render.continuous = my_render_cont,
+    render.categorical = my_render_cat)
+
+# make demographic table html
+c_tab_b
+
+# make demographic tablem markdown
+c_tab_b |> 
+  as.data.frame() |> 
+  kbl(format = "markdown")
+
+
+
+# Prepare data for mice
+
+  
+# Prepare data for mice
+# needs to use this pipe : %>%
+dt_prep <- dt %>%
+  mutate(time = as.numeric(wave) - 1)  %>%
+  select(-c(wave, year_measured))  %>% 
+  pivot_wider(
+    id_cols = id,
+    names_from = time,
+    values_from = -c(id, time),
+    names_glue = "t{time}_{.value}",
+    names_prefix = "t"
+  ) %>%
+  select(-c(starts_with("t0_nfd")))  %>%
+  select(-c(starts_with("t2_nfd")))  %>%
+  select(-t0_religion_religious) %>%
+  select(-c((starts_with("t1") | starts_with("t2")) & matches(paste0("(", paste(cvars), ")$"))))  %>%  # control vars only at baseline
+  select(-c((starts_with("t1") & matches(paste0("(", paste(rvars), ")$")))))  %>%  # outcome vars only at baseline and outcome
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  arrange(id)
+
+
+# need to remove id column
+dt_prep_no_id <- dt_prep |> 
+  select(-id)
+
+colnames(dt_prep_no_id)
+str(dt_prep_no_id)
+# inspect
+dev.off()
+naniar::vis_miss(dt_prep_no_id, warn_large_data = FALSE)
+
+# str( dt_19_noe$Id )
+
+
+# check for collinear vars
+mice:::find.collinear(dt_prep_no_id)
+
+## impute missing variables
+mice_gt <- mice::mice(dt_prep_no_id, m = 10)
+
+# save imputations
+saveRDS(mice_gt,
+        here::here(push_mods, "mice_gt"))
+
+# recall imputations if needed
+mice_gt <-
+  readRDS(here::here(push_mods, "mice_gt"))
+
+
+# check mi model
+outlist2 <-
+  row.names(mice_gt)[mice_gt$outflux < 0.5]
+length(outlist2)
+
+# checks. We do not impute with weights: area of current research
+
+head(mice_gt$loggedEvents, 10)
+
+# data warangling
+
+mc  <- mice::complete(mice_gt, "long", inc = T)
+
+vnames <- rownames(mc)
+
+cnames <- rownames(mc)
+
+length(vnames)/nrow(dt_prep_no_id) #(11 datasets)
+
+
+# if we need weights
+# newdat <- data.frame( rep( dt_prep$t0_w_GendAgeEuro, 11))
+# colnames(newdat ) <- "weights"
+# head(newdat)
+# length( newdat$weights ) == length( cnames)
+# 
+# 
+# mc_v <- bind_cols(newdat, mc ) |>
+#   relocate("weights", .before = "t0_Partner")
+
+# checks out
+
+# comment out if using weights with the above code
+mc_v <- mc
+
+skimr::skim(mc_v)
+
+#
+N <- nrow(dt_prep_no_id) # number of ids
+N2 = 3 * N # made long so need 3 x N # three waves
+
+# checks
+
+head(mc_v)
+
+
+# only use for long data
+# create variables in z score -- NOT WORKING FOR IPTW AT MOMENT
+# mc_vv <- mc_v %>%
+#   dplyr::mutate(Id = as.factor(rep(1:N, 11))) |> # need ids
+#   pivot_longer(
+#     cols = starts_with("t"),
+#     names_to = c("time", ".value"),
+#     names_pattern = "t(\\d+)_(.*)"
+#   ) |>
+#   relocate("time", .after = "Id") |>
+#   arrange(.imp, Id, time)  |>
+#   group_by(.imp, Id) |>
+#   fill(c(!starts_with("t0_Warm.") |
+#            !starts_with("t1_Warm.")), .direction = "down") |> # create baselines
+#   ungroup() |>
+#   select(-.id) |>
+#   mutate(.id = rep(1:N2, 11)) |>  # new id needed  for mice
+#   data.frame()
+# dim(mc_vv)
+# head(mc_vv)
+# head(mc_vv[, 27:36]) ## looks good
+# # Get data into shape
+
+
+# ml <- mc_v %>%
+#   dplyr::mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) |>
+#   select(-c(.imp_z, .id_z)) |>
+#   mutate_if(is.matrix, as.vector) %>%
+#   as.mids()
+
+
+
+# 
+# ml <- mc_v %>%
+#   mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) %>%
+#   select_if(~ any(names(.) %in% names(.)[sapply(., is.factor)]) | any(map_lgl(names(.), ~ends_with(.x, "_z")))) %>%
+#   select(-c(.imp_z, .id_z)) %>%
+#   mutate_if(is.matrix, as.vector) %>%
+#   as.mids()
+
+# ml <- mc_v %>%
+#   mutate(t1_nfd_became_17 = as.factor(t1_nfd_became_17),
+#          t1_nfd_lost_17 = as.factor(t1_nfd_lost_17) )|> 
+#   mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) %>%
+#   select(where(is.factor),
+#     ends_with("_z"),
+#     .imp,
+#     .id) %>%
+#     select(-c(.imp_z, .id_z)) %>%
+#   mutate_if(is.matrix, as.vector) %>%
+#   as.mids()
+
+colnames(ml)
+
+
+ml <- mc_v %>%
+  mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) %>%
+  select(
+    where(is.factor),
+    ends_with("_z"),
+    .imp,
+    .id
+  ) %>%
+  select(-c(.imp_z, .id_z)) %>%
+  dplyr::mutate(across(starts_with("t2_") & where(is.factor), ~ as.numeric(.x) - 1)) %>% # make factors numeric and subtract 1
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  mutate_if(is.matrix, as.vector) %>%
+  as.mids()
+
+# Confirm that ml is of class "mids"
+class(ml)
+str(ml)
+
+mf <- mice::complete(ml, "long", inc = TRUE)
+
+colnames(mf)
+
+saveRDS(ml, here::here(push_mods, "at-mice-ml"))
+saveRDS(mf, here::here(push_mods, "at-mice-mf"))
+
+
+```
+
+```{r}
+#| eval: false
+# outcomewide analysis
+#source(here::here("functions","functions_here.R"))
+
+# read imputed data
+ml <- readRDS(here::here(push_mods, "at-mice-ml"))
+
+# longform data if necessary
+mf <- readRDS(here::here(push_mods, "at-mice-mf"))
+
+colnames(mf)
+# Set exposure 
+X <- "t1_nfd_became_17"
+
+
+
+# baselin vars ---------------------------------------------------------
+
+baseline_vars = mf |>
+  dplyr::select(-c(.imp,
+                   .id,
+                  # id
+                  # time, if df is long
+                  # weights, if weights are used
+                  )) |> # include?
+  dplyr::select(starts_with("t0")) |> 
+  dplyr::select(-t0_christian_nfd) |> 
+  dplyr::select(!starts_with("t0_religion_religious")) |> colnames()
+
+baseline_vars
+
+outcome_vars = mf |>
+  dplyr::select(-c(.imp,
+                   .id,
+                  # id
+                  # time, if df is long
+                  # weights, if weights are used
+                  )) |> # include?
+  dplyr::select(starts_with("t2")) |> colnames()
+
+
+
+# set X var
+
+# matching function (more approaches in the outcomewide --> scripts --> johnmark --> covid folder)
+# set digits 3
+options(scipen = 999)
+
+# match the datasets to the exposure
+
+## matching formula
+dt_match <- weightthem(
+  as.formula(paste(as.formula(paste(
+    paste(X, "~",
+          paste(baseline_vars, collapse = "+"))
+  )))),
+  ml,
+  estimand = "ATT",
+  stabilize = TRUE,
+  method = "ebal"
+)
+
+
+match_mi <- function(X, baselinevars, ml, estimand, method) {
+  require(WeightIt)
+  require(MatchThem)
+  dt_match <- weightthem(
+    as.formula(paste(as.formula(paste(
+      paste(X, "~",
+            paste(baseline_vars, collapse = "+"))
+    )))),
+    ml,
+    estimand = estimand,
+    stabilize = TRUE,
+    method = method
+  )
+  dt_match
+}
+
+dt_match <- match_mi(X, baselinevars = baselinevars, ml = ml, estimand = "ATT", method = "ebal")
+
+saveRDS(dt_match, here::here(push_mods, "dt_match"))
+
+sum <- summary(dt_match)
+plot(sum)
+bal.tab(dt_match)
+
+
+
+
+
+
+
+# settings 
+dt_match = dt_match # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+
+#family
+family <- "gaussian"
+
+# bootstrap simulations
+nsims <- 100
+
+# cores
+cl = 8
+
+# x variable 
+X = "t1_nfd_became_17"
+
+# contrast value 
+delta = 1
+
+# outcomes
+# church
+Y = "t2_religion_church_z"
+m_1 <- glm_contrast_mi(dt_match, nsims, Y = "t2_religion_church_z", X, baseline_vars, cl,family = "gaussian", delta) 
+tb_church <- tab_ate_ols(m_1, "church", delta = 1, sd = 1)
+
+
+# religious id
+Y = "t2_religion_identification_z"
+m_2 <- glm_contrast_mi(dt_match, nsims, Y, X, baseline_vars, cl,family = "gaussian", delta) 
+tb_religious_id <- tab_ate_ols(m_2, "religous identification", delta = 1, sd = 1)
+tb_religious_id
+
+#  prayer
+Y = "t2_religion_prayer_z"
+m_3 <- glm_contrast_mi(dt_match, nsims, Y = "t2_religion_prayer_z", X, baseline_vars, cl,family = "gaussian", delta) 
+tb_prayer <- tab_ate_ols(m_3, "prayer", delta = 1, sd = 1)
+tb_prayer
+
+
+#  scripture
+
+m_4 <- glm_contrast_mi(dt_match, nsims, Y = "t2_religion_scripture_z", X, baseline_vars, cl,family = "gaussian", delta)
+tb_scripture <- tab_ate_ols(m_4, "scripture", delta = 1, sd = 1)
+tb_scripture
+
+# spiritual id
+m_5 <- glm_contrast_mi(dt_match, nsims, Y = "t2_religion_spiritual_identification_z", X, baseline_vars, cl,family = "gaussian", delta)
+
+tb_spiritual <- tab_ate_ols(m_5, "spiritual id", delta = 1, sd = 1)
+tb_spiritual
+
+# perc relig descr
+m_6 <- glm_contrast_mi(dt_match, nsims, Y = "t2_religion_perceive_religious_discrim_z", X, baseline_vars, cl,family = "gaussian", delta)
+
+tb_reldis <- tab_ate_ols(m_6, "perc rel discrim", delta = 1, sd = 1)
+tb_reldis
+
+tab_cont <-
+  rbind(
+    tb_church,
+    tb_religious_id,
+    tb_prayer,
+    tb_scripture,
+    tb_spiritual,
+    tb_reldis
+  
+  )
+
+
+tab_outcomes <- group_tab_ate(tab_cont)
+tab_outcomes
+
+
+library(tidyverse)
+library(glue)
+
+library(tidyverse)
+library(glue)
+interpret_table <- function(df, causal_scale, estimand) {
+  estimand_description <- case_when(
+    estimand %in% c("PATE", "ATE") ~ "Average Treatment Effect (ATE) represents the expected difference in outcomes between treatment and control groups for the whole population.",
+    estimand %in% c("PATT", "ATT") ~ "Average Treatment Effect on the Treated (ATT) represents the expected difference in outcomes between treatment and control groups for the individuals who received the treatment.",
+    estimand %in% "CATE" ~ "Conditional Average Treatment Effect (CATE) represents the expected difference in outcomes between treatment and control groups for a specific subgroup of individuals.",
+    estimand %in% c("SATE", "SATT") ~ "Sample Average Treatment Effect (SATE) represents the expected difference in outcomes between treatment and control groups within the sampled population.",
+    TRUE ~ "The specified estimand is not recognized. Please use one of the following: 'PATE', 'PATT', 'ATE', 'ATT', 'CATE', 'SATE', 'SATT'."
+  )
+  
+  if (causal_scale == "risk_ratio") {
+    interpretation <- df %>%
+      mutate(
+        causal_contrast = round(E_Value / E_Val_bound, 3),
+        strength_of_evidence = case_when(
+          E_Value >= 1.25 ~ "reliable evidence for causality",
+          E_Value >= 1.1 ~ "evidence for causality is not conclusive",
+          TRUE ~ "no reliable evidence for causality"
+        ),
+        outcome_interpretation = glue(
+          "For the outcome '{outcome}', the {estimand} causal contrast is {causal_contrast}. ",
+          "The confidence interval ranges from {round(`2.5 %`, 3)} to {round(`97.5 %`, 3)}. ",
+          "The E-value for this outcome is {round(E_Value, 3)}, indicating {strength_of_evidence}."
+        )
+      )
+  } else if (causal_scale == "risk_difference") {
+    interpretation <- df %>%
+      mutate(
+        causal_contrast = round(`E[Y(1)]-E[Y(0)]`, 3),
+        strength_of_evidence = case_when(
+          E_Value >= 1.25 ~ "reliable evidence for causality",
+          E_Value >= 1.1 ~ "evidence for causality is not conclusive",
+          TRUE ~ "no reliable evidence for causality"
+        ),
+        outcome_interpretation = glue(
+          "For the outcome '{outcome}', the {estimand} causal contrast is {causal_contrast}. ",
+          "The confidence interval ranges from {round(`2.5 %`, 3)} to {round(`97.5 %`, 3)}. ",
+          "The E-value for this outcome is {round(E_Value, 3)}, indicating {strength_of_evidence}."
+        )
+      )
+  } else {
+    stop("Invalid causal_scale argument. Please use 'risk_ratio' or 'risk_difference'.")
+  }
+  
+  result <- glue("Table interpretation:\n\n{estimand_description}\n\n{paste(interpretation$outcome_interpretation, collapse = '\n\n')}")
+  return(result)
+}
+
+# Example usage:
+# df1 <- read_csv("path/to/first_table.csv")
+# df2 <- read_csv("path/to/second_table.csv")
+# interpretation1 <- interpret_table(df1, "risk_difference")
+# interpretation2 <- interpret_table(df2, "risk_ratio")
+# cat(interpretation1)
+# cat(interpretation2)
+
+interpret_table(tab_outcomes,  "risk_difference", "ATT")
+
+
+tab_outcomes |> kbl(format = "markdown")
+
+
+
+#function to make plots
+xlab = "Causal Difference Scale (SD)"
+x_lim_lo = .35
+x_lim_hi= .2
+x_offset = -.35
+tab_outcomes$Estimate
+plot <- group_plot_ate(df = tab_outcomes, title = "", subtitle ="", xlab, ylab = "", x_offset, x_lim_lo, x_lim_hi) 
+
+plot
+
+group_plot_ate <- function(df, title, subtitle, xlab, ylab, x_offset, xlim) {
+  # Convert the title string to a symbol
+  title_sym <- sym(title)
+
+  out <- ggplot(
+    data = df,
+    aes(
+      y = reorder(outcome, `E[Y(1)]-E[Y(0)]`),
+      x = `E[Y(1)]-E[Y(0)]`,
+      xmin = `2.5 %`,
+      xmax = `97.5 %`,
+      fill = Estimate
+    )
+  ) +
+    geom_col(position = position_dodge(width = 0.3)) +
+    geom_errorbarh(height = .3, position = position_dodge(width = 0.3)) +
+    geom_vline(xintercept = 0, linetype = "solid") +
+    geom_vline(
+      xintercept = c(-.25, -.1, .1, .25),
+      linetype = "twodash",
+      alpha = .5
+    ) +
+    theme_classic(base_size = 10) +
+    scale_fill_manual(values = c("gray", "orange", "dodgerblue")) + # dodgerblue
+    labs(
+      x = xlab,
+      y = ylab,
+      title = title,
+      subtitle = subtitle
+    ) +
+    #labels so that the graph can also be a table
+    geom_text(
+      aes(x = x_offset, label = estimate_lab),
+      size = 4,
+      hjust = 0,
+      fontface = ifelse(df$Estimate == "not reliable", "plain", "bold")
+    ) +
+    coord_cartesian(xlim = c(x_lim_lo, x_lim_hi)) +
+    theme(
+      panel.border = element_blank(),
+      axis.line = element_blank(),
+      panel.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.title.x = element_text(size = 12),  # Increase x-axis label font size
+      axis.title.y = element_text(size = 12),
+      plot.title = element_text(face = "bold", size = 16),  # Increase title font size
+      plot.subtitle = element_text(size = 14),  # Increase title font size
+      axis.text = element_text(size = 12)  # Increase axis text font size
+    ) + theme(legend.position = "top",  # or "top"
+              legend.direction = "horizontal")
+  # return
+  out
+}
+
+
+
+
+Y = "t2_religion_religious"
+
+m_religion_religious <- glm_contrast_rr_mi(dt_match, nsims, Y = "t2_religion_religious", X, baseline_vars, cl,family = "poisson", delta) 
+
+
+
+tab__religion_religious <- tab_ate_rr(m_religion_religious, "religious:yes/no")
+
+tab__religion_religious
+
+
+```
+
 
 ::: {#refs}
 :::
