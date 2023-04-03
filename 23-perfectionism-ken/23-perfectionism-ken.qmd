@@ -1,12 +1,34 @@
 ---
-title: "Who are the NFDS"
-subtitle: "An OutcomeWide Study"
+title: "Outcome-Wide Perfectionism"
+subtitle: ""
 abstract: |
-  Who are the NFDs anyway?
+  Perfectly counterfactual
+author: 
+  - name:  Ken Rice
+    affiliation: Georgia State University 
+  - name: Don E. Davis
+    affiliation: Georgia State University
+    orcid_id: 0000-0003-3169-6576 
+  - name: Geoffrey Troughton
+    affiliation: Victoria University of Wellington
+    orcid_id: 0000-0001-7423-0640
+  - name          : Chris G. Sibley
+    affiliation   : School of Psychology, University of Auckland
+    orcid_id: 0000-0002-4064-8800
+  - name: Joseph Bulbulia
+    orcid: 0000-0002-5861-2056
+    affiliation: Victoria University of Wellington, New Zealand
+    email: joseph.bulbulia@vuw.ac.nz
+    corresponding: no
+
+execute:
+  warning: false
+  eval: false
+  
 keywords:
-  - Religious Change
-  - Christianity
-  - Denominations
+  - Read me
+  - Cite me
+  - Love me
 date: last-modified
 editor_options: 
   chunk_output_type: console
@@ -18,228 +40,761 @@ editor_options:
 #| include: false
 #| eval: false
 
-# author:
-#   - name: Authors TBA
-#     affiliation: TBA
-#   - name: Chris G Sibley
-#     orcid: 0000-0002-4064-8800
-#     affiliation: University of Auckland,  New Zealand
-#   - name: Joseph Bulbulia
-#     orcid: 0000-0002-5861-2056
-#     affiliation: Victoria University of Wellington, New Zealand
-#     email: joseph.bulbulia@vuw.ac.nz
-#{{< pagebreak >}}
-#libraries and functions
+
+# uncomment and use these links to load your functions
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+
+# # read functions
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+
+# libraries for jb (when internet is not accessible)
 # read libraries
-
-
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+source("/Users/joseph/GIT/templates/functions/libs2.R")
 
 # read functions
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+source("/Users/joseph/GIT/templates/functions/funs.R")
 
-
-# # read local functions
-# source(here::here("scripts","functions","funs_here.R"))
-
-# read data
+# read data/ set to path in your computer
 pull_path <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/time13a"
+    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
   )
 
-# for saving models
+# for saving models. # set path fo your computer
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/00drafts/who-nfds"
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23_perfectionism_ken"
   )
 
-# read data: note that you need use the arrow package
+# read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
-dat <- dat |> as_tibble()
+# for use
+#dat<- data.frame(dat)
 
 # count unique individuals
-skimr::n_unique(dat$Id)
+skimr::n_unique(dat$id)
 
+# another way to count: doesn't require skimr
+length(unique(dat$id))
 
-# more robust option for counting:
-length(unique(dat$Id))
-
-# participants by wave,
-dat |>
-  filter(YearMeasured == 2018) |>
-    filter(!is.na(Religious)) |> 
+# count participants by wave
+dat |> 
+  dplyr::filter(year_measured == 1) |>
   droplevels() |>
-  arrange(Wave) |
-  count()
+  dplyr::group_by(wave) |> 
+  dplyr::count(wave)
 
-dal <- dat |>  filter(YearMeasured == 1 & !is.na(Religious))
+# sampling by years
+dat |> 
+  dplyr::filter(year_measured == 1) |>
+  droplevels() |>
+  dplyr::count(sample_origin_year)
 
-table1::table1(data = dal, ~ GenCohort * Male | Wave * Religious,  transpose = FALSE, overall = FALSE)
 
-# create a table summary
-#library(gtsummary)
-# df <- dat |>
-#   filter(Wave == 2016 & YearMeasured==1 | Wave == 2017 & YearMeasured==1) |>
-#   select(KESSLER6, Pets.coded.catdog_factor, Wave)
-# # Summarize means of Kessler6 by Pets_coded and wave
-# tbl_summary(df,
-#             by = Pets.coded.catdog_factor,
-#             missing = "no",
-#             statistic = list(all_continuous() ~ "{mean} ({sd})")) %>%
-#   add_p(by = Wave, p = "none")
+# more description 
 
-#  get data in order
-dt_18 <- dat |>
-  dplyr::filter((Wave == 2018 & YearMeasured  == 1) |
-                  (Wave == 2019  &
-                     YearMeasured  == 1) |
-                  (Wave == 2020)| (Wave ==2021) ) |>  # Eligibility criteria
-  group_by(Id) |>
-  dplyr::mutate(k_18 =  ifelse(Wave == 2018 &
-                                 YearMeasured == 1 &
-                                 Christian == 1, 1, 0)) |>   # creating an indicator for the first wave
+# how many in 2018
+dat |>
+  filter(wave == 2018 & year_measured==1) |>
+  select(hours_work, gender3, id, wave) |>
+  drop_na() |>
+  summarise(count_distinct = n_distinct(id))
+table(dat$gender3)
+# perfectionism in 2018
+# graph of gender x perfectionism
+
+dt_graph  <- dat |>
+  filter(any(wave == 2018 & year_measured == 1))|>
+  select(perfectionism, male, id, wave) |>
+  drop_na() 
+
+dev.off()
+dt_graph |> 
+  ggplot(aes(x = male, y = perfectionism, colour = male)) +
+  geom_boxplot(notch = TRUE) + geom_jitter(shape = 16,
+                                           position = position_jitter(0.2),
+                                           alpha = .1) + 
+  labs(title = "Perfectionism by Gender: NZAVS years 2018-2019, N = 47823", y = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance.", x = "Male coded as 1, other identities coded as 0") + 
+  scale_color_viridis_d(option = "D")
+# graph of religious x perfectionism 
+dat |>
+  filter(any(wave == 2018 & year_measured==1)) |>
+  select(perfectionism, religious_identification_level, id, wave) |>
+  mutate(religious_identification = as.factor(religious_identification_level)) |>
+  drop_na() |>
+  ggplot(aes(x=as.factor(religious_identification_level), y= perfectionism, colour = factor(religious_identification_level))) +
+  geom_boxplot(notch = TRUE) + geom_jitter(shape=16, position=position_jitter(0.2), alpha = .1) + labs(
+    title = "Perfectionism by religious_identification: NZAVS years 2018-2019, N = 47823",
+    y = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance.",
+    x = "Male coded as 1, other identities coded as 0") + scale_color_viridis_d(option = "D")
+
+```
+
+
+```{r}
+#| label: clean data
+#| echo: false
+#| include: false
+#| eval: false
+
+# Variable 
+### 
+# Measures of Perfectionism: 
+# 
+# * "Doing my best never seems to be enough."
+# * "My performance rarely measures up to my standards."
+# * "I am hardly ever satisfied with my performance."
+
+
+# we might look at movement from <4 to >= 4. 
+# ask ken
+hist(dat$perfectionism, breaks = 100)
+
+# quartiles
+# num_quantiles <- 4 
+# 
+# quantile_breaks <- quantile(dat$perfectionism, probs = seq(0, 1, 1/num_quantiles))
+# dat$perfectionism_quantile <- cut(dat$perfectionism, breaks = quantile_breaks, include.lowest = TRUE, labels = FALSE)
+# 
+# dat_q <- dat |> mutate(perfectionism_quartile = ifelse(is.na(perfectionism), NA, ntile(perfectionism, 4)))
+# 
+# hist( dat$perfectionism_quartile, breaks = 100) 
+# 
+# hist( dat$perfectionism_quartile, breaks = 100) 
+# 
+# test_dat <- dat |> filter(!is.na(perfectionism))
+# head(test_dat[, c("perfectionism", "perfectionism_quartile")])
+# 
+# # Calculate the quantile breaks (cut points)
+# quantile_breaks <- quantile(dat$perfectionism, probs = seq(0, 1, 1/4), na.rm = TRUE)
+# 
+# # Print the quantile breaks
+# print(quantile_breaks)
+
+dat
+# another approach:
+# dplyr::mutate(Gender3 = as.factor(ifelse(
+#     GendAll == 0,
+#     "Female",
+#     if_else(GendAll == 1, "Male", "GenderDiverse")
+#   ))) |>
+#   dplyr::mutate(Male = as.factor(ifelse(GendAll == 1,
+#                                         "Male", "Not_male"))) |>
+#   mutate(Rural_GCH2018 = case_when(
+#     Rural_GCH2018 == 1 ~ "High Urban Accessibility",
+#     Rural_GCH2018 == 2 ~ "Medium Urban Accessibility",
+#     Rural_GCH2018 == 3 ~ "Low Urban Accessibility",
+#     Rural_GCH2018 == 4 ~ "Remote",
+#     Rural_GCH2018 == 5 ~ "Very Remote",
+#     #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
+#   )) |>
+#   mutate(Rural_gch2018 = factor(
+#     Rural_GCH2018,
+#     levels = c(
+#       "High Urban Accessibility",
+#       "Medium Urban Accessibility",
+#       "Low Urban Accessibility",
+#       "Remote",
+#       "Very Remote"
+#     ),
+#     ordered = TRUE
+#   ))
+
+
+
+# In general, I have a lot of self-control.
+# I wish I had more self-discipline.
+
+table( 7-  dat$self_control02r  )
+table( dat$self_control02r  )
+dat$sexual_satisfaction
+
+dat_long <- dat |> 
+  arrange(id, wave) |> 
+    # select variables 
+  mutate(religion_church_binary = as.factor(ifelse(religion_church > 0, 1, 0))) |> 
+  mutate(power_self_nocontrol = powerdependence1,
+         power_others_control = powerdependence1,
+         self_control_have_lots = self_control01,
+         self_control_wish_more = 7 -self_control02r, # original reverse scored
+             eth_cat = as.factor(eth_cat)) |> 
+  rename(religion_identification_level = religious_identification_level) |> 
+  rename(religion_religious = religious) |> 
+  select(
+    "wave",
+    "year_measured",
+    "id",
+    "edu",
+    "male",
+    "eth_cat",
+    "employed",
+    "gen_cohort",
+    "nz_dep2018",
+    "nzsei18",
+    "partner",
+    "parent",
+    "pol_orient",
+    "rural_gch2018",
+    "sdo",
+    "rwa",
+    "agreeableness",
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "religion_religious",
+    "religion_identification_level",
+    "religion_church_binary",
+    "big_doms",
+    "alcohol_frequency",
+    "alcohol_intensity",
+    "hlth_bmi",
+    "hours_exercise",
+    "sfhealth",
+    "hlth_sleep_hours",
+    "smoker",
+    "hlth_fatigue",
+    "rumination",
+    "kessler_depressed",
+    "kessler_effort",
+    "kessler_hopeless",
+    "kessler_nervous",
+    "kessler_restless",
+    "kessler_worthless",
+    "sexual_satisfaction",
+    "bodysat",
+    "vengeful_rumin",
+    "permeability_individual",
+    "impermeability_group",
+    "perfectionism",  # exposure
+    "power_self_nocontrol",
+    "power_others_control",
+    "self_esteem",
+    "self_control_have_lots" ,
+    "self_control_wish_more",
+    "emp_work_life_balance",
+    "gratitude",
+    "pwi_health",
+    "pwi_relationships",
+    "pwi_security",
+    "pwi_standardliving",
+    "lifesat_satlife",
+    "lifesat_ideal",
+    "meaning_purpose",
+    "meaning_sense"
+  ) |> 
+   dplyr::filter((wave == 2018 & year_measured  == 1) |
+                  (wave == 2019  &
+                     year_measured  == 1) |
+                  (wave == 2020)| 
+                  (wave ==2021) ) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
+  group_by(id) |>
+  dplyr::mutate(k_18 =  ifelse(wave == 2018 &
+                                !is.na(perfectionism), 1, 0)) |>   # creating an indicator for the first wave
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
-  dplyr::mutate(k_19 =  ifelse(Wave == 2019 &
-                                 YearMeasured == 1 &
-                                 Christian == 1, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people to deconvert
+  dplyr::mutate(k_19 =  ifelse(wave == 2019 &
+                                 year_measured == 1 &
+                                  !is.na(perfectionism) == 1, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
   dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
   ungroup() |>
-  droplevels() |>
-  mutate(Euro = if_else(EthCat == 1, 1, 0)) |>
-  mutate(
-    EthCat = as.factor(EthCat),
-    Believe.Spirit = as.factor(Believe.Spirit),
-    Believe.God = as.factor(Believe.God)
-  ) |>
-  select(# Age,
-    Id,
-    YearMeasured,
-    #SampleFrame, # how long in study
-    #w_GendAgeEuro, not estimating PATE
-    Wave,
-    BornNZ,
-    Edu,
-    EthCat,
-    Employed,
-    # Gender3,
-    GenCohort,
-    # EthCat,
-    #Household.INC, not reliable
-    KESSLER6,
-    NZDep2013,
-    NZSEI13,
-    Partner,
-    Parent,
-    Pol.Orient,
-    #  Pol.Wing,
-    Rural_GCH2018,
-    #  REGC_2022,
-    SDO,
-    RWA,
-    AGREEABLENESS,
-    CONSCIENTIOUSNESS,
-    EXTRAVERSION,
-    HONESTY_HUMILITY,
-    OPENNESS,
-    NEUROTICISM,
-    # Religion.Scripture,
-    # Religion.Church,
-    # Religion.Prayer,
-    # Believe.Spirit,
-    # Believe.God,
-    # Perc.Religious.Discrim,
-    # religious_identification,
-    # Spiritual.Identification,
-    Christian_nfd, 
-    Religious
-  ) |>
-  arrange(Id, Wave) |>
-  # mutate(
-  #   Religion.Church = ifelse(Religion.Church > 8, 8, Religion.Church),
-  #   # to avoid unstable models
-  #   Religion.Scripture = ifelse(Religion.Scripture > 8, 8, Religion.Scripture),
-  #   # to avoid unstable models
-  #   Religion.Prayer = ifelse(Religion.Prayer > 8, 8, Religion.Prayer)
-  # ) |> # to avoid unstable models
-  group_by(Id) |>
-  mutate(nfd_became =  # exposure
-           as.factor( ifelse(
-             ((Wave == 2019 & Christian_nfd == 1) &
-               (Wave == 2019 & lag(Christian_nfd == 0))), 1, 0)))|>
-  mutate(nfd_lost =  # exposure
-           as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
-                               (Wave == 2019 & lag(Christian_nfd == 1))
-           ), 1, 0))) |>
-  mutate(nfd_same =  # exposure
-           as.factor(ifelse(((Wave == 2019 & Christian_nfd == 1) &
-                               (Wave == 2019 & lag(Christian_nfd == 1))
-           ), 1, 0))) |>
-  mutate(denom_same =  # exposure
-           as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
-                               (Wave == 2019 & lag(Christian_nfd == 0))
-           ), 1, 0))) |> 
-  ungroup() |> 
-  janitor::clean_names() |> # make names consistent
-  # give sensible name
-  mutate(religious_change = case_when(
-    nfd_became == 1 ~ "nfd_became",
-    nfd_lost == 1 ~ "nfd_lost",
-    nfd_same == 1 ~ "nfd_same",
-    denom_same == 1 ~ "denom_same"
-    #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
-  )) |> 
-    mutate(rural_gch2018 = case_when(
-    rural_gch2018 == 1 ~ "High Urban Accessibility",
-    rural_gch2018 == 2 ~ "Medium Urban Accessibility",
-    rural_gch2018 == 3 ~ "Low Urban Accessibility",
-    rural_gch2018 == 4 ~ "Remote",
-    rural_gch2018 == 5 ~ "Very Remote",
-    #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
-  )) |> 
-   mutate(religious_change = factor(
-    religious_change,
-    levels = c(
-      "denom_same",
-      "nfd_same",
-      "nfd_became",
-      "nfd_lost"
-    ),
-    ordered = FALSE
-  )) |> 
-   mutate(rural_gch2018 = factor(
-    rural_gch2018,
-    levels = c(
-      "High Urban Accessibility",
-      "Medium Urban Accessibility",
-      "Low Urban Accessibility",
-      "Remote",
-      "Very Remote"
-    ),
-    ordered = TRUE
-  )) |> 
-  select(-c(nfd_became,nfd_same,nfd_lost,denom_same)) |> 
-  mutate(religious = as.numeric(religious)-1) |> 
-  mutate(religion_secular = ifelse(religious == 1, 0, 1)) |> # need rare outcome for logistic regression
-  select(-religious)
-#|> 
-  # rename(religion_believe_god = believe_god) |> 
-  # rename(religion_believe_spirit = believe_spirit) |> 
-  # rename(religion_perceive_religious_discrim = perc_religious_discrim) |> 
-  # rename(religion_identification = religious_identification) |> 
-  # rename(religion_spiritual_identification = spiritual_identification) |> 
+  droplevels() |> 
+  select(-c("h_19", "k_19", "h_18", "k_18"))
 
-colnames(dt_18)
-table(dt_18$religious_change)
-n_unique(dt_18$id)
-table(dt_18$nfd_became_17)
-table(dt_18$nfd_lost_17)
-table(dt_18$wave)
-table(dt_18$secular)
-table1::table1(~ as.factor(religion_secular) | wave, data = dt_18)
+
+# quantile for exposure
+
+
+# Print the resulting data frame
+table(dat_long$perfectionism_quartile)
+
+table(is.na( dat_long$male))
+# 
+# ## target trial 
+# dat_long <- dat_long |>
+#   dplyr::filter((wave == 2018 & year_measured  == 1) |
+#                   (wave == 2019  &
+#                      year_measured  == 1) |
+#                   (wave == 2020)| 
+#                   (wave ==2021) ) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
+#   group_by(id) |>
+#   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
+#                                 !is.na(perfectionism), 1, 0)) |>   # creating an indicator for the first wave
+#   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
+#   dplyr::mutate(k_19 =  ifelse(wave == 2019 &
+#                                  year_measured == 1 &
+#                                   !is.na(perfectionism) == 1, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people t
+#   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
+#   dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
+#   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
+#   ungroup() |>
+#   droplevels() |>
+#   
+#   arrange(Id, Wave) |>
+#   # mutate(
+#   #   Religion.Church = ifelse(Religion.Church > 8, 8, Religion.Church),
+#   #   # to avoid unstable models
+#   #   Religion.Scripture = ifelse(Religion.Scripture > 8, 8, Religion.Scripture),
+#   #   # to avoid unstable models
+#   #   Religion.Prayer = ifelse(Religion.Prayer > 8, 8, Religion.Prayer)
+#   # ) |> # to avoid unstable models
+#   group_by(Id) |>
+#   mutate(nfd_became =  # exposure
+#            as.factor( ifelse(
+#              ((Wave == 2019 & Christian_nfd == 1) &
+#                (Wave == 2019 & lag(Christian_nfd == 0))), 1, 0)))|>
+#   mutate(nfd_lost =  # exposure
+#            as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
+#                                (Wave == 2019 & lag(Christian_nfd == 1))
+#            ), 1, 0))) |>
+#   mutate(nfd_same =  # exposure
+#            as.factor(ifelse(((Wave == 2019 & Christian_nfd == 1) &
+#                                (Wave == 2019 & lag(Christian_nfd == 1))
+#            ), 1, 0))) |>
+#   mutate(denom_same =  # exposure
+#            as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
+#                                (Wave == 2019 & lag(Christian_nfd == 0))
+#            ), 1, 0))) |> 
+#   ungroup() |> 
+#   janitor::clean_names() |> # make names consistent
+#   # give sensible name
+#   mutate(religious_change = case_when(
+#     nfd_became == 1 ~ "nfd_became",
+#     nfd_lost == 1 ~ "nfd_lost",
+#     nfd_same == 1 ~ "nfd_same",
+#     denom_same == 1 ~ "denom_same"
+#     #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
+#   )) |> 
+#     mutate(rural_gch2018 = case_when(
+#     rural_gch2018 == 1 ~ "High Urban Accessibility",
+#     rural_gch2018 == 2 ~ "Medium Urban Accessibility",
+#     rural_gch2018 == 3 ~ "Low Urban Accessibility",
+#     rural_gch2018 == 4 ~ "Remote",
+#     rural_gch2018 == 5 ~ "Very Remote",
+#     #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
+#   ))
+#   select(-c(nfd_became,nfd_same,nfd_lost,denom_same)) |> 
+#   mutate(religious = as.numeric(religious)-1) |> 
+#   mutate(religion_secular = ifelse(religious == 1, 0, 1)) |> # need rare outcome for logistic regression
+#   select(-religious)
+# #|> 
+#   # rename(religion_believe_god = believe_god) |> 
+#   # rename(religion_believe_spirit = believe_spirit) |> 
+#   # rename(religion_perceive_religious_discrim = perc_religious_discrim) |> 
+#   # rename(religion_identification = religious_identification) |> 
+#   # rename(religion_spiritual_identification = spiritual_identification) |> 
+
+
+
+
+# function to prepare data
+
+  #health
+selected_health <- prepare_data(
+  data = dat_long,
+  baseline_vars = c(
+    "edu",
+    "male",
+    "eth_cat",
+    "employed",
+    "gen_cohort",
+    "nz_dep2018",
+    "nzsei18",
+    "partner",
+    "parent",
+    "pol_orient",
+    "rural_gch2018",
+    "sdo",
+    "rwa",
+    "agreeableness",
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "religion_religious",
+    "religion_identification_level",
+    "religion_church_binary",
+    "big_doms",
+    "alcohol_frequency",
+    "alcohol_intensity",
+    "hlth_bmi",
+    "hours_exercise",
+    "sfhealth",
+    "hlth_sleep_hours",
+    "smoker"
+  ),
+  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
+  outcome_vars = c(
+    "alcohol_frequency",
+    "alcohol_intensity",
+    "hlth_bmi",
+    "hours_exercise",
+    "sfhealth",
+    "hlth_sleep_hours",
+    "smoker"
+  ),
+  exclude_vars = c("year_measured")
+)
+
+
+# embodied
+
+
+selected_embodied_wellbeing <- prepare_data(
+  data = dat_long,
+  baseline_vars = c(
+    "edu",
+    "male",
+    "eth_cat",
+    "employed",
+    "gen_cohort",
+    "nz_dep2018",
+    "nzsei18",
+    "partner",
+    "parent",
+    "pol_orient",
+    "rural_gch2018",
+    "sdo",
+    "rwa",
+    "agreeableness",
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "religion_religious",
+    "religion_identification_level",
+    "religion_church_binary",
+    "big_doms",
+    "hlth_fatigue",
+    "rumination",
+    "kessler_depressed",
+    "kessler_effort",
+    "kessler_hopeless",
+    "kessler_nervous",
+    "kessler_restless",
+    "kessler_worthless"
+  ),
+  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
+  outcome_vars = c(
+     "hlth_fatigue",
+    "rumination",
+    "kessler_depressed",
+    "kessler_effort",
+    "kessler_hopeless",
+    "kessler_nervous",
+    "kessler_restless",
+    "kessler_worthless"
+  ),
+  exclude_vars = c("year_measured")
+)
+
+
+
+## practical
+
+
+selected_practical_wellbeing <- prepare_data(
+  data = dat_long,
+  baseline_vars = c(
+    "edu",
+    "male",
+    "eth_cat",
+    "employed",
+    "gen_cohort",
+    "nz_dep2018",
+    "nzsei18",
+    "partner",
+    "parent",
+    "pol_orient",
+    "rural_gch2018",
+    "sdo",
+    "rwa",
+    "agreeableness",
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "religion_religious",
+    "religion_identification_level",
+    "religion_church_binary",
+    "big_doms",
+    "sexual_satisfaction",
+    "bodysat",
+    "vengeful_rumin",
+    "permeability_individual",
+    "impermeability_group",
+    "perfectionism",  # exposure
+    "power_self_nocontrol",
+    "power_others_control",
+    "self_esteem",
+    "self_control_have_lots" ,
+    "self_control_wish_more",
+    "emp_work_life_balance"
+  ),
+  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
+  outcome_vars = c(
+    "nzsei18",  # objective success
+    "sexual_satisfaction",
+    "bodysat",
+    "vengeful_rumin",
+    "permeability_individual",
+    "impermeability_group",
+    "perfectionism",  # exposure
+    "power_self_nocontrol",
+    "power_others_control",
+    "self_esteem",
+    "self_control_have_lots" ,
+    "self_control_wish_more",
+    "emp_work_life_balance"
+  ),
+  exclude_vars = c("year_measured","wave")
+)
+
+str(selected_practical_wellbeing)
+
+
+
+# higher order.. gratitude could go here. 
+
+
+selected_reflective_wellbeing <- prepare_data(
+  data = dat_long,
+  baseline_vars = c(
+   "edu",
+    "male",
+    "eth_cat",
+    "employed",
+    "gen_cohort",
+    "nz_dep2018",
+    "nzsei18",
+    "partner",
+    "parent",
+    "pol_orient",
+    "rural_gch2018",
+    "sdo",
+    "rwa",
+    "agreeableness",
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "religion_religious",
+    "religion_identification_level",
+    "religion_church_binary",
+    "big_doms",
+    "gratitude",
+    "pwi_health",
+    "pwi_relationships",
+    "pwi_security",
+    "pwi_standardliving",
+    "lifesat_satlife",
+    "lifesat_ideal",
+    "meaning_purpose",
+    "meaning_sense"
+  ),
+  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
+  outcome_vars = c(
+    "gratitude",
+    "pwi_health",
+    "pwi_relationships",
+    "pwi_security",
+    "pwi_standardliving",
+    "lifesat_satlife",
+    "lifesat_ideal",
+    "meaning_purpose",
+    "meaning_sense"
+  ),
+  exclude_vars = c("year_measured")
+)
+
+
+create_wide_data <- function(dat_long, baseline_vars, exposure_var, outcome_vars, exclude_vars = c()) {
+  require(tidyverse)
+  # Add the 'time' column to the data
+  data_with_time <- dat_long %>%
+    mutate(time = as.numeric(wave) - 1) %>%
+    arrange(id, time)
+  
+  # Filter the data based on the time condition
+  data_filtered <- data_with_time %>%
+    filter(time >= 0)
+
+  # Create the wide data frame
+  wide_data <- data_filtered %>%
+    dplyr::select(-exclude_vars)  %>%  # Exclude specified variables
+    pivot_wider(
+      id_cols = id,
+      names_from = time,
+      values_from = -c(id, time),
+      names_glue = "t{time}_{.value}",
+      names_prefix = "t"
+    )
+  
+  # Define a custom function to filter columns based on your conditions
+  custom_col_filter <- function(col_name) {
+    if (startsWith(col_name, "t0_")) {
+      return(col_name %in% c(paste0("t0_", baseline_vars), paste0("t0_", outcome_vars)))
+    } else if (startsWith(col_name, "t1_")) {
+      return(col_name %in% paste0("t1_", exposure_var))
+    } else if (startsWith(col_name, "t2_")) {
+      return(col_name %in% paste0("t2_", outcome_vars))
+    } else if (startsWith(col_name, "t3_")) {
+      return(col_name %in% paste0("t3_", outcome_vars))
+    } else {
+      return(FALSE)
+    }
+  }
+  
+  # Apply the custom function to select the desired columns
+  wide_data_filtered <- wide_data %>%
+    dplyr::select(id, which(sapply(colnames(wide_data), custom_col_filter))) %>%
+    dplyr::relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+    dplyr::relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+    dplyr::relocate(starts_with("t3_"), .after = starts_with("t2_"))  %>%
+    arrange(id)%>%
+    select(-id)
+  
+  return(wide_data_filtered)
+}
+
+test <- create_wide_data_generic(dat_long, 
+  baseline_vars = c(
+   "edu",
+    "male",
+    "eth_cat",
+    "employed",
+    "gen_cohort",
+    "nz_dep2018",
+    "nzsei18",
+    "partner",
+    "parent",
+    "pol_orient",
+    "rural_gch2018",
+    "sdo",
+    "rwa",
+    "agreeableness",
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "religion_religious",
+    "religion_identification_level",
+    "religion_church_binary",
+    "big_doms"
+  ),
+  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
+  outcome_vars = c(
+    "gratitude",
+    "pwi_health",
+    "pwi_relationships",
+    "pwi_security",
+    "pwi_standardliving",
+    "lifesat_satlife",
+    "lifesat_ideal",
+    "meaning_purpose",
+    "meaning_sense"
+  ),
+  exclude_vars = c("year_measured"))
+
+colnames(test)
+
+
+ baseline_vars = c(
+   "edu",
+    "male",
+    "eth_cat",
+    "employed",
+    "gen_cohort",
+    "nz_dep2018",
+    "nzsei18",
+    "partner",
+    "parent",
+    "pol_orient",
+    "rural_gch2018",
+    "sdo",
+    "rwa",
+    "agreeableness",
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "religion_religious",
+    "religion_identification_level",
+    "religion_church_binary",
+    "big_doms"
+  )
+
+ outcome_vars_reflective = c(
+    "gratitude",
+    "pwi_health",
+    "pwi_relationships",
+    "pwi_security",
+    "pwi_standardliving",
+    "lifesat_satlife",
+    "lifesat_ideal",
+    "meaning_purpose",
+    "meaning_sense"
+  ) 
+ 
+exclude_vars = c("year_measured")
+
+test <- create_wide_data_generic(dat_long, 
+  baseline_vars = baseline_vars, 
+  exposure_var = exposure_var,
+  outcome_vars = outcome_vars_reflective)
+
+colnames(test)
+
+
+
+
+# measures
+# reflective wellbeing
+# I am satisfied with my life.
+# In most ways my life is close to ideal.
+# 
+# Self-esteem
+# On the whole am satisfied with myself.
+# Take a positive attitude toward myself.
+# Am inclined to feel that I am a failure.
+
+# Self-control
+# In general, I have a lot of self-control.
+# I wish I had more self-discipline.
+
+
+
+
+
+
+# Calculate the quantile breaks (cut points)
+quantile_breaks <- quantile(dat_long$perfectionism, probs = seq(0, 1, 1/4), na.rm = TRUE)
+
+# Create labels based on the cut points in the desired format
+cut_labels <- paste0(quantile_breaks[-length(quantile_breaks)], "_", quantile_breaks[-1])
+
+# Create the ordered factor variable with the new labels
+dat_long$perfectionism_quartile <- cut(dat_long$perfectionism,
+                                        breaks = quantile_breaks,
+                                        labels = cut_labels,
+                                        ordered_result = TRUE,
+                                        include.lowest = TRUE)
+
+# Print the resulting data frame
+print(dat_long$perfectionism_quartile)
+
+
+
 
 ## check numbers of those changed
 ds_18 <- dt_18 |>
