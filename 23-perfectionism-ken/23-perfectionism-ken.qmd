@@ -20,11 +20,10 @@ author:
     affiliation: Victoria University of Wellington, New Zealand
     email: joseph.bulbulia@vuw.ac.nz
     corresponding: no
-
 execute:
+  
   warning: false
   eval: false
-  
 keywords:
   - Read me
   - Cite me
@@ -39,6 +38,56 @@ editor_options:
 #| echo: false
 #| include: false
 #| eval: false
+
+# key functions
+# create_wide_data <- function(dat_long, baseline_vars, exposure_var, outcome_vars, exclude_vars = c()) {
+#   require(tidyverse)
+#   # Add the 'time' column to the data
+#   data_with_time <- dat_long %>%
+#     mutate(time = as.numeric(wave) - 1) %>%
+#     arrange(id, time)
+# 
+#   # Filter the data based on the time condition
+#   data_filtered <- data_with_time %>%
+#     filter(time >= 0)
+# 
+#   # Create the wide data frame
+#   wide_data <- data_filtered %>%
+#     dplyr::select(-exclude_vars)  %>%  # Exclude specified variables
+#     pivot_wider(
+#       id_cols = id,
+#       names_from = time,
+#       values_from = -c(id, time),
+#       names_glue = "t{time}_{.value}",
+#       names_prefix = "t"
+#     )
+# 
+#   # Define a custom function to filter columns based on conditions
+#   custom_col_filter <- function(col_name) {
+#     if (startsWith(col_name, "t0_")) {
+#       return(col_name %in% c(paste0("t0_", baseline_vars),  paste0("t0_", exposure_var), paste0("t0_", outcome_vars)))
+#     } else if (startsWith(col_name, "t1_")) {
+#       return(col_name %in% paste0("t1_", exposure_var))
+#     } else if (startsWith(col_name, "t2_")) {
+#       return(col_name %in% paste0("t2_", outcome_vars))
+#     } else if (startsWith(col_name, "t3_")) {
+#       return(col_name %in% paste0("t3_", outcome_vars))
+#     } else {
+#       return(FALSE)
+#     }
+#   }
+# 
+#   # Apply the custom function to select the desired columns
+#   wide_data_filtered <- wide_data %>%
+#     dplyr::select(id, which(sapply(colnames(wide_data), custom_col_filter))) %>%
+#     dplyr::relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+#     dplyr::relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+#     dplyr::relocate(starts_with("t3_"), .after = starts_with("t2_"))  %>%
+#     arrange(id)%>%
+#     select(-id)
+# 
+#   return(wide_data_filtered)
+# }
 
 
 # uncomment and use these links to load your functions
@@ -69,7 +118,6 @@ push_mods <-
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
-
 # for use
 #dat<- data.frame(dat)
 
@@ -101,15 +149,18 @@ dat |>
   select(hours_work, gender3, id, wave) |>
   drop_na() |>
   summarise(count_distinct = n_distinct(id))
+
+
+
 table(dat$gender3)
 # perfectionism in 2018
 # graph of gender x perfectionism
-
+dev.off()
 dt_graph  <- dat |>
   filter(any(wave == 2018 & year_measured == 1))|>
   select(perfectionism, male, id, wave) |>
   drop_na() 
-
+dev.off()
 dev.off()
 dt_graph |> 
   ggplot(aes(x = male, y = perfectionism, colour = male)) +
@@ -140,152 +191,191 @@ dat |>
 #| eval: false
 
 # Variable 
-### 
+
+#Occupational prestige/status
+#NZSEI06 (NZ Socio-economic index) Milne, B. J., Byun, U., & Lee, A. (2013). New Zealand socio-economic index 2006. Wellington: Statistics New Zealand.
+#NZSEI13 (NZ Socio-economic index) Fahy, K. M., Lee, A., & Milne, B. J. (2017). New Zealand socio-economic index 2013. Wellington: Statistics New Zealand.
+#NZSEI18 (NZ Socio-economic index) Boven, N., Shackleton, N., Bolton, L., Milne, B. (2021). The 2018 New Zealand Socioeconomic Index (NZSEI-19): A brief technical summary. Compass Research Centre.
+
 # Measures of Perfectionism: 
 # 
 # * "Doing my best never seems to be enough."
 # * "My performance rarely measures up to my standards."
 # * "I am hardly ever satisfied with my performance."
 
+# In general, I have a lot of self-control.
+# I wish I had more self-discipline.
+# #Please estimate your total household income (before tax) for the last year.
 
 # we might look at movement from <4 to >= 4. 
 # ask ken
 hist(dat$perfectionism, breaks = 100)
 
-# quartiles
-# num_quantiles <- 4 
-# 
-# quantile_breaks <- quantile(dat$perfectionism, probs = seq(0, 1, 1/num_quantiles))
-# dat$perfectionism_quantile <- cut(dat$perfectionism, breaks = quantile_breaks, include.lowest = TRUE, labels = FALSE)
-# 
-# dat_q <- dat |> mutate(perfectionism_quartile = ifelse(is.na(perfectionism), NA, ntile(perfectionism, 4)))
-# 
-# hist( dat$perfectionism_quartile, breaks = 100) 
-# 
-# hist( dat$perfectionism_quartile, breaks = 100) 
-# 
-# test_dat <- dat |> filter(!is.na(perfectionism))
-# head(test_dat[, c("perfectionism", "perfectionism_quartile")])
-# 
-# # Calculate the quantile breaks (cut points)
-# quantile_breaks <- quantile(dat$perfectionism, probs = seq(0, 1, 1/4), na.rm = TRUE)
-# 
-# # Print the quantile breaks
-# print(quantile_breaks)
 
-dat
-# another approach:
-# dplyr::mutate(Gender3 = as.factor(ifelse(
-#     GendAll == 0,
-#     "Female",
-#     if_else(GendAll == 1, "Male", "GenderDiverse")
-#   ))) |>
-#   dplyr::mutate(Male = as.factor(ifelse(GendAll == 1,
-#                                         "Male", "Not_male"))) |>
-#   mutate(Rural_GCH2018 = case_when(
-#     Rural_GCH2018 == 1 ~ "High Urban Accessibility",
-#     Rural_GCH2018 == 2 ~ "Medium Urban Accessibility",
-#     Rural_GCH2018 == 3 ~ "Low Urban Accessibility",
-#     Rural_GCH2018 == 4 ~ "Remote",
-#     Rural_GCH2018 == 5 ~ "Very Remote",
-#     #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
-#   )) |>
-#   mutate(Rural_gch2018 = factor(
-#     Rural_GCH2018,
-#     levels = c(
-#       "High Urban Accessibility",
-#       "Medium Urban Accessibility",
-#       "Low Urban Accessibility",
-#       "Remote",
-#       "Very Remote"
-#     ),
-#     ordered = TRUE
-#   ))
+  
+# Calculate the quantile breaks (cut points)
+quantile_breaks <- quantile(dat$perfectionism, probs = seq(0, 1, 1/4), na.rm = TRUE)
+cut_labels
+
+# Create labels based on the cut points in the desired format
+cut_labels <- paste0(quantile_breaks[-length(quantile_breaks)], "_", quantile_breaks[-1])
+
+# Create the ordered factor variable with the new labels
+dat$perfectionism_quartile <- cut(dat$perfectionism,
+                                        breaks = quantile_breaks,
+                                        labels = cut_labels,
+                                        ordered_result = TRUE,
+                                        include.lowest = TRUE)
+
+# Print the resulting data frame
+print(dat$perfectionism_quartile)
+
+
+# vars
+hist(dat$perfectionism, breaks = 100)
+
+dev.off()
+
+# hist
+table(dat$perfectionism_quartile)
+
+# quantile for exposure
+labels(dat$perfectionism_quartile)
+
+levels(dat$perfectionism_quartile)
+
+# Print the resulting data frame
+table(dat$perfectionism_quartile)
+levels(dat$perfectionism_quartile)
 
 
 
-# In general, I have a lot of self-control.
-# I wish I had more self-discipline.
+# 
+# ReligiousAtts01r.T10	I oppose religion in any form.
+# ReligiousAtts02.T10	All things considered, religion is a cause for good in the world.
+# ReligiousAtts03.T10	The teachings of traditional religions are still helpful today.
 
-table( 7-  dat$self_control02r  )
-table( dat$self_control02r  )
-dat$sexual_satisfaction
+
+# HLTH.SFHealth01.T10	In general, would you say your health is...
+# HLTH.SFHealth02r.T10	I seem to get sick a little easier than other people.
+# HLTH.SFHealth03r.T10	I expect my health to get worse.
+
+# Perc.Discrim.T10	Feel that I am often discriminated against because of my ethnicity.
+# Perc.Gend.Discrim.T10	Feel that I am often discriminated against because of my gender.
+# Perc.Religious.Discrim.T10	I feel that I am often discriminated against because of my religious/spiritual beliefs.
+
+#dat$religious_atts
+
 
 dat_long <- dat |> 
   arrange(id, wave) |> 
     # select variables 
-  mutate(religion_church_binary = as.factor(ifelse(religion_church > 0, 1, 0))) |> 
-  mutate(power_self_nocontrol = powerdependence1,
-         power_others_control = powerdependence1,
-         self_control_have_lots = self_control01,
-         self_control_wish_more = 7 -self_control02r, # original reverse scored
-             eth_cat = as.factor(eth_cat)) |> 
-  rename(religion_identification_level = religious_identification_level) |> 
+  mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |> 
+  mutate(perfectionism_high = ifelse(perfectionism > 4, 1, 0 )) |> 
   rename(religion_religious = religious) |> 
   select(
     "wave",
     "year_measured",
+    "sample_frame",
     "id",
     "edu",
     "male",
-    "eth_cat",
-    "employed",
-    "gen_cohort",
+    "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+    "employed", # Are you currently employed? (this includes self-employment or casual work)
+    "gen_cohort", #What is your gender? (open-ended)
+    "household_inc", # Please estimate your total household income (before tax) for the last year.
     "nz_dep2018",
-    "nzsei18",
+    "nzsei13",
     "partner",
     "parent",
-    "pol_orient",
+    "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
+    "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
     "rural_gch2018",
     "sdo",
     "rwa",
+    "brk_relationship",
+    "began_relationship",
     "agreeableness",
     "conscientiousness",
     "extraversion",
     "honesty_humility",
     "openness",
     "neuroticism",
-    "religion_religious",
-    "religion_identification_level",
+    "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
+    "religion_religious", # Do you identify with a religion and/or spiritual group?
+    "religion_identification_level", #How important is your religion to how you see yourself?"
     "religion_church_binary",
-    "big_doms",
-    "alcohol_frequency",
-    "alcohol_intensity",
-    "hlth_bmi",
-    "hours_exercise",
-    "sfhealth",
-    "hlth_sleep_hours",
-    "smoker",
-    "hlth_fatigue",
-    "rumination",
-    "kessler_depressed",
-    "kessler_effort",
-    "kessler_hopeless",
-    "kessler_nervous",
-    "kessler_restless",
-    "kessler_worthless",
-    "sexual_satisfaction",
-    "bodysat",
-    "vengeful_rumin",
-    "permeability_individual",
-    "impermeability_group",
-    "perfectionism",  # exposure
-    "power_self_nocontrol",
-    "power_others_control",
-    "self_esteem",
-    "self_control_have_lots" ,
-    "self_control_wish_more",
-    "emp_work_life_balance",
-    "gratitude",
-    "pwi_health",
-    "pwi_relationships",
-    "pwi_security",
-    "pwi_standardliving",
-    "lifesat_satlife",
-    "lifesat_ideal",
-    "meaning_purpose",
-    "meaning_sense"
+    "religion_prayer", # How many times did you pray in the last week?
+    "religion_scripture", # How many times did you read religious scripture in the last week?
+    "religion_church2", # How many times did you attend a church or place of worship in the last month?
+    "religion_believe_spirit",#Do you believe in some form of spirit or lifeforce?
+    "religion_believe_god",#Do you believe in a God
+    "religion_spiritual_identification", #w8,w10,w12-13 "I identify as a spiritual person."
+    "religion_perceive_religious_discrim", #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
+    "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers 
+    "w_gend_age_euro", # sample_weights
+    "alcohol_frequency", #"How often do you have a drink containing alcohol?"
+    "alcohol_intensity", # How many drinks containing alcohol do you have on a typical day when drinking?
+    "hlth_bmi", # " What is your height? (metres)\nWhat is your weight? (kg)\nKg 
+    "hours_exercise", # Hours spent … exercising/physical activity
+   # "sfhealth", 
+    "sfhealth_your_health",# "In general, would you say your health is...
+    "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
+    "sfhealth_expect_worse_health",#\nI expect my health to get worse." ****
+    "hlth_sleep_hours", #During the past month, on average, how many hours of actual sleep did you get per night?
+    "smoker",#Do you currently smoke?
+    "hlth_fatigue", #During the last 30 days, how often did.... you feel exhausted?
+    "rumination",# During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
+    "kessler_depressed", #During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
+    "kessler_effort",#During the last 30 days, how often did.... you feel that everything was an effort?
+    "kessler_hopeless",# During the last 30 days, how often did.... you feel hopeless?
+    "kessler_nervous",#During the last 30 days, how often did.... you feel nervous?
+    "kessler_restless", #During the last 30 days, how often did.... you feel restless or fidgety?
+    "kessler_worthless",# During the last 30 days, how often did.... you feel worthless?
+    "sexual_satisfaction", #  How satisfied are you with your sex life?
+    "bodysat", ## Am satisfied with the appearance, size and shape of my body.
+    "vengeful_rumin",# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+    "perfectionism",  # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+# I am hardly ever satisfied with my performance.
+    "power_self_nocontrol",# I do not have enough power or control over\nimportant parts of my life.
+    "power_others_control", # Other people have too much power or control over\nimportant parts of my life
+    "selfesteem_satself", #  On the whole am satisfied with myself.
+    "selfesteem_postiveself",# Take a positive attitude toward myself
+    "selfesteem_rfailure", # Am inclined to feel that I am a failure.
+    "self_control_have_lots",#In general, I have a lot of self-control.
+    "self_control_wish_more_r",#I wish I had more self-discipline.(r)
+    "emotion_regulation_out_control", # When I feel negative emotions, my emotions feel out of control. w10 - w13
+    "emotion_regulation_hide_neg_emotions", # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
+    "emotion_regulation_change_thinking_to_calm", # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
+    "emp_work_life_balance",# I have a good balance between work and other important things in my life.
+    "gratitude", ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+    "pwi_health",#Your health.
+    "pwi_relationships",#Your personal relationships.
+    "pwi_security",#Your future security.
+    "pwi_standardliving",#Your standard of living.
+    "lifesat_satlife",# I am satisfied with my life.
+    "lifesat_ideal",# In most ways my life is close to ideal.
+    "meaning_purpose",# My life has a clear sense of purpose.
+    "meaning_sense",# I have a good sense of what makes my life meaningful.
+    "perfectionism_high", # > 4
+    "perfectionism_quartile", # quartile cuts: 
+    "permeability_individual",#I believe I am capable, as an individual\nof improving my status in society.
+    "impermeability_group", #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
+    "neighbourhood_community", #I feel a sense of community with others in my local neighbourhood.
+    "support_help",# 'There are people I can depend on to help me if I really need it.
+    "support_turnto",# There is no one I can turn to for guidance in times of stress.
+    "support_rnoguidance", #There is no one I can turn to for guidance in times of stress.
+    "belong_accept", #Know that people in my life accept and value me.
+    "belong_routsider",# Feel like an outsider.
+    "belong_beliefs",# Know that people around me share my attitudes and beliefs.
+    "charity_donate",#How much money have you donated to charity in the last year?
+    "hours_charity",#Hours spent in activities/Hours spent … voluntary/charitable work
+    "nwi" # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
   ) |> 
+  # rename(emotion_regulation_out_control = emotion_regulation1,
+  #        emotion_regulation_hide_neg_emotions = emotion_regulation2,
+  #        emotion_regulation_change_thinking_to_calm = emotion_regulation3) |> 
+   dplyr::rename(sample_weights = w_gend_age_euro) |> 
    dplyr::filter((wave == 2018 & year_measured  == 1) |
                   (wave == 2019  &
                      year_measured  == 1) |
@@ -301,176 +391,146 @@ dat_long <- dat |>
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
   dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
+  mutate(perfectionism_low_became_high =  # exposure
+           as.factor(ifelse(((wave == 2019 & perfectionism_high == 0) &
+                               (wave == 2019 &  lag(perfectionism_high == 1))
+           ), 1, 0))) |>
+  mutate(perfectionism_high_same =  # exposure
+           as.factor(ifelse(((wave == 2019 & perfectionism_high == 1) &
+                               (wave == 2019 & lag(perfectionism_high == 1))
+           ), 1, 0))) |>
+  mutate(perfectionism_high_became_low =  # exposure
+           as.factor(ifelse(((wave == 2019 & perfectionism_high == 1) &
+                               (wave == 2019 & lag(perfectionism_high == 0))
+           ), 1, 0))) |>
+  mutate(perfectionism_low_same =  # exposure
+           as.factor(ifelse(((wave == 2019 & perfectionism_high == 0) &
+                               (wave == 2019 & lag(perfectionism_high == 0))
+           ), 1, 0))) |>
   ungroup() |>
+  mutate(perfectionism_change = case_when(
+    perfectionism_low_became_high == 1 ~ "perfectionism_low_became_high",
+    perfectionism_high_same == 1 ~ "perfectionism_high_same",
+    perfectionism_high_became_low == 1 ~ "perfectionism_high_became_low",
+    perfectionism_low_same == 1 ~ "perfectionism_low_same"
+    #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
+  )) |> 
+   mutate(perfectionism_change = factor(
+    perfectionism_change,
+    levels = c(
+      "perfectionism_low_same",
+      "perfectionism_high_same",
+      "perfectionism_high_became_low",
+      "perfectionism_low_became_high"
+    ),
+    ordered = FALSE
+  )) |> 
   droplevels() |> 
-  select(-c("h_19", "k_19", "h_18", "k_18"))
+  select(-c("h_19", "k_19", "h_18", "k_18")) #34762
 
 
-# quantile for exposure
+length(unique(dat_long$id))# 34762
+
+dt_19 <- dat_long |> 
+  filter(wave == "2019")
+
+table(dat_long$perfectionism_change)
+table(dt_19$perfectionism_change)
+
+table(dat_long$perfectionism_became_low)
+# check change
+
+## check numbers of those changed
+ds_18 <- dat_long |>
+  select(id, perfectionism_high, perfectionism, perfectionism_quartile,perfectionism_change) |>
+  mutate(perfectionism_high = as.numeric(perfectionism_high) ) |> 
+  mutate(perfectionism_quartile = as.numeric(perfectionism_quartile) - 1) |> # 740
+  mutate(perfectionism_change = as.numeric(perfectionism_change) ) # 740
 
 
-# Print the resulting data frame
-table(dat_long$perfectionism_quartile)
+table(ds_18$perfectionism_high)
 
-table(is.na( dat_long$male))
-# 
-# ## target trial 
-# dat_long <- dat_long |>
-#   dplyr::filter((wave == 2018 & year_measured  == 1) |
-#                   (wave == 2019  &
-#                      year_measured  == 1) |
-#                   (wave == 2020)| 
-#                   (wave ==2021) ) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
-#   group_by(id) |>
-#   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-#                                 !is.na(perfectionism), 1, 0)) |>   # creating an indicator for the first wave
-#   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
-#   dplyr::mutate(k_19 =  ifelse(wave == 2019 &
-#                                  year_measured == 1 &
-#                                   !is.na(perfectionism) == 1, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people t
-#   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
-#   dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
-#   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
-#   ungroup() |>
-#   droplevels() |>
-#   
-#   arrange(Id, Wave) |>
-#   # mutate(
-#   #   Religion.Church = ifelse(Religion.Church > 8, 8, Religion.Church),
-#   #   # to avoid unstable models
-#   #   Religion.Scripture = ifelse(Religion.Scripture > 8, 8, Religion.Scripture),
-#   #   # to avoid unstable models
-#   #   Religion.Prayer = ifelse(Religion.Prayer > 8, 8, Religion.Prayer)
-#   # ) |> # to avoid unstable models
-#   group_by(Id) |>
-#   mutate(nfd_became =  # exposure
-#            as.factor( ifelse(
-#              ((Wave == 2019 & Christian_nfd == 1) &
-#                (Wave == 2019 & lag(Christian_nfd == 0))), 1, 0)))|>
-#   mutate(nfd_lost =  # exposure
-#            as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
-#                                (Wave == 2019 & lag(Christian_nfd == 1))
-#            ), 1, 0))) |>
-#   mutate(nfd_same =  # exposure
-#            as.factor(ifelse(((Wave == 2019 & Christian_nfd == 1) &
-#                                (Wave == 2019 & lag(Christian_nfd == 1))
-#            ), 1, 0))) |>
-#   mutate(denom_same =  # exposure
-#            as.factor(ifelse(((Wave == 2019 & Christian_nfd == 0) &
-#                                (Wave == 2019 & lag(Christian_nfd == 0))
-#            ), 1, 0))) |> 
-#   ungroup() |> 
-#   janitor::clean_names() |> # make names consistent
-#   # give sensible name
-#   mutate(religious_change = case_when(
-#     nfd_became == 1 ~ "nfd_became",
-#     nfd_lost == 1 ~ "nfd_lost",
-#     nfd_same == 1 ~ "nfd_same",
-#     denom_same == 1 ~ "denom_same"
-#     #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
-#   )) |> 
-#     mutate(rural_gch2018 = case_when(
-#     rural_gch2018 == 1 ~ "High Urban Accessibility",
-#     rural_gch2018 == 2 ~ "Medium Urban Accessibility",
-#     rural_gch2018 == 3 ~ "Low Urban Accessibility",
-#     rural_gch2018 == 4 ~ "Remote",
-#     rural_gch2018 == 5 ~ "Very Remote",
-#     #TRUE ~ "Unknown"  # This line is optional and used for cases that don't match any of the specified conditions
-#   ))
-#   select(-c(nfd_became,nfd_same,nfd_lost,denom_same)) |> 
-#   mutate(religious = as.numeric(religious)-1) |> 
-#   mutate(religion_secular = ifelse(religious == 1, 0, 1)) |> # need rare outcome for logistic regression
-#   select(-religious)
-# #|> 
-#   # rename(religion_believe_god = believe_god) |> 
-#   # rename(religion_believe_spirit = believe_spirit) |> 
-#   # rename(religion_perceive_religious_discrim = perc_religious_discrim) |> 
-#   # rename(religion_identification = religious_identification) |> 
-#   # rename(religion_spiritual_identification = spiritual_identification) |> 
+dat$self_control_wish_more_r
+
+# check: finds same numbers
+msm::statetable.msm(round(perfectionism, 0), id, data = ds_18) |>
+  kbl() |>
+  kable_paper(full_width = F)
+
+
+# three years
+msm::statetable.msm(round(perfectionism_high, 0), id, data = ds_18) |>
+  kbl() |>
+  kable_paper(full_width = F)
+
+
+# this looks best
+msm::statetable.msm(round(perfectionism_quartile, 0), id, data = ds_18) |>
+  kbl() |>
+  kable_paper(full_width = F)
 
 
 
 
-# function to prepare data
+## select variables for domains of outcome
+## always to be determined with expert
 
-  #health
-selected_health <- prepare_data(
-  data = dat_long,
-  baseline_vars = c(
+# comment out what makes sense for a study
+# household income not a great measurement
+
+baseline_vars = c(
     "edu",
     "male",
-    "eth_cat",
-    "employed",
-    "gen_cohort",
+    "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+    "employed", # Are you currently employed? (this includes self-employment or casual work)
+    "gen_cohort", #What is your gender? (open-ended)
+   # "household_inc", # Please estimate your total household income (before tax) for the last year.
     "nz_dep2018",
-    "nzsei18",
+    "nzsei13",
     "partner",
     "parent",
-    "pol_orient",
+    "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
+    #"pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
     "rural_gch2018",
-    "sdo",
-    "rwa",
+   # "sdo",
+   # "rwa",
+   # "brk_relationship",
+   # "began_relationship",
     "agreeableness",
     "conscientiousness",
     "extraversion",
     "honesty_humility",
     "openness",
     "neuroticism",
-    "religion_religious",
-    "religion_identification_level",
-    "religion_church_binary",
-    "big_doms",
-    "alcohol_frequency",
-    "alcohol_intensity",
-    "hlth_bmi",
-    "hours_exercise",
-    "sfhealth",
-    "hlth_sleep_hours",
-    "smoker"
-  ),
-  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
-  outcome_vars = c(
-    "alcohol_frequency",
-    "alcohol_intensity",
-    "hlth_bmi",
-    "hours_exercise",
-    "sfhealth",
-    "hlth_sleep_hours",
-    "smoker"
-  ),
-  exclude_vars = c("year_measured")
+    "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
+    "religion_religious", # Do you identify with a religion and/or spiritual group?
+    "religion_identification_level", #How important is your religion to how you see yourself?"
+    "religion_church_binary" #,
+   # "religion_prayer", # How many times did you pray in the last week?
+   # "religion_scripture", # How many times did you read religious scripture in the last week?
+   # "religion_church2", # How many times did you attend a church or place of worship in the last month?
+  #  "religion_believe_spirit",#Do you believe in some form of spirit or lifeforce?
+  #  "religion_believe_god",#Do you believe in a God
+   # "religion_spiritual_identification", #w8,w10,w12-13 "I identify as a spiritual person."
+   # "religion_perceive_religious_discrim", #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
+  #  "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers 
 )
 
+exposure_var = c("perfectionism", "perfectionism_high") # we could construct this after imputation
 
-# embodied
+outcome_vars_health = c(
+    "alcohol_frequency",
+    "alcohol_intensity",
+    "hlth_bmi",
+    "hours_exercise",
+    "sfhealth_your_health",# "In general, would you say your health is...
+    "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
+    "sfhealth_expect_worse_health",
+    "hlth_sleep_hours",
+    "smoker"
+  )
 
-
-selected_embodied_wellbeing <- prepare_data(
-  data = dat_long,
-  baseline_vars = c(
-    "edu",
-    "male",
-    "eth_cat",
-    "employed",
-    "gen_cohort",
-    "nz_dep2018",
-    "nzsei18",
-    "partner",
-    "parent",
-    "pol_orient",
-    "rural_gch2018",
-    "sdo",
-    "rwa",
-    "agreeableness",
-    "conscientiousness",
-    "extraversion",
-    "honesty_humility",
-    "openness",
-    "neuroticism",
-    "religion_religious",
-    "religion_identification_level",
-    "religion_church_binary",
-    "big_doms",
+outcome_vars_embodied = c(
     "hlth_fatigue",
     "rumination",
     "kessler_depressed",
@@ -479,351 +539,114 @@ selected_embodied_wellbeing <- prepare_data(
     "kessler_nervous",
     "kessler_restless",
     "kessler_worthless"
-  ),
-  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
-  outcome_vars = c(
-     "hlth_fatigue",
-    "rumination",
-    "kessler_depressed",
-    "kessler_effort",
-    "kessler_hopeless",
-    "kessler_nervous",
-    "kessler_restless",
-    "kessler_worthless"
-  ),
-  exclude_vars = c("year_measured")
-)
-
-
-
-## practical
-
-
-selected_practical_wellbeing <- prepare_data(
-  data = dat_long,
-  baseline_vars = c(
-    "edu",
-    "male",
-    "eth_cat",
-    "employed",
-    "gen_cohort",
-    "nz_dep2018",
-    "nzsei18",
-    "partner",
-    "parent",
-    "pol_orient",
-    "rural_gch2018",
-    "sdo",
-    "rwa",
-    "agreeableness",
-    "conscientiousness",
-    "extraversion",
-    "honesty_humility",
-    "openness",
-    "neuroticism",
-    "religion_religious",
-    "religion_identification_level",
-    "religion_church_binary",
-    "big_doms",
-    "sexual_satisfaction",
-    "bodysat",
-    "vengeful_rumin",
-    "permeability_individual",
-    "impermeability_group",
-    "perfectionism",  # exposure
-    "power_self_nocontrol",
-    "power_others_control",
-    "self_esteem",
-    "self_control_have_lots" ,
-    "self_control_wish_more",
-    "emp_work_life_balance"
-  ),
-  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
-  outcome_vars = c(
-    "nzsei18",  # objective success
-    "sexual_satisfaction",
-    "bodysat",
-    "vengeful_rumin",
-    "permeability_individual",
-    "impermeability_group",
-    "perfectionism",  # exposure
-    "power_self_nocontrol",
-    "power_others_control",
-    "self_esteem",
-    "self_control_have_lots" ,
-    "self_control_wish_more",
-    "emp_work_life_balance"
-  ),
-  exclude_vars = c("year_measured","wave")
-)
-
-str(selected_practical_wellbeing)
-
-
-
-# higher order.. gratitude could go here. 
-
-
-selected_reflective_wellbeing <- prepare_data(
-  data = dat_long,
-  baseline_vars = c(
-   "edu",
-    "male",
-    "eth_cat",
-    "employed",
-    "gen_cohort",
-    "nz_dep2018",
-    "nzsei18",
-    "partner",
-    "parent",
-    "pol_orient",
-    "rural_gch2018",
-    "sdo",
-    "rwa",
-    "agreeableness",
-    "conscientiousness",
-    "extraversion",
-    "honesty_humility",
-    "openness",
-    "neuroticism",
-    "religion_religious",
-    "religion_identification_level",
-    "religion_church_binary",
-    "big_doms",
-    "gratitude",
-    "pwi_health",
-    "pwi_relationships",
-    "pwi_security",
-    "pwi_standardliving",
-    "lifesat_satlife",
-    "lifesat_ideal",
-    "meaning_purpose",
-    "meaning_sense"
-  ),
-  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
-  outcome_vars = c(
-    "gratitude",
-    "pwi_health",
-    "pwi_relationships",
-    "pwi_security",
-    "pwi_standardliving",
-    "lifesat_satlife",
-    "lifesat_ideal",
-    "meaning_purpose",
-    "meaning_sense"
-  ),
-  exclude_vars = c("year_measured")
-)
-
-
-create_wide_data <- function(dat_long, baseline_vars, exposure_var, outcome_vars, exclude_vars = c()) {
-  require(tidyverse)
-  # Add the 'time' column to the data
-  data_with_time <- dat_long %>%
-    mutate(time = as.numeric(wave) - 1) %>%
-    arrange(id, time)
-  
-  # Filter the data based on the time condition
-  data_filtered <- data_with_time %>%
-    filter(time >= 0)
-
-  # Create the wide data frame
-  wide_data <- data_filtered %>%
-    dplyr::select(-exclude_vars)  %>%  # Exclude specified variables
-    pivot_wider(
-      id_cols = id,
-      names_from = time,
-      values_from = -c(id, time),
-      names_glue = "t{time}_{.value}",
-      names_prefix = "t"
-    )
-  
-  # Define a custom function to filter columns based on your conditions
-  custom_col_filter <- function(col_name) {
-    if (startsWith(col_name, "t0_")) {
-      return(col_name %in% c(paste0("t0_", baseline_vars), paste0("t0_", outcome_vars)))
-    } else if (startsWith(col_name, "t1_")) {
-      return(col_name %in% paste0("t1_", exposure_var))
-    } else if (startsWith(col_name, "t2_")) {
-      return(col_name %in% paste0("t2_", outcome_vars))
-    } else if (startsWith(col_name, "t3_")) {
-      return(col_name %in% paste0("t3_", outcome_vars))
-    } else {
-      return(FALSE)
-    }
-  }
-  
-  # Apply the custom function to select the desired columns
-  wide_data_filtered <- wide_data %>%
-    dplyr::select(id, which(sapply(colnames(wide_data), custom_col_filter))) %>%
-    dplyr::relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-    dplyr::relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-    dplyr::relocate(starts_with("t3_"), .after = starts_with("t2_"))  %>%
-    arrange(id)%>%
-    select(-id)
-  
-  return(wide_data_filtered)
-}
-
-test <- create_wide_data_generic(dat_long, 
-  baseline_vars = c(
-   "edu",
-    "male",
-    "eth_cat",
-    "employed",
-    "gen_cohort",
-    "nz_dep2018",
-    "nzsei18",
-    "partner",
-    "parent",
-    "pol_orient",
-    "rural_gch2018",
-    "sdo",
-    "rwa",
-    "agreeableness",
-    "conscientiousness",
-    "extraversion",
-    "honesty_humility",
-    "openness",
-    "neuroticism",
-    "religion_religious",
-    "religion_identification_level",
-    "religion_church_binary",
-    "big_doms"
-  ),
-  exposure_var = c("perfectionism", "perfectionism_qaurtile"),
-  outcome_vars = c(
-    "gratitude",
-    "pwi_health",
-    "pwi_relationships",
-    "pwi_security",
-    "pwi_standardliving",
-    "lifesat_satlife",
-    "lifesat_ideal",
-    "meaning_purpose",
-    "meaning_sense"
-  ),
-  exclude_vars = c("year_measured"))
-
-colnames(test)
-
-
- baseline_vars = c(
-   "edu",
-    "male",
-    "eth_cat",
-    "employed",
-    "gen_cohort",
-    "nz_dep2018",
-    "nzsei18",
-    "partner",
-    "parent",
-    "pol_orient",
-    "rural_gch2018",
-    "sdo",
-    "rwa",
-    "agreeableness",
-    "conscientiousness",
-    "extraversion",
-    "honesty_humility",
-    "openness",
-    "neuroticism",
-    "religion_religious",
-    "religion_identification_level",
-    "religion_church_binary",
-    "big_doms"
   )
 
- outcome_vars_reflective = c(
-    "gratitude",
-    "pwi_health",
-    "pwi_relationships",
-    "pwi_security",
-    "pwi_standardliving",
-    "lifesat_satlife",
-    "lifesat_ideal",
-    "meaning_purpose",
-    "meaning_sense"
-  ) 
- 
+rm(outcome_vars_social)
+
+outcome_vars_practical = c(
+    "bodysat", ## Am satisfied with the appearance, size and shape of my body.
+    "vengeful_rumin",# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+   # "perfectionism",  # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+# I am hardly ever satisfied with my performance.
+    "power_self_nocontrol",# I do not have enough power or control over\nimportant parts of my life.
+    "power_others_control", # Other people have too much power or control over\nimportant parts of my life
+    "selfesteem_satself", #  On the whole am satisfied with myself.
+    "selfesteem_postiveself",# Take a positive attitude toward myself
+    "selfesteem_rfailure", # Am inclined to feel that I am a failure.
+    "self_control_have_lots",#In general, I have a lot of self-control.
+    "self_control_wish_more_r",#I wish I had more self-discipline.(r)
+     "emotion_regulation_out_control", # When I feel negative emotions, my emotions feel out of control. w10 - w13
+    "emotion_regulation_hide_neg_emotions", # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
+    "emotion_regulation_change_thinking_to_calm", # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
+    "emp_work_life_balance"# I have a good balance between work and other important things in my life.
+  )
+  
+outcome_vars_reflective = c(
+    "gratitude", ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+    "pwi_health",#Your health.
+    "pwi_relationships",#Your personal relationships.
+    "pwi_security",#Your future security.
+    "pwi_standardliving",#Your standard of living.
+    "lifesat_satlife",# I am satisfied with my life.
+    "lifesat_ideal",# In most ways my life is close to ideal.
+    "meaning_purpose",# My life has a clear sense of purpose.
+    "meaning_sense"# I have a good sense of what makes my life meaningful.
+  )
+
+
+outcome_vars_social = c(
+    "permeability_individual",#I believe I am capable, as an individual\nof improving my status in society.
+    "impermeability_group", #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
+    "neighbourhood_community", #I feel a sense of community with others in my local neighbourhood.
+    "support_help",# 'There are people I can depend on to help me if I really need it.
+    "support_turnto",# There is no one I can turn to for guidance in times of stress.
+    "support_rnoguidance", #There is no one I can turn to for guidance in times of stress.
+    "belong_accept", #Know that people in my life accept and value me.
+    "belong_routsider",# Feel like an outsider.
+    "belong_beliefs",# Know that people around me share my attitudes and beliefs.
+    "charity_donate",#How much money have you donated to charity in the last year?
+    "hours_charity"#,#Hours spent in activities/Hours spent … voluntary/charitable work
+  #  "nwi" # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
+  )
+
+
 exclude_vars = c("year_measured")
 
-test <- create_wide_data_generic(dat_long, 
+
+# data for mice
+prep_health <- create_wide_data(dat_long, 
+  baseline_vars = baseline_vars, 
+  exposure_var = exposure_var,
+  outcome_vars = outcome_vars_health)
+
+str(prep_health)
+nrow(prep_health)
+
+
+prep_embodied <- create_wide_data(dat_long, 
+  baseline_vars = baseline_vars, 
+  exposure_var = exposure_var,
+  outcome_vars = outcome_vars_embodied)
+
+str(prep_embodied)
+
+prep_practical <- create_wide_data(dat_long, 
+  baseline_vars = baseline_vars, 
+  exposure_var = exposure_var,
+  outcome_vars = outcome_vars_practical)
+
+str(prep_practical)
+
+prep_reflective <- create_wide_data(dat_long, 
   baseline_vars = baseline_vars, 
   exposure_var = exposure_var,
   outcome_vars = outcome_vars_reflective)
 
-colnames(test)
+str(prep_reflective)
+
+prep_social <- create_wide_data(dat_long, 
+  baseline_vars = baseline_vars, 
+  exposure_var = exposure_var,
+  outcome_vars = outcome_vars_social)
+
+str(prep_social)
+
+```
 
 
+```{r}
+#| label: tables
+#| echo: false
+#| include: false
+#| eval: false
 
 
-# measures
-# reflective wellbeing
-# I am satisfied with my life.
-# In most ways my life is close to ideal.
-# 
-# Self-esteem
-# On the whole am satisfied with myself.
-# Take a positive attitude toward myself.
-# Am inclined to feel that I am a failure.
-
-# Self-control
-# In general, I have a lot of self-control.
-# I wish I had more self-discipline.
-
-
-
-
-
-
-# Calculate the quantile breaks (cut points)
-quantile_breaks <- quantile(dat_long$perfectionism, probs = seq(0, 1, 1/4), na.rm = TRUE)
-
-# Create labels based on the cut points in the desired format
-cut_labels <- paste0(quantile_breaks[-length(quantile_breaks)], "_", quantile_breaks[-1])
-
-# Create the ordered factor variable with the new labels
-dat_long$perfectionism_quartile <- cut(dat_long$perfectionism,
-                                        breaks = quantile_breaks,
-                                        labels = cut_labels,
-                                        ordered_result = TRUE,
-                                        include.lowest = TRUE)
-
-# Print the resulting data frame
-print(dat_long$perfectionism_quartile)
-
-
-
-
-## check numbers of those changed
-ds_18 <- dt_18 |>
-  filter(year_measured == 1 &
-           wave == 2018 | year_measured == 1 & wave == 2019) |>
-  select(id, christian_nfd) |>
-  mutate(christian_nfd = as.numeric(christian_nfd) - 1) # 740
-
-
-
-
-# check: finds same numbers
-msm::statetable.msm(round(christian_nfd, 0), id, data = ds_18) |>
-  kbl() |>
-  kable_paper(full_width = F)
-
-
-dt_18 %>%
-  kbl() %>%
-  kable_paper("hover", full_width = F)
-
-dt_mice_18 <- dt_18 |> 
-  select(-c(id, year_measured,christian_nfd))
-
-# prepare data for mice imputation. 
-mice:::find.collinear(dt_mice_18)
+# only look at vars at baseline
+dat_18 <- dat_long |> 
+  dplyr::filter(wave == 2018)
 
 # check consistent n's
-colnames(dt_mice_18)
+colnames(prep_health)
 
   
 #table
@@ -839,409 +662,893 @@ my_render_cat <- function(x) {
 }
 
 
-
-# get control vars
-
-
-# baseline wave
-# do only for baseline wave
-dt_mice_b_18 <- dt_mice_18 |> 
-  filter(wave == 2018) 
-
-cvars_18 = dt_mice_b_18 |>
-  dplyr::select(!starts_with("religion_"))|>
-    dplyr::select(!starts_with("religious_"))|>
-  dplyr::select(!starts_with("nfd_")) |> 
-  dplyr::select(- wave) |>
-  colnames()
-
-cvars_18
-
-cvars = cvars_18
-# make into an equation
-
-output_string_18 <- paste(cvars_18, collapse = "+")
-formula_string_18 <- paste("~", output_string_18, "|wave")
+table_baseline_vars <- paste(baseline_vars, collapse = "+")
+formula_string_table_baseline <- paste("~", table_baseline_vars, "|wave")
 
 #formula_string <- paste("~", output_string)
-formula_obj_18 <- as.formula(formula_string_18)
-
-formula_obj_18
+formula_obj_baseline <- as.formula(formula_string_table_baseline)
 
 
-c_tab_18 <-
+# baseline table 
+table_baseline  <-
   table1::table1(
-    formula_obj_18,
-    data = dt_mice_b_18,
+    formula_obj_baseline,
+    data = dat_18,
     overall = FALSE,
     render.continuous = my_render_cont,
     render.categorical = my_render_cat
   )
 
-# make demographic table html
-c_tab_18
 
 # make demographic tablem markdown
-c_tab_18 |> 
-  as.data.frame() |> 
-  kbl(format = "markdown")
-
-# next for religion variables 
-
-
-rvars_18 = dt_mice_b_18 |>
-  dplyr::select(starts_with("religion_"))|>
-  colnames()
-
-rvars_18
-# make into an equation
-
-output_string_r_18 <- paste(rvars_18, collapse = "+")
-formula_string_r_18 <- paste("~", output_string_r_18, "|wave")
-
-#formula_string <- paste("~", output_string)
-formula_obj_r_18<- as.formula(formula_string_r)
-
-c_tab_r_18 <-
-  table1::table1(
-    formula_obj_r_18,
-    data = dt_mice_b_18,
-    overall = FALSE,
-    render.continuous = my_render_cont,
-    render.categorical = my_render_cat
-  )
-
-# make demographic table html
-c_tab_r_18
-
-# make demographic tablem markdown
-c_tab |> 
+table_baseline |> 
   as.data.frame() |> 
   kbl(format = "markdown")
 
 
+# can do for others...
+```
 
-# new table
-c_tab_b_18 <- table1::table1(formula_obj_18, data = dt_mice_b_18, overall = FALSE,
-                             render.continuous = my_render_cont,
-    render.categorical = my_render_cat)
 
-# make demographic table html
-c_tab_b_18
+```{r}
+#| label: imputations health
+#| echo: false
+#| include: false
+#| eval: false
 
-# make demographic tablem markdown
-c_tab_b_18 |> 
-  as.data.frame() |> 
-  kbl(format = "markdown")
+# reduce missingness by looking at +2 only , and remove factor for faster imputation
+prep_health_2only <- prep_health |> 
+  select(-starts_with("t3_")) |> 
+  mutate(across(where(is.double), as.numeric)) |> 
+  mutate(t0_male = as.numeric(t0_male)-1) |> 
+  mutate(t0_religion_religious = as.numeric(t0_religion_religious)-1) |>
+  mutate(t0_rural_gch2018 = as.integer(as.factor(t0_rural_gch2018)))
+# check
+str(prep_health_2only)
 
-colnames(dt_18)
-
-# Prepare data for mice
-
-# Prepare data for mice
-# needs to use this pipe : %>%
-
-cvars <- cvars_18
-#rvars <- religion_secular
-
-colnames(dt_prep_18)
-
-cvars
-
-dt_prep_18 <- dt_18 %>%
-  mutate(time = as.numeric(wave) - 1)  %>%
-  select(-c(wave, year_measured, christian_nfd))  %>% 
-  pivot_wider(
-    id_cols = id,
-    names_from = time,
-    values_from = -c(id, time),
-    names_glue = "t{time}_{.value}",
-    names_prefix = "t"
-  ) %>%
-  select(-c(starts_with("t0_religious_change")))  %>% # only exposure year
-  select(-c(starts_with("t2_religious_change")))  %>%
-  select(-c(starts_with("t3_religious_change")))  %>%
-  select(-t0_religion_secular) %>%
-  select(-c((starts_with("t1") | starts_with("t2") | starts_with("t3")) & matches(paste0("(", paste(cvars), ")$"))))|> 
-  select(-c((starts_with("t1") & matches(paste0("(", paste(rvars), ")$")))))  %>%  # outcome vars only at baseline and outcome
-  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-  relocate(starts_with("t3_"), .after = starts_with("t2_"))  %>%
-  arrange(id)
-
-colnames( dt_prep_18 )
-
-# need to remove id column
-dt_prep_no_id_18 <- dt_prep_18 |> 
-  select(-id)
-
-colnames(dt_prep_no_id_18)
-str(dt_prep_no_id_18)
-# inspect
 dev.off()
-naniar::vis_miss(dt_prep_no_id_18, warn_large_data = FALSE)
+# health
+naniar::vis_miss(prep_health_2only, warn_large_data = FALSE)
 
-# str( dt_19_noe$Id )
+dev.off()
 
 # check for collinear vars
-mice:::find.collinear(dt_prep_no_id_18)
+mice:::find.collinear(prep_health_2only)
+
+
+
+# prep factors remove for speed
+
 
 ## impute missing variables
-mice_gt_18 <- mice::mice(dt_prep_no_id_18, m = 10)
+mice_health  <- mice::mice(prep_health_2only, m = 10)
 
 # save imputations
-saveRDS(mice_gt_18,
-        here::here(push_mods, "mice_gt_18"))
+saveRDS(mice_health,
+        here::here(push_mods, "mice_health"))
 
 # recall imputations if needed
-mice_gt_18 <-
-  readRDS(here::here(push_mods, "mice_gt_18"))
+mice_health <-
+  readRDS(here::here(push_mods, "mice_health"))
 
 
 # check mi model
-outlist2 <-
-  row.names(mice_gt_18)[mice_gt_18$outflux < 0.5]
+outlist2 <-row.names(mice_health)[mice_health$outflux < 0.5]
 length(outlist2)
 
 # checks. We do not impute with weights: area of current research
 
-head(mice_gt_18$loggedEvents, 10)
+head(mice_health$loggedEvents, 10)
 
 # data warangling
 
-mc  <- mice::complete(mice_gt_18, "long", inc = T)
+mc  <- mice::complete(mice_health, "long", inc = T)
 
 vnames <- rownames(mc)
 
 cnames <- rownames(mc)
 
-length(vnames)/nrow(dt_prep_no_id_18) #(11 datasets)
+N <- length(vnames)/nrow(prep_health_2only) # (11 datasets)
+
 
 
 # if we need weights
-# newdat <- data.frame( rep( dt_prep$t0_w_GendAgeEuro, 11))
-# colnames(newdat ) <- "weights"
-# head(newdat)
-# length( newdat$weights ) == length( cnames)
-# 
-# 
-# mc_v <- bind_cols(newdat, mc ) |>
-#   relocate("weights", .before = "t0_Partner")
+newdat <- data.frame( rep(dat_18$sample_weights, N))
+
+colnames(newdat) <- "sample_weights"
+
+# check
+nrow(newdat) == nrow(mc)
+
+mc_v <- bind_cols(newdat, mc ) |>
+  relocate("sample_weights", .before = starts_with("t0_"))
 
 # checks out
 
 # comment out if using weights with the above code
-mc_v <- mc
 
 skimr::skim(mc_v)
 
-#
-N <- nrow(dt_prep_no_id_18) # number of ids
-N3 = 3 * N # made long so need 3 x N # three waves
+n_id <- nrow(dat_18) # number of ids
+# n_id_3 = 3 * n_id # made long so need 3 x N # three waves
 
-# checks
+outcome_vars_health
 
-head(mc_v)
-
-
-# only use for long data
-# create variables in z score -- NOT WORKING FOR IPTW AT MOMENT
-# mc_vv <- mc_v %>%
-#   dplyr::mutate(Id = as.factor(rep(1:N, 11))) |> # need ids
-#   pivot_longer(
-#     cols = starts_with("t"),
-#     names_to = c("time", ".value"),
-#     names_pattern = "t(\\d+)_(.*)"
-#   ) |>
-#   relocate("time", .after = "Id") |>
-#   arrange(.imp, Id, time)  |>
-#   group_by(.imp, Id) |>
-#   fill(c(!starts_with("t0_Warm.") |
-#            !starts_with("t1_Warm.")), .direction = "down") |> # create baselines
-#   ungroup() |>
-#   select(-.id) |>
-#   mutate(.id = rep(1:N2, 11)) |>  # new id needed  for mice
-#   data.frame()
-# dim(mc_vv)
-# head(mc_vv)
-# head(mc_vv[, 27:36]) ## looks good
-# # Get data into shape
-
-
-# ml <- mc_v %>%
-#   dplyr::mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) |>
-#   select(-c(.imp_z, .id_z)) |>
-#   mutate_if(is.matrix, as.vector) %>%
-#   as.mids()
-
-
-mf_18$t1_religious_change
-
-ml_18 <- mc_v %>%
-  mutate(t2_religion_secular = as.factor(t2_religion_secular),
-         t3_religion_secular = as.factor(t3_religion_secular)) |> 
-  mutate(t2_religion_secular = as.factor(t2_religion_secular),
-         t3_religion_secular = as.factor(t3_religion_secular),
-         t1_religious_change_ignore_test = as.numeric(t1_religious_change)) |> 
-  mutate(t1_test = as.factor(ifelse(t1_religious_change == "nfd_same",1, 0)))|> 
-  mutate(across(where(~ !is.factor(.x)), ~ scale(.x), .names = "{col}_z")) %>%
-  select(
+ml_health<- mc_v %>%
+  dplyr::mutate(id = as.factor(rep(1:n_id, 11))) |> # needed 
+  mutate( t0_eth_cat = as.factor(t0_eth_cat),
+         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t0_smoker = as.factor(t0_smoker),
+         t1_perfectionism_high = as.factor(t1_perfectionism_high),
+         t2_smoker = as.factor(t2_smoker),
+         t0_hours_exercise = log(t0_hours_exercise +1),
+         t2_hours_exercise =  log(t2_hours_exercise +1)) |>
+  dplyr::group_by(id) |>
+  dplyr::mutate(t0_sfhealth = mean(
+    c(
+      t0_sfhealth_your_health,
+      t0_sfhealth_get_sick_easier,
+      t0_sfhealth_expect_worse_health  ),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_sfhealth = mean(
+    c(
+      t2_sfhealth_your_health,
+      t2_sfhealth_get_sick_easier,
+      t2_sfhealth_expect_worse_health  ),
+    na.rm = TRUE
+  )) |>
+  dplyr::ungroup() |> 
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
     where(is.factor),
+    sample_weights,
     ends_with("_z"),
     .imp,
     .id
-  ) %>%
-   mutate(t2_religion_secular = as.numeric(t2_religion_secular)-1,
-         t3_religion_secular = as.numeric(t3_religion_secular)-1,
-         t1_test = as.numeric(t1_test)-1) |> 
-  select(-c(.imp_z, .id_z)) %>%
+  ) |> 
+  relocate(sample_weights, .before = starts_with("t1_"))  %>%
+  relocate(id, .before = sample_weights)  %>%
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
   relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
   mutate_if(is.matrix, as.vector) %>%
   as.mids()
+  
 
 # Confirm that ml is of class "mids"
-class(ml_18)
-str(ml_18)
+class(ml_health)
+str(ml_health)
 
-mf_18 <- mice::complete(ml_18, "long", inc = TRUE)
+mf_health <- mice::complete(ml_health, "long", inc = TRUE)
 
-str(mf_18)
-colnames(mf_18)
+str(mf_health)
+colnames(mf_health)
+# test
+head(mf_health$sample_weights)
+str(dat_18$sample_weights)
 
-saveRDS(ml_18, here::here(push_mods, "at-mice-ml_18"))
-saveRDS(mf_18, here::here(push_mods, "at-mice-mf_18"))
-
+saveRDS(ml_health, here::here(push_mods, "ml_health"))
+saveRDS(mf_health, here::here(push_mods, "mf_health"))
 ```
 
 ```{r}
+#| label: imputations embodied
+#| echo: false
+#| include: false
 #| eval: false
 
-# outcomewide analysis
-#source(here::here("functions","functions_here.R"))
+#| label: imputations health
+#| echo: false
+#| include: false
+#| eval: false
 
-# read imputed data
-ml_18 <- readRDS(here::here(push_mods, "at-mice-ml_18"))
+# reduce missingness by looking at +2 only , and remove factor for faster imputation
+prep_embodied_2only <- prep_embodied |> 
+  select(-starts_with("t3_")) |> 
+  mutate(across(where(is.double), as.numeric)) |> 
+  mutate(t0_male = as.numeric(t0_male)-1) |> 
+  mutate(t0_religion_religious = as.numeric(t0_religion_religious)-1) |>
+  mutate(t0_rural_gch2018 = as.integer(as.factor(t0_rural_gch2018)))
+# check
+str(prep_embodied_2only)
+
+dev.off()
+# health
+naniar::vis_miss(prep_embodied_2only, warn_large_data = FALSE)
+
+dev.off()
+
+# check for collinear vars
+mice:::find.collinear(prep_embodied_2only)
+
+
+
+# prep factors remove for speed
+
+## impute missing variables
+mice_embodied  <- mice::mice(prep_embodied_2only, m = 10)
+
+# save imputations
+saveRDS(mice_embodied,
+        here::here(push_mods, "mice_embodied"))
+
+# recall imputations if needed
+mice_embodied <-
+  readRDS(here::here(push_mods, "mice_embodied"))
+
+
+# check mi model
+outlist2 <-row.names(mice_embodied)[mice_embodied$outflux < 0.5]
+length(outlist2)
+
+# checks. We do not impute with weights: area of current research
+
+head(mice_embodied$loggedEvents, 10)
+
+# data warangling
+
+mc  <- mice::complete(mice_embodied, "long", inc = T)
+
+vnames <- rownames(mc)
+
+cnames <- rownames(mc)
+
+N <- length(vnames)/nrow(prep_embodied_2only) # (11 datasets)
+
+
+
+# if we need weights
+newdat <- data.frame( rep(dat_18$sample_weights, N))
+
+colnames(newdat) <- "sample_weights"
+
+# check
+nrow(newdat) == nrow(mc)
+
+mc_v <- bind_cols(newdat, mc ) |>
+  relocate("sample_weights", .before = starts_with("t0_"))
+
+# checks out
+
+# comment out if using weights with the above code
+
+skimr::skim(mc_v)
+
+n_id <- nrow(dat_18) # number of ids
+# n_id_3 = 3 * n_id # made long so need 3 x N # three waves
+
+outcome_vars_embodied
+
+ml_embodied<- mc_v %>%
+  dplyr::mutate(id = as.factor(rep(1:n_id, 11))) |> # needed 
+  mutate( 
+         t0_eth_cat = as.factor(t0_eth_cat),
+         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t1_perfectionism_high = as.factor(t1_perfectionism_high)) |>
+  dplyr::group_by(id) |>
+  dplyr::mutate(t0_kessler_6 = mean(
+    c(
+    t0_kessler_depressed,
+    t0_kessler_effort,
+    t0_kessler_hopeless,
+    t0_kessler_nervous,
+    t0_kessler_restless,
+    t0_kessler_worthless ),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_kessler_6 = mean(
+    c(
+    t2_kessler_depressed,
+    t2_kessler_effort,
+    t2_kessler_hopeless,
+    t2_kessler_nervous,
+    t2_kessler_restless,
+    t2_kessler_worthless ),
+    na.rm = TRUE
+  )) |>
+  dplyr::ungroup() |> 
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
+    where(is.factor),
+    sample_weights,
+    ends_with("_z"),
+    .imp,
+    .id
+  ) |> 
+  relocate(sample_weights, .before = starts_with("t1_"))  %>%
+  relocate(id, .before = sample_weights)  %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
+  mutate_if(is.matrix, as.vector) %>%
+  as.mids()
+  
+
+# Confirm that ml is of class "mids"
+class(ml_embodied)
+str(ml_embodied)
+
+mf_embodied <- mice::complete(ml_embodied, "long", inc = TRUE)
+
+
+colnames(mf_embodied)
+# test
+head(mf_embodied$sample_weights)
+str(dat_18$sample_weights)
+
+str(mf_embodied)
+str(ml_embodied)
+saveRDS(ml_embodied, here::here(push_mods, "ml_embodied"))
+saveRDS(mf_embodied, here::here(push_mods, "mf_embodied"))
+```
+
+
+
+```{r}
+#| label: imputations practical
+#| echo: false
+#| include: false
+#| eval: false
+prep_practical_2only <- prep_practical |> 
+  select(-starts_with("t3_")) |> 
+  mutate(across(where(is.double), as.numeric)) |> 
+  mutate(t0_male = as.numeric(t0_male)-1) |> 
+  mutate(t0_religion_religious = as.numeric(t0_religion_religious)-1) |>
+  mutate(t0_rural_gch2018 = as.integer(as.factor(t0_rural_gch2018))) |> 
+  select(-t0_emp_work_life_balance) # not at baseline
+# check
+str(prep_practical_2only)
+
+dev.off()
+# health
+naniar::vis_miss(prep_practical_2only, warn_large_data = FALSE)
+
+dev.off()
+
+# check for collinear vars
+mice:::find.collinear(prep_practical_2only)
+
+
+
+# prep factors remove for speed
+
+## impute missing variables
+mice_practical  <- mice::mice(prep_practical_2only, m = 10)
+
+# save imputations
+saveRDS(mice_practical,
+        here::here(push_mods, "mice_practical"))
+
+# recall imputations if needed
+mice_practical <-
+  readRDS(here::here(push_mods, "mice_practical"))
+
+
+# check mi model
+outlist2 <-row.names(mice_practical)[mice_practical$outflux < 0.5]
+length(outlist2)
+
+# checks. We do not impute with weights: area of current research
+
+head(mice_practical$loggedEvents, 10)
+
+# data warangling
+
+mc  <- mice::complete(mice_practical, "long", inc = T)
+
+vnames <- rownames(mc)
+
+cnames <- rownames(mc)
+
+N <- length(vnames)/nrow(prep_practical_2only) # (11 datasets)
+
+
+
+# if we need weights
+newdat <- data.frame( rep(dat_18$sample_weights, N))
+
+colnames(newdat) <- "sample_weights"
+
+# check
+nrow(newdat) == nrow(mc)
+
+mc_v <- bind_cols(newdat, mc ) |>
+  relocate("sample_weights", .before = starts_with("t0_"))
+
+# checks out
+
+# comment out if using weights with the above code
+
+skimr::skim(mc_v)
+
+n_id <- nrow(dat_18) # number of ids
+# n_id_3 = 3 * n_id # made long so need 3 x N # three waves
+
+outcome_vars_practical
+
+ml_practical <- mc_v %>%
+  dplyr::mutate(id = as.factor(rep(1:n_id, 11))) |> # needed 
+  mutate( t0_eth_cat = as.factor(t0_eth_cat),
+         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t1_perfectionism_high = as.factor(t1_perfectionism_high)) |>
+  dplyr::group_by(id) |>
+  dplyr::mutate(t0_powerdependence = mean(
+    c(
+    t0_power_self_nocontrol,
+    t0_power_others_control),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t0_selfesteem = mean(
+    c(
+    t0_selfesteem_satself,
+    t0_selfesteem_postiveself,
+    t0_selfesteem_rfailure),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t0_self_control = mean(
+    c(
+    t0_self_control_have_lots,
+    t0_self_control_wish_more_r),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t0_emotion_regulation = mean(
+    c(
+    t0_emotion_regulation_out_control,
+    t0_emotion_regulation_hide_neg_emotions,
+    t0_emotion_regulation_change_thinking_to_calm),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_powerdependence = mean(
+    c(
+    t2_power_self_nocontrol,
+    t2_power_others_control),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_selfesteem = mean(
+    c(
+    t2_selfesteem_satself,
+    t2_selfesteem_postiveself,
+    t2_selfesteem_rfailure),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_self_control = mean(
+    c(
+    t2_self_control_have_lots,
+    t2_self_control_wish_more_r),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_emotion_regulation = mean(
+    c(
+    t2_emotion_regulation_out_control,
+    t2_emotion_regulation_hide_neg_emotions,
+    t2_emotion_regulation_change_thinking_to_calm),
+    na.rm = TRUE
+  )) |>
+  dplyr::ungroup() |> 
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
+    where(is.factor),
+    sample_weights,
+    ends_with("_z"),
+    .imp,
+    .id
+  ) |> 
+  relocate(sample_weights, .before = starts_with("t1_"))  %>%
+  relocate(id, .before = sample_weights)  %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
+  mutate_if(is.matrix, as.vector) %>%
+  as.mids()
+  
+
+# Confirm that ml is of class "mids"
+class(ml_practical)
+str(mf_practical)
+
+mf_practical <- mice::complete(ml_practical, "long", inc = TRUE)
+
+str(mf_practical)
+colnames(mf_practical)
+# test
+head(ml_practical$sample_weights)
+str(dat_18$sample_weights)
+
+saveRDS(ml_practical, here::here(push_mods, "ml_practical"))
+saveRDS(mf_practical, here::here(push_mods, "mf_practical"))
+```
+
+
+
+```{r}
+#| label: imputations reflective
+#| echo: false
+#| include: false
+#| eval: false
+prep_reflective_2only <- prep_reflective |> 
+  select(-starts_with("t3_")) |> 
+  mutate(across(where(is.double), as.numeric)) |> 
+  mutate(t0_male = as.numeric(t0_male)-1) |> 
+  mutate(t0_religion_religious = as.numeric(t0_religion_religious)-1) |>
+  mutate(t0_rural_gch2018 = as.integer(as.factor(t0_rural_gch2018))) 
+# check
+str(prep_reflective_2only)
+
+dev.off()
+# health
+naniar::vis_miss(prep_reflective_2only, warn_large_data = FALSE)
+
+dev.off()
+
+# check for collinear vars
+mice:::find.collinear(prep_reflective_2only)
+
+
+
+# prep factors remove for speed
+
+## impute missing variables
+mice_reflective  <- mice::mice(prep_reflective_2only, m = 10)
+
+# save imputations
+saveRDS(mice_reflective,
+        here::here(push_mods, "mice_reflective"))
+
+# recall imputations if needed
+mice_reflective <-
+  readRDS(here::here(push_mods, "mice_reflective"))
+
+
+# check mi model
+outlist2 <-row.names(mice_reflective)[mice_reflective$outflux < 0.5]
+length(outlist2)
+
+# checks. We do not impute with weights: area of current research
+
+head(mice_reflective$loggedEvents, 10)
+
+# data warangling
+
+mc  <- mice::complete(mice_reflective, "long", inc = T)
+
+vnames <- rownames(mc)
+
+cnames <- rownames(mc)
+
+N <- length(vnames)/nrow(prep_reflective_2only) # (11 datasets)
+
+
+
+# if we need weights
+newdat <- data.frame( rep(dat_18$sample_weights, N))
+
+colnames(newdat) <- "sample_weights"
+
+# check
+nrow(newdat) == nrow(mc)
+
+mc_v <- bind_cols(newdat, mc ) |>
+  relocate("sample_weights", .before = starts_with("t0_"))
+
+# checks out
+
+# comment out if using weights with the above code
+
+skimr::skim(mc_v)
+
+n_id <- nrow(dat_18) # number of ids
+# n_id_3 = 3 * n_id # made long so need 3 x N # three waves
+
+outcome_vars_reflective
+
+ml_reflective <- mc_v %>%
+  dplyr::mutate(id = as.factor(rep(1:n_id, 11))) |> # needed 
+  mutate( t0_eth_cat = as.factor(t0_eth_cat),
+         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t1_perfectionism_high = as.factor(t1_perfectionism_high)) |>
+  dplyr::group_by(id) |>
+  dplyr::mutate(t0_pwi = mean(
+    c(
+    t0_pwi_health,
+    t0_pwi_relationships,
+    t0_pwi_security,
+    t0_pwi_standardliving),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t0_lifesat = mean(
+    c(
+    t0_lifesat_satlife,
+    t0_lifesat_ideal),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t0_meaning = mean(
+    c(
+    t0_meaning_purpose,
+    t0_meaning_sense),
+    na.rm = TRUE
+  )) |> 
+    dplyr::mutate(t2_pwi = mean(
+    c(
+    t2_pwi_health,
+    t2_pwi_relationships,
+    t2_pwi_security,
+    t2_pwi_standardliving),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_lifesat = mean(
+    c(
+    t2_lifesat_satlife,
+    t2_lifesat_ideal),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_meaning = mean(
+    c(
+    t2_meaning_purpose,
+    t2_meaning_sense),
+    na.rm = TRUE
+  )) |> 
+  dplyr::ungroup() |> 
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
+    where(is.factor),
+    sample_weights,
+    ends_with("_z"),
+    .imp,
+    .id
+  ) |> 
+  relocate(sample_weights, .before = starts_with("t1_"))  %>%
+  relocate(id, .before = sample_weights)  %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
+  mutate_if(is.matrix, as.vector) %>%
+  as.mids()
+  
+
+# Confirm that ml is of class "mids"
+class(ml_reflective)
+str(ml_reflective)
+
+mf_reflective <- mice::complete(ml_reflective, "long", inc = TRUE)
+
+
+colnames(mf_reflective)
+# test
+head(mf_reflective$sample_weights)
+str(dat_18$sample_weights)
+str(ml_reflective)
+str(mf_reflective)
+
+saveRDS(ml_reflective, here::here(push_mods, "ml_reflective"))
+saveRDS(mf_reflective, here::here(push_mods, "mf_reflective"))
+```
+
+
+
+```{r}
+#| label: imputations social
+#| echo: false
+#| include: false
+#| eval: false
+prep_social_2only <- prep_social |> 
+  select(-starts_with("t3_")) |> 
+  mutate(across(where(is.double), as.numeric)) |> 
+  mutate(t0_male = as.numeric(t0_male)-1) |> 
+  mutate(t0_religion_religious = as.numeric(t0_religion_religious)-1) |>
+  mutate(t0_rural_gch2018 = as.integer(as.factor(t0_rural_gch2018))) 
+# check
+str(prep_social_2only)
+
+dev.off()
+# health
+naniar::vis_miss(prep_social_2only, warn_large_data = FALSE)
+
+dev.off()
+
+# check for collinear vars
+mice:::find.collinear(prep_social_2only)
+
+
+
+# prep factors remove for speed
+
+## impute missing variables
+mice_social  <- mice::mice(prep_social_2only, m = 10)
+
+# save imputations
+saveRDS(mice_social,
+        here::here(push_mods, "mice_social"))
+
+# recall imputations if needed
+mice_social <-
+  readRDS(here::here(push_mods, "mice_social"))
+
+
+# check mi model
+outlist2 <-row.names(mice_social)[mice_social$outflux < 0.5]
+length(outlist2)
+
+# checks. We do not impute with weights: area of current research
+
+head(mice_social$loggedEvents, 10)
+
+# data warangling
+
+mc  <- mice::complete(mice_social, "long", inc = T)
+
+vnames <- rownames(mc)
+
+cnames <- rownames(mc)
+
+N <- length(vnames)/nrow(prep_social_2only) # (11 datasets)
+
+
+
+# if we need weights
+newdat <- data.frame( rep(dat_18$sample_weights, N))
+
+colnames(newdat) <- "sample_weights"
+
+# check
+nrow(newdat) == nrow(mc)
+
+mc_v <- bind_cols(newdat, mc ) |>
+  relocate("sample_weights", .before = starts_with("t0_"))
+
+# checks out
+
+# comment out if using weights with the above code
+
+skimr::skim(mc_v)
+
+n_id <- nrow(dat_18) # number of ids
+# n_id_3 = 3 * n_id # made long so need 3 x N # three waves
+
+outcome_vars_social
+
+ml_social<- mc_v %>%
+  dplyr::mutate(id = as.factor(rep(1:n_id, 11))) |> # needed 
+  mutate(t0_eth_cat = as.factor(t0_eth_cat),
+         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t0_charity_donate = log(t0_charity_donate + 1),
+         t1_perfectionism_high = as.factor(t1_perfectionism_high),
+         t2_charity_donate = log(t2_charity_donate + 1),
+         t0_volunteers = as.factor(ifelse(t0_hours_charity > 1,1,0)),
+        t2_volunteers = as.factor(ifelse(t2_hours_charity > 1,1,0)))|>
+  dplyr::group_by(id) |>
+  dplyr::mutate(t0_support = mean(
+    c(
+    t0_support_help,
+    t0_support_turnto,
+    t0_support_rnoguidance),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t0_belong = mean(
+    c(
+    t0_belong_accept,
+    t0_belong_routsider,
+    t0_belong_beliefs),
+    na.rm = TRUE
+  )) |> 
+   dplyr::mutate(t2_support = mean(
+    c(
+    t2_support_help,
+    t2_support_turnto,
+    t2_support_rnoguidance),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_belong = mean(
+    c(
+    t2_belong_accept,
+    t2_belong_routsider,
+    t2_belong_beliefs),
+    na.rm = TRUE
+  )) |> 
+  dplyr::ungroup() |> 
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
+    where(is.factor),
+    sample_weights,
+    ends_with("_z"),
+    .imp,
+    .id
+  ) |> 
+  relocate(id, .before = sample_weights)  %>%
+  relocate(sample_weights, .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
+  mutate_if(is.matrix, as.vector) %>%
+  as.mids()
+  
+
+# Confirm that ml is of class "mids"
+class(ml_social)
+str(ml_social)
+
+mf_social <- mice::complete(ml_social, "long", inc = TRUE)
+
+str(mf_social)
+colnames(mf_social)
+# test
+head(mf_social$sample_weights)
+str(dat_18$sample_weights)
+
+saveRDS(ml_social, here::here(push_mods, "ml_social"))
+saveRDS(mf_social, here::here(push_mods, "mf_social"))
+```
+
+
+
+
+```{r}
+#| label: models heath
+#| eval: false
+
+
+ml_health <- readRDS(here::here(push_mods, "ml_health"))
 
 # longform data if necessary
-mf_18 <- readRDS(here::here(push_mods, "at-mice-mf_18"))
+mf_health <- readRDS(here::here(push_mods, "mf_health"))
 
-colnames(mf)
+colnames(mf_health)
+
+mf_health$t1_perfectionism_high
 
 # Set exposure 
-X <- "t1_religious_change" # bad name
+X <- "t1_perfectionism_high"
 
 
 # baselin vars ---------------------------------------------------------
 
-baseline_vars = mf_18 |>
-  dplyr::select(-c(.imp,
-                   .id,
-                  # id
-                  # time, if df is long
-                  # weights, if weights are used
-                  )) |> # include?
+baseline_vars_health = mf_health |> 
   dplyr::select(starts_with("t0")) |> colnames()
-baseline_vars
 
-outcome_vars = mf_18 |>
-  dplyr::select(-c(.imp,
-                   .id,
-                  # id
-                  # time, if df is long
-                  # weights, if weights are used
-                  )) |> # include?
-  dplyr::select(starts_with("t2")|starts_with("t3")) |> colnames()
+baseline_vars_health
 
-outcome_vars
-
-
-# set X var
-
-# matching function (more approaches in the outcomewide --> scripts --> johnmark --> covid folder)
-# set digits 3
 options(scipen = 999)
 
-# match the datasets to the exposure
+is.mids(ml_health)
 
-## matching formula
-
-
-# 
-# dt_match <- weightthem(
-#   as.formula(paste(as.formula(paste(
-#     paste(X, "~",
-#           paste(baseline_vars, collapse = "+"))
-#   )))),
-#   ml_18,
-#   estimand = "ATE",
-#   stabilize = TRUE,
-#   method = "ebal"
-# #   
-# )
+dt_match_health <- match_mi(data = ml_health, X = "t1_perfectionism_high", baseline_vars = baseline_vars_health, estimand = "ATE",  method = "ebal", sample_weights = "sample_weights")
 
 
 
+sum <- summary(dt_match_health)
+sum
+
+dt_match_trim_health <- WeightIt::trim(dt_match_health, at = .95)
 
 
-match_mi <- function(.data, X, baselinevars,estimand, method) {
-  require(WeightIt)
-  require(MatchThem)
-
-  # if not binary, we model the interacton to obtain better weights
-  # not we can add survey weights at this point.
-  
-  formula_str <- paste(X, "~", paste(baseline_vars, collapse = "+"))
-
-
-  weight_var <- if (weights) .data$weights else NULL
-
-  dt_match <- weightthem(
-    as.formula(formula_str),
-    weights = if (!is.null(weight_var)) weight_var else NULL, # survey
-    .data,
-    estimand = estimand,
-    stabilize = TRUE,
-    method = method
-  )
-  dt_match
-}
-
-
-X <- "t1_religious_change"
-X <- "t1_religious_change_ignore_test_z"
-
-
-dt_match <- match_mi(ml_18, X = X, baselinevars = baselinevars, estimand = "ATE", method = "ebal")
-
-
-sum <- summary(dt_match)
+sum <- summary(dt_match_trim_health)
+sum
 plot(sum)
 bal.tab(dt_match)
 dt_match
 
-table(mf_18$t1_religious_change)
 
 # settings 
-dt_match = dt_match # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+dt_match_health_use = dt_match_trim_health # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
 
-#family
-family <- "quasibinomial"
+
 
 # bootstrap simulations
 nsims <- 200
 
 # cores
-cl = 8
+cl = 10
+
 
 # x variable 
-X = "t1_religious_change"
-Y = "t3_religion_secular"
+X = "t1_perfectionism_high"
+Y = "t2_alcohol_frequency_z"
 
-# contrast value  (contrasting same with nfd_same)
-# treat_1 = 1
-# treat_0 = 0
 
 # as specified
 
@@ -1253,126 +1560,106 @@ cores
 
 
 
-weighted.models <- with(dt_match,
-                        glm(t3_religion_secular ~ t1_religious_change, family = quasibinomial()))
-
-pooled_summary <- summary(pool(weighted.models))
-pooled_summary
-coef_demom_same <- pooled_summary$estimate[1]
-coef_nfd_same <- pooled_summary$estimate[2]
-coef_nfd_became <- pooled_summary$estimate[3]
-coef_nfd_lost <- pooled_summary$estimate[4]
-coef_nfd_became
-
-# interpret
-round( plogis(coef_demom_same), 3) # prob of denom same
-round( plogis(coef_demom_same + coef_nfd_same), 3) # prob of nfd same
-round( plogis(coef_demom_same + coef_nfd_became), 3) # prob of nfd became
-round( plogis(coef_demom_same + coef_nfd_lost), 3) # prob of denom became
-
-
-# summary(pool(weighted.models, conf.int = TRUE,
-#         exponentiate = TRUE))
-
-  mice::pool(weighted.models, conf.int = TRUE, exponentiate = TRUE)
-
-
-df = dt_match
-
-
-table(mf_18$t1_religious_change)
-
-# df = dt_match
-# Y = "t3_religion_secular"
-# X = "t1_test"
-# baseline_vars = baseline_vars
-# treat_0 = 0
-# treat_1 = 1
-# estimand = "ATT"
-# scale = "RR"
-# nsims = 200
-# cores = 8
-# family = quasibinomial()
-weights = TRUE
-
-
+# weighted.models <- with(dt_match_health_use,
+#                         glm(t3_religion_secular ~ t1_religious_change, family = quasibinomial()))
 # 
-# causal_contrast <- function(df, Y, X, baseline_vars = "1", treat_0 = 0, treat_1 = 1,
-#                             estimand = "ATE", scale = "RR", nsims = 200,
-#                             cores = 1, family = binomial(), weights = TRUE) {
-#   
-#   # Load required packages
-#   require("clarify")
-#   require("rlang") # for building dynamic expressions
-#   require("glue") # for easier string manipulation
-#   
-#   # Fit models using the complete datasets (all imputations)
-#   fits <-  lapply(complete(df, "all"), function(d) {
-#     # Set weights variable based on the value of 'weights' argument
-#     weight_var <- if (weights) d$weights else NULL
-#     
-#     glm(
-#       as.formula(paste(
-#         paste(Y, "~", X , "*", "("),
-#         paste(baseline_vars, collapse = "+"),
-#         paste(")")
-#       )),
-#       weights = weight_var,
-#       family = family,
-#       data = d
-#     )
-#   })
-#   
-#   # A `clarify_misim` object
-#   sim.imp <- misim(fits, n = nsims)
-#   
-#   # Build dynamic expression for subsetting
-#   subset_expr <- rlang::expr(!!rlang::sym(X) == !!treat_1)
-#   
-#   # Compute the Average Marginal Effects
-#   if (estimand == "ATT") {
-#     sim_estimand <- sim_ame(sim.imp,
-#                             var = X,
-#                             subset = eval(subset_expr),
-#                             cl = cores,
-#                             verbose = FALSE)
-#   } else { # For ATE
-#     sim_estimand <- sim_ame(sim.imp,
-#                             var = X,
-#                             cl = cores,
-#                             verbose = FALSE)
-#   }
-#   
-#   # Convert sim_estimand to a data frame
-#   sim_estimand_df <- as.data.frame(sim_estimand)
-#   
-#   # Transform the results based on the specified scale
-#   if (scale == "RR") {
-#     sim_estimand_df$RR <- sim_estimand_df[[paste0("E[Y(", treat_1, ")]")]] / sim_estimand_df[[paste0("E[Y(", treat_0, ")]")]]
-#   } else { # For RD
-#     sim_estimand_df$RD <- sim_estimand_df[[paste0("E[Y(", treat_1, ")]")]] - sim_estimand_df[[paste0("E[Y(", treat_0, ")]")]]
-#   }
-#   
-#   # Calculate the desired summary statistics
-#   out <- t(sapply(sim_estimand_df, function(x) {
-#     c(Estimate = round(mean(x), 4), `2.5 %` = round(quantile(x, 0.025), 4), `97.5 %` = round(quantile(x, 0.975), 4))
-#   }))
-#   
-#   # Set the row names of the output to match the desired format
-#   rownames(out) <- colnames(sim_estimand_df)
-#   
-#   # Rename the column names to avoid duplicates
-#   colnames(out) <- c("Estimate", "2.5 %", "97.5 %")
-#   
-#   return(out)
-# }
+# pooled_summary <- summary(pool(weighted.models))
+# pooled_summary
+# coef_demom_same <- pooled_summary$estimate[1]
+# coef_nfd_same <- pooled_summary$estimate[2]
+# coef_nfd_became <- pooled_summary$estimate[3]
+# coef_nfd_lost <- pooled_summary$estimate[4]
+# coef_nfd_became
+# 
+# # interpret
+# round( plogis(coef_demom_same), 3) # prob of denom same
+# round( plogis(coef_demom_same + coef_nfd_same), 3) # prob of nfd same
+# round( plogis(coef_demom_same + coef_nfd_became), 3) # prob of nfd became
+# round( plogis(coef_demom_same + coef_nfd_lost), 3) # prob of denom became
 
-mod_compare_sames <- causal_contrast(
-  df = dt_match,
+weighted.models <- with(dt_match_health_use,
+                        glm(t2_alcohol_frequency_z ~ t1_perfectionism_high, family = gaussian))
+
+
+summary(weighted.models)
+
+baseline_vars_health
+
+test <- causal_contrast( df = dt_match_health_use,  # note change
+  Y = "t2_alcohol_frequency_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  nsims = 100,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE
+)
+
+
+
+mod_health_alcohol_frequency  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_alcohol_frequency_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 100,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "alcohol_frequency_z"
+)
+
+mod_health_alcohol_frequency
+# save model
+saveRDS(mod_health_alcohol_frequency, here::here(push_mods, "mod_health_alcohol_frequency"))
+
+
+
+mod_health_smoker  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_smoker",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RR",
+  type = "RR",
+  nsims = 10,
+  cores = cores,
+  delta = 1,
+  sd = 1,
+  family = quasibinomial(),
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "alcohol_frequency_z"
+)
+
+
+mod_health_alcohol_frequency
+mod_health_smoker
+
+
+mod_alcohol_frequency <- causal_contrast(
+  df = dt_match_health_use,
   Y = "t3_religion_secular",
   X = "t1_religious_change",
   # X = "t1_test",
-  baseline_vars = baseline_vars,
+  baseline_vars = baseline_vars_health,
   treat_1 = "nfd_same",
   treat_0 = "denom_same",
   # treat_1 = 1,
@@ -1996,7 +2283,10 @@ Who are the NFDs anyway?[@sibley2012]
 
 ## Method
 
+
+
 ### Questions related to religion are as follows
+
 
 #### Belief in God
 
