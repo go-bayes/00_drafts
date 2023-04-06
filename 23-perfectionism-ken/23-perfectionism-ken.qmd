@@ -118,6 +118,7 @@ push_mods <-
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
+
 # for use
 #dat<- data.frame(dat)
 
@@ -264,7 +265,7 @@ levels(dat$perfectionism_quartile)
 # Perc.Gend.Discrim.T10	Feel that I am often discriminated against because of my gender.
 # Perc.Religious.Discrim.T10	I feel that I am often discriminated against because of my religious/spiritual beliefs.
 
-#dat$religious_atts
+#dat$religious_attack
 
 
 dat_long <- dat |> 
@@ -543,6 +544,7 @@ outcome_vars_embodied = c(
 
 rm(outcome_vars_social)
 
+# nzsei
 outcome_vars_practical = c(
     "bodysat", ## Am satisfied with the appearance, size and shape of my body.
     "vengeful_rumin",# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
@@ -599,6 +601,7 @@ prep_health <- create_wide_data(dat_long,
   exposure_var = exposure_var,
   outcome_vars = outcome_vars_health)
 
+head(prep_health)
 str(prep_health)
 nrow(prep_health)
 
@@ -776,7 +779,7 @@ outcome_vars_health
 
 ml_health<- mc_v %>%
   dplyr::mutate(id = as.factor(rep(1:n_id, 11))) |> # needed 
-  mutate( t0_eth_cat = as.factor(t0_eth_cat),
+  mutate(t0_eth_cat = as.factor(t0_eth_cat),
          t0_rural_gch2018 = as.factor(t0_rural_gch2018),
          t0_smoker = as.factor(t0_smoker),
          t1_perfectionism_high = as.factor(t1_perfectionism_high),
@@ -1491,7 +1494,6 @@ saveRDS(mf_social, here::here(push_mods, "mf_social"))
 #| label: models heath
 #| eval: false
 
-
 ml_health <- readRDS(here::here(push_mods, "ml_health"))
 
 # longform data if necessary
@@ -1508,7 +1510,7 @@ X <- "t1_perfectionism_high"
 # baselin vars ---------------------------------------------------------
 
 baseline_vars_health = mf_health |> 
-  dplyr::select(starts_with("t0")) |> colnames()
+  dplyr::select(starts_with("t0"), -t0_perfectionism_z, -t0_sfhealth_z) |> colnames()
 
 baseline_vars_health
 
@@ -1518,23 +1520,27 @@ is.mids(ml_health)
 
 dt_match_health <- match_mi(data = ml_health, X = "t1_perfectionism_high", baseline_vars = baseline_vars_health, estimand = "ATE",  method = "ebal", sample_weights = "sample_weights")
 
-
+saveRDS(dt_match_health, here::here(push_mods, "dt_match_health"))
 
 sum <- summary(dt_match_health)
 sum
-
-dt_match_trim_health <- WeightIt::trim(dt_match_health, at = .95)
-
-
-sum <- summary(dt_match_trim_health)
-sum
 plot(sum)
-bal.tab(dt_match)
-dt_match
+bal.tab(dt_match_health)
+
+dt_match_trim_health <- WeightIt::trim(dt_match_health, at = .99)
+sum_trim <- summary(dt_match_trim_health)
+sum_trim
+
+bal.tab(dt_match_trim_health)
+
+love.plot(dt_match_trim_health, binary = "std", thresholds = c(m = .1))
+love.plot(dt_match_health, binary = "std", thresholds = c(m = .1))
+
+dev.off()
 
 
 # settings 
-dt_match_health_use = dt_match_trim_health # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+dt_match_health_use = dt_match_health # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
 
 
 
@@ -1542,7 +1548,7 @@ dt_match_health_use = dt_match_trim_health # matched dataset from propensity sco
 nsims <- 200
 
 # cores
-cl = 10
+cl =  parallel::detectCores () 
 
 
 # x variable 
@@ -1558,49 +1564,7 @@ cores
 
 # outcomes
 
-
-
-# weighted.models <- with(dt_match_health_use,
-#                         glm(t3_religion_secular ~ t1_religious_change, family = quasibinomial()))
-# 
-# pooled_summary <- summary(pool(weighted.models))
-# pooled_summary
-# coef_demom_same <- pooled_summary$estimate[1]
-# coef_nfd_same <- pooled_summary$estimate[2]
-# coef_nfd_became <- pooled_summary$estimate[3]
-# coef_nfd_lost <- pooled_summary$estimate[4]
-# coef_nfd_became
-# 
-# # interpret
-# round( plogis(coef_demom_same), 3) # prob of denom same
-# round( plogis(coef_demom_same + coef_nfd_same), 3) # prob of nfd same
-# round( plogis(coef_demom_same + coef_nfd_became), 3) # prob of nfd became
-# round( plogis(coef_demom_same + coef_nfd_lost), 3) # prob of denom became
-
-weighted.models <- with(dt_match_health_use,
-                        glm(t2_alcohol_frequency_z ~ t1_perfectionism_high, family = gaussian))
-
-
-summary(weighted.models)
-
-baseline_vars_health
-
-test <- causal_contrast( df = dt_match_health_use,  # note change
-  Y = "t2_alcohol_frequency_z",
-  X = "t1_perfectionism_high",
-  baseline_vars = baseline_vars_health,
-  treat_1 = 1,
-  treat_0 = 0,
-  estimand = "ATE",
-  scale = "RD",
-  nsims = 100,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE
-)
-
+outcome_vars_health
 
 
 mod_health_alcohol_frequency  <- gcomp_sim(
@@ -1613,7 +1577,7 @@ mod_health_alcohol_frequency  <- gcomp_sim(
   estimand = "ATE",
   scale = "RD",
   type = "RD",
-  nsims = 100,
+  nsims = 200,
   cores = cores,
   family = gaussian,
   weights = TRUE,
@@ -1628,6 +1592,218 @@ saveRDS(mod_health_alcohol_frequency, here::here(push_mods, "mod_health_alcohol_
 
 
 
+mod_health_alcohol_intensity  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_alcohol_intensity_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "alcohol_intensity_z"
+)
+
+mod_health_alcohol_intensity
+# save model
+saveRDS(mod_health_alcohol_intensity, here::here(push_mods, "mod_health_alcohol_intensity"))
+
+
+mod_health_hlth_bmi  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_hlth_bmi_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "hlth_bmi_z"
+)
+
+mod_health_hlth_bmi
+# save model
+saveRDS(mod_health_hlth_bmi, here::here(push_mods, "mod_health_hlth_bmi"))
+
+
+mod_health_hours_exercise  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_hours_exercise_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "hours_exercise_log_z"
+)
+
+mod_health_hours_exercise
+# save model
+saveRDS(mod_health_hours_exercise, here::here(push_mods, "mod_health_hours_exercise"))
+
+# reduction of an hour
+# exp(-.0199)
+# exp(.0151)
+
+
+mod_health_sfhealth_your_health  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_sfhealth_your_health_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "sfhealth_your_health_z"
+)
+
+mod_health_sfhealth_your_health
+
+
+# save model
+saveRDS(mod_health_sfhealth_your_health, here::here(push_mods, "mod_health_sfhealth_your_health"))
+mod_health_sfhealth_your_health
+
+mod_health_sfhealth_get_sick_easier  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_sfhealth_get_sick_easier_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "sfhealth_get_sick_easier_z (reversed)"
+)
+
+mod_health_sfhealth_get_sick_easier
+
+
+# save model
+saveRDS(mod_health_sfhealth_get_sick_easier, here::here(push_mods, "mod_health_sfhealth_get_sick_easier"))
+
+
+
+mod_health_sfhealth_expect_worse_health  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_sfhealth_expect_worse_health_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "sfhealth_expect_worse_health_z"
+)
+
+mod_health_sfhealth_expect_worse_health
+
+
+# save model
+saveRDS(mod_health_sfhealth_expect_worse_health, here::here(push_mods, "mod_health_sfhealth_expect_worse_health"))
+
+
+
+
+mod_health_sfhealth_comp  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_sfhealth_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "sfhealth_z (composite)"
+)
+
+mod_health_sfhealth_comp
+
+# save model
+saveRDS(mod_health_sfhealth_comp, here::here(push_mods, "mod_health_sfhealth_comp"))
+
+
+
+
+## 
+mod_health_hlth_sleep_hours  <- gcomp_sim(
+  df = dt_match_health_use,  # note change
+  Y = "t2_hlth_sleep_hours_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_health,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "hlth_sleep_hours"
+)
+
+mod_health_hlth_sleep_hours
+# save model
+saveRDS(mod_health_hlth_sleep_hours, here::here(push_mods, "mod_health_hlth_sleep_hours"))
+
+
+
+## Risk Ratio
+
 mod_health_smoker  <- gcomp_sim(
   df = dt_match_health_use,  # note change
   Y = "t2_smoker",
@@ -1638,7 +1814,7 @@ mod_health_smoker  <- gcomp_sim(
   estimand = "ATE",
   scale = "RR",
   type = "RR",
-  nsims = 10,
+  nsims = 200,
   cores = cores,
   delta = 1,
   sd = 1,
@@ -1646,336 +1822,996 @@ mod_health_smoker  <- gcomp_sim(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "alcohol_frequency_z"
+  new_name = "smoker"
 )
 
 
-mod_health_alcohol_frequency
 mod_health_smoker
 
-
-mod_alcohol_frequency <- causal_contrast(
-  df = dt_match_health_use,
-  Y = "t3_religion_secular",
-  X = "t1_religious_change",
-  # X = "t1_test",
-  baseline_vars = baseline_vars_health,
-  treat_1 = "nfd_same",
-  treat_0 = "denom_same",
-  # treat_1 = 1,
-  estimand = "ATE",
-  scale = "RR",
-  nsims = 1000,
-  cores = cores,
-  family = quasibinomial(),
-  weights = TRUE
-)
-
-# view
-mod_compare_sames
-
-# save
-saveRDS(mod_compare_sames, here::here(push_mods, "mod_compare_sames"))
-mod_compare_sames <- readRDS( here::here(push_mods, "mod_compare_sames"))
+# save model
+saveRDS(mod_health_smoker, here::here(push_mods, "mod_health_smoker"))
 
 
-# model comparing the sames
-mod_compare_sames <- causal_contrast(
-  df = dt_match,
-  Y = "t3_religion_secular",
-  X = "t1_religious_change",
-  # X = "t1_test",
-  baseline_vars = baseline_vars,
-  treat_1 = "nfd_same",
-  treat_0 = "denom_same",
-  # treat_1 = 1,
-  estimand = "ATE",
-  scale = "RR",
-  nsims = 200,
-  cores = cores,
-  family = quasibinomial(),
-  weights = TRUE
-)
+# needs work
+# interpret_table(mod_health_hlth_sleep_hours, estimand = "hours sleep", causal_scale = "risk_difference")
 
+## combo-table
 
-# compare the changers
-
-mod_compare_changes <- causal_contrast(
-  df = dt_match,
-  Y = "t3_religion_secular",
-  X = "t1_religious_change",
-  # X = "t1_test",
-  baseline_vars = baseline_vars,
-  treat_1 = "nfd_became",
-  treat_0 = "nfd_lost",
-  # treat_1 = 1,
-  estimand = "ATE",
-  scale = "RR",
-  nsims = 1000,
-  cores = 8,
-  family = quasibinomial(),
-  weights = TRUE
-)
-
-saveRDS(mod_compare_changes, here::here(push_mods, "mod_compare_changes"))
-
-mod_compare_changes <- readRDS(here::here(push_mods, "mod_compare_changes"))
-
-mod_compare_changes |> 
-    kbl(format = "markdown") 
-
-t_1<- tab_ate(mod_compare_changes, new_name = "same", type = "RR")
-
-t_1
-t_2 <- tab_ate(mod_compare_changes, new_name = "changed", type = "RR")
-t_2 
-
-t_1
-t_2
-
-tab_rb <-
+tab_health <-
   rbind(
-    t_1,
-    t_2
+mod_health_alcohol_frequency,
+mod_health_alcohol_intensity,
+mod_health_hlth_bmi,
+mod_health_hours_exercise,
+mod_health_sfhealth_your_health,
+mod_health_sfhealth_get_sick_easier,
+mod_health_sfhealth_expect_worse_health,
+mod_health_sfhealth_comp,
+mod_health_hlth_sleep_hours
   )
 
-tab_rb
+tab_health
 
 #tab_cont_df <- as.data.frame(tab_cont)
 
 
 
-group_tab(tab_rb, type = "RR")
+group_tab_health <- group_tab(tab_health, type = "RD")
+
+group_tab_health
+
+dev.off()
+
+group_plot_ate_health <- group_plot_ate(group_tab_health,    
+                           type = "RD", 
+                           title = "ATE of Hight Perfectionism Discrepency", 
+                           subtitle = "Health Outcomes", 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           x_offset = -.5,
+                           x_lim_lo = -.5,
+                           x_lim_hi = 0.1)  
+group_plot_ate_health
 
 
-
-
-# test
-
-mod_test <- gcomp_sim(
-  df = ml_18,  # note change
-  Y = "t3_religion_secular",
-  X = "t1_religious_change",
-  # X = "t1_test",
-  baseline_vars = baseline_vars,
-  treat_1 = "nfd_same",
-  treat_0 = "denom_same",
-  # treat_1 = 1,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 50,
-  cores = cores,
-  family = quasibinomial(),
-  weights = FALSE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "TEST YET"
+ggsave(
+  group_plot_ate_health,
+  path = here::here(here::here(push_mods, "group_plot_ate_health")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "group_plot_ate_health.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
 )
 
-mod_test 
-
-#tab_ate(test_again, new_name = "test_function")
-
-
-#ignore results, just testing function
-
-treat_1 = 1
-treat_0 = 0
-df = ml_18
-Y = "t3_religion_secular"
-X = "t1_religious_change_ignore_test_z"
- baseline_vars = baseline_vars
-scale = "RD"
-weights = FALSE
-family= quasibinomial()
-nsims = 100
-cores = parallel::detectCores ()
-
-# note sorking
-
-mod_test_only_for_code <- causal_contrast(
-  df = ml_18,
-  Y = "t3_religion_secular",
-  X = "t1_religious_change_ignore_test_z",
-  # X = "t1_test",
-  baseline_vars = baseline_vars,
-  treat_1 = 1,
-  treat_0 = 0,
-  # treat_1 = 1,
-  estimand = "ATE",  # must be ATE for continous treatment
-  scale = "RD",
-  nsims = 50,
-  cores = 10,
-  family = quasibinomial(),
-  weights = TRUE,
-  continuous_X = TRUE,
-  splines = TRUE
-)
-
-mod_test_only_for_code
-
-rm(mod_test_only_for_code)
-
-tab_ate(mod_test_only_for_code, new_name = "work", scale = "RD")
-# rownames(mod_test_only_for_code)<- "RD"
-# mod_test_only_for_code
-
-
-test_you <- gcomp_sim(
-  df = dt_match,  # note change
-  Y = "t3_religion_secular",
-  X = "t1_religious_change",
-  # X = "t1_test",
-  baseline_vars = baseline_vars,
-  treat_1 = "nfd_same",
-  treat_0 = "denom_same",
-  # treat_1 = 1,
-  estimand = "ATE",
-  nsims = 10,
-  cores = 8,
-  type = "RR",
-  scale = "RR",
-  family = quasibinomial(),
-  weights = FALSE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "TEST YET"
-)
-
-test_you
-
-  mod_test_only_for_code
-
-mod_test_only_for_code
-rownames(mod_test_only_for_code) <- "splure"
-mod_test_only_for_code
-tab_ate(mod_test_only_for_code, type = "RD", new_name = "splure")
-
-mod_test_only_for_code2 <- cauxsal_contrast(
-  df = dt_match,
-  Y = "t3_religion_secular",
-  X = "t1_religious_change_ignore_test_z",
-  baseline_vars = baseline_vars,
-  treat_1 = 1,
-  treat_0 = 0,
-  estimand = "ATE",  # must be ATE for continous treatment
-  scale = "RD",
-  nsims = 10,
-  cores = 10,
-  family = quasibinomial(),
-  weights = TRUE,
-  continuous_X = TRUE,
-  splines = TRUE
-)
-
-
-
-test_me <- gcomp_sim(
-  df = dt_match,  # note change
-  Y = "t3_religion_secular",
-  X = "t1_religious_change_ignore_test_z",
-  # X = "t1_test",
-  baseline_vars = baseline_vars,
-  treat_1 = "nfd_same",
-  treat_0 = "denom_same",
-  # treat_1 = 1,
-  estimand = "ATE",
-  scale = "RD",
-  nsims = 10,
-  cores = 8,
-  type = "RD",
-  family = quasibinomial(),
-  weights = FALSE,
-  continuous_X = TRUE,
-  splines = FALSE, 
-  new_name = "testy"
-)
-test_me
-
-mod_test_only_for_code2
-
-
-
-
-### ASIDE 0
-### ASIDE 
-
-baseline_vars
-
-min = 0
-max =  2
-
-# set full range of X
-x
-
-table()
-
-
-# # range for some graphs
-# minmax <- paste(c(x), sep = ",")
-# minmax
-
-
-# range  of data
-x = min:max
-
-# baseline condition
-r = 0
-
-# focal contrast for X
-f = 1
-
-# number of imputed datasets
-m = 10
-
-# need to correctly subset the models
-p = c(r, f) #
-
-cvars = baseline_vars
-main = "title"
-
-X = "t1_religious_change_ignore_test_z"
-
-# allows splines
-test_again <- gcomp_delta(df, X, Y, baseline_vars, family, m = 10, min = -1, max = 2, r = 0, f = 1, splines = FALSE, delta = 1, sd = 1, new_name = "test_take_2")
-
-test_again
-
-
-test_again2 <- test_again
-
-# works!
-tab_testagain2 <-
-  rbind(
-    test_again,
-    test_again2
-  )
-
-
-tab_rb <-
-  rbind(
-    t_1,
-    t_2
-  )
-
-tab_rb
-
-#tab_cont_df <- as.data.frame(tab_cont)
-
-
-
-group_tab(tab_rb, type = "RR")
-
-
-colnames(tab_cont_df) <- c("E[Y(1)]/E[Y(0)]", "2.5 %", "97.5 %")
-
-tab_cont_df_grouped <- group_tab(tab_cont_df, type = "RR")
-
-
+dev.off()
 ```
 
 
+
+```{r}
+#| label: models embodied
+#| eval: false
+
+
+ml_embodied <- readRDS(here::here(push_mods, "ml_embodied"))
+
+# longform data if necessary
+mf_embodied <- readRDS(here::here(push_mods, "mf_embodied"))
+
+colnames(mf_embodied)
+
+mf_embodied$t1_perfectionism_high
+
+# Set exposure 
+X <- "t1_perfectionism_high"
+
+
+# baselin vars ---------------------------------------------------------
+
+baseline_vars_embodied = mf_embodied |> 
+  dplyr::select(starts_with("t0"), -t0_perfectionism_z, 
+                -t0_kessler_6_z) |> colnames()
+
+
+options(scipen = 999)
+baseline_vars_embodied
+
+dt_match_embodied <- match_mi(data = ml_embodied, X = "t1_perfectionism_high", baseline_vars = baseline_vars_embodied , estimand = "ATE",  method = "ebal", sample_weights = "sample_weights")
+
+saveRDS(dt_match_embodied , here::here(push_mods, "dt_match_embodied"))
+
+sum <- summary(dt_match_embodied)
+sum
+plot(sum)
+bal.tab(dt_match_embodied)
+
+dt_match_trim_embodied <- WeightIt::trim(dt_match_embodied, at = .99)
+sum_trim <- summary(dt_match_trim_embodied)
+sum_trim
+
+bal.tab(dt_match_trim_embodied)
+
+love.plot(dt_match_trim_embodied, binary = "std", thresholds = c(m = .1))
+love.plot(dt_match_embodied, binary = "std", thresholds = c(m = .1))
+
+dev.off()
+
+
+# settings 
+dt_match_embodied_use = dt_match_embodied # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+
+
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl =  parallel::detectCores () 
+
+X = "t1_perfectionism_high"
+
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+# outcomes
+
+outcome_vars_embodied
+# 1] "hlth_fatigue"      "rumination"        "kessler_depressed"
+# [4] "kessler_effort"    "kessler_hopeless"  "kessler_nervous"  
+# [7] "kessler_restless"  "kessler_worthless"
+
+# add composite t2_kessler_6
+
+
+mod_embodied_hlth_fatigue  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_hlth_fatigue_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "hlth_fatigue_z"
+)
+
+mod_embodied_hlth_fatigue
+# save model
+saveRDS(mod_embodied_hlth_fatigue, here::here(push_mods, "mod_embodied_hlth_fatigue"))
+
+# rumination
+mod_embodied_rumination  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_rumination_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "rumination_z"
+)
+
+mod_embodied_rumination
+# save model
+saveRDS(mod_embodied_rumination, here::here(push_mods, "mod_embodied_rumination"))
+
+## kessler_depressed
+mod_embodied_kessler_depressed  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_kessler_depressed_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_depressed_z"
+)
+
+mod_embodied_kessler_depressed
+# save model
+saveRDS(mod_embodied_kessler_depressed, here::here(push_mods, "mod_embodied_kessler_depressed"))
+
+
+
+## kessler_effort
+mod_embodied_kessler_effort  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_kessler_effort_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_effort_z"
+)
+
+mod_embodied_kessler_effort
+# save model
+saveRDS(mod_embodied_kessler_effort, here::here(push_mods, "mod_embodied_kessler_effort"))
+
+
+## kessler_hopeless
+mod_embodied_kessler_hopeless  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_kessler_hopeless_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_hopeless_z"
+)
+
+mod_embodied_kessler_hopeless
+# save model
+saveRDS(mod_embodied_kessler_hopeless, here::here(push_mods, "mod_embodied_kessler_hopeless"))
+
+
+## kessler_nervous
+mod_embodied_kessler_nervous  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_kessler_nervous_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_nervous_z"
+)
+
+mod_embodied_kessler_nervous
+# save model
+saveRDS(mod_embodied_kessler_nervous, here::here(push_mods, "mod_embodied_kessler_nervous"))
+
+
+## kessler_restless
+mod_embodied_kessler_restless  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_kessler_restless_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_restless_z"
+)
+
+mod_embodied_kessler_restless
+# save model
+saveRDS(mod_embodied_kessler_restless, here::here(push_mods, "mod_embodied_kessler_restless"))
+
+
+## kessler_worthless
+mod_embodied_kessler_worthless  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_kessler_worthless_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_worthless_z"
+)
+
+mod_embodied_kessler_worthless
+# save model
+saveRDS(mod_embodied_kessler_worthless, here::here(push_mods, "mod_embodied_kessler_worthless"))
+
+
+
+## t2_kessler_6
+mod_embodied_kessler_6  <- gcomp_sim(
+  df = dt_match_embodied_use,  # note change
+  Y = "t2_kessler_6_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_6 (composite)"
+)
+
+mod_embodied_kessler_6
+# save model
+saveRDS(mod_embodied_kessler_6, here::here(push_mods, "mod_embodied_kessler_6"))
+
+
+
+## combo-table
+
+tab_embodied <-
+  rbind(
+mod_embodied_hlth_fatigue,
+mod_embodied_rumination,
+mod_embodied_kessler_depressed,
+mod_embodied_kessler_effort,
+mod_embodied_kessler_hopeless,
+mod_embodied_kessler_nervous,
+mod_embodied_kessler_restless,
+mod_embodied_kessler_worthless,
+mod_embodied_kessler_6
+  )
+
+tab_embodied
+
+
+group_tab_embodied <- group_tab(tab_embodied, type = "RD")
+
+group_tab_embodied
+
+
+
+group_plot_ate_embodied <- group_plot_ate(
+  group_tab_embodied,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency",
+  subtitle = "Embodied Outcomes",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.5,
+  x_lim_lo = -.5,
+  x_lim_hi = .5
+)  
+
+group_plot_ate_embodied
+
+
+dev.off()
+ggsave(
+  group_plot_ate_embodied,
+  path = here::here(here::here(push_mods, "group_plot_ate_embodied")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "ggroup_plot_ate_embodied.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+dev.off()
+```
+
+
+```{r}
+#| label: models pratical
+#| eval: false
+
+
+ml_practical <- readRDS(here::here(push_mods, "ml_practical"))
+
+# longform data if necessary
+mf_practical <- readRDS(here::here(push_mods, "mf_practical"))
+
+colnames(mf_practical)
+
+mf_embodied$t1_perfectionism_high
+
+# Set exposure 
+X <- "t1_perfectionism_high"
+
+
+# baselin vars ---------------------------------------------------------
+baseline_vars_practical = mf_practical |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_perfectionism_z,
+    -t0_selfesteem_z,
+    -t0_emotion_regulation_z,
+    -t0_self_control_z,
+    -t0_powerdependence_z,
+  ) |> colnames()
+
+options(scipen = 999)
+baseline_vars_practical
+
+dt_match_practical <- match_mi(data = ml_practical, X = "t1_perfectionism_high", baseline_vars = baseline_vars_practical , estimand = "ATE",  method = "ebal", sample_weights = "sample_weights")
+
+saveRDS(dt_match_practical , here::here(push_mods, "dt_match_practical"))
+
+sum <- summary(dt_match_practical)
+sum
+plot(sum)
+bal.tab(dt_match_embodied)
+
+dt_match_trim_practical <- WeightIt::trim(dt_match_practical, at = .99)
+sum_trim <- summary(dt_match_trim_practical)
+sum_trim
+
+bal.tab(dt_match_trim_practical)
+
+love.plot(dt_match_trim_practical, binary = "std", thresholds = c(m = .1))
+love.plot(dt_match_practical, binary = "std", thresholds = c(m = .1))
+
+dev.off()
+
+
+# settings 
+dt_match_practical_use = dt_match_trim_practical # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+
+
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl =  parallel::detectCores () 
+
+X = "t1_perfectionism_high"
+
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+# outcomes
+
+outcome_vars_practical
+                                
+
+mod_practical_bodysat  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_bodysat_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "bodysat_z"
+)
+
+mod_practical_bodysat
+
+# save model
+saveRDS(mod_practical_bodysat, here::here(push_mods, "mod_practical_bodysat"))
+
+
+mod_practical_vengeful_rumin  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_vengeful_rumin_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "vengeful_rumin_z"
+)
+
+mod_practical_vengeful_rumin
+
+# save model
+saveRDS(mod_practical_vengeful_rumin, here::here(push_mods, "mod_practical_vengeful_rumin"))
+
+
+
+mod_practical_power_self_nocontrol  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_power_self_nocontrol_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "power_self_nocontrol_z"
+)
+
+mod_practical_power_self_nocontrol
+
+# save model
+saveRDS(mod_practical_power_self_nocontrol, here::here(push_mods, "mod_practical_power_self_nocontrol"))
+
+
+mod_practical_power_others_control  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_power_others_control_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "power_others_control_z"
+)
+
+mod_practical_power_others_control
+
+# save model
+saveRDS(mod_practical_power_others_control, here::here(push_mods, "mod_practical_power_others_control"))
+
+
+mod_practical_powerdependence  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_powerdependence_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "powerdependence_z"
+)
+
+mod_practical_powerdependence
+
+# save model
+saveRDS(mod_practical_powerdependence, here::here(push_mods, "mod_practical_powerdependence"))
+
+
+
+mod_practical_selfesteem_satself  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_selfesteem_satself_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "selfesteem_satself_z"
+)
+
+mod_practical_selfesteem_satself
+
+
+# save model
+saveRDS(mod_practical_selfesteem_satself, here::here(push_mods, "mod_practical_selfesteem_satself"))
+
+mod_practical_selfesteem_postiveself  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_selfesteem_postiveself_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "selfesteem_postiveself_z"
+)
+
+mod_practical_selfesteem_postiveself
+
+# save model
+saveRDS(mod_practical_selfesteem_postiveself, here::here(push_mods, "mod_practical_selfesteem_postiveself"))
+
+
+mod_practical_selfesteem_rfailure  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_selfesteem_rfailure_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "selfesteem_failure_z (reversed)"
+)
+
+mod_practical_selfesteem_rfailure
+
+# save model
+saveRDS(mod_practical_selfesteem_rfailure, here::here(push_mods, "mod_practical_selfesteem_rfailure"))
+
+
+mod_practical_selfesteem  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_selfesteem_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "selfesteem_z"
+)
+
+mod_practical_selfesteem
+
+# save model
+saveRDS(mod_practical_selfesteem, here::here(push_mods, "mod_practical_selfesteem"))
+
+
+mod_practical_self_control_have_lots  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_self_control_have_lots_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "self_control_have_lots_z"
+)
+
+mod_practical_self_control_have_lots
+
+# save model
+saveRDS(mod_practical_self_control_have_lots, here::here(push_mods, "mod_practical_self_control_have_lots"))
+
+mod_practical_self_control_wish_more_r  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_self_control_wish_more_r_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "self_control_wish_more_z (reversed)"
+)
+
+mod_practical_self_control_wish_more_r
+
+# save model
+saveRDS(mod_practical_self_control_wish_more_r, here::here(push_mods, "mod_practical_self_control_wish_more_r"))
+
+
+mod_practical_self_control <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_self_control_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "self_control_z"
+)
+
+mod_practical_self_control
+
+# save model
+saveRDS(mod_practical_self_control, here::here(push_mods, "mod_practical_self_control"))
+
+
+
+mod_practical_emotion_regulation_out_control <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_emotion_regulation_out_control_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "emotion_regulation_out_control_z"
+)
+
+mod_practical_emotion_regulation_out_control
+
+# save model
+saveRDS(mod_practical_emotion_regulation_out_control, here::here(push_mods, "mod_practical_emotion_regulation_out_control"))
+
+mod_practical_emotion_regulation_hide_neg_emotions <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_emotion_regulation_hide_neg_emotions_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "emotion_regulation_hide_neg_emotions_z"
+)
+
+mod_practical_emotion_regulation_hide_neg_emotions
+
+# save model
+saveRDS(mod_practical_emotion_regulation_hide_neg_emotions, here::here(push_mods, "mod_practical_emotion_regulation_hide_neg_emotions"))
+
+
+mod_practical_emotion_regulation_change_thinking_to_calm <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_emotion_regulation_change_thinking_to_calm_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "emotion_regulation_change_thinking_to_calm_z"
+)
+
+mod_practical_emotion_regulation_change_thinking_to_calm
+
+# save model
+saveRDS(mod_practical_emotion_regulation_change_thinking_to_calm, here::here(push_mods, "mod_practical_emotion_regulation_change_thinking_to_calm"))
+
+
+mod_practical_emotion_regulation <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_emotion_regulation_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "emotion_regulation_z"
+)
+
+mod_practical_emotion_regulation
+# save model
+saveRDS(mod_practical_emotion_regulation, here::here(push_mods, "mod_practical_emotion_regulation"))
+
+
+
+mod_practical_emp_work_life_balance <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_emp_work_life_balance_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "emp_work_life_balance (no baseline)"
+)
+
+mod_practical_emp_work_life_balance
+# save model
+saveRDS(mod_practical_emp_work_life_balance, here::here(push_mods, "mod_practical_emp_work_life_balance"))
+
+## combo-table
+
+
+
+tab_practical <-
+  rbind(
+mod_practical_bodysat,
+  mod_practical_vengeful_rumin,
+  mod_practical_power_self_nocontrol,
+  mod_practical_power_others_control,
+  mod_practical_powerdependence,
+  mod_practical_selfesteem_satself,
+  mod_practical_selfesteem_postiveself,
+  mod_practical_selfesteem_rfailure,
+  mod_practical_selfesteem,
+  mod_practical_self_control_have_lots,
+  mod_practical_self_control_wish_more_r,
+  mod_practical_self_control,
+  mod_practical_emotion_regulation_out_control,
+  mod_practical_emotion_regulation_hide_neg_emotions,
+  mod_practical_emotion_regulation_change_thinking_to_calm,
+  mod_practical_emotion_regulation,
+  mod_practical_emp_work_life_balance
+  )
+
+tab_practical
+
+
+group_tab_practical <- group_tab(tab_practical, type = "RD")
+
+group_tab_practical
+
+
+
+group_plot_ate_practical <- group_plot_ate(
+  group_tab_practical,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency",
+  subtitle = "Practical Outcomes",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.75,
+  x_lim_lo = -.75,
+  x_lim_hi = .5
+)
+
+group_plot_ate_practical
+
+
+dev.off()
+ggsave(
+  group_plot_ate_practical,
+  path = here::here(here::here(push_mods, "group_plot_ate_practical")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "ggroup_plot_ate_practical.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+dev.off()
+
+```
 
 
 ```{r}
@@ -1989,297 +2825,11 @@ tab_cont_df_grouped <- group_tab(tab_cont_df, type = "RR")
 #| include: false
 #| eval: false
 
-# Compare with transitioning out of NFD
-
-
-baseline_vars = mf_18 |>
-  dplyr::select(-c(.imp,
-                   .id,
-                  # id
-                  # time, if df is long
-                  # weights, if weights are used
-                  )) |> # include?
-  dplyr::select(starts_with("t0_")) |> 
-  dplyr::select(-t0_christian_nfd) |> 
-  dplyr::select(!starts_with("t0_religion_religious")) |> colnames()
-
-X <- "t1_nfd_lost_17"
-# 
-# dt_match_lost_18<- weightthem(
-#   as.formula(paste(as.formula(paste(
-#     paste(X, "~",
-#           paste(baseline_vars, collapse = "+"))
-#   )))),
-#   ml_18,
-#   estimand = "ATT",
-#   stabilize = TRUE,
-#   method = "ebal"
-# )
-
-
-match_mi <- function(X, baselinevars, ml, estimand, method) {
-  require(WeightIt)
-  require(MatchThem)
-  dt_match <- weightthem(
-    as.formula(paste(as.formula(paste(
-      paste(X, "~",
-            paste(baseline_vars, collapse = "+"))
-    )))),
-    ml,
-    estimand = estimand,
-    stabilize = TRUE,
-    method = method
-  )
-  dt_match
-}
-
-
-dt_match_lost_18 <- match_mi(X = "t1_nfd_lost_17", baselinevars = baselinevars, ml = ml_18, estimand = "ATT", method = "ebal")
-
-#saveRDS(dt_match, here::here(push_mods, "dt_match"))
-
-sum <- summary(dt_match_lost_18)
-sum
-plot(sum)
-bal.tab(dt_match_lost_18)
-
-
-# settings 
-df = dt_match_lost_18 # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
-
-#family
-family <- "binomial"
-
-# bootstrap simulations
-nsims <- 1000
-
-# cores
-cl = 8
-
-# x variable 
-X = "t1_nfd_lost_17"
-
-# contrast value 
-delta = 1
-
-X
-
-# outcomes
-
-
-
-lost_nfd <-
-  contrast_rr(
-    df = df,
-    Y = "t2_religion_religious",
-    X = "t1_nfd_lost_17",
-    baseline_vars = baseline_vars,
-    cl = 8,
-    family = "binomial",
-    delta = 1,
-    nsims = 1000
-  ) 
-
-
-tb_lost_p1 <- tab_ate_rr(lost_nfd, "Religious + 1", delta = 1, sd = 1)
-tb_lost_p1
-
-m_t3_religion_religious <- contrast_rr(dt_match, nsims, Y = "t3_religion_religious", X, baseline_vars, cl,family = "quasibinomial", delta) 
-
-tb_m_t3_religion_religious <- tab_ate_rr(m_t3_religion_religious, "Religious + 2", delta = 1, sd = 1)
-tb_m_t3_religion_religious
-
-
-tab_cont <-
-  rbind(
-    tb_m_t2_religion_religious,
-    tb_m_t3_religion_religious
-  )
-
-
-tab_outcomes <- group_tab_ate_rr(tab_cont) 
-tab_outcomes
-tab_outcomes |> select(-Estimate, - estimate_lab) |> kbl(format = "html", digits = 3) 
-
-tab_outcomes %>%
-  dplyr::select(-Estimate, - estimate_lab) |> 
-    kbl() %>%
-  kable_paper("hover", full_width = F)
-
-
-# For the interpretation of tables. 
-interpret_table(tab_outcomes, "risk_ratio", "ATT")
-
-
-
-#function to make plots
-xlab = "Causal RR Scale"
-x_lim_lo = .5
-x_lim_hi= 1.5
-x_offset = -.5
-
-tab_outcomes
-plot <- group_plot_ate_rr(df = tab_outcomes, title = "", subtitle ="", xlab, ylab = "", x_lim_lo= .5, x_lim_hi = 1.5, x_offset = -.5
-) 
-
-plot
-
-df<- tab_outcomes
-
-title = "One and Two-Year Risk of Religious Disaffiliation After Becoming a Christian NFD"
-subtitle = "NZAVS 2018-2022"
-
-df |> kbl(format = "markdown")
-
-
-
-
-gt_plot <- group_plot_ate_rr(df, title, xlab, ylab, subtitle = "NZAVS 2018-2022",
-                              x_offset= 0, 
-                              x_lim_lo = 0, 
-                              x_lim_hi = 1.5)
-
-gt_plot
-
-
-ggsave(
-  gt_plot,
-  path = here::here(here::here("figs", "gt")),
-  width = 8,
-  height = 6,
-  units = "in",
-  filename = "gt_plot.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-group_plot_ate_rr <- function(df, title, subtitle, xlab, ylab,
-                              x_offset= 0, 
-                              x_lim_lo = 0, 
-                              x_lim_hi = 1.5) {
-  # Convert the title string to a symbol
-  title_sym <- sym(title)
-  # create plot 
-  out <-ggplot(
-    data = df,
-    aes(
-      y = reorder(outcome, `E[Y(1)]/E[Y(0)]`),
-      x = `E[Y(1)]/E[Y(0)]`,
-      xmin = `2.5 %`,
-      xmax = `97.5 %`,
-      group = Estimate, 
-      color = Estimate
-    )
-  ) +
-    geom_errorbarh(aes(color = Estimate), height = .3, position = position_dodge(width = 0.3)) + # Add color to geom_errorbarh
-    geom_point(size = 4, position = position_dodge(width = 0.3)) + # Replace geom_col with geom_point
-    geom_vline(xintercept = 1, linetype = "solid") +
-    theme_classic(base_size = 12) +
-    scale_color_manual(values = c("orange", "black", "dodgerblue")) + # Set custom color scale
-    labs(
-      x = "Causal Risk Ratio",
-      y = " ",
-      title = title,
-      subtitle = subtitle
-    ) +
-    geom_text(
-      aes(x = x_offset, label = estimate_lab), # Display only estimate labels
-      size = 4,
-      hjust = 0,
-      fontface = ifelse(df$Estimate == "not reliable", "plain", "bold")
-    ) +
-        coord_cartesian(xlim = c(x_lim_lo, x_lim_hi)) +
-
-    # coord_fixed(clip = "off", 
-    #             xlim = c(x_lim_lo, x_lim_hi)
-    #             ) + 
-    theme(
-      legend.position = "top",
-      legend.direction = "horizontal",
-      plot.title = element_text(face = "bold", size = 12, hjust = 0), # Align title to the left
-      plot.subtitle = element_text(size = 10, hjust = 0) # Align subtitle to the left
-    )
-  # plot
-  out
-}
-
-    # Use coord_fixed instead of coord_cartesian
-    # theme(
-    #   panel.border = element_blank(),
-    #   axis.line = element_blank(),
-    #   panel.background = element_blank(),
-    #   panel.grid.major = element_blank(),
-    #   panel.grid.minor = element_blank(),
-    #   axis.title.x = element_text(size = 12),  # x-axis label font size
-    #   axis.title.y = element_text(size = 12), # y-axis label font size
-    #   plot.title = element_text(face = "bold", size = 16, hjust = 0),  # increase title font size and align it to the left
-    #   plot.subtitle = element_text(size = 14),  # Increase title font size
-    #   axis.text = element_text(size = 12),  # Increase axis text font size
-    #   plot.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt") # Add space to accommodate text outside the plot area
-    # ) + 
-
-
-# group_plot_ate_rr <- function(df, title, subtitle, xlab, ylab, x_offset, x_lim_lo, x_lim_hi) {
-#   # Convert the title string to a symbol
-#   title_sym <- sym(title)
-#   # create plot 
-#   out <-ggplot(
-#     data = df,
-#     aes(
-#       y = reorder(outcome, `E[Y(1)]/E[Y(0)]`),
-#       x = `E[Y(1)]/E[Y(0)]`,
-#       xmin = `2.5 %`,
-#       xmax = `97.5 %`,
-#       fill = Estimate
-#     )
-#   ) + geom_col(position = position_dodge(width = 0.3)) +
-#     geom_errorbarh(height = .3, position = position_dodge(width = 0.3)) +
-#     geom_vline(xintercept = 1, linetype = "solid") +
-#     geom_vline(
-#       xintercept = c(.5, .75, 1.25, 1.5),
-#       linetype = "twodash",
-#       alpha = .5
-#     ) +
-#     theme_classic(base_size = 10) +
-#     scale_fill_manual(values = c("gray", "orange", "dodgerblue")) + # dodgerblue
-#     labs(
-#       x = xlab,
-#       y = ylab,
-#       title = title,
-#       subtitle = subtitle
-#     )+
-#     #labels so that the graph can also be a table
-#     geom_text(
-#       aes(x = x_offset, label = estimate_lab),
-#       size = 4,
-#       hjust = 0,
-#       fontface = ifelse(df$Estimate == "not reliable", "plain", "bold")
-#     ) +
-#     coord_cartesian(xlim = c(x_lim_lo, x_lim_hi)) +
-#     theme(
-#       panel.border = element_blank(),
-#       axis.line = element_blank(),
-#       panel.background = element_blank(),
-#       panel.grid.major = element_blank(),
-#       panel.grid.minor = element_blank(),
-#       axis.title.x = element_text(size = 12),  # x-axis label font size
-#       axis.title.y = element_text(size = 12), # y-axis label font size
-#       plot.title = element_text(face = "bold", size = 16),  # increase title font size
-#       plot.subtitle = element_text(size = 14),  # Increase title font size
-#       axis.text = element_text(size = 12)  # Increase axis text font size
-#     ) + theme(legend.position = "top",  # or "top"
-#               legend.direction = "horizontal")
-#   # plot
-#   out
-# }
-
-
 ```
+
 ## Introduction
 
-Who are the NFDs anyway?[@sibley2012]
+Here we go... [@sibley2012]
 
 ## Method
 
