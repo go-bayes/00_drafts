@@ -451,7 +451,6 @@ ds_18 <- dat_long |>
 
 table(ds_18$perfectionism_high)
 
-dat$self_control_wish_more_r
 
 # check: finds same numbers
 msm::statetable.msm(round(perfectionism, 0), id, data = ds_18) |>
@@ -546,6 +545,7 @@ rm(outcome_vars_social)
 
 # nzsei
 outcome_vars_practical = c(
+    "nzsei13", # objective job success
     "bodysat", ## Am satisfied with the appearance, size and shape of my body.
     "vengeful_rumin",# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
    # "perfectionism",  # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
@@ -1895,7 +1895,6 @@ dev.off()
 #| label: models embodied
 #| eval: false
 
-
 ml_embodied <- readRDS(here::here(push_mods, "ml_embodied"))
 
 # longform data if necessary
@@ -2249,7 +2248,7 @@ dev.off()
 
 
 ```{r}
-#| label: models pratical
+#| label: models practical
 #| eval: false
 
 
@@ -2322,6 +2321,31 @@ cores
 
 outcome_vars_practical
                                 
+
+
+mod_practical_nzsei13  <- gcomp_sim(
+  df = dt_match_practical_use,  # note change
+  Y = "t2_nzsei13_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_practical,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "t2_nzsei13_z"
+)
+
+mod_practical_nzsei13 # no effect on employment
+
+# save model
+saveRDS(mod_practical_nzsei13, here::here(push_mods, "mod_practical_nzsei13"))
 
 mod_practical_bodysat  <- gcomp_sim(
   df = dt_match_practical_use,  # note change
@@ -2753,23 +2777,24 @@ saveRDS(mod_practical_emp_work_life_balance, here::here(push_mods, "mod_practica
 
 tab_practical <-
   rbind(
-mod_practical_bodysat,
-  mod_practical_vengeful_rumin,
-  mod_practical_power_self_nocontrol,
-  mod_practical_power_others_control,
-  mod_practical_powerdependence,
-  mod_practical_selfesteem_satself,
-  mod_practical_selfesteem_postiveself,
-  mod_practical_selfesteem_rfailure,
-  mod_practical_selfesteem,
-  mod_practical_self_control_have_lots,
-  mod_practical_self_control_wish_more_r,
-  mod_practical_self_control,
-  mod_practical_emotion_regulation_out_control,
-  mod_practical_emotion_regulation_hide_neg_emotions,
-  mod_practical_emotion_regulation_change_thinking_to_calm,
-  mod_practical_emotion_regulation,
-  mod_practical_emp_work_life_balance
+    mod_practical_nzsei13,
+    mod_practical_bodysat,
+    mod_practical_vengeful_rumin,
+    mod_practical_power_self_nocontrol,
+    mod_practical_power_others_control,
+    mod_practical_powerdependence,
+    mod_practical_selfesteem_satself,
+    mod_practical_selfesteem_postiveself,
+    mod_practical_selfesteem_rfailure,
+    mod_practical_selfesteem,
+    mod_practical_self_control_have_lots,
+    mod_practical_self_control_wish_more_r,
+    mod_practical_self_control,
+    mod_practical_emotion_regulation_out_control,
+    mod_practical_emotion_regulation_hide_neg_emotions,
+    mod_practical_emotion_regulation_change_thinking_to_calm,
+    mod_practical_emotion_regulation,
+    mod_practical_emp_work_life_balance
   )
 
 tab_practical
@@ -2788,7 +2813,7 @@ group_plot_ate_practical <- group_plot_ate(
   subtitle = "Practical Outcomes",
   xlab = "(sd units)",
   ylab = "test",
-  x_offset = -.75,
+  x_offset = -.8,
   x_lim_lo = -.75,
   x_lim_hi = .5
 )
@@ -2812,6 +2837,458 @@ ggsave(
 dev.off()
 
 ```
+
+
+```{r}
+#| label: models reflective
+#| eval: false
+
+
+ml_reflective <- readRDS(here::here(push_mods, "ml_reflective"))
+
+# longform data if necessary
+mf_reflective <- readRDS(here::here(push_mods, "mf_refective"))
+
+colnames(mf_reflective)
+
+mf_embodied$t1_perfectionism_high
+
+# Set exposure 
+X <- "t1_perfectionism_high"
+
+
+# baselin vars ---------------------------------------------------------
+baseline_vars_reflective = mf_reflective |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_perfectionism_z,
+    -t0_pwi_z,
+    -t0_meaning_z,
+  ) |> colnames()
+
+options(scipen = 999)
+baseline_vars_reflective
+
+dt_match_reflective <- match_mi(data = ml_reflective, X = "t1_perfectionism_high", baseline_vars = baseline_vars_reflective , estimand = "ATE",  method = "ebal", sample_weights = "sample_weights")
+
+saveRDS(dt_match_reflective, here::here(push_mods, "dt_match_refectivel"))
+
+sum <- summary(dt_match_reflective)
+sum
+plot(sum)
+bal.tab(dt_match_reflective)
+
+dt_match_trim_reflective <- WeightIt::trim(dt_match_reflective, at = .99)
+sum_trim <- summary(dt_match_trim_reflective)
+sum_trim
+
+bal.tab(dt_match_trim_reflective)
+
+love.plot(dt_match_trim_reflective, binary = "std", thresholds = c(m = .1))
+love.plot(dt_match_reflective, binary = "std", thresholds = c(m = .1))
+
+dev.off()
+
+
+# settings 
+dt_match_reflective_use = dt_match_reflective # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+
+
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl =  parallel::detectCores () 
+
+X = "t1_perfectionism_high"
+
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+# outcomes
+
+outcome_vars_reflective
+                 
+#  outcome_vars_reflective
+# [1] "gratitude"          "pwi_health"         "pwi_relationships" 
+# [4] "pwi_security"       "pwi_standardliving" "lifesat_satlife"   
+# [7] "lifesat_ideal"      "meaning_purpose"    "meaning_sense"
+
+
+
+# save model
+saveRDS(mod_reflective_meaning, here::here(push_mods, "mod_reflective_meaning"))
+
+
+
+mod_reflective_gratitude  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_gratitude_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "gratitude_z"
+)
+
+mod_reflective_gratitude
+
+# save model
+saveRDS(mod_reflective_gratitude, here::here(push_mods, "mod_reflective_gratitude"))
+
+
+mod_reflective_pwi_health  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_pwi_health_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "pwi_health_z"
+)
+
+mod_reflective_pwi_health
+
+# save model
+saveRDS(mod_reflective_pwi_health, here::here(push_mods, "mod_reflective_pwi_health"))
+
+
+mod_reflective_pwi_relationships  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_pwi_relationships_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "pwi_relationships_z"
+)
+
+mod_reflective_pwi_relationships
+
+# save model
+saveRDS(mod_reflective_pwi_relationships, here::here(push_mods, "mod_reflective_pwi_relationships"))
+
+
+mod_reflective_pwi_security  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_pwi_security_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "pwi_security_z"
+)
+
+mod_reflective_pwi_security
+
+# save model
+saveRDS(mod_reflective_pwi_security, here::here(push_mods, "mod_reflective_pwi_security"))
+
+
+mod_reflective_pwi_standardliving  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_pwi_standardliving_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "pwi_standardliving_z"
+)
+
+mod_reflective_pwi_standardliving
+
+# save model
+saveRDS(mod_reflective_pwi_standardliving, here::here(push_mods, "mod_reflective_pwi_standardliving"))
+
+
+
+mod_reflective_pwi  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_pwi_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "pwi_z"
+)
+
+mod_reflective_pwi
+
+# save model
+saveRDS(mod_reflective_pwi, here::here(push_mods, "mod_reflective_pwi"))
+
+
+# lifesat
+
+mod_reflective_lifesat_satlife  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_lifesat_satlife_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "lifesat_satlife_z"
+)
+
+mod_reflective_lifesat_satlife
+
+# save model
+saveRDS(mod_reflective_lifesat_satlife, here::here(push_mods, "mod_reflective_lifesat_satlife"))
+
+
+mod_reflective_lifesat_ideal  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_lifesat_ideal_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "lifesat_ideal_z"
+)
+
+mod_reflective_lifesat_ideal
+
+# save model
+saveRDS(mod_reflective_lifesat_ideal, here::here(push_mods, "mod_reflective_lifesat_ideal"))
+
+
+## lifesat
+mod_reflective_lifesat  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_pwi_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "lifesat_z"
+)
+
+mod_reflective_lifesat
+
+# save model
+saveRDS(mod_reflective_lifesat, here::here(push_mods, "mod_reflective_lifesat"))
+
+
+# meaning
+
+
+mod_reflective_meaning_purpose  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_meaning_purpose_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "meaning_purpose_z"
+)
+
+mod_reflective_meaning_purpose
+
+# save model
+saveRDS(mod_reflective_meaning_purpose, here::here(push_mods, "mod_reflective_meaning_purpose"))
+
+
+mod_reflective_meaning_sense  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_meaning_sense_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "meaning_sense_z"
+)
+
+mod_reflective_meaning_sense
+
+# save model
+saveRDS(mod_reflective_meaning_sense, here::here(push_mods, "mod_reflective_meaning_sense"))
+
+
+
+
+
+mod_reflective_meaning  <- gcomp_sim(
+  df = dt_match_reflective_use,  # note change
+  Y = "t2_meaning_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_reflective,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "meaning_z"
+)
+
+mod_reflective_meaning
+
+## combo-table
+tab_reflective <- rbind(
+  mod_reflective_gratitude,
+  mod_reflective_pwi_health,
+  mod_reflective_pwi_relationships,
+  mod_reflective_pwi_security,
+  mod_reflective_pwi_standardliving,
+  mod_reflective_pwi,
+  mod_reflective_lifesat_satlife,
+  mod_reflective_lifesat_ideal,
+  mod_reflective_lifesat,
+  mod_reflective_meaning_purpose,
+  mod_reflective_meaning_sense,
+  mod_reflective_meaning
+)
+
+tab_reflective
+
+
+group_tab_reflective <- group_tab(tab_reflective, type = "RD")
+
+group_tab_reflective
+
+
+
+group_plot_ate_reflective <- group_plot_ate(
+  group_tab_reflective,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency",
+  subtitle = "Reflective Outcomes",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.8,
+  x_lim_lo = -.75,
+  x_lim_hi = .5
+)
+
+group_plot_ate_reflective
+
+
+dev.off()
+ggsave(
+  group_plot_ate_reflective,
+  path = here::here(here::here(push_mods, "group_plot_ate_reflective")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "group_plot_ate_reflective.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+dev.off()
+
+```
+
+
+
+
 
 
 ```{r}
