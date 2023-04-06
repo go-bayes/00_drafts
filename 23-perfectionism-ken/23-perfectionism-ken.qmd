@@ -633,7 +633,6 @@ prep_social <- create_wide_data(dat_long,
   outcome_vars = outcome_vars_social)
 
 str(prep_social)
-
 ```
 
 
@@ -647,6 +646,8 @@ str(prep_social)
 # only look at vars at baseline
 dat_18 <- dat_long |> 
   dplyr::filter(wave == 2018)
+
+saveRDS(dat_18, here::here(push_mods, "dat_18"))
 
 # check consistent n's
 colnames(prep_health)
@@ -744,8 +745,28 @@ length(outlist2)
 head(mice_health$loggedEvents, 10)
 
 # data warangling
-
 mc  <- mice::complete(mice_health, "long", inc = T)
+
+# # Calculate the quantile breaks (cut points)
+# quantile_breaks <- quantile(mc$t0_perfectionism, probs = seq(0, 1, 1/4), na.rm = TRUE)
+# 
+# # Create labels based on the cut points in the desired format
+# cut_labels <- paste0(quantile_breaks[-length(quantile_breaks)], "_", quantile_breaks[-1])
+# 
+# cut_labels
+# # Create the ordered factor variable with the new labels
+# mc$t0_perfectionism_quartile <- cut(mc$t0_perfectionism,
+#                                         breaks = quantile_breaks,
+#                                         labels = cut_labels,
+#                                         ordered_result = TRUE,
+#                                         include.lowest = TRUE)
+# 
+# mc$t1_perfectionism_quartile <- cut(mc$t1_perfectionism,
+#                                         breaks = quantile_breaks,
+#                                         labels = cut_labels,
+#                                         ordered_result = TRUE,
+#                                         include.lowest = TRUE)
+
 
 vnames <- rownames(mc)
 
@@ -754,6 +775,7 @@ cnames <- rownames(mc)
 N <- length(vnames)/nrow(prep_health_2only) # (11 datasets)
 
 
+dat_18 <- readRDS(here::here(push_mods, "dat_18"))
 
 # if we need weights
 newdat <- data.frame( rep(dat_18$sample_weights, N))
@@ -836,6 +858,8 @@ saveRDS(ml_health, here::here(push_mods, "ml_health"))
 saveRDS(mf_health, here::here(push_mods, "mf_health"))
 ```
 
+
+
 ```{r}
 #| label: imputations embodied
 #| echo: false
@@ -867,7 +891,7 @@ dev.off()
 mice:::find.collinear(prep_embodied_2only)
 
 
-
+colnames(prep_embodied_2only)
 # prep factors remove for speed
 
 ## impute missing variables
@@ -893,6 +917,30 @@ head(mice_embodied$loggedEvents, 10)
 # data warangling
 
 mc  <- mice::complete(mice_embodied, "long", inc = T)
+
+#
+quantile_breaks <- quantile(mc$t0_perfectionism, probs = seq(0, 1, 1/4), na.rm = TRUE)
+quantile_breaks
+
+# Create labels based on the cut points in the desired format
+cut_labels <- paste0(quantile_breaks[-length(quantile_breaks)], "to", quantile_breaks[-1])
+
+cut_labels 
+
+# Create the ordered factor variable with the new labels
+# set order to FALSE only for PROP score models
+mc$t0_perfectionism_quartile <- cut(mc$t0_perfectionism,
+                                        breaks = quantile_breaks,
+                                        labels = cut_labels,
+                                        ordered_result = TRUE,
+                                        include.lowest = TRUE)
+
+mc$t1_perfectionism_quartile <- cut(mc$t1_perfectionism,
+                                        breaks = quantile_breaks,
+                                        labels = cut_labels,
+                                        ordered_result = TRUE,
+                                        include.lowest = TRUE)
+
 
 vnames <- rownames(mc)
 
@@ -970,22 +1018,69 @@ ml_embodied<- mc_v %>%
   as.mids()
   
 
+
+# need to rename sample_weights - for contin mods no prop scores
+ml_embodied_cont <- mc_v %>%
+  dplyr::mutate(id = as.factor(rep(1:n_id, 11))) |> # needed 
+  mutate( 
+         t0_eth_cat = as.factor(t0_eth_cat),
+         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t1_perfectionism_high = as.factor(t1_perfectionism_high)) |>
+  dplyr::group_by(id) |>
+  dplyr::mutate(t0_kessler_6 = mean(
+    c(
+    t0_kessler_depressed,
+    t0_kessler_effort,
+    t0_kessler_hopeless,
+    t0_kessler_nervous,
+    t0_kessler_restless,
+    t0_kessler_worthless ),
+    na.rm = TRUE
+  )) |>
+    dplyr::mutate(t2_kessler_6 = mean(
+    c(
+    t2_kessler_depressed,
+    t2_kessler_effort,
+    t2_kessler_hopeless,
+    t2_kessler_nervous,
+    t2_kessler_restless,
+    t2_kessler_worthless ),
+    na.rm = TRUE
+  )) |>
+  dplyr::ungroup() |> 
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
+    where(is.factor),
+    sample_weights,
+    ends_with("_z"),
+    .imp,
+    .id
+  ) |> 
+  rename(weights = sample_weights) |> 
+  relocate(weights, .before = starts_with("t1_"))  %>%
+  relocate(id, .before = weights)  %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
+  mutate_if(is.matrix, as.vector) %>%
+  as.mids()
+
 # Confirm that ml is of class "mids"
 class(ml_embodied)
-str(ml_embodied)
+class(ml_embodied_cont)
 
 mf_embodied <- mice::complete(ml_embodied, "long", inc = TRUE)
+mf_embodied_cont <- mice::complete(ml_embodied_cont, "long", inc = TRUE)
 
 
-colnames(mf_embodied)
-# test
-head(mf_embodied$sample_weights)
-str(dat_18$sample_weights)
-
-str(mf_embodied)
+str(mf_embodied$t0_perfectionism_quartile)
 str(ml_embodied)
 saveRDS(ml_embodied, here::here(push_mods, "ml_embodied"))
 saveRDS(mf_embodied, here::here(push_mods, "mf_embodied"))
+
+saveRDS(ml_embodied_cont, here::here(push_mods, "ml_embodied_cont"))
+saveRDS(mf_embodied_cont, here::here(push_mods, "mf_embodied_cont"))
 ```
 
 
@@ -1915,7 +2010,8 @@ X <- "t1_perfectionism_high"
 baseline_vars_embodied = mf_embodied |> 
   dplyr::select(starts_with("t0"), 
                 -t0_perfectionism_z, 
-                -t0_kessler_6_z) |> colnames()
+                -t0_kessler_6_z,
+                -t0_perfectionism_quartile) |> colnames() # note we added quartiles for this analysis to demonstrate interest of different causal estimans
 
 
 options(scipen = 999)
@@ -3705,6 +3801,7 @@ mod_social_support
 mod_social_permeability_individual
 mod_social_impermeability_group
 mod_social_neighbourhood_community
+
 tab_social <- rbind(
   mod_social_belong,
   mod_social_support,
@@ -3763,6 +3860,924 @@ dev.off()
 
 ```
 
+```{r}
+#| label: model embodied continuous
+#| eval: false
+
+#| label: models embodied
+#| eval: false
+
+# scale
+mean(dt_19$perfectionism, na.rm = TRUE) # 3.085961
+sd(dt_19$perfectionism, na.rm = TRUE) # 1.375789
+
+ml_embodied_cont <- readRDS(here::here(push_mods, "ml_embodied_cont"))
+
+# longform data if necessary
+mf_embodied_cont <- readRDS(here::here(push_mods, "mf_embodied_cont"))
+
+colnames(mf_embodied_cont)
+
+mf_embodied_cont$t1_perfectionism_z
+
+# Set exposure 
+X <- "t1_perfectionism_z"
+
+
+# baselin vars ---------------------------------------------------------
+
+baseline_vars_embodied_cont = mf_embodied_cont |> 
+  dplyr::select(starts_with("t0"), 
+                # -t0_perfectionism_z, 
+                -t0_perfectionism_high_z,
+                -t0_kessler_6_z,
+                -t0_perfectionism_quartile) |> colnames() # note we added quartiles for this analysis to demonstrate interest of different causal estimans
+
+
+options(scipen = 999)
+baseline_vars_embodied_cont
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl =  parallel::detectCores () 
+
+X = "t1_perfectionism_z"
+df = ml_embodied_cont
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+baseline_vars = baseline_vars_embodied_cont
+# outcomes
+
+
+mod_embodied_hlth_fatigue_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_hlth_fatigue_z",
+  X =  X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE, # new setting
+  splines = TRUE, # new setting
+  new_name = "hlth_fatigue_z"
+)
+
+mod_embodied_hlth_fatigue_cont
+
+# save model
+saveRDS(mod_embodied_hlth_fatigue_cont, here::here(push_mods, "mod_embodied_hlth_fatigue_cont"))
+
+# rumination
+mod_embodied_rumination_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_rumination_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "rumination_z"
+)
+
+mod_embodied_rumination_cont
+
+# save model
+saveRDS(mod_embodied_rumination_cont, here::here(push_mods, "mod_embodied_rumination_cont"))
+
+## kessler_depressed
+mod_embodied_kessler_depressed_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_depressed_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "kessler_depressed_z"
+)
+
+mod_embodied_kessler_depressed_cont
+
+# save model
+saveRDS(mod_embodied_kessler_depressed_cont, here::here(push_mods, "mod_embodied_kessler_depressed_cont"))
+
+
+
+## kessler_effort
+mod_embodied_kessler_effort_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_effort_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "kessler_effort_z"
+)
+
+mod_embodied_kessler_effort_cont
+# save model
+saveRDS(mod_embodied_kessler_effort_cont, here::here(push_mods, "mod_embodied_kessler_effort_cont"))
+
+
+## kessler_hopeless
+mod_embodied_kessler_hopeless_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_hopeless_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "kessler_hopeless_z"
+)
+
+mod_embodied_kessler_hopeless_cont
+
+
+# save model
+saveRDS(mod_embodied_kessler_hopeless_cont, here::here(push_mods, "mod_embodied_kessler_hopeless_cont"))
+
+
+## kessler_nervous
+
+mod_embodied_kessler_nervous_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_nervous_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "kessler_nervous_z"
+)
+
+mod_embodied_kessler_nervous_cont
+
+# save model
+saveRDS(mod_embodied_kessler_nervous_cont, here::here(push_mods, "mod_embodied_kessler_nervous_cont"))
+
+
+## kessler_restless
+mod_embodied_kessler_restless_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_restless_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "kessler_restless_z"
+)
+
+mod_embodied_kessler_restless_cont
+# save model
+saveRDS(mod_embodied_kessler_restless_cont, here::here(push_mods, "mod_embodied_kessler_restless_cont"))
+
+
+## kessler_worthless
+mod_embodied_kessler_worthless_cont  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_worthless_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "kessler_worthless_z"
+)
+
+mod_embodied_kessler_worthless_cont
+
+# save model
+saveRDS(mod_embodied_kessler_worthless_cont, here::here(push_mods, "mod_embodied_kessler_worthless_cont"))
+
+
+## t2_kessler_6
+mod_embodied_kessler_6_cont  <- gcomp_sim(
+   df = df,  # note change
+  Y = "t2_kessler_6_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "kessler_6_z (composite)"
+)
+
+mod_embodied_kessler_6_cont
+
+# save model
+saveRDS(mod_embodied_kessler_6_cont, here::here(push_mods, "mod_embodied_kessler_6_cont"))
+
+
+## combo-table
+
+tab_embodied_cont <-
+  rbind(
+mod_embodied_hlth_fatigue_cont,
+mod_embodied_rumination_cont,
+mod_embodied_kessler_depressed_cont,
+mod_embodied_kessler_effort_cont,
+mod_embodied_kessler_hopeless_cont,
+mod_embodied_kessler_nervous_cont,
+mod_embodied_kessler_restless_cont,
+mod_embodied_kessler_worthless_cont,
+mod_embodied_kessler_6_cont
+  )
+
+tab_embodied_cont
+
+
+group_tab_embodied_cont <- group_tab(tab_embodied_cont, type = "RD")
+
+group_tab_embodied_cont
+
+
+
+group_plot_ate_embodied_cont <- group_plot_ate(
+  group_tab_embodied_cont,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency",
+  subtitle = "Embodied Outcomes - Continuous X",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.5,
+  x_lim_lo = -.5,
+  x_lim_hi = .5
+)  
+
+group_plot_ate_embodied_cont
+
+
+
+ggsave(
+  group_plot_ate_embodied_cont,
+  path = here::here(here::here(push_mods, "group_plot_ate_embodied_cont")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "group_plot_ate_embodied_cont.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+dev.off()
+```
+
+
+
+```{r}
+#| label: model embodied quartiles
+#| eval: false
+
+#| label: models embodied
+#| eval: false
+
+ml_embodied <- readRDS(here::here(push_mods, "ml_embodied"))
+
+# longform data if necessary
+mf_embodied <- readRDS(here::here(push_mods, "mf_embodied"))
+
+colnames(mf_embodied)
+
+mf_embodied$t1_perfectionism_quartile
+
+# Set exposure 
+X <- "t1_perfectionism_quartile"
+
+
+# baselin vars ---------------------------------------------------------
+
+# remove variables from baseline that are not relevant
+baseline_vars_embodied_quart = mf_embodied |> 
+  dplyr::select(starts_with("t0"), 
+               # -t0_perfectionism_z,  # use cont at baseline
+                -t0_perfectionism_high_z,
+                -t0_kessler_6_z,
+                -t0_perfectionism_quartile
+                ) |> colnames() # note we added quartiles for this analysis to demonstrate interest of different causal estimans
+
+baseline_vars_embodied_quart
+# options(scipen = 999)
+# 
+# mf_embodied$t1_perfectionism_quartile
+# att
+
+
+
+dt_match_embodied_quart <-
+  match_mi(
+    data = ml_embodied,
+    X = "t1_perfectionism_quartile",
+    baseline_vars = baseline_vars_embodied_quart,
+    estimand = "ATE",
+    method = "ebal",
+    sample_weights = "sample_weights"
+  )
+
+
+
+saveRDS(dt_match_embodied_quart , here::here(push_mods, "dt_match_embodied_quart"))
+
+sum <- summary(dt_match_embodied_quart)
+sum
+plot(sum)
+bal.tab(dt_match_embodied_quart)
+
+dt_match_trim_embodied_quart <- WeightIt::trim(dt_match_embodied_quart, at = .995)
+sum_trim <- summary(dt_match_trim_embodied_quart)
+sum_trim
+
+bal.tab(dt_match_trim_embodied_quart)
+
+love.plot(dt_match_trim_embodied_quart, binary = "std", thresholds = c(m = .1))
+love.plot(dt_match_embodied_quart, binary = "std", thresholds = c(m = .1))
+
+dev.off()
+
+
+df = dt_match_trim_embodied_quart
+
+# Set exposure 
+X <- "t1_perfectionism_quartile"
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl =  parallel::detectCores () 
+
+X = "t1_perfectionism_quartile"
+
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+# outcomes
+
+outcome_vars_embodied
+# 1] "hlth_fatigue"      "rumination"        "kessler_depressed"
+# [4] "kessler_effort"    "kessler_hopeless"  "kessler_nervous"  
+# [7] "kessler_restless"  "kessler_worthless"
+
+# add composite t2_kessler_6
+
+
+baseline_vars = baseline_vars_embodied_quart
+
+treat_0 = "1to2"
+treat_1 = "4to7"
+
+mod_embodied_hlth_fatigue_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_hlth_fatigue_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "hlth_fatigue_z"
+)
+
+mod_embodied_hlth_fatigue_quart
+
+# save model
+saveRDS(mod_embodied_hlth_fatigue_quart, here::here(push_mods, "mod_embodied_hlth_fatigue_quart"))
+
+# rumination
+mod_embodied_rumination_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_rumination_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "rumination_z"
+)
+
+mod_embodied_rumination_quart
+# save model
+saveRDS(mod_embodied_rumination_quart, here::here(push_mods, "mod_embodied_rumination_quart"))
+
+## kessler_depressed
+mod_embodied_kessler_depressed_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_depressed_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_depressed_z"
+)
+
+mod_embodied_kessler_depressed_quart
+
+# save model
+saveRDS(mod_embodied_kessler_depressed_quart, here::here(push_mods, "mod_embodied_kessler_depressed_quart"))
+
+
+
+## kessler_effort
+mod_embodied_kessler_effort_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_effort_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_effort_z"
+)
+
+mod_embodied_kessler_effort_quart
+# save model
+saveRDS(mod_embodied_kessler_effort_quart, here::here(push_mods, "mod_embodied_kessler_effort_quart"))
+
+
+## kessler_hopeless
+mod_embodied_kessler_hopeless_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_hopeless_z",
+  X = X,
+  baseline_vars = baseline_vars_embodied,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_hopeless_z"
+)
+
+mod_embodied_kessler_hopeless_quart
+# save model
+saveRDS(mod_embodied_kessler_hopeless_quart, here::here(push_mods, "mod_embodied_kessler_hopeless_quart"))
+
+
+## kessler_nervous
+mod_embodied_kessler_nervous_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_nervous_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_nervous_z"
+)
+
+mod_embodied_kessler_nervous_quart
+# save model
+saveRDS(mod_embodied_kessler_nervous_quart, here::here(push_mods, "mod_embodied_kessler_nervous_quart"))
+
+
+## kessler_restless
+mod_embodied_kessler_restless_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_restless_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_restless_z"
+)
+
+mod_embodied_kessler_restless_quart
+# save model
+saveRDS(mod_embodied_kessler_restless_quart, here::here(push_mods, "mod_embodied_kessler_restless_quart"))
+
+
+## kessler_worthless
+mod_embodied_kessler_worthless_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_worthless_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_worthless_z"
+)
+
+mod_embodied_kessler_worthless_quart
+
+# save model
+saveRDS(mod_embodied_kessler_worthless_quart, here::here(push_mods, "mod_embodied_kessler_worthless_quart"))
+
+## t2_kessler_6
+mod_embodied_kessler_6_quart  <- gcomp_sim(
+  df = df,  # note change
+  Y = "t2_kessler_6_z",
+  X = X,
+  baseline_vars = baseline_vars,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "kessler_6_z (composite)"
+)
+
+mod_embodied_kessler_6_quart
+# save model
+saveRDS(mod_embodied_kessler_6_quart, here::here(push_mods, "mod_embodied_kessler_6_quart"))
+
+
+
+## combo-table
+
+tab_embodied_quart <-
+  rbind(
+mod_embodied_hlth_fatigue_quart,
+mod_embodied_rumination_quart,
+mod_embodied_kessler_depressed_quart,
+mod_embodied_kessler_effort_quart,
+mod_embodied_kessler_hopeless_quart,
+mod_embodied_kessler_nervous_quart,
+mod_embodied_kessler_restless_quart,
+mod_embodied_kessler_worthless_quart,
+mod_embodied_kessler_6_quart
+  )
+
+tab_embodied_quart
+
+
+group_tab_embodied_quart <- group_tab(tab_embodied_quart, type = "RD")
+
+group_tab_embodied_quart
+
+
+
+group_plot_ate_embodied_quart <- group_plot_ate(
+  group_tab_embodied_quart,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency",
+  subtitle = "Embodied Outcomes: from lowest (score 1-2) to highest (score 4-7) quartile",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.5,
+  x_lim_lo = -.5,
+  x_lim_hi = .5
+)  
+
+group_plot_ate_embodied_quart
+
+dev.off()
+ggsave(
+  group_plot_ate_embodied_quart,
+  path = here::here(here::here(push_mods, "group_plot_ate_embodied_quart")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "group_plot_ate_embodied_quart",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+dev.off()
+```
+
+```{r}
+#| label: compare embodied approaches
+
+# read quartile models
+mod_embodied_hlth_fatigue_quart <- readRDS(here::here(push_mods, "mod_embodied_hlth_fatigue_quart"))
+
+mod_embodied_rumination_quart <- readRDS(here::here(push_mods, "mod_embodied_rumination_quart"))
+
+mod_embodied_kessler_hopeless_quart <- readRDS(here::here(push_mods, "mod_embodied_kessler_hopeless_quart"))
+
+mod_embodied_kessler_depressed_quart <- readRDS( here::here(push_mods, "mod_embodied_kessler_depressed_quart"))
+
+mod_embodied_kessler_effort_quart <- readRDS(here::here(push_mods, "mod_embodied_kessler_effort_quart"))
+
+mod_embodied_kessler_hopeless_quart <- readRDS( here::here(push_mods, "mod_embodied_kessler_hopeless_quart"))
+
+mod_embodied_kessler_nervous_quart <- readRDS(here::here(push_mods, "mod_embodied_kessler_nervous_quart"))
+
+mod_embodied_kessler_restless_quart <- readRDS( here::here(push_mods, "mod_embodied_kessler_restless_quart"))
+
+mod_embodied_kessler_worthless_quart <- readRDS(here::here(push_mods, "mod_embodied_kessler_worthless_quart"))
+
+mod_embodied_kessler_6_quart <- readRDS( here::here(push_mods, "mod_embodied_kessler_6_quart"))
+
+
+# read binary 
+mod_embodied_hlth_fatigue <- readRDS(here::here(push_mods, "mod_embodied_hlth_fatigue"))
+
+mod_embodied_rumination <- readRDS(here::here(push_mods, "mod_embodied_rumination"))
+
+mod_embodied_kessler_hopeless <- readRDS(here::here(push_mods, "mod_embodied_kessler_hopeless"))
+
+mod_embodied_kessler_depressed <- readRDS( here::here(push_mods, "mod_embodied_kessler_depressed"))
+
+mod_embodied_kessler_effort <- readRDS(here::here(push_mods, "mod_embodied_kessler_effort"))
+
+mod_embodied_kessler_hopeless <- readRDS( here::here(push_mods, "mod_embodied_kessler_hopeless"))
+
+mod_embodied_kessler_nervous <- readRDS(here::here(push_mods, "mod_embodied_kessler_nervous"))
+
+mod_embodied_kessler_restless <- readRDS( here::here(push_mods, "mod_embodied_kessler_restless"))
+
+mod_embodied_kessler_worthless <- readRDS(here::here(push_mods, "mod_embodied_kessler_worthless"))
+
+mod_embodied_kessler_6 <- readRDS( here::here(push_mods, "mod_embodied_kessler_6"))
+
+
+
+# read _cont 
+
+mod_embodied_hlth_fatigue_cont <- readRDS(here::here(push_mods, "mod_embodied_hlth_fatigue_cont"))
+
+mod_embodied_rumination_cont <- readRDS(here::here(push_mods, "mod_embodied_rumination_cont"))
+
+mod_embodied_kessler_hopeless_cont <- readRDS(here::here(push_mods, "mod_embodied_kessler_hopeless_cont"))
+
+mod_embodied_kessler_depressed_cont <- readRDS( here::here(push_mods, "mod_embodied_kessler_depressed_cont"))
+
+mod_embodied_kessler_effort_cont <- readRDS(here::here(push_mods, "mod_embodied_kessler_effort_cont"))
+
+mod_embodied_kessler_hopeless_cont <- readRDS( here::here(push_mods, "mod_embodied_kessler_hopeless_cont"))
+
+mod_embodied_kessler_nervous_cont <- readRDS(here::here(push_mods, "mod_embodied_kessler_nervous_cont"))
+
+mod_embodied_kessler_restless_cont <- readRDS( here::here(push_mods, "mod_embodied_kessler_restless_cont"))
+
+mod_embodied_kessler_worthless_cont <- readRDS(here::here(push_mods, "mod_embodied_kessler_worthless_cont"))
+
+mod_embodied_kessler_6_cont <- readRDS( here::here(push_mods, "mod_embodied_kessler_6_cont"))
+
+
+
+# tab embodied binary
+
+tab_embodied <-
+  rbind(
+mod_embodied_hlth_fatigue,
+mod_embodied_rumination,
+mod_embodied_kessler_depressed,
+mod_embodied_kessler_effort,
+mod_embodied_kessler_hopeless,
+mod_embodied_kessler_nervous,
+mod_embodied_kessler_restless,
+mod_embodied_kessler_worthless,
+mod_embodied_kessler_6
+  )
+
+
+# tab embodied quart
+
+tab_embodied_quart <-
+  rbind(
+mod_embodied_hlth_fatigue_quart,
+mod_embodied_rumination_quart,
+mod_embodied_kessler_depressed_quart,
+mod_embodied_kessler_effort_quart,
+mod_embodied_kessler_hopeless_quart,
+mod_embodied_kessler_nervous_quart,
+mod_embodied_kessler_restless_quart,
+mod_embodied_kessler_worthless_quart,
+mod_embodied_kessler_6_quart
+  )
+
+
+# tab continuous 
+
+# tab embodied binary
+
+tab_embodied_cont <-
+  rbind(
+mod_embodied_hlth_fatigue_cont,
+mod_embodied_rumination_cont,
+mod_embodied_kessler_depressed_cont,
+mod_embodied_kessler_effort_cont,
+mod_embodied_kessler_hopeless_cont,
+mod_embodied_kessler_nervous_cont,
+mod_embodied_kessler_restless_cont,
+mod_embodied_kessler_worthless_cont,
+mod_embodied_kessler_6_cont
+  )
+
+
+group_tab_embodied_quart <- group_tab(tab_embodied_quart, type = "RD")
+
+group_tab_embodied_cont <- group_tab(tab_embodied_cont, type = "RD")
+
+group_tab_embodied <- group_tab(tab_embodied, type = "RD")
+
+
+
+
+group_plot_ate_embodied_quart <- group_plot_ate(
+  group_tab_embodied_quart,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency: Quartile",
+  subtitle = "Embodied Outcomes: from lowest (score 1-2) to highest (score 4-7) quartile",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.5,
+  x_lim_lo = -.5,
+  x_lim_hi = .5
+)  
+
+group_plot_ate_embodied_quart
+
+group_plot_ate_embodied_bin <- group_plot_ate(
+  group_tab_embodied,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency: Binary Cut > 4",
+  subtitle = "Embodied Outcomes: Low (1-4) to High (>4)",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.5,
+  x_lim_lo = -.5,
+  x_lim_hi = .5
+)  
+
+group_plot_ate_embodied_bin
+
+mean(dt_19$perfectionism, na.rm = TRUE) # 3.085961
+sd(dt_19$perfectionism, na.rm = TRUE) # 1.375789
+
+group_plot_ate_embodied_cont <- group_plot_ate(
+  group_tab_embodied,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency: Continuous Mean to + 1",
+  subtitle = "Embodied Outcomes: Mean (3.086) + SD (1.376)",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.5,
+  x_lim_lo = -.5,
+  x_lim_hi = .5
+)  
+
+
+library(patchwork)
+graph_compare_approaches_embodied <- group_plot_ate_embodied_bin / group_plot_ate_embodied_cont /group_plot_ate_embodied_quart + 
+  plot_annotation(title = "Comparison of Causal Effect Estimatation Approaches", tag_levels = "a")
+
+graph_compare_approaches_embodied
+
+ggsave(
+  graph_compare_approaches_embodied,
+  path = here::here(here::here(push_mods, "graph_compare_approaches_embodied")),
+  width = 8,
+  height = 12,
+  units = "in",
+  filename = "graph_compare_approaches_embodied.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+```
 
 
 
