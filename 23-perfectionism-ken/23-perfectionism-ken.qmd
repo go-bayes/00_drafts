@@ -1510,7 +1510,9 @@ X <- "t1_perfectionism_high"
 # baselin vars ---------------------------------------------------------
 
 baseline_vars_health = mf_health |> 
-  dplyr::select(starts_with("t0"), -t0_perfectionism_z, -t0_sfhealth_z) |> colnames()
+  dplyr::select(starts_with("t0"), 
+                -t0_perfectionism_z, 
+                -t0_sfhealth_z) |> colnames()
 
 baseline_vars_health
 
@@ -1911,7 +1913,8 @@ X <- "t1_perfectionism_high"
 # baselin vars ---------------------------------------------------------
 
 baseline_vars_embodied = mf_embodied |> 
-  dplyr::select(starts_with("t0"), -t0_perfectionism_z, 
+  dplyr::select(starts_with("t0"), 
+                -t0_perfectionism_z, 
                 -t0_kessler_6_z) |> colnames()
 
 
@@ -3229,6 +3232,10 @@ mod_reflective_meaning  <- gcomp_sim(
 
 mod_reflective_meaning
 
+# save model
+saveRDS(mod_reflective_meaning, here::here(push_mods, "mod_reflective_meaning"))
+
+
 ## combo-table
 tab_reflective <- rbind(
   mod_reflective_gratitude,
@@ -3286,6 +3293,475 @@ dev.off()
 
 ```
 
+
+```{r}
+#| label: models social
+#| eval: false
+ml_social <- readRDS(here::here(push_mods, "ml_social"))
+
+# longform data if necessary
+mf_social <- readRDS(here::here(push_mods, "mf_social"))
+
+colnames(mf_social)
+
+mf_social$t1_perfectionism_high
+
+# Set exposure 
+X <- "t1_perfectionism_high"
+
+
+
+# baselin vars ---------------------------------------------------------
+
+
+baseline_vars_social = mf_social |>
+  dplyr::select(starts_with("t0"),
+                -t0_belong_z,
+                -t0_support_z) |> colnames()
+
+options(scipen = 999)
+baseline_vars_social
+
+dt_match_social <- match_mi(data = ml_social, X = "t1_perfectionism_high", baseline_vars = baseline_vars_social , estimand = "ATE",  method = "ebal", sample_weights = "sample_weights")
+
+saveRDS(dt_match_social, here::here(push_mods, "dt_match_social"))
+
+sum <- summary(dt_match_social)
+sum
+plot(sum)
+bal.tab(dt_match_social)
+
+dt_match_trim_social <- WeightIt::trim(dt_match_social, at = .999)
+sum_trim <- summary(dt_match_trim_social)
+sum_trim
+
+bal.tab(dt_match_trim_social) # 12
+
+love.plot(dt_match_trim_social, binary = "std", thresholds = c(m = .1))
+love.plot(dt_match_social, binary = "std", thresholds = c(m = .1))
+
+dev.off()
+
+
+# settings 
+dt_match_social_use = dt_match_trim_social # matched dataset from propensity scores.  If no propensity score model make ml_match = ml
+
+
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl =  parallel::detectCores () 
+
+X = "t1_perfectionism_high"
+
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+# outcomes
+
+outcome_vars_social
+                 
+dt_match_social_use
+
+
+
+
+# save model
+mod_social_belong  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_belong_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "belong_z"
+)
+
+mod_social_belong
+
+# save model
+saveRDS(mod_social_belong, here::here(push_mods, "mod_social_belong"))
+
+
+mod_social_support  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_support_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "support_z"
+)
+
+mod_social_support
+
+# save model
+saveRDS(mod_social_support, here::here(push_mods, "mod_social_support"))
+
+
+
+mod_social_permeability_individual  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_permeability_individual_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "permeability_individual_z"
+)
+
+mod_social_permeability_individual
+# save model
+saveRDS(mod_social_permeability_individual, here::here(push_mods, "mod_social_permeability_individual"))
+
+
+
+
+mod_social_impermeability_group  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_impermeability_group_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "impermeability_group_z"
+)
+
+mod_social_impermeability_group
+# save model
+saveRDS(mod_social_impermeability_group, here::here(push_mods, "mod_social_impermeability_group"))
+
+
+mod_social_neighbourhood_community  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_neighbourhood_community_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "neighbourhood_community_z"
+)
+
+mod_social_neighbourhood_community
+
+# save model
+saveRDS(mod_social_neighbourhood_community, here::here(push_mods, "mod_social_neighbourhood_community"))
+
+
+
+mod_social_support_help  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_support_help_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "support_help_z"
+)
+
+mod_social_support_help
+
+# save model
+saveRDS(mod_social_support_help, here::here(push_mods, "mod_social_support_help"))
+
+
+
+mod_social_support_turnto  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_support_turnto_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "support_turnto_z"
+)
+
+mod_social_support_turnto
+
+# save model
+saveRDS(mod_social_support_turnto, here::here(push_mods, "mod_social_support_turnto"))
+
+
+mod_social_support_rnoguidance  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_support_rnoguidance_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "support_noguidance_z (reversed)"
+)
+
+mod_social_support_rnoguidance
+# save model
+saveRDS(mod_social_support_rnoguidance, here::here(push_mods, "mod_social_support_rnoguidance"))
+
+
+
+mod_social_belong_accept  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_belong_accept_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "support_belong_accept"
+)
+
+mod_social_belong_accept
+
+# save model
+saveRDS(mod_social_belong_accept, here::here(push_mods, "mod_social_belong_accept"))
+
+
+
+mod_social_belong_routsider  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_belong_routsider_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "support_belong_outsider (reversed)"
+)
+
+mod_social_belong_routsider
+
+# save model
+saveRDS(mod_social_belong_routsider, here::here(push_mods, "mod_social_belong_routsider"))
+
+
+
+
+mod_social_belong_beliefs  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_belong_beliefs_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "support_belong_beliefs"
+)
+
+# save model
+saveRDS(mod_social_belong_beliefs, here::here(push_mods, "mod_social_belong_beliefs"))
+
+
+mod_social_charity_donate  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_charity_donate_z",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "charity_donate_z (log z)"
+)
+
+mod_social_charity_donate
+
+# save model
+saveRDS(mod_social_charity_donate, here::here(push_mods, "mod_social_charity_donate"))
+
+
+mod_social_volunteers_RR  <- gcomp_sim(
+  df = dt_match_social_use,  # note change
+  Y = "t2_volunteers",
+  X = "t1_perfectionism_high",
+  baseline_vars = baseline_vars_social,
+  treat_1 = 1,
+  treat_0 = 0,
+  estimand = "ATE",
+  scale = "RR",
+  type = "RR",
+  nsims = 200,
+  cores = cores,
+  family = quasibinomial(),
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "Volunteers (yes/no)"
+)
+
+mod_social_volunteers_RR 
+
+# save model
+saveRDS(mod_social_volunteers_RR, here::here(push_mods, "mod_social_volunteers_RR"))
+
+
+## combo-table
+mod_social_belong
+mod_social_support
+mod_social_permeability_individual
+mod_social_impermeability_group
+mod_social_neighbourhood_community
+tab_social <- rbind(
+  mod_social_belong,
+  mod_social_support,
+  mod_social_permeability_individual,
+  mod_social_impermeability_group,
+  mod_social_neighbourhood_community,
+  mod_social_support_help,
+  mod_social_support_turnto,
+  mod_social_support_rnoguidance,
+  mod_social_belong_accept,
+  mod_social_belong_routsider,
+  mod_social_belong_beliefs,
+  mod_social_charity_donate
+)
+
+tab_social
+
+
+group_tab_social <- group_tab(tab_social, type = "RD")
+
+group_tab_social
+
+
+
+group_plot_ate_social <- group_plot_ate(
+  group_tab_social,
+  type = "RD",
+  title = "ATE of High Perfectionism Discrepency",
+  subtitle = "Social Outcomes",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.8,
+  x_lim_lo = -.75,
+  x_lim_hi = .5
+)
+
+group_plot_ate_social
+
+
+dev.off()
+ggsave(
+  group_plot_ate_social,
+  path = here::here(here::here(push_mods, "group_plot_ate_social")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "group_plot_ate_social.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+group_plot_ate_social
+
+dev.off()
+
+```
 
 
 
