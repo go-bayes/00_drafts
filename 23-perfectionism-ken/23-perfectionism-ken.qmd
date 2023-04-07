@@ -275,6 +275,7 @@ dat_long <- dat |>
   mutate(perfectionism_high = ifelse(perfectionism > 4, 1, 0 )) |> 
   rename(religion_religious = religious) |> 
   select(
+    "perfectionism_quartile",
     "wave",
     "year_measured",
     "sample_frame",
@@ -433,9 +434,17 @@ dat_long <- dat |>
 length(unique(dat_long$id))# 34762
 
 dt_19 <- dat_long |> 
-  filter(wave == "2019")
+  filter(wave == "2019") |> 
+  mutate(perfectionism_quartile_number = as.numeric(perfectionism_quartile))
 
-table(dat_long$perfectionism_change)
+dt_18_19 <- dat_long |> 
+  filter(wave == "2018", wave == "2019") |> 
+  mutate(perfectionism_quartile_number = as.numeric(perfectionism_quartile)) |> 
+  mutate(perfectionism_quartile_number = as.numeric(as.character(perfectionism_quartile)))
+
+
+
+table(dt_18_19$perfectionism_quartile_number)
 table(dt_19$perfectionism_change)
 
 table(dat_long$perfectionism_became_low)
@@ -3795,12 +3804,37 @@ mod_social_volunteers_RR
 saveRDS(mod_social_volunteers_RR, here::here(push_mods, "mod_social_volunteers_RR"))
 
 
+
+# read 
+
+mod_social_belong <- readRDS( here::here(push_mods, "mod_social_belong"))
+mod_social_support <- readRDS(here::here(push_mods, "mod_social_support"))
+mod_social_permeability_individual <- readRDS( here::here(push_mods, "mod_social_permeability_individual"))
+
+mod_social_impermeability_group <- readRDS( here::here(push_mods, "mod_social_impermeability_group"))
+
+mod_social_neighbourhood_community<- readRDS(here::here(push_mods, "mod_social_neighbourhood_community"))
+
+mod_social_support_help <- readRDS(here::here(push_mods, "mod_social_support_help"))
+
+
+mod_social_support_turnto <- readRDS( here::here(push_mods, "mod_social_support_turnto"))
+
+mod_social_support_rnoguidance <- readRDS( here::here(push_mods, "mod_social_support_rnoguidance"))
+
+
+mod_social_belong_accept <- readRDS(here::here(push_mods, "mod_social_belong_accept"))
+
+mod_social_belong_routsider <- readRDS( here::here(push_mods, "mod_social_belong_routsider"))
+
+mod_social_belong_beliefs <- readRDS(here::here(push_mods, "mod_social_belong_beliefs"))
+
+mod_social_charity_donate <- readRDS(here::here(push_mods, "mod_social_charity_donate"))
+
+mod_social_volunteers_RR <- readRDS( here::here(push_mods, "mod_social_volunteers_RR"))
+
 ## combo-table
-mod_social_belong
-mod_social_support
-mod_social_permeability_individual
-mod_social_impermeability_group
-mod_social_neighbourhood_community
+
 
 tab_social <- rbind(
   mod_social_belong,
@@ -4216,7 +4250,7 @@ mf_embodied <- readRDS(here::here(push_mods, "mf_embodied"))
 
 colnames(mf_embodied)
 
-mf_embodied$t1_perfectionism_quartile
+table( mf_embodied$t1_perfectionism_quartile )/11
 
 # Set exposure 
 X <- "t1_perfectionism_quartile"
@@ -4271,6 +4305,7 @@ love.plot(dt_match_embodied_quart, binary = "std", thresholds = c(m = .1))
 
 dev.off()
 
+ml_embodied$t1_perfectionism
 
 df = dt_match_trim_embodied_quart
 
@@ -4302,7 +4337,7 @@ outcome_vars_embodied
 baseline_vars = baseline_vars_embodied_quart
 
 treat_0 = "1to2"
-treat_1 = "4to7"
+treat_1 = "2to3"
 
 mod_embodied_hlth_fatigue_quart  <- gcomp_sim(
   df = df,  # note change
@@ -4712,8 +4747,9 @@ group_tab_embodied_cont <- group_tab(tab_embodied_cont, type = "RD")
 
 group_tab_embodied <- group_tab(tab_embodied, type = "RD")
 
-
-
+group_tab_embodied_quart 
+group_tab_embodied
+group_tab_embodied_cont
 
 group_plot_ate_embodied_quart <- group_plot_ate(
   group_tab_embodied_quart,
@@ -4747,7 +4783,7 @@ mean(dt_19$perfectionism, na.rm = TRUE) # 3.085961
 sd(dt_19$perfectionism, na.rm = TRUE) # 1.375789
 
 group_plot_ate_embodied_cont <- group_plot_ate(
-  group_tab_embodied,
+  group_tab_embodied_cont,
   type = "RD",
   title = "ATE of High Perfectionism Discrepency: Continuous Mean to + 1",
   subtitle = "Embodied Outcomes: Mean (3.086) + SD (1.376)",
