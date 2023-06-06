@@ -99,7 +99,6 @@ hist(dat$perfectionism, breaks = 100)
 
 ```
 
-
 ```{r}
 #| label: clean data
 #| echo: false
@@ -517,7 +516,6 @@ prep_social <- create_wide_data(dat_long,
 str(prep_social)
 ```
 
-
 ```{r}
 #| label: tables
 #| echo: false
@@ -574,7 +572,6 @@ table_baseline |>
 
 # can do for others...
 ```
-
 
 ```{r}
 #| label: imputations health
@@ -749,8 +746,6 @@ str(dat_18$sample_weights)
 saveRDS(ml_health, here::here(push_mods, "ml_health"))
 saveRDS(mf_health, here::here(push_mods, "mf_health"))
 ```
-
-
 
 ```{r}
 #| label: imputations embodied
@@ -953,8 +948,6 @@ saveRDS(mf_embodied, here::here(push_mods, "mf_embodied"))
 # saveRDS(mf_embodied_cont, here::here(push_mods, "mf_embodied_cont"))
 ```
 
-
-
 ```{r}
 #| label: imputations practical
 #| echo: false
@@ -1132,8 +1125,6 @@ saveRDS(ml_practical, here::here(push_mods, "ml_practical"))
 saveRDS(mf_practical, here::here(push_mods, "mf_practical"))
 ```
 
-
-
 ```{r}
 #| label: imputations reflective
 #| echo: false
@@ -1303,8 +1294,6 @@ saveRDS(ml_reflective, here::here(push_mods, "ml_reflective"))
 saveRDS(mf_reflective, here::here(push_mods, "mf_reflective"))
 ```
 
-
-
 ```{r}
 #| label: imputations social
 #| echo: false
@@ -1463,9 +1452,6 @@ str(dat_18$sample_weights)
 saveRDS(ml_social, here::here(push_mods, "ml_social"))
 saveRDS(mf_social, here::here(push_mods, "mf_social"))
 ```
-
-
-
 
 ```{r}
 #| label: models heath
@@ -1868,8 +1854,6 @@ ggsave(
 dev.off()
 ```
 
-
-
 ```{r}
 #| label: models embodied
 #| eval: false
@@ -1881,19 +1865,19 @@ mf_embodied <- readRDS(here::here(push_mods, "mf_embodied"))
 
 colnames(mf_embodied)
 
-mf_embodied$t1_perfectionism_high
+mf_embodied$t0_perfectionism
 
 # Set exposure 
-X <- "t1_perfectionism_high"
+X <- "t1_perfectionism_coarsen"
 
+class(ml_embodied)
 
 # baselin vars ---------------------------------------------------------
 
 baseline_vars_embodied = mf_embodied |> 
   dplyr::select(starts_with("t0"), 
                 -t0_perfectionism_z, 
-                -t0_kessler_6_z,
-                -t0_perfectionism_quartile) |> colnames() # note we added quartiles for this analysis to demonstrate interest of different causal estimans
+                -t0_kessler_6_z) |> colnames() # note we added quartiles for this analysis to demonstrate interest of different causal estimans
 
 
 options(scipen = 999)
@@ -2226,7 +2210,6 @@ ggsave(
 
 dev.off()
 ```
-
 
 ```{r}
 #| label: models practical
@@ -2819,7 +2802,6 @@ dev.off()
 
 ```
 
-
 ```{r}
 #| label: models reflective
 #| eval: false
@@ -3270,7 +3252,6 @@ ggsave(
 dev.off()
 
 ```
-
 
 ```{r}
 #| label: models social
@@ -4050,8 +4031,10 @@ mod_embodied_kessler_6_cont
 
 # save model
 saveRDS(mod_embodied_kessler_6_cont, here::here(push_mods, "mod_embodied_kessler_6_cont"))
+mod_embodied_kessler_6_cont <- readRDS(here::here(push_mods, "mod_embodied_kessler_6_cont"))
 
 
+mod_embodied_kessler_6_cont
 ## combo-table
 
 tab_embodied_cont <-
@@ -4106,8 +4089,6 @@ ggsave(
 
 dev.off()
 ```
-
-
 
 ```{r}
 #| label: model embodied quartiles
@@ -4688,9 +4669,6 @@ ggsave(
 
 ```
 
-
-
-
 ```{r}
 #| label: fig-meaningless
 #| fig-cap: A meaningless scatterplot
@@ -4710,10 +4688,7 @@ Here we go... [@sibley2012]
 
 ## Method
 
-
-
 ### Questions related to religion are as follows
-
 
 #### Belief in God
 
@@ -4781,8 +4756,8 @@ We next leveraged longitudinal data to investigate whether changing from transit
 | Male                                   | 4003 (37 %)        |
 | Not_male                               | 6784 (63 %)        |
 | **Cohort**                             |                    |
-| Gen_Silent: born\< 1946                | 714 (7 %)          |
-| Gen Boomers: born \>= 1946 & b.\< 1965 | 5229 (48 %)        |
+| Gen_Silent: b.\< 1946                | 714 (7 %)          |
+| Gen Boomers: b. \>= 1946 & b.\< 1965 | 5229 (48 %)        |
 | GenX: born \>=1961 & b.\< 1981         | 3311 (31 %)        |
 | GenY: born \>=1981 & b.\< 1996         | 1421 (13 %)        |
 | GenZ: born \>= 1996                    | 112 (1 %)          |
@@ -4919,6 +4894,19 @@ The sample consists of 10,878 participants who responded the NZAVS 2016/17 Time 
 
 Although the timing of the attacks was random with respect to NAVS data collection, non-response and panel attrition may potentially bias inferences. A simple version of this threat is indicated in @fig-dag. $\dots$. We used both demographic indicators (see @tbl-sample) and personality indicators (see @tbl-personality) when multiply imputing missing responses.
 
+### Propensity scores
+
+We first identified covariates for which balance is required, following VanderWeeles modified disjunctive cause criterion [@vanderweele2019; @vanderweele2020]
+
+Clarify [@greifer2023] and the original King citation [@king2000] following [@rainey2023].
+
+We also used the WeightIt Package in R [@greifer2023a].
+
+\
+We first assessed covariate balance using the cobalt package [@greifer2023b]
+
+We compared for methods for balancing covariates on the exposure: (1) covariate balancing propensity scores, which utilises the CBPS package [@CBPS]; (2) entropy balancing [@greifer2023a], (3) Bayesian additive regression trees [@dbarts], and (4) energy balancing [@greifer2023a].
+
 ```{tikz}
 #| label: fig-dag
 #| fig-cap: "Causal graph shows potential for selection bias from loss to follow up or non-response. To address this, we multiply impute missing values conditional on the assumption that missing values are random conditional on the imputation model (MAR)."
@@ -4944,38 +4932,48 @@ Although the timing of the attacks was random with respect to NAVS data collecti
 
 ```
 
-## Results
 
-Causal effect estimates on the difference scale are presented in @fig-results1. Contrasts are presented in standardised response units. Again, these causal effect estimates are modelled as a contrast in (1) expected group attitudes for the entire population prior to the attacks (NZAVS Time 10 pre-attacks) with (2) expected group attitudes for the entire population during the following year weighted by 2018 census data to recover post-stratification estimates. Assuming correct model specification and no measurement error, such contrasts would be unbiased estimates for the intention-to-treat effect for random "assignment" to the attack condition. \[Note: see supplement X for a discussion of the distinction between the per-protocol and intention to treat effects\]. Note that standard errors were obtained both by simulation and the delta method (simulated contrasts are reported here.) As indicated in @fig-results1, we replicate previous findings revealing a strong increase in the acceptance of Muslims. Furthermore, we find evidence for the transference of acceptance to prototypical minorities. We do not find a boost in acceptance for non-prototypical minority groups. Nor do we find acceptance for groups that may be regarded as "negative controls." The exception to this pattern is in evidence of an increase in the acceptance of Pacific peoples. Additionally, we find evidence for acceptance of those with mentally illness.
 
-Before attempting to interpret the naive analysis, however, we must adjust for the possibility of temporal trends (see: @tbl-timeproto, @tbl-timenegcontrol, @tbl-timenonproto.)
 
-![Causal effect estimates on the difference scale. Estimates were modelled with post-stratification survey weights (Age/Gender/NZ European Ethnicity), yeilding a population average treatment effect. However, these naive contrasts do not incorporate pre-attack time trends in minority-group acceptance.](fig_1.jpg){#fig-results1}
+<!-- ## Results -->
 
-![Sensitivity analysis for causal contrasts adjusted for the estimated time trends in minority-group acceptance. Panel (a) presents the "worst case" scenario for increasing acceptance in pre-attack trajectories, implying that the attacks would have increased acceptance for all groups. Panel (b) presents the scenario in which increasing acceptance in pre-attack trajectories adjusted at the mean of the pre-attack trends. Here we find stronger evidence for transference of acceptance to non-prototypical groups. Panel (c) presents the "best case" scenario for increasing acceptance in pre-attack acceptance, implying that the attacks did not increase acceptance as strongly as would appear in the naive analysis](fig_2.jpg){#fig-results2}
+<!-- Causal effect estimates on the difference scale are presented in @fig-results1. Contrasts are presented in standardised response units. Again, these causal effect estimates are modelled as a contrast in (1) expected group attitudes for the entire population prior to the attacks (NZAVS Time 10 pre-attacks) with (2) expected group attitudes for the entire population during the following year weighted by 2018 census data to recover post-stratification estimates. Assuming correct model specification and no measurement error, such contrasts would be unbiased estimates for the intention-to-treat effect for random "assignment" to the attack condition. \[Note: see supplement X for a discussion of the distinction between the per-protocol and intention to treat effects\]. Note that standard errors were obtained both by simulation and the delta method (simulated contrasts are reported here.) As indicated in @fig-results1, we replicate previous findings revealing a strong increase in the acceptance of Muslims. Furthermore, we find evidence for the transference of acceptance to prototypical minorities. We do not find a boost in acceptance for non-prototypical minority groups. Nor do we find acceptance for groups that may be regarded as "negative controls." The exception to this pattern is in evidence of an increase in the acceptance of Pacific peoples. Additionally, we find evidence for acceptance of those with mentally illness. -->
 
-@fig-results2 presents a sensitivity analysis for causal effect estimates on the difference scale. Panel (a) presents the "worst case" scenario for increasing acceptance in pre-attack trajectories, implying that the attacks would have increased acceptance for all groups. This finding would be consistent with a strong "Jacidina Effect" (see Discussion.)
+<!-- Before attempting to interpret the naive analysis, however, we must adjust for the possibility of temporal trends (see: @tbl-timeproto, @tbl-timenegcontrol, @tbl-timenonproto.) -->
 
-Panel (b) presents the scenario in which increasing acceptance in pre-attack trajectories adjusted at the mean of the pre-attack trends. Here we find stronger evidence for the transference of acceptance to non-prototypical groups. Panel (c) presents the "best case" scenario for increasing acceptance in pre-attack acceptance, implying that the attacks did not increase acceptance as strongly as would appear in the naive analysis. Prototypical Attitude Response Theory survives the strongest estimate of the pre-attack increase in acceptance. For this reason our most conservative estimats supports Prototypical Attitude Response Theory. Notably, at every level of the sensitivity analysis, the causal effects of attitudes to Muslims are estimated lower than in the naive analysis. This is because the acceptance of Muslims had been growing more steeply in the years prior to the attacks than had the acceptance of other groups. Notably, we find that as people age, they tend to be less accepting of the elderly and of the dominant NZ European majority.
 
-| Parameter | Muslims           | Indians               |                     Asians | Refugees              |                 Immigrants | Chinese               |
-|:----------|:----------|:----------|----------:|:----------|----------:|:----------|
-| time      | 0.05 (0.04, 0.06) | 0.02 (7.24e-03, 0.03) | 4.55e-03 (-6.34e-03, 0.02) | 0.01 (2.16e-04, 0.03) | 6.38e-03 (-4.39e-03, 0.02) | 0.01 (3.66e-03, 0.02) |
 
-: Estimated annual increase in acceptance for prototypical minority groups. Note that attitudes to refugees were not measured in the 2016/17 NZAVS Wave, rendering estimates for this trajectory less reliable than other estimates. {#tbl-timeproto}
+<!-- ![Sensitivity analysis for causal contrasts adjusted for the estimated time trends in minority-group acceptance. Panel (a) presents the "worst case" scenario for increasing acceptance in pre-attack trajectories, implying that the attacks would have increased acceptance for all groups. Panel (b) presents the scenario in which increasing acceptance in pre-attack trajectories adjusted at the mean of the pre-attack trends. Here we find stronger evidence for transference of acceptance to non-prototypical groups. Panel (c) presents the "best case" scenario for increasing acceptance in pre-attack acceptance, implying that the attacks did not increase acceptance as strongly as would appear in the naive analysis](fig_2.jpg){#fig-results2} -->
 
-| Parameter   |                  Pacific |           NZ European |                     Maori |
-|:-----------------|-----------------:|-----------------:|------------------:|
-| (Intercept) |      0.004 (-0.02, 0.02) |    0.035 (0.01, 0.06) |       0.011 (-0.01, 0.03) |
-| time        | -0.010 (-0.02, 6.86e-04) | -0.034 (-0.05, -0.02) | -0.016 (-0.03, -4.92e-03) |
+<!-- @fig-results2 presents a sensitivity analysis for causal effect estimates on the difference scale. Panel (a) presents the "worst case" scenario for increasing acceptance in pre-attack trajectories, implying that the attacks would have increased acceptance for all groups. This finding would be consistent with a strong "Jacidina Effect" (see Discussion.) -->
 
-: Estimated annual increase in acceptance for non-prototypical groups {#tbl-timenonproto}
+<!-- Panel (b) presents the scenario in which increasing acceptance in pre-attack trajectories adjusted at the mean of the pre-attack trends. Here we find stronger evidence for the transference of acceptance to non-prototypical groups. Panel (c) presents the "best case" scenario for increasing acceptance in pre-attack acceptance, implying that the attacks did not increase acceptance as strongly as would appear in the naive analysis. Prototypical Attitude Response Theory survives the strongest estimate of the pre-attack increase in acceptance. For this reason our most conservative estimats supports Prototypical Attitude Response Theory. Notably, at every level of the sensitivity analysis, the causal effects of attitudes to Muslims are estimated lower than in the naive analysis. This is because the acceptance of Muslims had been growing more steeply in the years prior to the attacks than had the acceptance of other groups. Notably, we find that as people age, they tend to be less accepting of the elderly and of the dominant NZ European majority. -->
 
-| Parameter | Overweight               | Mental Illness          |                   Elderly |
-|:-----------------|:-----------------|:-----------------|------------------:|
-| time      | -0.006 (-0.02, 4.98e-03) | 0.010 (-6.45e-03, 0.03) | -0.023 (-0.04, -7.72e-03) |
+<!-- | Parameter | Muslims           | Indians               |                     Asians | Refugees              |                 Immigrants | Chinese               | -->
 
-: Estimated annual increase in acceptance for negative controls. Note that attitudes to those with Mental Illness were not measured in the 2016/17 NZAVS Wave, rendering estimates for this trajectory less reliable than other estimates {#tbl-timenegcontrol}
+<!-- |:----------|:----------|:----------|----------:|:----------|----------:|:----------| -->
+
+<!-- | time      | 0.05 (0.04, 0.06) | 0.02 (7.24e-03, 0.03) | 4.55e-03 (-6.34e-03, 0.02) | 0.01 (2.16e-04, 0.03) | 6.38e-03 (-4.39e-03, 0.02) | 0.01 (3.66e-03, 0.02) | -->
+
+<!-- : Estimated annual increase in acceptance for prototypical minority groups. Note that attitudes to refugees were not measured in the 2016/17 NZAVS Wave, rendering estimates for this trajectory less reliable than other estimates. {#tbl-timeproto} -->
+
+<!-- | Parameter   |                  Pacific |           NZ European |                     Maori | -->
+
+<!-- |:-----------------|-----------------:|-----------------:|------------------:| -->
+
+<!-- | (Intercept) |      0.004 (-0.02, 0.02) |    0.035 (0.01, 0.06) |       0.011 (-0.01, 0.03) | -->
+
+<!-- | time        | -0.010 (-0.02, 6.86e-04) | -0.034 (-0.05, -0.02) | -0.016 (-0.03, -4.92e-03) | -->
+
+<!-- : Estimated annual increase in acceptance for non-prototypical groups {#tbl-timenonproto} -->
+
+<!-- | Parameter | Overweight               | Mental Illness          |                   Elderly | -->
+
+<!-- |:-----------------|:-----------------|:-----------------|------------------:| -->
+
+<!-- | time      | -0.006 (-0.02, 4.98e-03) | 0.010 (-6.45e-03, 0.03) | -0.023 (-0.04, -7.72e-03) | -->
+
+<!-- : Estimated annual increase in acceptance for negative controls. Note that attitudes to those with Mental Illness were not measured in the 2016/17 NZAVS Wave, rendering estimates for this trajectory less reliable than other estimates {#tbl-timenegcontrol} -->
 
 ## Discussion
 
@@ -4998,7 +4996,6 @@ Points to consider:
 HERE...
 
 ## References
-
 
 ```{r}
 #| eval: false
@@ -5753,9 +5750,6 @@ tab__religion_religious <- tab_ate_rr(m_religion_religious, "religious:yes/no")
 tab__religion_religious
 ```
 
-
-
-
 ```{r}
 #| label: useful descriptive 
 
@@ -5851,7 +5845,6 @@ dat |>
     x = "Male coded as 1, other identities coded as 0") + scale_color_viridis_d(option = "D")
 
 ```
-
 
 ::: {#refs}
 :::
