@@ -49,18 +49,25 @@ push_mods <-
   )
 ```
 
-### A penance
+## Introduction
 
-It is a truism that correlation is not causation. Yet in many human sciences it is common practice to report correlations using hedging language. The assumption: correlation is causal-ish.  For many years, I adopted this common practice. In many scientific publications I would report correlational data using hedging, causal-ish langauge.  This practice is disasterous for science.  In contenting myself with causal-ish language, I contributed to what has become a **causal crisis** across many human sciences. I have spent the past several years immersing myself in the literatures on causal inference. 
+### Objective 
 
+The frequent misconception of equating correlation with causation in human sciences has given rise to a **causal crisis** [cite]. Despite the potential of causal diagrams to address this predicament, their practicality is sometimes obscured by confusion and improper utalisation.
 
-Although causal diagrammes are becomming more commonplace, however, in the areas that stand to benefit most from causal diagrammes confusion still reighs. 
+Here, we:
 
-My purpose here is share what I have learned about causal diagrammes, and to offer advice. Some of my advice is opinioned. 
+1. develop the connection between this powerful analytical tool and the potential outcomes framework, a fundamental component of causal inference.
 
-In any case, this article is a penance. 
+2. offer practical guidance for employing causal diagrams to enhance causal understanding for questions in the human sciences, to accellerate the transition from merely inferring correlations to estimating causal relationships.
 
-### Purpose
+3. emphasise the need for time-series data to address causal questions, such that the chronological sequence of events implied by the diagramme may identify cause-effect relationships.
+
+We apply the tools to a problem of measurement error in time-series data. 
+
+Our overarching goal is to deliver a comprehensive tutorial that elucidates the principles of causal inference and showcases the practical utility of causal diagrams, encouraging a more precise and informed approach to discerning causality.
+
+### Correlation 
 
 Correlation is not, in itself, the problem. We say a relation between an exposure $A$ and and outcome $Y$ is causal if the corration between $A$ and $Y$ is unbiased. 
 
@@ -68,13 +75,19 @@ Causal diagrammes, or directed acyclic graphs (DAGS), are qualitative tools for 
 
 However we must recognise that we never start by answering a causal question.  We start by asking a causal question. Many who utilise causal graphs fail to appreciate this fact.
 
-### Causal questions 
+## The potential outcomes framework.
 
 
+### Causal consistency
+
+### Postivity
+
+### Exchangeability
+
+### Correct model specification 
 
 
-
-## Common Causal Graphs
+## The Four Canonical Causal Diagrammes: Problems and Solutions
 
 ```{r}
 #| include: false
@@ -93,10 +106,7 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 ```
 
 
-## Graphs of Canonical confounders
-
-
-### Confounding by Common Cause
+### 1. Confounding by Common Cause
 
 The problem of confounding by common cause arises when there is an unmeasured or unaccounted-for variable, denoted as "L," that influences both the treatment variable, denoted by $A,$ and the outcome variable, denoted as $Y.$ This confounder, $L$,  creates an association between $A$ and $Y$ that is not solely due to the direct causal effect of $A$ on $Y$. Instead, the observed association between $A$ and $Y$ may be partially or entirely driven by the presence of $L$, making it difficult to isolate and accurately estimate the true causal effect of $A$ on $Y$.
 
@@ -159,7 +169,7 @@ Confounding by common cause can be addressed by adjusting for it. If $L$ is meas
 ```
 
 
-### Second problem: Collider stratification: conditioning on a common effect
+### 2, collider stratification: conditioning on a common effect
 
 Conditioning on a common effect occures when a variable $L$ is affected by both the treatment $A$ and an outcome $Y$.  Conditioning on $L$ creates a spurious association between $A$ and $Y$, biasing the true causal relationship. This occurs because the relationship between $A$ and $Y$ becomes confounded by the common effect $L$. The observed association  between $A$ and $Y$ may be solely driven by the influence of $L$.
 
@@ -191,10 +201,7 @@ Conditioning on a common effect occures when a variable $L$ is affected by both 
 
 ```
 
-
-
 ### Solution: ensure all confounders are measured before the exposure
-
 
 To address the problem of conditioning on a common effect, it is crucial to ensure that every potential confounder $L$ that may affect $A$ is measured before $A$. If such temporal order is preserved,  $L$ cannot be an effect of $A$, and thus neither of $Y$.  By measuring all relevant confounders in advance, researchers can minimize bias and obtain more reliable estimates of the true causal relationship between A and Y. Note that collider stratification may arise even if $L$ occurs before $A$, when $L$ does not affect $A$ or $Y$. This is called M-bias. We describe this case below. Note, however, that if $L$ is not a common cause of $A$ and $Y$, $L$ should not be included in our model because it is not a source of confounding.
 
@@ -230,7 +237,7 @@ To address the problem of conditioning on a common effect, it is crucial to ensu
 
 
 
-### Third problem: conditioning on a mediator 
+### 3 Conditioning on a mediator 
 
 Conditioning on a mediator refers to a situation where $L$ lies on the causal pathway between the treatment $A$ and the outcome $Y$.  Conditioning on $L$ can lead to biased estimates by blocking or distort the true causal pathway between $A$ and $Y$, obscuring the total effect of $A$ on $Y$.  Where $L$ is a collider between $A$ and an unmeasured confouder $U$, then including $L$ may increase the strength of association between $A$ and $Y$. We review this second possibility next. In either case, unless one is interested in mediation analysis (see below), conditioning on a post-treatment variable is nearly always a bad idea. [JB to discuss the exception] 
 
@@ -292,7 +299,7 @@ To address the problem of mediator bias, when interested in total effects do not
 ```
 
 
-### Fourth problem: conditioning on a descendant
+### 4. conditioning on a descendant
 
 
 Say $A$ is a cause of $A*$. There is a theorem that proves that when we condition on $A*$ we partially condition on $A$. 
@@ -332,7 +339,7 @@ First the negative. Suppose there is a confounder $L$ that is caused by an unobs
 ```
 
 
-### Solution: (yet again) ensure that counfounders are measured before the exposure
+### Solution: ensure that counfounders are measured before the exposure
 
 Ensuring the confounder (L) is measured before the exposure (A) has two beneficial properties. Firstly, if $L$ is a confounder, that is, if $L$ is a variable which if we fail to condition on it will bias the association between treatment and outcome, the strategy of including only pre-treatment indicators of $L$ will eliminate collider bias. Secondly, there is the positive side to the theorem that conditioning on a descendent is equivalent to partially conditioning on its parent: if an unmeasured confounder is associated with both $A$, $Y$, and $L$, then adjusting for $L$ helps to reduce confounding caused by the unmeasured confounder. By obtaining measure of $L$ that occur before $A$, such advantages can be achieved, allowing for more accurate estimation for the causal effect of $A$ on $Y$. We use the convention of a blue dotted arrow to indicate that the association between $A$ and $Y$ may still be biased, but that bias is reduced by inluding $L$
 
@@ -369,12 +376,11 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 **This ends the examples of cannoical casual diagrammes**  
 
 
+### Summary 
 
-## Examples 
 
-Next some worked examples.
 
-## Common cause of exposure and outcome. 
+### Common cause of exposure and outcome. 
 
 
 ```{tikz}
@@ -460,9 +466,7 @@ Next some worked examples.
 
 
 
-
 ### Solution: adjust for confounder at baseline
-
 
 
 ```{tikz}
@@ -489,7 +493,6 @@ Next some worked examples.
 \end{tikzpicture}
 
 ```
-
 
 
 
