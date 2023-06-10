@@ -64,7 +64,7 @@ In any case, this article is a penance.
 
 Correlation is not, in itself, the problem. We say a relation between an exposure $A$ and and outcome $Y$ is causal if the corration between $A$ and $Y$ is unbiased. 
 
-Causal diagrammes, or directed acyclic graphs (DAGS), are qualitative tools for identifying sources of bias. They are powerful because they translate the mathematical artiface eludidates the structures of unbiased relations into simple images. We may therefore use the images to understand how we may answer causal questions.  
+Causal diagrammes, or directed acyclic graphs (DAGS), are qualitative tools for identifying sources of bias. They are powerful because they translate a mathematical artiface that underpinns causal inference into simple, useable images. We may therefore use the images to understand how we may answer causal questions.  
 
 However we must recognise that we never start by answering a causal question.  We start by asking a causal question. Many who utilise causal graphs fail to appreciate this fact.
 
@@ -96,7 +96,7 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 ## Graphs of Canonical confounders
 
 
-### Confounding by Common Cause. 
+### Confounding by Common Cause
 
 The problem of confounding by common cause arises when there is an unmeasured or unaccounted-for variable, denoted as "L," that influences both the treatment variable, denoted by $A,$ and the outcome variable, denoted as $Y.$ This confounder, $L$,  creates an association between $A$ and $Y$ that is not solely due to the direct causal effect of $A$ on $Y$. Instead, the observed association between $A$ and $Y$ may be partially or entirely driven by the presence of $L$, making it difficult to isolate and accurately estimate the true causal effect of $A$ on $Y$.
 
@@ -125,7 +125,6 @@ The problem of confounding by common cause arises when there is an unmeasured or
 \draw [-latex, black] (L) to (A);
 \end{tikzpicture}
 ```
-
 
 
 ### Solution: adjust for the pre-exposure confounder
@@ -160,9 +159,9 @@ Confounding by common cause can be addressed by adjusting for it. If $L$ is meas
 ```
 
 
-### Second problem: Collider Stratification: conditioning on a common effect.
+### Second problem: Collider stratification: conditioning on a common effect
 
-Conditioning on a common effect refers to a situation where there is a variable, $L$, is affected by both the treatment $A$ and an outcome $Y$.  Conditioning on $L$ creates a spurious association between $A$ and $Y$, biasing the true causal relationship. This occurs because the relationship between $A$ and $Y$ becomes confounded by the common effect $L$. The observed association  between $A$ and $Y$ may be solely driven by the influence of $L$.
+Conditioning on a common effect occures when a variable $L$ is affected by both the treatment $A$ and an outcome $Y$.  Conditioning on $L$ creates a spurious association between $A$ and $Y$, biasing the true causal relationship. This occurs because the relationship between $A$ and $Y$ becomes confounded by the common effect $L$. The observed association  between $A$ and $Y$ may be solely driven by the influence of $L$.
 
 ```{tikz}
 #| label: fig-dag-common-effect
@@ -233,7 +232,7 @@ To address the problem of conditioning on a common effect, it is crucial to ensu
 
 ### Third problem: conditioning on a mediator 
 
-Conditioning on a mediator refers to a situation where $L$ lies on the causal pathway between the treatment $A$ and the outcome $Y$.  Conditioning on $L$ can lead to biased estimates by blocking or distort the true causal pathway between $A$ and $Y$, obscuring the total effect of $A$ on $Y$.  Where $L$ is a collider between $A$ and an unmeasured confouder $U$, then including $L$ may increase the strength of association between $A$ and $Y$. We review this second possibility next. In either case, unless one is interested in mediation analysis (see below), conditioning on a post-treatment variable is always a bad idea. 
+Conditioning on a mediator refers to a situation where $L$ lies on the causal pathway between the treatment $A$ and the outcome $Y$.  Conditioning on $L$ can lead to biased estimates by blocking or distort the true causal pathway between $A$ and $Y$, obscuring the total effect of $A$ on $Y$.  Where $L$ is a collider between $A$ and an unmeasured confouder $U$, then including $L$ may increase the strength of association between $A$ and $Y$. We review this second possibility next. In either case, unless one is interested in mediation analysis (see below), conditioning on a post-treatment variable is nearly always a bad idea. [JB to discuss the exception] 
 
 
 ```{tikz}
@@ -263,10 +262,9 @@ Conditioning on a mediator refers to a situation where $L$ lies on the causal pa
 ```
 
 
+### Solution: ensure confounders are measured before the exposure
 
-### Solution: ensure confounders are measured before the exposure.
-
-To address the problem of mediator bias, do not condition on a mediator. Ensure that $L$ occurs before $A$ (and $Y$). Again we discover the importance of an explicit temporal ordering for our variables.  
+To address the problem of mediator bias, when interested in total effects do not condition on a mediator. This can be done by ensuring that $L$ occurs before $A$ (and $Y$). Again we discover the importance of an explicit temporal ordering for our variables.  Although note, if $L$ is associated with $Y$ but is not associated with $A$ conditioning on $L$ will improve the efficiency of the causal effect estimate of $A$ on $Y$.  However, if $A$ might affect $L$, then $L$ might be a mediator, and including $L$ risks bias. As with some much in causal estimation, we must understand the context.
 
 ```{tikz}
 #| label: fig-dag-mediator-solution
@@ -297,7 +295,12 @@ To address the problem of mediator bias, do not condition on a mediator. Ensure 
 ### Fourth problem: conditioning on a descendant
 
 
-Say $X$ is a cause of $X*$. There is a theorem that proves that when we condition on $X*$ we partially condition on $X$. There are both negative and positive implications for causal estimation. First the negative. Suppose there is a confounder $L$ that is caused by an unobserved variable $U$, and is affected by the treatment $A$. Suppose further that $U$  causes the outcome $Y$. In this scenario, as described in @fig-dag-descendent, conditioning on $L$, which is a descendant of $A$ and $U$, can lead to a spurious association between $A$ and $Y$ through the path $A \to L \to U \to Y$. 
+Say $A$ is a cause of $A*$. There is a theorem that proves that when we condition on $A*$ we partially condition on $A$. 
+
+There are both negative and positive implications of this theorem for causal estimation in real-world scenarios. 
+
+First the negative. Suppose there is a confounder $L$ that is caused by an unobserved variable $U$, and is affected by the treatment $A$. Suppose further that $U$  causes the outcome $Y$. In this scenario, as described in @fig-dag-descendent, conditioning on $L$, which is a descendant of $A$ and $U$, can lead to a spurious association between $A$ and $Y$ through the path $A \to L \to U \to Y$. 
+
 
 ```{tikz}
 #| label: fig-dag-descendent
@@ -329,8 +332,7 @@ Say $X$ is a cause of $X*$. There is a theorem that proves that when we conditio
 ```
 
 
-### Solution: (yet again!) ensure that counfounders are measured before the exposure
-
+### Solution: (yet again) ensure that counfounders are measured before the exposure
 
 Ensuring the confounder (L) is measured before the exposure (A) has two beneficial properties. Firstly, if $L$ is a confounder, that is, if $L$ is a variable which if we fail to condition on it will bias the association between treatment and outcome, the strategy of including only pre-treatment indicators of $L$ will eliminate collider bias. Secondly, there is the positive side to the theorem that conditioning on a descendent is equivalent to partially conditioning on its parent: if an unmeasured confounder is associated with both $A$, $Y$, and $L$, then adjusting for $L$ helps to reduce confounding caused by the unmeasured confounder. By obtaining measure of $L$ that occur before $A$, such advantages can be achieved, allowing for more accurate estimation for the causal effect of $A$ on $Y$. We use the convention of a blue dotted arrow to indicate that the association between $A$ and $Y$ may still be biased, but that bias is reduced by inluding $L$
 
@@ -349,7 +351,6 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 \begin{tikzpicture}[{every node/.append style}=draw]
 
-
 \node [rectangle, draw=white] (U) at (0, 0) {U};
 \node [rectangle, draw=black] (L) at (2, 0) {t0/L};
 \node [rectangle, draw=white](A) at (4, 0) {t1/A};
@@ -365,7 +366,7 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-### This ends the examples of cannoical casual diagrammes  
+**This ends the examples of cannoical casual diagrammes**  
 
 
 

@@ -65,6 +65,13 @@ push_mods <-
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
+
+env_names <- dat |> 
+  select(starts_with("env_")) |> 
+  colnames()
+
+dat$equake_affected_earthquake
+
 # inspect exposure
 hist(dat$perfectionism, breaks = 100)
 
@@ -4749,62 +4756,62 @@ We next leveraged longitudinal data to investigate whether changing from transit
 
 ### Sample
 
-|                                        | Time 10 (baseline) |
-|:---------------------------------------|:-------------------|
-|                                        | (N=10787)          |
-| **Male**                               |                    |
-| Male                                   | 4003 (37 %)        |
-| Not_male                               | 6784 (63 %)        |
-| **Cohort**                             |                    |
+|                                      | Time 10 (baseline) |
+|:-------------------------------------|:-------------------|
+|                                      | (N=10787)          |
+| **Male**                             |                    |
+| Male                                 | 4003 (37 %)        |
+| Not_male                             | 6784 (63 %)        |
+| **Cohort**                           |                    |
 | Gen_Silent: b.\< 1946                | 714 (7 %)          |
 | Gen Boomers: b. \>= 1946 & b.\< 1965 | 5229 (48 %)        |
-| GenX: born \>=1961 & b.\< 1981         | 3311 (31 %)        |
-| GenY: born \>=1981 & b.\< 1996         | 1421 (13 %)        |
-| GenZ: born \>= 1996                    | 112 (1 %)          |
-| **NZ-European**                        |                    |
-| No                                     | 2018 (19 %)        |
-| Yes                                    | 8730 (81 %)        |
-| Missing                                | 39 (0.4%)          |
-| **Education**                          |                    |
-| Mean (SD)                              | 5.63 (± 2.66)      |
-| Missing                                | 37 (0.3%)          |
-| **Employed**                           |                    |
-| No                                     | 2714 (25 %)        |
-| Yes                                    | 8064 (75 %)        |
-| Missing                                | 9 (0.1%)           |
-| **NZDep2018**                          |                    |
-| Mean (SD)                              | 4.70 (± 2.73)      |
-| Missing                                | 117 (1.1%)         |
-| **NZSEI13**                            |                    |
-| Mean (SD)                              | 54.9 (± 16.0)      |
-| Missing                                | 56 (0.5%)          |
-| **Rural_GCH2018**                      |                    |
-| 1                                      | 6632 (61 %)        |
-| 2                                      | 2092 (19 %)        |
-| 3                                      | 1254 (12 %)        |
-| 4                                      | 567 (5 %)          |
-| 5                                      | 126 (1 %)          |
-| Missing                                | 116 (1.1%)         |
-| **Born NZ**                            |                    |
-| Mean (SD)                              | 0.800 (± 0.400)    |
-| Missing                                | 18 (0.2%)          |
-| **Parent**                             |                    |
-| No                                     | 2574 (24 %)        |
-| Yes                                    | 8212 (76 %)        |
-| Missing                                | 1 (0.0%)           |
-| **Partner**                            |                    |
-| No                                     | 2576 (24 %)        |
-| Yes                                    | 7903 (73 %)        |
-| Missing                                | 308 (2.9%)         |
-| **Politically_Liberal**                |                    |
-| Mean (SD)                              | 3.57 (± 1.38)      |
-| Missing                                | 497 (4.6%)         |
-| **Left_Wing**                          |                    |
-| Mean (SD)                              | 3.71 (± 1.31)      |
-| Missing                                | 537 (5.0%)         |
-| **Religious_Identification**           |                    |
-| Mean (SD)                              | 1.72 (± 2.58)      |
-| Missing                                | 68 (0.6%)          |
+| GenX: born \>=1961 & b.\< 1981       | 3311 (31 %)        |
+| GenY: born \>=1981 & b.\< 1996       | 1421 (13 %)        |
+| GenZ: born \>= 1996                  | 112 (1 %)          |
+| **NZ-European**                      |                    |
+| No                                   | 2018 (19 %)        |
+| Yes                                  | 8730 (81 %)        |
+| Missing                              | 39 (0.4%)          |
+| **Education**                        |                    |
+| Mean (SD)                            | 5.63 (± 2.66)      |
+| Missing                              | 37 (0.3%)          |
+| **Employed**                         |                    |
+| No                                   | 2714 (25 %)        |
+| Yes                                  | 8064 (75 %)        |
+| Missing                              | 9 (0.1%)           |
+| **NZDep2018**                        |                    |
+| Mean (SD)                            | 4.70 (± 2.73)      |
+| Missing                              | 117 (1.1%)         |
+| **NZSEI13**                          |                    |
+| Mean (SD)                            | 54.9 (± 16.0)      |
+| Missing                              | 56 (0.5%)          |
+| **Rural_GCH2018**                    |                    |
+| 1                                    | 6632 (61 %)        |
+| 2                                    | 2092 (19 %)        |
+| 3                                    | 1254 (12 %)        |
+| 4                                    | 567 (5 %)          |
+| 5                                    | 126 (1 %)          |
+| Missing                              | 116 (1.1%)         |
+| **Born NZ**                          |                    |
+| Mean (SD)                            | 0.800 (± 0.400)    |
+| Missing                              | 18 (0.2%)          |
+| **Parent**                           |                    |
+| No                                   | 2574 (24 %)        |
+| Yes                                  | 8212 (76 %)        |
+| Missing                              | 1 (0.0%)           |
+| **Partner**                          |                    |
+| No                                   | 2576 (24 %)        |
+| Yes                                  | 7903 (73 %)        |
+| Missing                              | 308 (2.9%)         |
+| **Politically_Liberal**              |                    |
+| Mean (SD)                            | 3.57 (± 1.38)      |
+| Missing                              | 497 (4.6%)         |
+| **Left_Wing**                        |                    |
+| Mean (SD)                            | 3.71 (± 1.31)      |
+| Missing                              | 537 (5.0%)         |
+| **Religious_Identification**         |                    |
+| Mean (SD)                            | 1.72 (± 2.58)      |
+| Missing                              | 68 (0.6%)          |
 
 : Sample Statistics (baseline = 2018) {#tbl-sample}
 
@@ -4932,16 +4939,11 @@ We compared for methods for balancing covariates on the exposure: (1) covariate 
 
 ```
 
-
-
-
 <!-- ## Results -->
 
 <!-- Causal effect estimates on the difference scale are presented in @fig-results1. Contrasts are presented in standardised response units. Again, these causal effect estimates are modelled as a contrast in (1) expected group attitudes for the entire population prior to the attacks (NZAVS Time 10 pre-attacks) with (2) expected group attitudes for the entire population during the following year weighted by 2018 census data to recover post-stratification estimates. Assuming correct model specification and no measurement error, such contrasts would be unbiased estimates for the intention-to-treat effect for random "assignment" to the attack condition. \[Note: see supplement X for a discussion of the distinction between the per-protocol and intention to treat effects\]. Note that standard errors were obtained both by simulation and the delta method (simulated contrasts are reported here.) As indicated in @fig-results1, we replicate previous findings revealing a strong increase in the acceptance of Muslims. Furthermore, we find evidence for the transference of acceptance to prototypical minorities. We do not find a boost in acceptance for non-prototypical minority groups. Nor do we find acceptance for groups that may be regarded as "negative controls." The exception to this pattern is in evidence of an increase in the acceptance of Pacific peoples. Additionally, we find evidence for acceptance of those with mentally illness. -->
 
 <!-- Before attempting to interpret the naive analysis, however, we must adjust for the possibility of temporal trends (see: @tbl-timeproto, @tbl-timenegcontrol, @tbl-timenonproto.) -->
-
-
 
 <!-- ![Sensitivity analysis for causal contrasts adjusted for the estimated time trends in minority-group acceptance. Panel (a) presents the "worst case" scenario for increasing acceptance in pre-attack trajectories, implying that the attacks would have increased acceptance for all groups. Panel (b) presents the scenario in which increasing acceptance in pre-attack trajectories adjusted at the mean of the pre-attack trends. Here we find stronger evidence for transference of acceptance to non-prototypical groups. Panel (c) presents the "best case" scenario for increasing acceptance in pre-attack acceptance, implying that the attacks did not increase acceptance as strongly as would appear in the naive analysis](fig_2.jpg){#fig-results2} -->
 
