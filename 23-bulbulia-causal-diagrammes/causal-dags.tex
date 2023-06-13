@@ -76,6 +76,29 @@
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newlength{\cslentryspacingunit} % times entry-spacing
+\setlength{\cslentryspacingunit}{\parskip}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+  \let\oldpar\par
+  \def\par{\hangindent=\cslhangindent\oldpar}
+  \fi
+  % set entry spacing
+  \setlength{\parskip}{#2\cslentryspacingunit}
+ }%
+ {}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{booktabs}
 \usepackage{longtable}
@@ -91,6 +114,7 @@
 \usepackage[normalem]{ulem}
 \usepackage{makecell}
 \usepackage{xcolor}
+\usepackage{cancel}
 \makeatletter
 \makeatother
 \makeatletter
@@ -151,7 +175,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={Better Causal Diagrammes},
+  pdftitle={Better causal diagrammes},
   pdfauthor={Joseph A. Bulbulia},
   colorlinks=true,
   linkcolor={blue},
@@ -160,96 +184,338 @@
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\title{Better Causal Diagrammes}
+\title{Better causal diagrammes}
 \author{Joseph A. Bulbulia}
 \date{}
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, breakable, frame hidden, borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, interior hidden, enhanced]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, breakable, borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, enhanced, frame hidden, interior hidden]}{\end{tcolorbox}}\fi
 
 \listoffigures
 \listoftables
+\hypertarget{abstract}{%
+\section{Abstract}\label{abstract}}
+
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
 
 \hypertarget{objective}{%
 \subsection{Objective}\label{objective}}
 
-The frequent misconception of equating correlation with causation in
-human sciences has given rise to a \textbf{causal crisis} {[}cite{]}.
-Despite the potential of causal diagrams to address this predicament,
-their practicality is sometimes obscured by confusion and improper
-utalisation.
+Correlation is not causation. However, persistent confusion in the
+analysis and reporting of correlation across many human sciences has
+limited progress. Frequently, the correlations in observed data are
+biased, and may even run in the opposite direction to observed
+correlations. Where time series data are lacking, we generally cannot
+estimate consistent causal effects However, many researchers report
+correlations using hedging language that may suggest or imply causation.
+This widespread practice -- in which the author has regrettably
+participated -- has led to what might be called a ``causality crisis''
+(\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022}). Addressing this
+causality crisis is among the most science's pressing issues.
 
-Here, we:
+When integrated into causally conscientious workflows, causal diagrammes
+(also called directed acyclic graphs, or ``DAGs'') are powerful tools by
+which to assist in the identification of causality, and so, to address
+the causality crisis. However, unscrupulous applications of causal
+diagrammes may estimate causal effects. Causal diagrammes clarify
+assumptions. Science requires assumptions but it also requires data.
+Researchers armed with DAGs may be tempted to let themselves off the
+hook. However, it would be better if causal diagrammes directed
+researchers to pause, and collect data appropriate to their questions,
+or at least to name the clarify the obstacles.
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
+Here, I offer a comprehensive tutorial that showcases the practical
+utility of temporally action graphs.\footnote{The term ``DAG'' is
+  unfortunate because not all directed acyclic graphs are causal. For a
+  graph to be causal it must satisfy the conditions of markov
+  factorisation (see Appendix A). In my utopia, we call causal
+  diagrammes ``temporal action graphs'' - or ``TAGs.'' However, the
+  causality crisis will not combatted with jargon. And again, for a
+  graph to be causal the central concept is not chronological action but
+  rather markov factorisation (see Appendix A).} Temporal action graphs
+are ordinary (causal) directed acyclic graphs in which the spatial
+structure of the graph is designed to reflected the temporal order of
+assumed causality. We may think of such temporally structured causal
+diagrammes as \textbf{chronologically conscientious DAGs}.
+
+We will discover that adding temporal order to the traditionally static
+structure of DAGs may greatly assist both in understanding causal
+assumptions and in directing attention to the data we need to address
+our questions. We will also discover opportunities for measuring
+confounders that occur after the exposure and outcome have occurred.
+This special case reveals the limitations of ready-made rules insisting
+that confounders must occur prior to the exposure, and that we should
+therefore never condition on post-exposure confounders.
+
+There are many good resources for drawing causal diagrammes
+(\protect\hyperlink{ref-rohrer2018}{Rohrer 2018};
+\protect\hyperlink{ref-hernan2023}{Hernan and Robins 2023a};
+\protect\hyperlink{ref-cinelli2022}{Cinelli, Forney, and Pearl 2022};
+\protect\hyperlink{ref-barrett2021}{Barrett 2021};
+\protect\hyperlink{ref-mcelreath2020}{McElreath 2020}).
+
+My primary purpose here is to explain the benefits of maintaining, where
+possible, the chronological ordering of events. Second, I demonstrate
+the utility of temporal for the the diagnosis of problems arising from
+measurement error. I believe these problems to be among the most
+important -- yet most ill-considered -- in the human sciences.
+
+The article is organised as follows:
+
+\textbf{Part 1.} develops the connection between causal diagrammes and
+the potential outcomes framework. Understanding this connection is
+important. Whereas causal diagrammes help researchers to answer
+questions, we must first understand how to ask causal questions. Absent
+such an understanding causal graphs are a best unhelpful and more likely
+misleading.
+
+\textbf{Part 2.} reviews the four fundamental graphs that form the basis
+of causal understanding. This material replicates material in other
+tutorials. However, by emphasising the temporal order in spatial
+structure solutions to identifying causality in the presence of
+confounding are more apparent. We develop this four fundamental problems
+to concepts of interaction, mediations, and treatment-confounder
+feedback.
+
+\textbf{Part 3.} Applies temporal action graphs to a substantative
+problem in measurement. Some of the enthusiasm for strategies we develop
+in \textbf{Part 2} is diminished by an appreciation for how measurement
+error may bias results. The upshot of Part 3 is to argue for the
+importance of attending to measurement error as a source of bias, and to
+perform sensitivity analyses even when carefully documented time-series
+data have been collected.
+
+A brief concluding section reviews advice. Technical details are
+presented in an appendix.
+
+Causal diagrammes are tools we use to answer causal questions.
+\textbf{However before we can answer a causal question, we must first
+understand what is involved when we ask a causal question.}
+
+\hypertarget{part-1.-how-to-ask-causal-questions}{%
+\section{Part 1. How to ask causal
+questions}\label{part-1.-how-to-ask-causal-questions}}
+
+\hypertarget{the-fundamental-problem-of-causal-inference.}{%
+\subsection{The fundamental problem of causal
+inference.}\label{the-fundamental-problem-of-causal-inference.}}
+
+The frameworks within which causal inference has developed all rely on a
+counterfactual conception of causality. We cay that \(A\) causes \(Y\)
+if changing \(A\) would have made a difference to the outcome of \(Y\).
+
+Consider an example. Suppose,there is evidence that bilingual children
+perform better at cognitive tasks. Here, learning a second language is
+our exposure or ``treatment'' of interest.
+
+Define two potential outcomes for each child in a population:
+
+\begin{itemize}
+\tightlist
 \item
-  develop the connection between this powerful analytical tool and the
-  potential outcomes framework, a fundamental component of causal
-  inference.
+  \(Y_i(a = 1)\): The cognitive ability of child \(i\) if they were
+  bilingual. This is the counterfactual outcome when A = 1.
 \item
-  offer practical guidance for employing causal diagrams to enhance
-  causal understanding for questions in the human sciences, to
-  accellerate the transition from merely inferring correlations to
-  estimating causal relationships.
-\item
-  emphasise the need for time-series data to address causal questions,
-  such that the chronological sequence of events implied by the
-  diagramme may identify cause-effect relationships.
-\end{enumerate}
+  \(Y_i(a = 0)\): The cognitive ability of child \(i\) if they were
+  monolingual. This is the counterfactual outcome when A = 0.
+\end{itemize}
 
-We apply the tools to a problem of measurement error in time-series
-data.
+Within a counterfactual or ``potential outcomes'' framework, the causal
+effect of bilingualism on cognitive ability for individual \(i\) is
+defined as the difference between the two potential outcomes:
 
-Our overarching goal is to deliver a comprehensive tutorial that
-elucidates the principles of causal inference and showcases the
-practical utility of causal diagrams, encouraging a more precise and
-informed approach to discerning causality.
+\[
+\text{Causal Effect}_i = Y_i(1) - Y_i(0) 
+\]
 
-\hypertarget{correlation}{%
-\subsection{Correlation}\label{correlation}}
+Our interest is in a contrast between two states of the world, one in
+which a child hypothetically receives bilingual exposure (\(Y\) when
+exposure is set \(a=1\)) an one in which a child hypothetically does not
+(\(Y\) when exposure is set \(a=0\)).{[}\^{}3{]} Notice that any child
+can, at most, only receive one level of the exposure. Only one
+hypothetical exposure can be realised. The outcome under the exposure
+that the child does not receive is not generally observed. For this
+reason, causal inference has been described as a missing data problem
+(\protect\hyperlink{ref-westreich2015}{Westreich et al. 2015};
+\protect\hyperlink{ref-edwards2015}{Edwards, Cole, and Westreich 2015}).
+At least half the counterfactual outcomes we require for estimating
+individual causal effects are missing.
 
-Correlation is not, in itself, the problem. We say a relation between an
-exposure \(A\) and and outcome \(Y\) is causal if the corration between
-\(A\) and \(Y\) is unbiased.
+{[}3{]}: The counter-factual outcome under the exposure \(A = a\) may be
+written in different ways, such as \(Y(a)\) (the notation we use here),
+\(Y^a\), and \(Y_a\).
 
-Causal diagrammes, or directed acyclic graphs (DAGS), are qualitative
-tools for identifying sources of bias. They are powerful because they
-translate a mathematical artiface that underpinns causal inference into
-simple, useable images. We may therefore use the images to understand
-how we may answer causal questions.
+Table Table~\ref{tbl-consistency} expresses the relationship between
+observable and counterfactual outcomes as a contingency table (This
+table is modified from a table in
+(\protect\hyperlink{ref-morgan2014}{Morgan and Winship 2014})).
 
-However we must recognise that we never start by answering a causal
-question. We start by asking a causal question. Many who utilise causal
-graphs fail to appreciate this fact.
+\hypertarget{tbl-consistency}{}
+\begin{longtable}[]{@{}lll@{}}
+\caption{\label{tbl-consistency}Causal estimation as a missing data
+problem.}\tabularnewline
+\toprule\noalign{}
+Group & Exposure(A=1) & No Exposure (A=0) \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Group & Exposure(A=1) & No Exposure (A=0) \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Y(1) & Observable & Counterfactual \\
+Y(0) & Counterfactual & Observable \\
+\end{longtable}
 
-\hypertarget{the-potential-outcomes-framework.}{%
-\section{The potential outcomes
-framework.}\label{the-potential-outcomes-framework.}}
+As evident from Table~\ref{tbl-consistency}, the inaccessibility of
+individual-level causal effects is not limited to observational studies:
+individual-level causal effects are not observed in randomised
+experiments. This table applies to experiments.
 
-\hypertarget{causal-consistency}{%
-\subsection{Causal consistency}\label{causal-consistency}}
+However, although we cannot generally observe individual level causal
+effects, were the following identification assumptions hold, it may be
+possible to estimate average causal effects as a contrast in the average
+responses in the exposed an unexposed groups \footnote{Note that the
+  contrast may be between different levels of a multinomial categorical
+  or continuous indicator, in which case we would define the levels to
+  contrast as \(A = a\) and \(A = a*\), and we define the causal
+  contrast on the difference scale as \begin{align*}
+  ATE = E[Y(a) - Y(a*)]
+  \end{align*}} Such that:
 
-\hypertarget{postivity}{%
-\subsection{Postivity}\label{postivity}}
+\begin{align*}
+ATE = E(Y(1) - Y(0))\\
+          ~  = E(Y(1) - E(Y(0))
+\end{align*}
 
-\hypertarget{exchangeability}{%
-\subsection{Exchangeability}\label{exchangeability}}
+\hypertarget{identification-assumption-1-causal-consistency}{%
+\subsubsection{Identification assumption 1: Causal
+consistency}\label{identification-assumption-1-causal-consistency}}
 
-\hypertarget{correct-model-specification}{%
-\subsection{Correct model
-specification}\label{correct-model-specification}}
+We satisfy the causal consistency assumption when the potential or
+counterfactual outcome under treatment (or exposure) \(Y(A=a)\)
+corresponds to the observed outcome \(Y_{observed}|A=a\) if the
+treatment (or exposure). For a binary exposure, the consistency
+assumption my be expressed as follows: (equation from Morgan and Winship
+(\protect\hyperlink{ref-morgan2014}{2014}))
 
-\hypertarget{the-four-canonical-causal-diagrammes-problems-and-solutions}{%
-\section{The Four Canonical Causal Diagrammes: Problems and
-Solutions}\label{the-four-canonical-causal-diagrammes-problems-and-solutions}}
+\[Y^{observed} = AY(a=1) + (1-A)Y(a=0)\]
 
-\hypertarget{confounding-by-common-cause}{%
-\subsection{1. Confounding by Common
-Cause}\label{confounding-by-common-cause}}
+Where the assumption of causal consistency is tenable, we may obtain the
+missing counterfactual outcomes under hypothetical exposures as observed
+outcomes under realised exposures, such that:
+
+\[
+Y_i = 
+\begin{cases} 
+Y_i^1 & \text{if } A_i = 1 \\
+Y_i^0 & \text{if } A_i = 0 
+\end{cases}
+\]
+
+Note, that the missing counterfactuals remain missing:
+
+\[
+ATE = \large(\underbrace{E[Y(1)|A = 1]}_\text{observed} + \underbrace{E[Y(1)|A = 0]}_\text{unobserved}\large) - \large(\underbrace{E[Y(0)|A = 0]}_\text{observed}  + \underbrace{E[Y(0)|A = 1]}_\text{unobserved}\large)
+\]
+
+However, by substituting \(Y_{observed}|A\) for \(Y(a)\) we may recover
+counterfactual outcomes required for our causal contrasts from realised
+outcomes under different levels of exposures.
+
+There are three reasons that applied researchers must understand the
+causal consistency assumption.
+
+First, the causal consistency assumption reveals \emph{the priority of
+counterfactual outcomes over realised outcomes.} If statistics is
+data-science, causal estimation is \emph{counterfactual data-science}.
+
+Second, causal consistency implies ``treatment variation irrelevance,''
+such that each of the many versions of a treatment \(K\) are
+sufficiently well-defined to correspond to well-defined outcome \(Y_k\)
+, and exposure \(A\) corresponds to a coarsened indicator of the many
+versions \(K\), then if there is no confounding for the effect of \(K\)
+on \(Y\) given measured confounders \(L\) we may estimate consistent
+causal effects.\footnote{We write \(Y_k\) is independent of \(K\)
+  conditional on \(L\) (\protect\hyperlink{ref-vanderweele2009}{Tyler J.
+  VanderWeele 2009}, \protect\hyperlink{ref-vanderweele2018}{2018};
+  \protect\hyperlink{ref-vanderweele2013}{Tyler J. VanderWeele and
+  Hernan 2013}) as: \(K \coprod Y_k | L\) (or equivalently
+  \(Y_k \coprod K | L\))} However, although we may estimate consistent
+causal
+
+Third, although treatement variation irrelevance implies that we may
+estimate consisten causal effects in a world where versions of treatment
+are not well controlled, if we well-defined interventions, as is typical
+in much observational research, our understanding of the phenonomenon is
+curtailed (\protect\hyperlink{ref-hernuxe1n2008}{Hernán and Taubman
+2008}). For example, consider effect of weight-loss at age 40 on all
+cause mortality at age 50. Notably, there are many way in which people
+lose weight, including exercise, caloric restriction, liposuction,
+stomach stapling, smoking, cancer, and famine. To estimate the causal
+effect of weight-loss without specifying the intervention in question
+leaves it unclear which effect we are consistently estimating
+(\protect\hyperlink{ref-hernan2023a}{Hernan and Robins 2023b}).
+
+\hypertarget{identification-assumption-2-exchangability}{%
+\subsubsection{Identification assumption 2:
+Exchangability}\label{identification-assumption-2-exchangability}}
+
+Given the observed covariates, the treatment assignment is independent
+of the potential outcomes. Mathematically, this can be expressed as.
+
+\[Y^a\coprod A \text{ for all }a\]
+
+or with strata of confounding covarates:
+
+\[Y^a\coprod  A \text{ for all }a|L\]
+
+When conditional exchangability holds:
+
+\[
+\begin{aligned}
+ATE = E[Y^{a=1}|L = l] - E[Y^{a=0}|L = l] ~ \text{for any value}~l
+\end{aligned}
+\]
+
+\begin{quote}
+``We say that a set L of measured non-descendants of L is a sufficient
+set for confounding adjustment when conditioning on L blocks all
+backdoor paths--that is, the treated and the untreated are exchangeable
+within levels of L''(\protect\hyperlink{ref-hernan2023a}{Hernan and
+Robins 2023b})
+\end{quote}
+
+\hypertarget{identification-assumption-3-positivity}{%
+\subsubsection{Identification assumption 3:
+Positivity}\label{identification-assumption-3-positivity}}
+
+The probability of receiving every value of the exposure within all
+strata of co-variates is greater than zero
+
+\begin{equation}
+0 < \Pr(A=a|L)<1, ~ \forall a \in A, ~ \forall a \in L
+\end{equation}
+
+There are two types of positivity violations - Random non-positivity:
+the casual effect of aging with observations missing at ages 40-41 (we
+use parametric models as a work around.) - Deterministic non-positivity:
+the causal effect of hysterectomy in biological males (assumption
+violated).
+
+For causal inference, correlation is not the problem. The problem is
+bias.
+
+\hypertarget{part-2.-the-four-canonical-causal-diagrammes}{%
+\section{Part 2. The Four Canonical Causal
+Diagrammes}\label{part-2.-the-four-canonical-causal-diagrammes}}
+
+\hypertarget{the-problem-of-confounding-by-common-cause}{%
+\subsection{1. The problem of confounding by common
+cause}\label{the-problem-of-confounding-by-common-cause}}
 
 The problem of confounding by common cause arises when there is an
 unmeasured or unaccounted-for variable, denoted as ``L,'' that
@@ -263,7 +529,7 @@ estimate the true causal effect of \(A\) on \(Y\).
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-1.pdf}
 
 }
 
@@ -271,21 +537,22 @@ estimate the true causal effect of \(A\) on \(Y\).
 
 \end{figure}
 
-\hypertarget{solution-adjust-for-the-pre-exposure-confounder}{%
-\subsection{Solution: adjust for the pre-exposure
-confounder}\label{solution-adjust-for-the-pre-exposure-confounder}}
+\hypertarget{solution-to-the-problem-of-confounding-by-a-common-cause-adjust-for-all-measured-pre-exposure-confounders.}{%
+\subsection{Solution to the problem of confounding by a common cause:
+adjust for all measured pre-exposure
+confounders.}\label{solution-to-the-problem-of-confounding-by-a-common-cause-adjust-for-all-measured-pre-exposure-confounders.}}
 
 Confounding by common cause can be addressed by adjusting for it. If
 \(L\) is measured before the treatment (or exposure) is assigned, we may
 adjust for this confounder to account for its influence. Typically we
 adjust through through statistical techniques such as stratification,
 regression, matching, or inverse probability of treatment weighting.
-Sucg adjustment helps to mitigate the bias caused by the confounder,
+Such adjustment helps to mitigate the bias caused by the confounder,
 allowing for a more accurate estimation of the true causal relationship.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-solution-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-solution-1.pdf}
 
 }
 
@@ -294,21 +561,22 @@ pre-exposure confounder.}
 
 \end{figure}
 
-\hypertarget{collider-stratification-conditioning-on-a-common-effect}{%
-\subsection{2, collider stratification: conditioning on a common
-effect}\label{collider-stratification-conditioning-on-a-common-effect}}
+\hypertarget{confounding-by-collider-stratification-conditioning-on-a-common-effect}{%
+\subsection{2. Confounding by collider stratification (conditioning on a
+common
+effect)}\label{confounding-by-collider-stratification-conditioning-on-a-common-effect}}
 
-Conditioning on a common effect occures when a variable \(L\) is
-affected by both the treatment \(A\) and an outcome \(Y\). Conditioning
-on \(L\) creates a spurious association between \(A\) and \(Y\), biasing
-the true causal relationship. This occurs because the relationship
-between \(A\) and \(Y\) becomes confounded by the common effect \(L\).
-The observed association between \(A\) and \(Y\) may be solely driven by
-the influence of \(L\).
+Conditioning on a common effect occurs when a variable \(L\) is affected
+by both the treatment \(A\) and an outcome \(Y\). Conditioning on \(L\)
+creates a spurious association between \(A\) and \(Y\), biasing the true
+causal relationship. This occurs because the relationship between \(A\)
+and \(Y\) becomes confounded by the common effect \(L\). The observed
+association between \(A\) and \(Y\) may be solely driven by the
+influence of \(L\).
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-1.pdf}
 
 }
 
@@ -317,9 +585,10 @@ collider.}
 
 \end{figure}
 
-\hypertarget{solution-ensure-all-confounders-are-measured-before-the-exposure}{%
-\subsection{Solution: ensure all confounders are measured before the
-exposure}\label{solution-ensure-all-confounders-are-measured-before-the-exposure}}
+\hypertarget{solution-to-the-problem-of-conditioning-on-a-collider-ensure-that-all-confounders-are-measured-before-the-the-outcome-has-occurred}{%
+\subsection{Solution to the problem of conditioning on a collider:
+ensure that all confounders are measured before the the outcome has
+occurred}\label{solution-to-the-problem-of-conditioning-on-a-collider-ensure-that-all-confounders-are-measured-before-the-the-outcome-has-occurred}}
 
 To address the problem of conditioning on a common effect, it is crucial
 to ensure that every potential confounder \(L\) that may affect \(A\) is
@@ -335,7 +604,7 @@ model because it is not a source of confounding.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-solution-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-solution-1.pdf}
 
 }
 
@@ -361,7 +630,7 @@ nearly always a bad idea. {[}JB to discuss the exception{]}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-1.pdf}
 
 }
 
@@ -385,7 +654,7 @@ much in causal estimation, we must understand the context.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-solution-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-solution-1.pdf}
 
 }
 
@@ -414,7 +683,7 @@ association between \(A\) and \(Y\) through the path
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-1.pdf}
 
 }
 
@@ -444,7 +713,7 @@ inluding \(L\)
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-solution-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-solution-1.pdf}
 
 }
 
@@ -464,7 +733,7 @@ outcome.}\label{common-cause-of-exposure-and-outcome.}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-1-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-1-1.pdf}
 
 }
 
@@ -478,7 +747,7 @@ Confounder}\label{solution-adjust-for-confounder}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-2-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-2-1.pdf}
 
 }
 
@@ -493,7 +762,7 @@ t2}\label{bias-exposure-at-baseline-is-a-common-cause-of-the-exposure-at-t1-and-
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-3-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-3-1.pdf}
 
 }
 
@@ -508,7 +777,7 @@ baseline}\label{solution-adjust-for-confounder-at-baseline}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-4-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-4-1.pdf}
 
 }
 
@@ -522,7 +791,7 @@ control}\label{a-more-thorough-confounding-control}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-5-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-5-1.pdf}
 
 }
 
@@ -536,7 +805,7 @@ control}\label{a-more-thorough-confounding-control}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-6-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-6-1.pdf}
 
 }
 
@@ -554,7 +823,7 @@ outcome}\label{unmeasured-confounder-affects-selection-and-the-outcome}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-1.pdf}
 
 }
 
@@ -571,7 +840,7 @@ confounder}\label{unmeasured-confounder-affects-a-measured-confounder-of-selecti
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-2-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-2-1.pdf}
 
 }
 
@@ -587,7 +856,7 @@ attrition}\label{unmeasured-confounder-affects-slection-into-the-study-and-also-
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-4-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-4-1.pdf}
 
 }
 
@@ -602,7 +871,7 @@ attrition}\label{outcome-and-exposure-affect-attrition}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-5-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-5-1.pdf}
 
 }
 
@@ -618,7 +887,7 @@ error.}\label{outcome-and-exposure-affect-attrition-we-may-approach-this-problem
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-directed-measurement-error-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-directed-measurement-error-1.pdf}
 
 }
 
@@ -640,7 +909,7 @@ outcome.}\label{common-cause-of-exposure-and-outcome.-1}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-effect-modfication-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-effect-modfication-1.pdf}
 
 }
 
@@ -655,7 +924,7 @@ interaction}\label{another-graph-for-interaction}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-effect-modfication-2-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-effect-modfication-2-1.pdf}
 
 }
 
@@ -669,7 +938,7 @@ effect-modification.}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-m-bias-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-m-bias-1.pdf}
 
 }
 
@@ -718,7 +987,7 @@ given \(L\)
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediation-assuptions-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediation-assuptions-1.pdf}
 
 }
 
@@ -733,7 +1002,7 @@ Feedback}\label{confounder-treatment-feedback}}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-9-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-9-1.pdf}
 
 }
 
@@ -741,9 +1010,385 @@ Feedback}\label{confounder-treatment-feedback}}
 
 \end{figure}
 
-\hypertarget{multiple-versions-of-treatment}{%
-\section{Multiple Versions of
-Treatment}\label{multiple-versions-of-treatment}}
+By the end of this lecture you will:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Understand the causal assumptions implied by the factor analytic
+  interpretation of the formative and reflective models.
+\item
+  Be able to distinguish between statistical and structural
+  interpretations of these models.
+\item
+  Understand why Vanderweele thinks consistent causal estimation is
+  possible using the theory of multiple versions of treatments for
+  constructs with multiple indicators
+\end{enumerate}
+
+\hypertarget{two-ways-of-thinking-about-measurement-in-psychometric-research.}{%
+\section{Two ways of thinking about measurement in psychometric
+research.}\label{two-ways-of-thinking-about-measurement-in-psychometric-research.}}
+
+In psychometric research, formative and reflective models describe the
+relationship between latent variables and their respective indicators.
+VanderWeele discusses this in the assigned reading for this week
+(\protect\hyperlink{ref-vanderweele2022}{Tyler J. VanderWeele 2022}).
+
+\hypertarget{reflective-model-factor-analysis}{%
+\subsection{Reflective Model (Factor
+Analysis)}\label{reflective-model-factor-analysis}}
+
+In a reflective measurement model, also known as an effect indicator
+model, the latent variable is understood to cause the observed
+variables. In this model, changes in the latent variable cause changes
+in the observed variables. Each indicator (observed variable) is a
+`reflection' of the latent variable. In other words, they are effects or
+manifestations of the latent variable. These relations are presented in
+Figure~\ref{fig-dag-latent-1}.
+
+The reflective model may be expressed:
+
+\[X_i = \lambda_i \eta + \varepsilon_i\]
+
+Here, \(X_i\) is an observed variable (indicator), \(\lambda_i\) is the
+factor loading for \(X_i\), \(\eta\) is the latent variable, and
+\(\varepsilon_i\) is the error term associated with \(X_i\). It is
+assumed that all the indicators are interchangeable and have a common
+cause, which is the latent variable \(\eta\).
+
+In the conventional approach of factor analysis, the assumption is that
+a common latent variable is responsible for the correlation seen among
+the indicators. Thus, any fluctuation in the latent variable should
+immediately lead to similar changes in the indicators.These assumptions
+are presented in Figure~\ref{fig-dag-latent-1}.
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-latent-1-1.pdf}
+
+}
+
+\caption{\label{fig-dag-latent-1}Reflective model: assume univariate
+latent variable η giving rise to indicators X1\ldots X3. Figure adapted
+from VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+\hypertarget{the-formative-model-factor-analysis}{%
+\subsection{The Formative Model (Factor
+Analysis)}\label{the-formative-model-factor-analysis}}
+
+In a formative measurement model, the observed variables are seen as
+causing or determining the latent variable. Here again, there is a
+single latent variable. However this latent variable is taken to be an
+effect of the underlying indicators. These relations are presented in
+Figure~\ref{fig-dag-latent-formative_0}.
+
+The formative model may be expressed:
+
+\[\eta = \sum_i\lambda_i X_i + \varepsilon\]
+
+In this equation, \(\eta\) is the latent variable, \(\lambda_i\) is the
+weight for \(X_i\) (the observed variable), and \(\varepsilon\) is the
+error term. The latent variable \(\eta\) is a composite of the observed
+variables \(X_i\).
+
+In the context of a formative model, correlation or interchangeability
+between indicators is not required. Each indicator contributes
+distinctively to the latent variable. As such, a modification in one
+indicator doesn't automatically imply a corresponding change in the
+other indicators.
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-latent-formative_0-1.pdf}
+
+}
+
+\caption{\label{fig-dag-latent-formative_0}Formative model:: assume
+univariate latent variable from which the indicators X1\ldots X3 give
+rise. Figure adapted from VanderWeele: doi:
+10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+\hypertarget{structural-interpretation-of-the-formative-model-and-reflective-models-factor-analysis}{%
+\section{Structural Interpretation of the formative model and reflective
+models (Factor
+Analysis)}\label{structural-interpretation-of-the-formative-model-and-reflective-models-factor-analysis}}
+
+\begin{quote}
+However, this analysis of reflective and formative models assumed that
+the latent η was causally efficacious. This may not be the case
+(VanderWeele 2022)
+\end{quote}
+
+VanderWeele distinguishes between statistical and structural
+interpretations of the equations preesented above.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Statistical Model:} a mathematical construct that shows how
+  observable variables, also known as indicators, are related to latent
+  or unseen variables. These are presented in the equations above
+\item
+  \textbf{Structural Model:} A structural model refers to the causal
+  assumptions or hypotheses about the relationships among variables in a
+  statistical model. The assumptions of the factor analytic tradition
+  are presented in Figure~\ref{fig-dag-latent-formative_0} and
+  Figure~\ref{fig-dag-latent-1} are structural models.
+\end{enumerate}
+
+We have seen that the \textbf{reflective model} statistically implies
+that the observed variables (indicators) are reflections or
+manifestations of the latent variable, expressed as
+\(X_i = \lambda_i \eta + \varepsilon_i\). However, the factor analytic
+tradition makes the additional structural assumption that a univariate
+latent variable is causally efficacious and influences the observed
+variables, as in:
+Figure~\ref{fig-structural-assumptions-reflective-model}.
+
+We have also seen that the \textbf{formative model} statistically
+implies that the latent variable is formed or influenced by the observed
+variables, expressed as \(\eta = \sum_i\lambda_i X_i + \varepsilon\).
+However, the factor analytic tradition makes the additional assumption
+that the observed variables give rise to a univariate latent variable,
+as in Figure~\ref{fig-dag-reflective-assumptions_note}.
+
+\begin{figure}
+
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-structural-assumptions-reflective-model-1.pdf}
+
+}
+
+\caption{Reflective Model: causal assumptions. Figure adapted from
+VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-reflective-assumptions_note-1.pdf}
+
+}
+
+\caption{Formative model: causal assumptions. Figure adapted from
+VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+The reflective model implies \(X_i = \lambda_i \eta + \varepsilon_i\),
+which factor analysts take to imply
+Figure~\ref{fig-structural-assumptions-reflective-model}.
+
+}
+
+\end{minipage}%
+
+\caption{\label{fig-latent}The formative model implies
+\(\eta = \sum_i\lambda_i X_i + \varepsilon\), which factor analysts take
+to imply Figure~\ref{fig-dag-reflective-assumptions_note}.}
+
+\end{figure}
+
+\hypertarget{problems-with-the-structural-interpretations-of-the-reflective-and-formative-factor-models.}{%
+\section{Problems with the structural interpretations of the reflective
+and formative factor
+models.}\label{problems-with-the-structural-interpretations-of-the-reflective-and-formative-factor-models.}}
+
+While the statistical model \(X_i = \lambda_i \eta + \varepsilon_i\)
+aligns with Figure~\ref{fig-structural-assumptions-reflective-model}, it
+also alings with Figure~\ref{fig-dag-formative-assumptions-compatible}.
+Cross-sectional data, unfortunately, do not provide enough information
+to discern between these different structural interpretations.
+
+Similarly, the statistical model
+\(\eta = \sum_i\lambda_i X_i + \varepsilon\) agrees with
+Figure~\ref{fig-dag-reflective-assumptions_note} but it also agrees
+with@fig-dag-reflectiveassumptions-compatible\_again. Here too,
+cross-sectional data cannot decide between these two potential
+structural interpretations.
+
+There are other, compatible structural interprestations as well. The
+formative and reflective conceptions of factor analysis are compatible
+with indicators having causal effects as shown in
+(\protect\hyperlink{ref-fig_dag_multivariate_reality_again}{\textbf{fig\_dag\_multivariate\_reality\_again?}}).
+They are also compatible with a multivariate reality giving rise to
+multiple indicators as shown in
+Figure~\ref{fig-dag-multivariate-reality-bulbulia}.
+
+\begin{figure}
+
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-formative-assumptions-compatible-1.pdf}
+
+}
+
+\caption{\label{fig-dag-formative-assumptions-compatible}Formative model
+is compatible with indicators causing outcome.Figure adapted from
+VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-reflectiveassumptions-compatible_again-1.pdf}
+
+}
+
+\caption{\label{fig-dag-reflectiveassumptions-compatible_again}Reflective
+model is compatible with indicators causing the outcome. Figure adapted
+from VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig_dag_multivariate_reality_again-1.pdf}
+
+}
+
+\caption{Multivariate reality gives rise to the indicators, from which
+we draw our measures. Figure adapted from VanderWeele: doi:
+10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-multivariate-reality-bulbulia-1.pdf}
+
+}
+
+\caption{\label{fig-dag-multivariate-reality-bulbulia}Although we take
+our constructs, A, to be functions of indicators, X, such that, perhaps
+only one or several of the indicators are efficacious.Figure adapted
+from VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+VanderWeele's key observation is this:
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+\textbf{While cross-sectional data can provide insights into the
+relationships between variables, they cannot conclusively determine the
+causal direction of these relationships.}
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+This results is worrying. The structural assumptions of factor analysis
+underpin nearly all psychological research. If the cross-sectional data
+used to derive factor structures cannot decide whether the structural
+interpretations of factor models are accurate, where does that leave us?
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+More worrying still, VanderWeele discusses several longitudinal tests
+for structural interpretations of univariate latent variables that do
+not pass.
+
+}
+
+\end{minipage}%
+\newline
+\begin{minipage}[t]{\linewidth}
+
+{\centering 
+
+Where does that leave us? In psychology we have heard about a
+replication crisis. We might describe the reliance on factor models as
+an aspect of a much larger, and more worrying ``causal crisis''
+(\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022})
+
+}
+
+\end{minipage}%
+
+\end{figure}
+
+\hypertarget{review-of-the-theory-of-multiple-versions-of-treatment}{%
+\section{Review of the theory of multiple versions of
+treatment}\label{review-of-the-theory-of-multiple-versions-of-treatment}}
 
 \begin{figure}
 
@@ -756,12 +1401,244 @@ coarseneed version of K}
 
 \end{figure}
 
-\hypertarget{does-the-multiple-versions-of-treatments-approach-save-us}{%
-\section{Does the Multiple Versions of Treatments Approach Save
-Us?}\label{does-the-multiple-versions-of-treatments-approach-save-us}}
+Perhaps not all is lost. VanderWeele looks to the theory of multiple
+versions of treatment for solace.
 
-Measurement error remeains a problem if errors are either directed or
-dependent (correlated) or both. (See: measurement link.)
+Recall, a causal effect is defined as the difference in the expected
+potential outcome when everyone is exposed (perhaps contrary to fact) to
+one level of a treatment, conditional on their levels of a confounder,
+with the expected potential outcome when everyone is exposed to a a
+different level of a treatement (perhaps contrary to fact), conditional
+on their levels of a counfounder.
+
+\[ \delta = \sum_l \left( \mathbb{E}[Y|A=a,l] - \mathbb{E}[Y|A=a^*,l] \right) P(l)\]
+
+where \(\delta\) is the causal estimand on the difference scale
+\((\mathbb{E}[Y^0 - Y^0])\).
+
+In causal inference, the multiple versions of treatment theory allows us
+to handle situations where the treatment isn't uniform, but instead has
+several variations. Each variation of the treatment, or ``version'', can
+have a different impact on the outcome. Consistency is not violated
+because it is redefined: for each version of the treatment, the outcome
+under that version is equal to the observed outcome when that version is
+received. Put differently we may think of the indicator \(A\) as
+corresponding to many version of the true treament \(K\). Where
+conditional independence holds such that there is a absence of
+confounding for the effect of \(K\) on \(Y\) given \(L\), we have:
+\(Y_k \coprod A|K,L\). This states conditional on \(L\), \(A\) gives no
+information about \(Y\) once \(K\) and \(L\) are accounted for. When
+\(Y = Y_k\) if \(K = k\) and Y\(_k\) is independent of \(K\), condition
+on \(L\), then \(A\) may be thought of as a coarsened indicator of
+\(K\), as shown in
+(\protect\hyperlink{ref-fig_dag_multiple_version_treatment_dag}{\textbf{fig\_dag\_multiple\_version\_treatment\_dag?}}).
+We may estimate consistent causal effects where:
+
+\[ \delta = \sum_{k,l} \mathbb{E}[Y_k|l] P(k|a,l) P(l) - \sum_{k,l} \mathbb{E}[Y_k|l] P(k|a^*,l) P(l)\]
+
+The scenario represents a hypothetical randomised trial where within
+strata of covariates \(L\), individuals in one group receive a treatment
+\(K\) version randomly assigned from the distribution of \(K\)
+distribution \((A = 1, L = l)\) sub-population. Meanwhile, individuals
+in the other group receive a randomly assigned \(K\) version from
+\((A = 0, L = l)\)
+
+This theory finds its utility in practical scenarios where treatments
+seldom resemble each other -- we discussed the example of obesity last
+week (see: (\protect\hyperlink{ref-vanderweele2013}{Tyler J. VanderWeele
+and Hernan 2013})).
+
+\hypertarget{reflective-and-formative-measurement-models-may-be-approached-as-multiple-versions-of-treatment}{%
+\subsection{Reflective and formative measurement models may be
+approached as multiple versions of
+treatment}\label{reflective-and-formative-measurement-models-may-be-approached-as-multiple-versions-of-treatment}}
+
+Vanderweele applies the following substitution:
+
+\[\delta = \sum_{\eta,l} \mathbb{E}[Y_\eta|l] P(\eta|A=a+1,l) P(l) - \sum_{\eta,l} \mathbb{E}[Y_\eta|l] P(\eta|A=a,l) P(l)\]
+
+Specifically, we substitue \(K\) with \(\eta\) from the previous
+section, and compare the measurement response \(A = a + 1\) with
+\(A = a\). We discover that if the influence of \(\eta\) on \(Y\) is not
+confounded given \(L\), then the multiple versions of reality consistent
+with the reflective and formative statistical models of reality will not
+lead to biased estimation. \(\delta\) retains its interpretability as a
+comparison in a hypothetical randomised trial in which the distribution
+of coarsened measures of \(\eta_A\) are balanced within levels of the
+treatment, conditional on \(\eta_L\).
+
+This connection between measurement and the multiple versions of
+treatment framework provides a hope for consistent causal inference
+varying reliabilities of measurement.
+
+However, as with the theory of multiple treatments, we might not known
+how to interpret our results because we don't know the true
+relationships between our measured indicators and underlying reality.
+
+How can we do better?
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-multiple-version-treatment-applied-measurement-1.pdf}
+
+}
+
+\caption{\label{fig-dag-multiple-version-treatment-applied-measurement}Multiple
+Versions of treatment applied to measuremen.Figure adapted from
+VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+\hypertarget{vanderweeles-model-of-reality}{%
+\section{VanderWeele's model of
+reality}\label{vanderweeles-model-of-reality}}
+
+VanderWeele's article concludes as follows:
+
+\begin{quote}
+A preliminary outline of a more adequate approach to the construction
+and use of psychosocial measures might thus be summarized by the
+following propositions, that I have argued for in this article: (1)
+Traditional univariate reflective and formative models do not adequately
+capture the relations between the underlying causally relevant phenomena
+and our indicators and measures. (2) The causally relevant constituents
+of reality related to our constructs are almost always multidimensional,
+giving rise both to our indicators from which we construct measures, and
+also to our language and concepts, from which we can more precisely
+define constructs. (3) In measure construction, we ought to always
+specify a definition of the underlying construct, from which items are
+derived, and by which analytic relations of the items to the definition
+are made clear. (4) The presumption of a structural univariate
+reflective model impairs measure construction, evaluation, and use. (5)
+If a structural interpretation of a univariate reflective factor model
+is being proposed this should be formally tested, not presumed; factor
+analysis is not sufficient for assessing the relevant evidence. (6) Even
+when the causally relevant constituents of reality are multidimensional,
+and a univariate measure is used, we can still interpret associations
+with outcomes using theory for multiple versions of treatment, though
+the interpretation is obscured when we do not have a clear sense of what
+the causally relevant constituents are. (7) When data permit, examining
+associations item-by-item, or with conceptually related item sets, may
+give insight into the various facets of the construct.
+\end{quote}
+
+\begin{quote}
+A new integrated theory of measurement for psychosocial constructs is
+needed in light of these points -- one that better respects the
+relations between our constructs, items, indicators, measures, and the
+underlying causally relevant phenomena. (VanderWeele 2022)
+\end{quote}
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-multivariate-reality-complete-1.pdf}
+
+}
+
+\caption{\label{fig-dag-multivariate-reality-complete}Multivariate
+reality gives rise to the latent variables.Figure adapted from
+VanderWeele: doi: 10.1097/EDE.0000000000001434}
+
+\end{figure}
+
+This seems to me sensible. However,
+Figure~\ref{fig-dag-multivariate-reality-complete} this is not a causal
+graph. The arrows to not clearly represent causal relations. It leaves
+me unclear about what to practically do.
+
+Let's return to the three wave many-outcomes model described in previous
+weeks. How should we revise this model in light of measurement theory?
+
+\hypertarget{how-theory-of-dependent-and-directed-measurement-error-might-be-usefully-employed-to-develop-a-pragmatic-responses-to-construct-measurement}{%
+\section{How theory of dependent and directed measurement error might be
+usefully employed to develop a pragmatic responses to construct
+measurement}\label{how-theory-of-dependent-and-directed-measurement-error-might-be-usefully-employed-to-develop-a-pragmatic-responses-to-construct-measurement}}
+
+By now you are all familiar with The New Zealand Attitudes and Values
+Study (NZAVS),which is a national probability survey collects a wide
+range of information, including data on distress, exercise habits, and
+cultural backgrounds.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-uu-null-1.pdf}
+
+}
+
+\caption{\label{fig-dag-uu-null}Uncorrelated non-differential
+measurement error does not bias estimates under the null. Note, however,
+we assume that L is measured with sufficient precision to block the path
+from A\_eta --\textgreater{} L\_eta --\textgreater{} Y\_eta, which,
+otherwise, we would assume to be open.}
+
+\end{figure}
+
+Consider a study that seeks to use this dataset to investigate the
+effect of regular exercise on psychological distress. In contrast to
+previous graphs, let us allow for latent reality to affect our
+measurements, as well as the discrepencies between our measurements and
+true underlying reality. We shall use Figure~\ref{fig-dag-uu-null} as
+our initial guide.
+
+We represent the true exercise by \(\eta_A\). We represent true
+psychological distress by \(\eta_Y\). Let \(\eta_L\) denote a persons
+true workload, and assume that this state of work affects both levels of
+excercise and psychological distress.
+
+To bring the model into contact with measurement theory, Let us describe
+measurements of these latent true underlying realities as functions of
+multiple indicators: \(L_{f(X_1\dots X_n)}\), \(A_{f(X_1\dots X_n)}\),
+and \(A_{f(X_1\dots X_n)}\). These constructs are measured realisations
+of the underlying true states. We assume that the true states of these
+variables affect their corresponding measured states, and so draw arrows
+from \(\eta_L\rightarrow{L_{f(X_1\dots X_n)}}\),
+\(\eta_A\rightarrow{A_{f(X_1\dots X_n)}}\),
+\(\eta_Y\rightarrow{Y_{f(X_1\dots X_n)}}\).
+
+We also assume unmeasured sources of error that affect the measurements:
+\(U_{L} \rightarrow\) \(L_{f(X_1\dots X_n)}\), \(U_{A} \rightarrow\)
+\(A_{f(X_1\dots X_n)}\), and \(U_{Y} \rightarrow\)
+\(Y_{f(X_1\dots X_n)}\). That is, we allow that our measured indicators
+may ``see as through a mirror, in darkness,'' the underlying true
+reality they hope to capture (Corinthians 13:12). We use \(U_{L}\),
+\(U_{A}\) and \(U_{Y}\) to denote the unmeasured sources of error in the
+measured indicators. These are the unknown, and perhaps unknowable,
+darkness and mirror.
+
+Allow that the true underlying reality represented by the \(\eta_{var}\)
+may be multivariate. Similarly, allow the true underlying reality
+represented by \(\U_{var}\) is multivariate.
+
+We now have a causal diagramme that more precisely captures
+VanderWeele's thinking as presented in
+Figure~\ref{fig-dag-multivariate-reality-complete}. In our
+Figure~\ref{fig-dag-uu-null}, we have fleshed out \(\mathcal{R}\) in a
+way that may include natural language concepts and scientific language,
+or constructs, as latent realities and latent unmeasured sources of
+error in our constructs.
+
+The utility of describing the measurement dynamics using causal graphs
+is apparrent. We can understand that the measured states, once
+conditioned upon create \emph{collider biases} which opens path between
+the unmeasured sources of error and the true underlying state that gives
+rise to our measurements. This is depicted by a the arrows \(U_{var}\)
+and from \(\eta_{var}\) into each \(var_{f(X1, X2,\dots X_n)}\)
+
+Notice: \textbf{where true unmeasured (multivariate) psycho-physical
+states are related to true unmeasured (multivariate) sources of error in
+the measurement of those states, the very act of measurement opens
+pathways to confounding.}
+
+If for each measured construct \(var_{f(X1, X2,\dots X_n)}\), the
+sources of error \(U_{var}\) and the unmeasured consituents of reality
+that give rise to our measures \(\eta_{var}\) are uncorrelated with
+other variables \(U\prime_{var}\) and from \(\eta\prime_{var}\) and
+\(var\prime_{f(X1, X2,\dots X_n)}\), our estimates may be downwardly
+biased toward the null. However, d-separation is preserved. Where errors
+are uncorrelated with true latent realities, there is no new pathway
+that opens information between our exposure and outcome. Consider the
+relations presented in
+Figure~\ref{fig-dag-dep-udir-effect-confounders-3wave}
 
 \begin{figure}
 
@@ -770,11 +1647,132 @@ dependent (correlated) or both. (See: measurement link.)
 }
 
 \caption{\label{fig-dag-dep-udir-effect-confounders-3wave}Measurement
-error opens a pathway to confounding if either there are correlated
-errors, or a directed effect of the exposure on the errors of measured
-outcome.}
+error opens an additional pathway to confounding if either there are
+correlated errors, or a directed effect of the exposure on the errors of
+measured outcome.}
 
 \end{figure}
+
+Here,
+
+\(\eta_L \rightarrow L\): We assume that the true workload state affects
+its measurement. This measurement, however, may be affected by an
+unmeasured error source, \(U_{L}\). Personal perceptions of workload can
+introduce this error. For instance, a person may perceive their workload
+differently based on recent personal experiences or cultural
+backgrounds. Additionally, unmeasured cultural influences like societal
+expectations of productivity could shape their responses independently
+of the true workload state. There may be cultural differences -
+Americans may verstate; the British may present effortless superiority.
+
+\(\eta_A \rightarrow A\): When it comes to exercise, the true state may
+affect the measured frequency (questions about exercise are not totally
+uninformative). However, this measurement is also affected by an
+unmeasured source of error, which we denote by \(U_{A}\). For example, a
+cultural shift towards valuing physical health might prompt participants
+toreport higher activity levels, introducing an error, \(U_{A}\).
+
+\(\eta_Y \rightarrow Y\): We assume questions about distress are not
+totally uninformative: actual distress affects the measured distress.
+However this measurement is subject to unmeasured error: \(U_{Y}\). For
+instance, an increased societal acceptance of mental health might change
+how distress is reported creating an error, \(U_{Y}\), in the
+measurement of distress. Such norms, moreover, may change over time.
+
+\(U_{L} \rightarrow L\), \(U_{A} \rightarrow A\), and
+\(U_{Y} \rightarrow Y\): These edges between the nodes indicate how each
+unmeasured error source can influence its corresponding measurement,
+leading to a discrepancy between the true state and the measured state.
+
+\(U_{L} \rightarrow U_{A}\) and \(U_{L} \rightarrow U_{Y}\): These
+relationships indicate that the error in the stress measurement can
+correlate with those in the exercise and mood measurements. This could
+stem from a common cultural bias affecting how a participant
+self-reports across these areas.
+
+\(\eta_A \rightarrow U_{Y}\) and \(\eta_L \rightarrow U_{A}\): These
+relationships indicate that the actual state of one variable can affect
+the error in another variable's measurement. For example, a cultural
+emphasis on physical health leading to increased exercise might, in
+turn, affect the reporting of distress levels, causing an error,
+\(U_{Y}\), in the distress measurement. Similarly, if a cultural trend
+pushes people to work more, it might cause them to over or underestimate
+their exercise frequency, introducing an error, \(U_{A}\), in the
+exercise measurement.
+
+\hypertarget{confounding-control-by-baseline-measures-of-exposure-and-outcome-dependent-directed-measurement-error-in-three-wave-panels}{%
+\subsection{Confounding control by baseline measures of exposure and
+outcome: Dependent Directed Measurement Error in Three-Wave
+Panels}\label{confounding-control-by-baseline-measures-of-exposure-and-outcome-dependent-directed-measurement-error-in-three-wave-panels}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  We propose a three-wave panel design to control confounding. This
+  design adjusts for baseline measurements of both exposure and the
+  outcome.
+\item
+  Understanding this approach in the context of potential directed and
+  correlated measurement errors gives us a clearer picture of its
+  strengths and limitations.
+\item
+  This three-wave panel design incorporates baseline measurements of
+  both exposure and confounders. As a result, any bias that could come
+  from unmeasured sources of measurement errors should be uncorrelated
+  with their baseline effects.
+\item
+  For instance, if individuals have a social desirability bias at the
+  baseline, they would have to develop a different bias unrelated to the
+  initial one for new bias to occur due to correlated unmeasured sources
+  of measurement errors.
+\item
+  However, we cannot completely eliminate the possibility of such new
+  bias development. There could also be potential new sources of bias
+  from directed effects of the exposure on the error term of the
+  outcome, which can often occur due to panel attrition.
+\item
+  To mitigate this risk, we adjust for panel attrition/non-response
+  using methods like multiple imputation. We also consistently perform
+  sensitivity analyses to detect any unanticipated bias.
+\item
+  Despite these potential challenges, it is worth noting that by
+  including measures of both exposure and outcome at baseline, the
+  chances of new confounding are significantly reduced.
+\item
+  Therefore, adopting this practice should be a standard procedure in
+  multi-wave studies as it substantially minimizes the likelihood of
+  introducing novel confounding factors.
+\end{enumerate}
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-dep-udir-effect-confounders-3wave-new-1.pdf}
+
+}
+
+\caption{\label{fig-dag-dep-udir-effect-confounders-3wave-new}TBA}
+
+\end{figure}
+
+\hypertarget{comment-on-slow-changes}{%
+\subsection{Comment on slow changes}\label{comment-on-slow-changes}}
+
+Over long periods of time we can expect additional sources of
+confounding. Changes in cultural norms and attitudes can occur over the
+duration of a longitudinal study like the NZAVS, leading to residual
+confounding. For example, if there is a cultural shift towards increased
+acceptance of mental health issues, this might change how psychological
+distress is reported over time, irrespective of baseline responses.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{9}
+\tightlist
+\item
+  \textbf{Need for Sensitivity Analysis} The Key takehome message is
+  that we must always perform sensitivity analyses because we can never
+  be certain that our confounding control strategy has worked.
+\end{enumerate}
 
 \hypertarget{add-graph-on-when-we-might-want-to-condition-on-a-post-treatment-indicator}{%
 \section{Add Graph on when we might want to condition on a post
@@ -797,6 +1795,93 @@ indicator}\label{add-graph-on-when-we-might-want-to-condition-on-a-post-treatmen
 \item
   We may distinguish between effect modification and interaction.
 \end{enumerate}
+
+\hypertarget{references}{%
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{1}{0}
+\leavevmode\vadjust pre{\hypertarget{ref-barrett2021}{}}%
+Barrett, Malcolm. 2021. \emph{Ggdag: Analyze and Create Elegant Directed
+Acyclic Graphs}. \url{https://CRAN.R-project.org/package=ggdag}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-bulbulia2022}{}}%
+Bulbulia, Joseph A. 2022. {``A Workflow for Causal Inference in
+Cross-Cultural Psychology.''} \emph{Religion, Brain \& Behavior} 0 (0):
+1--16. \url{https://doi.org/10.1080/2153599X.2022.2070245}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-cinelli2022}{}}%
+Cinelli, Carlos, Andrew Forney, and Judea Pearl. 2022. {``A Crash Course
+in Good and Bad Controls.''} \emph{Sociological Methods \& Research},
+May, 00491241221099552. \url{https://doi.org/10.1177/00491241221099552}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-edwards2015}{}}%
+Edwards, Jessie K, Stephen R Cole, and Daniel Westreich. 2015. {``All
+Your Data Are Always Missing: Incorporating Bias Due to Measurement
+Error into the Potential Outcomes Framework.''} \emph{International
+Journal of Epidemiology} 44 (4): 14521459.
+
+\leavevmode\vadjust pre{\hypertarget{ref-hernan2023}{}}%
+Hernan, M. A., and J. M. Robins. 2023a. \emph{Causal Inference}. Chapman
+\& Hall/CRC Monographs on Statistics \& Applied Probab. Taylor \&
+Francis. \url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-hernan2023a}{}}%
+---------. 2023b. \emph{Causal Inference}. Chapman \& Hall/CRC
+Monographs on Statistics \& Applied Probab. Taylor \& Francis.
+\url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2008}{}}%
+Hernán, M. A., and S. L. Taubman. 2008. {``Does obesity shorten life?
+The importance of well-defined interventions to answer causal
+questions.''} \emph{International Journal of Obesity (2005)} 32 Suppl 3
+(August): S8--14. \url{https://doi.org/10.1038/ijo.2008.82}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-mcelreath2020}{}}%
+McElreath, Richard. 2020. \emph{Statistical Rethinking: A Bayesian
+Course with Examples in r and Stan}. CRC press.
+
+\leavevmode\vadjust pre{\hypertarget{ref-morgan2014}{}}%
+Morgan, Stephen L., and Christopher Winship. 2014. \emph{Counterfactuals
+and Causal Inference: Methods and Principles for Social Research}. 2nd
+ed. Analytical Methods for Social Research. Cambridge: Cambridge
+University Press. \url{https://doi.org/10.1017/CBO9781107587991}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-rohrer2018}{}}%
+Rohrer, Julia M. 2018. {``Thinking Clearly about Correlations and
+Causation: Graphical Causal Models for Observational Data.''}
+\emph{Advances in Methods and Practices in Psychological Science} 1 (1):
+2742.
+
+\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2009}{}}%
+VanderWeele, Tyler J. 2009. {``Concerning the Consistency Assumption in
+Causal Inference.''} \emph{Epidemiology} 20 (6): 880.
+\url{https://doi.org/10.1097/EDE.0b013e3181bd5638}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2018}{}}%
+---------. 2018. {``On Well-Defined Hypothetical Interventions in the
+Potential Outcomes Framework.''} \emph{Epidemiology} 29 (4): e24.
+\url{https://doi.org/10.1097/EDE.0000000000000823}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2022}{}}%
+---------. 2022. {``Constructed Measures and Causal Inference: Towards a
+New Model of Measurement for Psychosocial Constructs.''}
+\emph{Epidemiology} 33 (1): 141.
+\url{https://doi.org/10.1097/EDE.0000000000001434}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2013}{}}%
+VanderWeele, Tyler J, and Miguel A Hernan. 2013. {``Causal Inference
+Under Multiple Versions of Treatment.''} \emph{Journal of Causal
+Inference} 1 (1): 120.
+
+\leavevmode\vadjust pre{\hypertarget{ref-westreich2015}{}}%
+Westreich, Daniel, Jessie K Edwards, Stephen R Cole, Robert W Platt,
+Sunni L Mumford, and Enrique F Schisterman. 2015. {``Imputation
+Approaches for Potential Outcomes in Causal Inference.''}
+\emph{International Journal of Epidemiology} 44 (5): 17311737.
+
+\end{CSLReferences}
 
 
 

@@ -1,0 +1,129 @@
+---
+title: "Test"
+author:
+  - name: Joseph A. Bulbulia
+orcid: 0000-0002-5861-2056
+affiliation: Victoria University of Wellington, New Zealand
+email: joseph.bulbulia@vuw.ac.nz
+corresponding: yes
+date-format: short
+sanitize: true
+keep-tex: true
+include-in-header:
+      - text: |
+          \usepackage{cancel}
+          
+execute:
+  warning: false
+  eval: true
+  echo: false
+---
+
+
+```{r}
+#| label: load-libraries
+#| echo: false
+#| include: false
+#| eval: false
+
+
+# for making graphs
+library("tinytex")
+library(extrafont)
+loadfonts(device = "all")
+
+
+# libraries for jb (when internet is not accessible)
+# read libraries
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+# read functions
+source("/Users/joseph/GIT/templates/functions/funs.R")
+
+# read data/ set to path in your computer
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
+  )
+
+# for saving models. # set path fo your computer
+push_mods <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23_perfectionism_ken"
+  )
+```
+
+## Test
+
+
+$$Y(a)\cancel{\coprod} A|L$$
+
+## Dag
+
+```{tikz}
+#| label: fig-dag-common-cause
+#| fig-cap: "Counfounding by common cause."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [ellipse, draw=white] (L) at (0, 0) {t0/L};
+\node [rectangle, draw=white] (A) at (4, 0) {t1/A};
+\node [rectangle, draw=white] (Y) at (8, 0) {t2/Y};
+\draw [-latex, draw=red, dashed] (A) to (Y);
+\draw [-latex, bend left, draw =black] (L) to (Y);
+\draw [-latex, black] (L) to (A);
+\end{tikzpicture}
+```
+
+
+
+```{r }
+#| echo: false
+#| code-fold: true
+#| warnings: false
+#| message: false
+#| label: tbl-consistency
+#| tbl-cap: Causal Consistency
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+
+# create data frame
+my_data <- tibble(
+  Group = c(
+    "Y(1)",
+    "Y(0)"
+  ),
+  "Exposure (A=1)" = c("Observable", "Counterfactual"),
+  "No Exposure (A=0)" = c("Counterfactual", "Observable"),
+  
+)
+
+# create table 
+my_data %>%
+  kbl(format = "markdown")
+
+```
+
+
+Note Here I offer a comprehensive tutorial that showcases the practical utility of temporally organised causal diagrams.[^1] Temporally organised causal diagrams are ordinary directed acyclic graphs (DAGs) in which the spatial structure of the graph is designed to reflected the temporal order of assumed causality. We may think of such graphs as temporally conscientious causal DAGS.[^2]
+
+[^2]: Note that the contrast may be between different levels of a multinomial categorical or continuous indicator, in which case we would define the levels to contrast as $A = a$ and $A = a*$
+\begin{align}
+ATE = E(Y(a) - Y(a*))
+\end{align} 
+
+
+[^1]: It is tempting to call temporally organised causal diagrammes "temporal action graphs" - or "TAGs." However, we do not need more jargon.

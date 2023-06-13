@@ -1,5 +1,5 @@
 ---
-title: "Better Causal Diagrammes"
+title: "Better causal diagrammes"
 author:
   - name: Joseph A. Bulbulia
 orcid: 0000-0002-5861-2056
@@ -9,12 +9,14 @@ corresponding: yes
 date-format: short
 sanitize: true
 keep-tex: true
+include-in-header:
+      - text: |
+          \usepackage{cancel}
 execute:
   warning: false
   eval: true
   echo: false
 ---
-
 
 ```{r}
 #| label: load-libraries
@@ -49,40 +51,174 @@ push_mods <-
   )
 ```
 
+## Abstract
+
 ## Introduction
 
-### Objective 
+### Objective
 
- Correlation is not causation. However, persisten confusion in the analysis and reporting of correlation across many human sciences has given rise to a *causal crisis*. Despite the potential of causal diagrams (DAGs) to address this predicament, their practicality is sometimes obscured by improper use. For example, with only cross sectional data, it is generally difficult to justify the assumptions required for causal inference. Cross-sectional researchers may be tempted to employ causal diagrammes to clarify their assumptions. However, where are assumptions are strong, the appropriate reponse is to pause and collect appropriate time-series data. By reporting results that condition on strong assumptions researchers armed with DAGs perpetuate the *causal crisis*. Causal diagrammes that are structured such that the temporal sequence of confounder, cause, and effect is reflected in the spatial organisation of the graph may greatly assist researchers in understanding understanding the assumption required to consistently estimate unbias causal effects. 
- 
-Here, my primary objective is to deliver a comprehensive tutorial that showcases the practical utility of temporally organised causal diagrams for obataining a more precise and informed approach to discerning causality.
+Correlation is not causation. However, persistent confusion in the analysis and reporting of correlation across many human sciences has limited progress. Frequently, the correlations in observed data are biased, and may even run in the opposite direction to observed correlations. Where time series data are lacking, we generally cannot estimate consistent causal effects However, many researchers report correlations using hedging language that may suggest or imply causation. This widespread practice -- in which the author has regrettably participated -- has led to what might be called a "causality crisis" [@bulbulia2022]. Addressing this causality crisis is among the most science's pressing issues.
 
-**Part 1.** Develop the connection between causal diagrammes and the potential outcomes framework.
+When integrated into causally conscientious workflows, causal diagrammes (also called directed acyclic graphs, or "DAGs") are powerful tools by which to assist in the identification of causality, and so, to address the causality crisis. However, unscrupulous applications of causal diagrammes may estimate causal effects. Causal diagrammes clarify assumptions. Science requires assumptions but it also requires data. Researchers armed with DAGs may be tempted to let themselves off the hook. However, it would be better if causal diagrammes directed researchers to pause, and collect data appropriate to their questions, or at least to name the clarify the obstacles.
 
-**Part 2.** Reviews the four fundamental graphs that form the basis of causal understanding. 
+Here, I offer a comprehensive tutorial that showcases the practical utility of temporally action graphs.[^1] Temporal action graphs are ordinary (causal) directed acyclic graphs in which the spatial structure of the graph is designed to reflected the temporal order of assumed causality. We may think of such temporally structured causal diagrammes as **chronologically conscientious DAGs**.
 
-**Part 3.** Applies the time graph to a substantative problem in measurement.
+[^1]: The term "DAG" is unfortunate because not all directed acyclic graphs are causal. For a graph to be causal it must satisfy the conditions of markov factorisation (see Appendix A). In my utopia, we call causal diagrammes "temporal action graphs" - or "TAGs." However, the causality crisis will not combatted with jargon. And again, for a graph to be causal the central concept is not chronological action but rather markov factorisation (see Appendix A).
 
+We will discover that adding temporal order to the traditionally static structure of DAGs may greatly assist both in understanding causal assumptions and in directing attention to the data we need to address our questions. We will also discover opportunities for measuring confounders that occur after the exposure and outcome have occurred. This special case reveals the limitations of ready-made rules insisting that confounders must occur prior to the exposure, and that we should therefore never condition on post-exposure confounders.
 
-## Part 1.  The potential outcomes framework 
+There are many good resources for drawing causal diagrammes [@rohrer2018; @hernan2023; @cinelli2022; @barrett2021; @mcelreath2020].
 
+My primary purpose here is to explain the benefits of maintaining, where possible, the chronological ordering of events. Second, I demonstrate the utility of temporal for the the diagnosis of problems arising from measurement error. I believe these problems to be among the most important -- yet most ill-considered -- in the human sciences.
 
-### Bias 
+The article is organised as follows:
 
-When it comes to causal estimation, correlation is not the problem. The problem is bias. We say a relation between an exposure $A$ and and outcome $Y$ is causal if the corration between $A$ and $Y$ is unbiased.  What, then, is bias? 
+**Part 1.** develops the connection between causal diagrammes and the potential outcomes framework. Understanding this connection is important. Whereas causal diagrammes help researchers to answer questions, we must first understand how to ask causal questions. Absent such an understanding causal graphs are a best unhelpful and more likely misleading.
 
-## The potential outcomes framework.
+**Part 2.** reviews the four fundamental graphs that form the basis of causal understanding. This material replicates material in other tutorials. However, by emphasising the temporal order in spatial structure solutions to identifying causality in the presence of confounding are more apparent. We develop this four fundamental problems to concepts of interaction, mediations, and treatment-confounder feedback.
 
-### Causal consistency
+**Part 3.** Applies temporal action graphs to a substantative problem in measurement. Some of the enthusiasm for strategies we develop in **Part 2** is diminished by an appreciation for how measurement error may bias results. The upshot of Part 3 is to argue for the importance of attending to measurement error as a source of bias, and to perform sensitivity analyses even when carefully documented time-series data have been collected.
 
-### Postivity
+A brief concluding section reviews advice. Technical details are presented in an appendix.
 
-### Exchangeability
+Causal diagrammes are tools we use to answer causal questions. **However before we can answer a causal question, we must first understand what is involved when we ask a causal question.**
 
-### Correct model specification 
+## Part 1. How to ask causal questions
 
+### The fundamental problem of causal inference.
 
-## Part 2. The Four Canonical Causal Diagrammes 
+The frameworks within which causal inference has developed all rely on a counterfactual conception of causality. We cay that $A$ causes $Y$ if changing $A$ would have made a difference to the outcome of $Y$.
+
+Consider an example. Suppose,there is evidence that bilingual children perform better at cognitive tasks. Here, learning a second language is our exposure or "treatment" of interest.
+
+Define two potential outcomes for each child in a population:
+
+-   $Y_i(a = 1)$: The cognitive ability of child $i$ if they were bilingual. This is the counterfactual outcome when A = 1.
+-   $Y_i(a = 0)$: The cognitive ability of child $i$ if they were monolingual. This is the counterfactual outcome when A = 0.
+
+Within a counterfactual or "potential outcomes" framework, the causal effect of bilingualism on cognitive ability for individual $i$ is defined as the difference between the two potential outcomes:
+
+$$
+\text{Causal Effect}_i = Y_i(1) - Y_i(0) 
+$$
+
+Our interest is in a contrast between two states of the world, one in which a child hypothetically receives bilingual exposure ($Y$ when exposure is set $a=1$) an one in which a child hypothetically does not ($Y$ when exposure is set $a=0$).\[\^3\] Notice that any child can, at most, only receive one level of the exposure. Only one hypothetical exposure can be realised. The outcome under the exposure that the child does not receive is not generally observed. For this reason, causal inference has been described as a missing data problem [@westreich2015; @edwards2015]. At least half the counterfactual outcomes we require for estimating individual causal effects are missing.
+
+\[3\]: The counter-factual outcome under the exposure $A = a$ may be written in different ways, such as $Y(a)$ (the notation we use here), $Y^a$, and $Y_a$.
+
+Table @tbl-consistency expresses the relationship between observable and counterfactual outcomes as a contingency table (This table is modified from a table in [@morgan2014]).
+
+```{r }
+#| echo: false
+#| code-fold: true
+#| warnings: false
+#| message: false
+#| label: tbl-consistency
+#| tbl-cap: Causal estimation as a missing data problem.
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+
+# create data frame
+my_data <- tibble(
+  Group = c(
+    "Y(1)",
+    "Y(0)"
+  ),
+  "Exposure(A=1)" = c("Observable", "Counterfactual"),
+  "No Exposure (A=0)" = c("Counterfactual", "Observable"),
+  
+)
+
+# create table 
+my_data %>%
+  kbl(format = "markdown")
+
+```
+
+As evident from @tbl-consistency, the inaccessibility of individual-level causal effects is not limited to observational studies: individual-level causal effects are not observed in randomised experiments. This table applies to experiments.
+
+However, although we cannot generally observe individual level causal effects, were the following identification assumptions hold, it may be possible to estimate average causal effects as a contrast in the average responses in the exposed an unexposed groups [^2] Such that:
+
+[^2]: Note that the contrast may be between different levels of a multinomial categorical or continuous indicator, in which case we would define the levels to contrast as $A = a$ and $A = a*$, and we define the causal contrast on the difference scale as \begin{align*}
+    ATE = E[Y(a) - Y(a*)]
+    \end{align*}
+
+```{=tex}
+\begin{align*}
+ATE = E(Y(1) - Y(0))\\
+          ~  = E(Y(1) - E(Y(0))
+\end{align*}
+```
+#### Identification assumption 1: Causal consistency
+
+We satisfy the causal consistency assumption when the potential or counterfactual outcome under treatment (or exposure) $Y(A=a)$ corresponds to the observed outcome $Y_{observed}|A=a$ if the treatment (or exposure). For a binary exposure, the consistency assumption my be expressed as follows: (equation from @morgan2014)
+
+$$Y^{observed} = AY(a=1) + (1-A)Y(a=0)$$
+
+Where the assumption of causal consistency is tenable, we may obtain the missing counterfactual outcomes under hypothetical exposures as observed outcomes under realised exposures, such that:
+
+$$
+Y_i = 
+\begin{cases} 
+Y_i^1 & \text{if } A_i = 1 \\
+Y_i^0 & \text{if } A_i = 0 
+\end{cases}
+$$
+
+Note, that the missing counterfactuals remain missing:
+
+$$
+ATE = \large(\underbrace{E[Y(1)|A = 1]}_\text{observed} + \underbrace{E[Y(1)|A = 0]}_\text{unobserved}\large) - \large(\underbrace{E[Y(0)|A = 0]}_\text{observed}  + \underbrace{E[Y(0)|A = 1]}_\text{unobserved}\large)
+$$
+
+However, by substituting $Y_{observed}|A$ for $Y(a)$ we may recover counterfactual outcomes required for our causal contrasts from realised outcomes under different levels of exposures.
+
+There are three reasons that applied researchers must understand the causal consistency assumption.
+
+First, the causal consistency assumption reveals *the priority of counterfactual outcomes over realised outcomes.* If statistics is data-science, causal estimation is *counterfactual data-science*.
+
+Second, causal consistency implies "treatment variation irrelevance," such that each of the many versions of a treatment $K$ are sufficiently well-defined to correspond to well-defined outcome $Y_k$ , and exposure $A$ corresponds to a coarsened indicator of the many versions $K$, then if there is no confounding for the effect of $K$ on $Y$ given measured confounders $L$ we may estimate consistent causal effects.[^3] However, although we may estimate consistent causal
+
+[^3]: We write $Y_k$ is independent of $K$ conditional on $L$ [@vanderweele2009; @vanderweele2013; @vanderweele2018] as: $K \coprod Y_k | L$ (or equivalently $Y_k \coprod K | L$)
+
+Third, although treatement variation irrelevance implies that we may estimate consisten causal effects in a world where versions of treatment are not well controlled, if we well-defined interventions, as is typical in much observational research, our understanding of the phenonomenon is curtailed [@hernán2008]. For example, consider effect of weight-loss at age 40 on all cause mortality at age 50. Notably, there are many way in which people lose weight, including exercise, caloric restriction, liposuction, stomach stapling, smoking, cancer, and famine. To estimate the causal effect of weight-loss without specifying the intervention in question leaves it unclear which effect we are consistently estimating [@hernan2023a].
+
+#### Identification assumption 2: Exchangability
+
+Given the observed covariates, the treatment assignment is independent of the potential outcomes. Mathematically, this can be expressed as.
+
+$$Y^a\coprod A \text{ for all }a$$
+
+or with strata of confounding covarates:
+
+$$Y^a\coprod  A \text{ for all }a|L$$
+
+When conditional exchangability holds:
+
+$$
+\begin{aligned}
+ATE = E[Y^{a=1}|L = l] - E[Y^{a=0}|L = l] ~ \text{for any value}~l
+\end{aligned}
+$$
+
+> "We say that a set L of measured non-descendants of L is a sufficient set for confounding adjustment when conditioning on L blocks all backdoor paths--that is, the treated and the untreated are exchangeable within levels of L"[@hernan2023a]
+
+#### Identification assumption 3: Positivity
+
+The probability of receiving every value of the exposure within all strata of co-variates is greater than zero
+
+```{=tex}
+\begin{equation}
+0 < \Pr(A=a|L)<1, ~ \forall a \in A, ~ \forall a \in L
+\end{equation}
+```
+There are two types of positivity violations - Random non-positivity: the casual effect of aging with observations missing at ages 40-41 (we use parametric models as a work around.) - Deterministic non-positivity: the causal effect of hysterectomy in biological males (assumption violated).
+
+For causal inference, correlation is not the problem. The problem is bias.
+
+## Part 2. The Four Canonical Causal Diagrammes
 
 ```{r}
 #| include: false
@@ -100,15 +236,14 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 #source("/Users/joseph/GIT/templates/functions/funs.R")
 ```
 
+### 1. The problem of confounding by common cause
 
-### 1. Confounding by Common Cause
-
-The problem of confounding by common cause arises when there is an unmeasured or unaccounted-for variable, denoted as "L," that influences both the treatment variable, denoted by $A,$ and the outcome variable, denoted as $Y.$ This confounder, $L$,  creates an association between $A$ and $Y$ that is not solely due to the direct causal effect of $A$ on $Y$. Instead, the observed association between $A$ and $Y$ may be partially or entirely driven by the presence of $L$, making it difficult to isolate and accurately estimate the true causal effect of $A$ on $Y$.
+The problem of confounding by common cause arises when there is an unmeasured or unaccounted-for variable, denoted as "L," that influences both the treatment variable, denoted by $A,$ and the outcome variable, denoted as $Y.$ This confounder, $L$, creates an association between $A$ and $Y$ that is not solely due to the direct causal effect of $A$ on $Y$. Instead, the observed association between $A$ and $Y$ may be partially or entirely driven by the presence of $L$, making it difficult to isolate and accurately estimate the true causal effect of $A$ on $Y$.
 
 ```{tikz}
 #| label: fig-dag-common-cause
 #| fig-cap: "Counfounding by common cause."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -131,15 +266,14 @@ The problem of confounding by common cause arises when there is an unmeasured or
 \end{tikzpicture}
 ```
 
+### Solution to the problem of confounding by a common cause: adjust for all measured pre-exposure confounders.
 
-### Solution: adjust for the pre-exposure confounder
-
-Confounding by common cause can be addressed by adjusting for it. If $L$ is measured before the treatment (or exposure) is assigned, we may adjust for this confounder to account for its influence. Typically we adjust through through statistical techniques such as stratification, regression, matching, or inverse probability of treatment weighting. Sucg adjustment helps to mitigate the bias caused by the confounder, allowing for a more accurate estimation of the true causal relationship.
+Confounding by common cause can be addressed by adjusting for it. If $L$ is measured before the treatment (or exposure) is assigned, we may adjust for this confounder to account for its influence. Typically we adjust through through statistical techniques such as stratification, regression, matching, or inverse probability of treatment weighting. Such adjustment helps to mitigate the bias caused by the confounder, allowing for a more accurate estimation of the true causal relationship.
 
 ```{tikz}
 #| label: fig-dag-common-cause-solution
 #| fig-cap: "Solution: adjust for pre-exposure confounder."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -163,15 +297,14 @@ Confounding by common cause can be addressed by adjusting for it. If $L$ is meas
 
 ```
 
+### 2. Confounding by collider stratification (conditioning on a common effect)
 
-### 2, collider stratification: conditioning on a common effect
-
-Conditioning on a common effect occures when a variable $L$ is affected by both the treatment $A$ and an outcome $Y$.  Conditioning on $L$ creates a spurious association between $A$ and $Y$, biasing the true causal relationship. This occurs because the relationship between $A$ and $Y$ becomes confounded by the common effect $L$. The observed association  between $A$ and $Y$ may be solely driven by the influence of $L$.
+Conditioning on a common effect occurs when a variable $L$ is affected by both the treatment $A$ and an outcome $Y$. Conditioning on $L$ creates a spurious association between $A$ and $Y$, biasing the true causal relationship. This occurs because the relationship between $A$ and $Y$ becomes confounded by the common effect $L$. The observed association between $A$ and $Y$ may be solely driven by the influence of $L$.
 
 ```{tikz}
 #| label: fig-dag-common-effect
 #| fig-cap: "Confounding by conditioning on a collider."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -196,15 +329,14 @@ Conditioning on a common effect occures when a variable $L$ is affected by both 
 
 ```
 
-### Solution: ensure all confounders are measured before the exposure
+### Solution to the problem of conditioning on a collider: ensure that all confounders are measured before the the outcome has occurred
 
-To address the problem of conditioning on a common effect, it is crucial to ensure that every potential confounder $L$ that may affect $A$ is measured before $A$. If such temporal order is preserved,  $L$ cannot be an effect of $A$, and thus neither of $Y$.  By measuring all relevant confounders in advance, researchers can minimize bias and obtain more reliable estimates of the true causal relationship between A and Y. Note that collider stratification may arise even if $L$ occurs before $A$, when $L$ does not affect $A$ or $Y$. This is called M-bias. We describe this case below. Note, however, that if $L$ is not a common cause of $A$ and $Y$, $L$ should not be included in our model because it is not a source of confounding.
-
+To address the problem of conditioning on a common effect, it is crucial to ensure that every potential confounder $L$ that may affect $A$ is measured before $A$. If such temporal order is preserved, $L$ cannot be an effect of $A$, and thus neither of $Y$. By measuring all relevant confounders in advance, researchers can minimize bias and obtain more reliable estimates of the true causal relationship between A and Y. Note that collider stratification may arise even if $L$ occurs before $A$, when $L$ does not affect $A$ or $Y$. This is called M-bias. We describe this case below. Note, however, that if $L$ is not a common cause of $A$ and $Y$, $L$ should not be included in our model because it is not a source of confounding.
 
 ```{tikz}
 #| label: fig-dag-common-effect-solution
 #| fig-cap: "Solution: avoid colliders"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -230,17 +362,14 @@ To address the problem of conditioning on a common effect, it is crucial to ensu
 
 ```
 
+### 3 Conditioning on a mediator
 
-
-### 3 Conditioning on a mediator 
-
-Conditioning on a mediator refers to a situation where $L$ lies on the causal pathway between the treatment $A$ and the outcome $Y$.  Conditioning on $L$ can lead to biased estimates by blocking or distort the true causal pathway between $A$ and $Y$, obscuring the total effect of $A$ on $Y$.  Where $L$ is a collider between $A$ and an unmeasured confouder $U$, then including $L$ may increase the strength of association between $A$ and $Y$. We review this second possibility next. In either case, unless one is interested in mediation analysis (see below), conditioning on a post-treatment variable is nearly always a bad idea. [JB to discuss the exception] 
-
+Conditioning on a mediator refers to a situation where $L$ lies on the causal pathway between the treatment $A$ and the outcome $Y$. Conditioning on $L$ can lead to biased estimates by blocking or distort the true causal pathway between $A$ and $Y$, obscuring the total effect of $A$ on $Y$. Where $L$ is a collider between $A$ and an unmeasured confouder $U$, then including $L$ may increase the strength of association between $A$ and $Y$. We review this second possibility next. In either case, unless one is interested in mediation analysis (see below), conditioning on a post-treatment variable is nearly always a bad idea. \[JB to discuss the exception\]
 
 ```{tikz}
 #| label: fig-dag-mediator
 #| fig-cap: "Confounding by a mediator."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -263,15 +392,14 @@ Conditioning on a mediator refers to a situation where $L$ lies on the causal pa
 \end{tikzpicture}
 ```
 
-
 ### Solution: ensure confounders are measured before the exposure
 
-To address the problem of mediator bias, when interested in total effects do not condition on a mediator. This can be done by ensuring that $L$ occurs before $A$ (and $Y$). Again we discover the importance of an explicit temporal ordering for our variables.  Although note, if $L$ is associated with $Y$ but is not associated with $A$ conditioning on $L$ will improve the efficiency of the causal effect estimate of $A$ on $Y$.  However, if $A$ might affect $L$, then $L$ might be a mediator, and including $L$ risks bias. As with some much in causal estimation, we must understand the context.
+To address the problem of mediator bias, when interested in total effects do not condition on a mediator. This can be done by ensuring that $L$ occurs before $A$ (and $Y$). Again we discover the importance of an explicit temporal ordering for our variables. Although note, if $L$ is associated with $Y$ but is not associated with $A$ conditioning on $L$ will improve the efficiency of the causal effect estimate of $A$ on $Y$. However, if $A$ might affect $L$, then $L$ might be a mediator, and including $L$ risks bias. As with some much in causal estimation, we must understand the context.
 
 ```{tikz}
 #| label: fig-dag-mediator-solution
 #| fig-cap: "Ensure confounders occur before exposures."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -293,21 +421,18 @@ To address the problem of mediator bias, when interested in total effects do not
 
 ```
 
-
 ### 4. Conditioning on a descendant
 
+Say $A$ is a cause of $A*$. There is a theorem that proves that when we condition on $A*$ we partially condition on $A$.
 
-Say $A$ is a cause of $A*$. There is a theorem that proves that when we condition on $A*$ we partially condition on $A$. 
+There are both negative and positive implications of this theorem for causal estimation in real-world scenarios.
 
-There are both negative and positive implications of this theorem for causal estimation in real-world scenarios. 
-
-First the negative. Suppose there is a confounder $L$ that is caused by an unobserved variable $U$, and is affected by the treatment $A$. Suppose further that $U$  causes the outcome $Y$. In this scenario, as described in @fig-dag-descendent, conditioning on $L$, which is a descendant of $A$ and $U$, can lead to a spurious association between $A$ and $Y$ through the path $A \to L \to U \to Y$. 
-
+First the negative. Suppose there is a confounder $L$ that is caused by an unobserved variable $U$, and is affected by the treatment $A$. Suppose further that $U$ causes the outcome $Y$. In this scenario, as described in @fig-dag-descendent, conditioning on $L$, which is a descendant of $A$ and $U$, can lead to a spurious association between $A$ and $Y$ through the path $A \to L \to U \to Y$.
 
 ```{tikz}
 #| label: fig-dag-descendent
 #| fig-cap: "Confounding by descent"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -333,7 +458,6 @@ First the negative. Suppose there is a confounder $L$ that is caused by an unobs
 
 ```
 
-
 ### Solution: ensure that counfounders are measured before the exposure
 
 Ensuring the confounder (L) is measured before the exposure (A) has two beneficial properties. Firstly, if $L$ is a confounder, that is, if $L$ is a variable which if we fail to condition on it will bias the association between treatment and outcome, the strategy of including only pre-treatment indicators of $L$ will eliminate collider bias. Secondly, there is the positive side to the theorem that conditioning on a descendent is equivalent to partially conditioning on its parent: if an unmeasured confounder is associated with both $A$, $Y$, and $L$, then adjusting for $L$ helps to reduce confounding caused by the unmeasured confounder. By obtaining measure of $L$ that occur before $A$, such advantages can be achieved, allowing for more accurate estimation for the causal effect of $A$ on $Y$. We use the convention of a blue dotted arrow to indicate that the association between $A$ and $Y$ may still be biased, but that bias is reduced by inluding $L$
@@ -341,7 +465,7 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 ```{tikz}
 #| label: fig-dag-descendent-solution
 #| fig-cap: "Solution: again, ensure temporal ordering in all measured variables."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -368,20 +492,16 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-**This ends the examples of canonical casual diagrammes**  
+**This ends the examples of canonical casual diagrammes**
 
+### Summary
 
-### Summary 
-
-
-
-### Common cause of exposure and outcome. 
-
+### Common cause of exposure and outcome.
 
 ```{tikz}
 #| label: fig-dag-1
 #| fig-cap: "Common cause of exposure and outcome: example"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -407,7 +527,7 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 ```{tikz}
 #| label: fig-dag-2
 #| fig-cap: "Solution to this problem."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -429,15 +549,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
-
 ### Bias: exposure at baseline is a common cause of the exposure at t1 and outcome at t2
-
 
 ```{tikz}
 #| label: fig-dag-3
 #| fig-cap: "Causal graph reveals bias from pre-exosure indicator"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -459,15 +576,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
-
 ### Solution: adjust for confounder at baseline
-
 
 ```{tikz}
 #| label: fig-dag-4
 #| fig-cap: "Solution to this problem"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -489,14 +603,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
-
-###  A more thorough confounding control
+### A more thorough confounding control
 
 ```{tikz}
 #| label: fig-dag-5
 #| fig-cap: "Causal graph:more general panel design"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -519,13 +631,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
-###  Generic 3-wave panel design (VanderWeeele 2020)
+### Generic 3-wave panel design (VanderWeeele 2020)
 
 ```{tikz}
 #| label: fig-dag-6
 #| fig-cap: "Causal graph: three-wave panel design"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -551,61 +662,70 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 \end{tikzpicture}
 ```
 
-
-
 <!-- ### Selection bias version 1 -->
 
-
-
-
 <!-- ```{tikz} -->
+
 <!-- #| label: fig-dag-7 -->
+
 <!-- #| fig-cap: "Causal graph: three-wave panel design with selection bias" -->
-<!-- #| out-width: 100% -->
+
+<!-- #| out-width: 80% -->
+
 <!-- #| echo: false -->
 
 <!-- \usetikzlibrary{positioning} -->
+
 <!-- \usetikzlibrary{shapes.geometric} -->
+
 <!-- \usetikzlibrary{arrows} -->
+
 <!-- \usetikzlibrary{decorations} -->
+
 <!-- \tikzstyle{Arrow} = [->, thin, preaction = {decorate}] -->
+
 <!-- \tikzset{>=latex} -->
 
 <!-- \begin{tikzpicture}[{every node/.append style}=draw] -->
 
 <!-- \node [rectangle, draw=white] (U) at (0, 0) {U}; -->
+
 <!-- \node [rectangle, draw=black, align=left] (L) at (2, 0) {t0/L \\t0/A \\t0/Y}; -->
+
 <!-- \node [rectangle, draw=white] (A) at (4, 0) {t1/A}; -->
+
 <!-- \node [ellipse, draw=white] (Y) at (6, 0) {t2/Y}; -->
+
 <!-- \node [rectangle, draw=black] (S) at (8, 0) {S}; -->
 
 <!-- \draw [-latex, draw=black] (U) to (L); -->
-<!-- \draw [-latex, draw=black] (L) to (A); -->
-<!-- \draw [-latex, bend left=50, draw=black] (L) to (Y); -->
-<!-- \draw [-latex, bend right=50, draw=black, dotted] (U) to (Y); -->
-<!-- \draw [-latex, bend left=50, draw=black, dotted] (U) to (A); -->
-<!-- \draw [-latex, draw=black] (Y) to (S); -->
-<!-- \draw [-latex, bend right, draw=black] (A) to (S); -->
-<!-- \draw [-latex, draw=red, dashed] (A) to (Y); -->
 
+<!-- \draw [-latex, draw=black] (L) to (A); -->
+
+<!-- \draw [-latex, bend left=50, draw=black] (L) to (Y); -->
+
+<!-- \draw [-latex, bend right=50, draw=black, dotted] (U) to (Y); -->
+
+<!-- \draw [-latex, bend left=50, draw=black, dotted] (U) to (A); -->
+
+<!-- \draw [-latex, draw=black] (Y) to (S); -->
+
+<!-- \draw [-latex, bend right, draw=black] (A) to (S); -->
+
+<!-- \draw [-latex, draw=red, dashed] (A) to (Y); -->
 
 <!-- \end{tikzpicture} -->
 
-
 <!-- ``` -->
-
 
 ### Selection bias: there are several types
 
-
-
-#### Unmeasured confounder affects selection and the outcome 
-
+#### Unmeasured confounder affects selection and the outcome
 
 ```{tikz}
 #| label: fig-dag-8
 #| fig-cap: "Causal graph: three-wave panel design with selection bias"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -644,16 +764,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
-
-
 #### Unmeasured confounder affects a measured confounder of selection and the outcome, and there are unmeasured confourders that affect the measured confounder
-
 
 ```{tikz}
 #| label: fig-dag-8-2
 #| fig-cap: "Causal graph: three-wave panel design with selection bias: example 2"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -696,16 +812,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
-
-
 #### Unmeasured confounder affects slection into the study and also attrition
-
 
 ```{tikz}
 #| label: fig-dag-8-4
 #| fig-cap: "Causal graph: three-wave panel design with selection bias: selection into the study (D) affects attrition"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -741,16 +853,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
-
-
 #### Outcome and exposure affect attrition
-
 
 ```{tikz}
 #| label: fig-dag-8-5
 #| fig-cap: "Causal graph:outcome and exposure affect attrition (Y measured with directed measurement error)"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -780,14 +888,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 
 ```
 
-
 #### Outcome and exposure affect attrition: we may approach this problem as one of directed measurement error.
-
 
 ```{tikz}
 #| label: fig-directed-measurement-error
 #| fig-cap: "TBA"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -840,25 +946,16 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 \end{tikzpicture}
 ```
 
-
-
-
-
-
 ## Important Causal Diagrammes
 
+## How do we draw interactions?
 
-## How do we draw interactions? 
-
-
-
-## Common cause of exposure and outcome. 
-
+## Common cause of exposure and outcome.
 
 ```{tikz}
 #| label: fig-dag-effect-modfication
 #| fig-cap: "A simple graph for effect-modification."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -878,14 +975,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 \end{tikzpicture}
 ```
 
-
-### Another graph for interaction 
-
+### Another graph for interaction
 
 ```{tikz}
 #| label: fig-dag-effect-modfication-2
 #| fig-cap: "A simple graph for effect-modification."
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -905,15 +1000,12 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 \end{tikzpicture}
 ```
 
-
-
 ### M-Bias
 
-
-```{tikz} 
+```{tikz}
 #| label: fig-m-bias
 #| fig-cap: "M-bias: confounding control by including previous measures of the outcome"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 
@@ -943,36 +1035,28 @@ Ensuring the confounder (L) is measured before the exposure (A) has two benefici
 \end{tikzpicture}
 ```
 
-
-
-
-
-
-### What if mediation is of interest? 
-
+### What if mediation is of interest?
 
 Consider the assumptions required for mediation analysis:
 
-1. No unmeasured exposure-outcome confounders given  $L$ 
+1.  No unmeasured exposure-outcome confounders given $L$
 
-$$Y^{am}\coprod A|L$$
-2. No unmeasured meadiator-outcome confounders given $L$ 
+$$Y^{am}\coprod A|L$$ 2. No unmeasured meadiator-outcome confounders given $L$
 
 $$Y^{am}\coprod M|L$$
 
-3. No unmeasured exposure-mediator confounders given $L$ 
+3.  No unmeasured exposure-mediator confounders given $L$
 
 $$M^{a}\coprod A|L$$
 
-4. No mediator-outcome confounder affected by the exposure (no red arrow)
+4.  No mediator-outcome confounder affected by the exposure (no red arrow)
 
 $$Y^{am}\coprod M^{a*}|L$$
-
 
 ```{tikz}
 #| label: fig-dag-mediation-assuptions
 #| fig-cap: "Assumptions for mediation analysis"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -1012,17 +1096,12 @@ $$Y^{am}\coprod M^{a*}|L$$
 
 ```
 
-
-
-
 ### Confounder-Treatment Feedback
-
-
 
 ```{tikz}
 #| label: fig-dag-9
 #| fig-cap: "Confounder Treatement Feedback"
-#| out-width: 100%
+#| out-width: 80%
 #| echo: false
 
 
@@ -1057,10 +1136,379 @@ $$Y^{am}\coprod M^{a*}|L$$
 \end{tikzpicture}
 ```
 
+By the end of this lecture you will:
+
+1.  Understand the causal assumptions implied by the factor analytic interpretation of the formative and reflective models.
+
+2.  Be able to distinguish between statistical and structural interpretations of these models.
+
+3.  Understand why Vanderweele thinks consistent causal estimation is possible using the theory of multiple versions of treatments for constructs with multiple indicators
+
+```{r}
+#| include: false
+#| echo: false
+#read libraries
+
+library("tinytex")
+library(extrafont)
+loadfonts(device = "all")
+
+# read libraries
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+# read functions
+source("/Users/joseph/GIT/templates/functions/funs.R")
+```
+
+## Two ways of thinking about measurement in psychometric research.
+
+In psychometric research, formative and reflective models describe the relationship between latent variables and their respective indicators. VanderWeele discusses this in the assigned reading for this week [@vanderweele2022].
+
+### Reflective Model (Factor Analysis)
+
+In a reflective measurement model, also known as an effect indicator model, the latent variable is understood to cause the observed variables. In this model, changes in the latent variable cause changes in the observed variables. Each indicator (observed variable) is a 'reflection' of the latent variable. In other words, they are effects or manifestations of the latent variable. These relations are presented in @fig-dag-latent-1.
+
+The reflective model may be expressed:
+
+$$X_i = \lambda_i \eta + \varepsilon_i$$
+
+Here, $X_i$ is an observed variable (indicator), $\lambda_i$ is the factor loading for $X_i$, $\eta$ is the latent variable, and $\varepsilon_i$ is the error term associated with $X_i$. It is assumed that all the indicators are interchangeable and have a common cause, which is the latent variable $\eta$.
+
+In the conventional approach of factor analysis, the assumption is that a common latent variable is responsible for the correlation seen among the indicators. Thus, any fluctuation in the latent variable should immediately lead to similar changes in the indicators.These assumptions are presented in @fig-dag-latent-1.
+
+```{tikz}
+#| label: fig-dag-latent-1
+#| fig-cap: "Reflective model: assume univariate latent variable η giving rise to indicators X1...X3. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 80%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
 
 
-## Multiple Versions of Treatment
 
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (eta) at (0, 0) {$\eta$};
+\node [rectangle, draw=white] (X1) at (6, 1) {X$_1$};
+\node [rectangle, draw=white] (X2) at (6, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (6, -1) {X$_n$};
+
+\draw [-latex, draw=black] (eta) to (X1);
+\draw [-latex, draw=black] (eta) to (X2);
+\draw [-latex, draw=black] (eta) to (Xn);
+
+\end{tikzpicture}
+```
+
+### The Formative Model (Factor Analysis)
+
+In a formative measurement model, the observed variables are seen as causing or determining the latent variable. Here again, there is a single latent variable. However this latent variable is taken to be an effect of the underlying indicators. These relations are presented in @fig-dag-latent-formative_0.
+
+The formative model may be expressed:
+
+$$\eta = \sum_i\lambda_i X_i + \varepsilon$$
+
+In this equation, $\eta$ is the latent variable, $\lambda_i$ is the weight for $X_i$ (the observed variable), and $\varepsilon$ is the error term. The latent variable $\eta$ is a composite of the observed variables $X_i$.
+
+In the context of a formative model, correlation or interchangeability between indicators is not required. Each indicator contributes distinctively to the latent variable. As such, a modification in one indicator doesn't automatically imply a corresponding change in the other indicators.
+
+```{tikz}
+#| label: fig-dag-latent-formative_0
+#| fig-cap: "Formative model:: assume univariate latent variable from which the indicators X1...X3 give rise. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 80%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=black] (X1) at (0, 1) {X1};
+\node [rectangle, draw=white] (X2) at (0, 0) {$\vdots$};
+\node [rectangle, draw=black] (Xn) at (0, -1) {X$_n$};
+\node [rectangle, draw=white] (eta) at (6, 0) {$\eta$};
+
+
+\draw [-latex, draw=black] (X1) to (eta);
+\draw [-latex, draw=black] (X2) to (eta);
+\draw [-latex, draw=black] (Xn) to (eta);
+
+\end{tikzpicture}
+```
+
+## Structural Interpretation of the formative model and reflective models (Factor Analysis)
+
+> However, this analysis of reflective and formative models assumed that the latent η was causally efficacious. This may not be the case (VanderWeele 2022)
+
+VanderWeele distinguishes between statistical and structural interpretations of the equations preesented above.
+
+1.  **Statistical Model:** a mathematical construct that shows how observable variables, also known as indicators, are related to latent or unseen variables. These are presented in the equations above
+
+2.  **Structural Model:** A structural model refers to the causal assumptions or hypotheses about the relationships among variables in a statistical model. The assumptions of the factor analytic tradition are presented in @fig-dag-latent-formative_0 and @fig-dag-latent-1 are structural models.
+
+We have seen that the **reflective model** statistically implies that the observed variables (indicators) are reflections or manifestations of the latent variable, expressed as $X_i = \lambda_i \eta + \varepsilon_i$. However, the factor analytic tradition makes the additional structural assumption that a univariate latent variable is causally efficacious and influences the observed variables, as in: @fig-structural-assumptions-reflective-model.
+
+We have also seen that the **formative model** statistically implies that the latent variable is formed or influenced by the observed variables, expressed as $\eta = \sum_i\lambda_i X_i + \varepsilon$. However, the factor analytic tradition makes the additional assumption that the observed variables give rise to a univariate latent variable, as in @fig-dag-reflective-assumptions_note.
+
+::: {#fig-latent layout-ncol="1"}
+```{tikz}
+#| label: fig-structural-assumptions-reflective-model
+#| fig-cap: "Reflective Model: causal assumptions. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=black] (L) at (0, 0) {L};
+\node [rectangle, draw=white] (eta) at (2, 0) {$\eta$};
+\node [rectangle, draw=white] (X1) at (4, 1) {X1};
+\node [rectangle, draw=white] (X2) at (4, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (4, -1) {X$_n$};
+\node [rectangle, draw=white] (A) at (6, 0) {A};
+
+\node [rectangle, draw=white] (Y) at (8, 0) {Y};
+
+\draw [-latex, bend right=80, draw=black] (L) to (Y);
+\draw [-latex, draw=black] (L) to (eta);
+\draw [-latex, bend left=90, draw=red] (eta) to (Y);
+\draw [-latex, draw=black] (eta) to (X1);
+\draw [-latex, draw=black] (eta) to (X2);
+\draw [-latex, draw=black] (eta) to (Xn);
+
+\draw [-latex, draw=black] (X1) to (A);
+\draw [-latex, draw=black] (X2) to (A);
+\draw [-latex, draw=black] (Xn) to (A);
+
+\end{tikzpicture}
+```
+
+```{tikz}
+#| label: fig-dag-reflective-assumptions_note
+#| fig-cap: "Formative model: causal assumptions. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+\node [draw=black] (L) at (0, 0) {L};
+\node [rectangle, draw=black] (X1) at (3, 1) {X1};
+\node [rectangle, draw=white] (X2) at (3, 0) {$\vdots$};
+\node [rectangle, draw=black] (Xn) at (3, -1) {X$_n$};
+\node [rectangle, draw=white] (eta) at (6, 0) {$\eta$};
+\node [rectangle, draw=white] (Y) at (9, 0) {Y};
+
+
+
+\draw [-latex, draw=black] (X1) to (eta);
+\draw [-latex, draw=black] (X2) to (eta);
+\draw [-latex, draw=black] (Xn) to (eta);
+\draw [-latex, bend right=80, draw=black] (L) to (Y);
+\draw [-latex, draw=black, bend left = 80] (L) to (eta);
+\draw [-latex, draw=red] (eta) to (Y);
+
+
+\end{tikzpicture}
+```
+
+The reflective model implies $X_i = \lambda_i \eta + \varepsilon_i$, which factor analysts take to imply @fig-structural-assumptions-reflective-model.
+
+The formative model implies $\eta = \sum_i\lambda_i X_i + \varepsilon$, which factor analysts take to imply @fig-dag-reflective-assumptions_note.
+:::
+
+## Problems with the structural interpretations of the reflective and formative factor models.
+
+While the statistical model $X_i = \lambda_i \eta + \varepsilon_i$ aligns with @fig-structural-assumptions-reflective-model, it also alings with @fig-dag-formative-assumptions-compatible. Cross-sectional data, unfortunately, do not provide enough information to discern between these different structural interpretations.
+
+Similarly, the statistical model $\eta = \sum_i\lambda_i X_i + \varepsilon$ agrees with @fig-dag-reflective-assumptions_note but it also agrees with\@fig-dag-reflectiveassumptions-compatible_again. Here too, cross-sectional data cannot decide between these two potential structural interpretations.
+
+There are other, compatible structural interprestations as well. The formative and reflective conceptions of factor analysis are compatible with indicators having causal effects as shown in @fig_dag_multivariate_reality_again. They are also compatible with a multivariate reality giving rise to multiple indicators as shown in @fig-dag-multivariate-reality-bulbulia.
+
+::: {layout-ncol="1"}
+```{tikz}
+#| label: fig-dag-formative-assumptions-compatible
+#| fig-cap: "Formative model is compatible with indicators causing outcome.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+%\node [rectangle, draw=white] (L) at (0, 0) {L};
+\node [rectangle, draw=white] (eta) at (2, 0) {$\eta$};
+\node [rectangle, draw=white] (X1) at (4, 1) {X1};
+\node [rectangle, draw=white] (X2) at (4, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (4, -1) {X$_n$};
+\node [rectangle, draw=white] (Y) at (6, 0) {Y};
+
+%\draw [-latex, bend right=80, draw=black] (L) to (Y);
+%\draw [-latex, bend left=60, draw=black] (L) to (X1);
+%\draw [-latex, bend left=40, draw=black] (L) to (X2);
+%\draw [-latex, bend right=60, draw=black] (L) to (Xn);
+
+\draw [-latex, draw=black] (eta) to (X1);
+\draw [-latex, draw=black] (eta) to (X2);
+\draw [-latex, draw=black] (eta) to (Xn);
+
+\draw [-latex, draw=red] (X1) to (Y);
+\draw [-latex, draw=red] (X2) to (Y);
+\draw [-latex, draw=red] (Xn) to (Y);
+
+
+\end{tikzpicture}
+```
+
+```{tikz}
+#| label: fig-dag-reflectiveassumptions-compatible_again
+#| fig-cap: "Reflective model is compatible with indicators causing the outcome. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+%\node [draw=white] (L) at (0, 0) {L};
+\node [rectangle, draw=white] (X1) at (2, 1) {X1};
+\node [rectangle, draw=white] (X2) at (2, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (2, -1) {X$_n$};
+\node [rectangle, draw=white] (eta) at (4, 0) {$\eta$};
+\node [rectangle, draw=white] (Y) at (6, 0) {Y};
+
+
+
+\draw [-latex, draw=black] (X1) to (eta);
+\draw [-latex, draw=black] (X2) to (eta);
+\draw [-latex, draw=black] (Xn) to (eta);
+%\draw [-latex, bend left=80, draw=black] (L) to (Y);
+\draw [-latex, bend left=60, draw=red] (X1) to (Y);
+\draw [-latex, bend left=40, draw=red] (X2) to (Y);
+\draw [-latex, bend right =60,  draw=red] (Xn) to (Y);
+
+
+
+\end{tikzpicture}
+```
+
+```{tikz}
+#| label: fig_dag_multivariate_reality_again
+#| fig-cap: "Multivariate reality gives rise to the indicators, from which we draw our measures. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+\node [draw=white] (eta1) at (0, 1) {$\eta_1$};
+\node [rectangle, draw=white] (eta2) at (0, 0) {$\vdots$};
+\node [rectangle, draw=white] (etan) at (0, -1) {$\eta_n$};
+\node [rectangle, draw=white] (X1) at (2, 1) {X$_1$};
+\node [rectangle, draw=white] (X2) at (2, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (2, -1 ) {X$_n$};
+\node [rectangle, draw=white] (A) at (4, 0 ) {A};
+\node [rectangle, draw=white] (Y) at (6, 0 ) {Y};
+
+
+
+\draw [-latex, draw=black] (eta1) to (X1);
+\draw [-latex, draw=black] (eta2) to (X2);
+\draw [-latex, draw=black] (etan) to (Xn);
+
+\draw [-latex, draw=black] (X1) to (A);
+\draw [-latex, draw=black] (X2) to (A);
+\draw [-latex, draw=black] (Xn) to (A);
+\draw [-latex, bend left=80, draw=red] (eta1) to (Y);
+\draw [-latex, bend right=80, draw=red] (etan) to (Y);
+
+
+
+\end{tikzpicture}
+```
+
+```{tikz}
+#| label: fig-dag-multivariate-reality-bulbulia
+#| fig-cap: "Although we take our constructs, A, to be functions of indicators, X, such that, perhaps only one or several of the indicators are efficacious.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+\node [draw=white] (eta1) at (0, 1) {$\eta_1$};
+\node [rectangle, draw=white] (eta2) at (0, 0) {$\vdots$};
+\node [rectangle, draw=white] (etan) at (0, -1) {$\eta_n$};
+\node [rectangle, draw=white] (X1) at (2, 1) {X$_1$};
+\node [rectangle, draw=white] (X2) at (2, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (2, -1 ) {X$_n$};
+\node [rectangle, draw=white] (Y) at (6, 0 ) {Y};
+
+
+
+\draw [-latex, draw=black] (eta1) to (X1);
+\draw [-latex, draw=black] (eta2) to (X2);
+\draw [-latex, draw=black] (etan) to (Xn);
+
+
+\draw [-latex, bend left=80, draw=red] (eta1) to (Y);
+
+
+
+\end{tikzpicture}
+```
+
+VanderWeele's key observation is this:
+
+**While cross-sectional data can provide insights into the relationships between variables, they cannot conclusively determine the causal direction of these relationships.**
+
+This results is worrying. The structural assumptions of factor analysis underpin nearly all psychological research. If the cross-sectional data used to derive factor structures cannot decide whether the structural interpretations of factor models are accurate, where does that leave us?
+
+More worrying still, VanderWeele discusses several longitudinal tests for structural interpretations of univariate latent variables that do not pass.
+
+Where does that leave us? In psychology we have heard about a replication crisis. We might describe the reliance on factor models as an aspect of a much larger, and more worrying "causal crisis" [@bulbulia2022]
+:::
+
+## Review of the theory of multiple versions of treatment
 
 ```{tikz}
 #| label: fig_dag_multiple_version_treatment_dag
@@ -1093,19 +1541,197 @@ $$Y^{am}\coprod M^{a*}|L$$
 \end{tikzpicture}
 ```
 
+Perhaps not all is lost. VanderWeele looks to the theory of multiple versions of treatment for solace.
+
+Recall, a causal effect is defined as the difference in the expected potential outcome when everyone is exposed (perhaps contrary to fact) to one level of a treatment, conditional on their levels of a confounder, with the expected potential outcome when everyone is exposed to a a different level of a treatement (perhaps contrary to fact), conditional on their levels of a counfounder.
+
+$$ \delta = \sum_l \left( \mathbb{E}[Y|A=a,l] - \mathbb{E}[Y|A=a^*,l] \right) P(l)$$
+
+where $\delta$ is the causal estimand on the difference scale $(\mathbb{E}[Y^0 - Y^0])$.
+
+In causal inference, the multiple versions of treatment theory allows us to handle situations where the treatment isn't uniform, but instead has several variations. Each variation of the treatment, or "version", can have a different impact on the outcome. Consistency is not violated because it is redefined: for each version of the treatment, the outcome under that version is equal to the observed outcome when that version is received. Put differently we may think of the indicator $A$ as corresponding to many version of the true treament $K$. Where conditional independence holds such that there is a absence of confounding for the effect of $K$ on $Y$ given $L$, we have: $Y_k \coprod A|K,L$. This states conditional on $L$, $A$ gives no information about $Y$ once $K$ and $L$ are accounted for. When $Y = Y_k$ if $K = k$ and Y$_k$ is independent of $K$, condition on $L$, then $A$ may be thought of as a coarsened indicator of $K$, as shown in @fig_dag_multiple_version_treatment_dag. We may estimate consistent causal effects where:
+
+$$ \delta = \sum_{k,l} \mathbb{E}[Y_k|l] P(k|a,l) P(l) - \sum_{k,l} \mathbb{E}[Y_k|l] P(k|a^*,l) P(l)$$
+
+The scenario represents a hypothetical randomised trial where within strata of covariates $L$, individuals in one group receive a treatment $K$ version randomly assigned from the distribution of $K$ distribution $(A = 1, L = l)$ sub-population. Meanwhile, individuals in the other group receive a randomly assigned $K$ version from $(A = 0, L = l)$
+
+This theory finds its utility in practical scenarios where treatments seldom resemble each other -- we discussed the example of obesity last week (see: [@vanderweele2013]).
+
+### Reflective and formative measurement models may be approached as multiple versions of treatment
+
+Vanderweele applies the following substitution:
+
+$$\delta = \sum_{\eta,l} \mathbb{E}[Y_\eta|l] P(\eta|A=a+1,l) P(l) - \sum_{\eta,l} \mathbb{E}[Y_\eta|l] P(\eta|A=a,l) P(l)$$
+
+Specifically, we substitue $K$ with $\eta$ from the previous section, and compare the measurement response $A = a + 1$ with $A = a$. We discover that if the influence of $\eta$ on $Y$ is not confounded given $L$, then the multiple versions of reality consistent with the reflective and formative statistical models of reality will not lead to biased estimation. $\delta$ retains its interpretability as a comparison in a hypothetical randomised trial in which the distribution of coarsened measures of $\eta_A$ are balanced within levels of the treatment, conditional on $\eta_L$.
+
+This connection between measurement and the multiple versions of treatment framework provides a hope for consistent causal inference varying reliabilities of measurement.
+
+However, as with the theory of multiple treatments, we might not known how to interpret our results because we don't know the true relationships between our measured indicators and underlying reality.
+
+How can we do better?
+
+```{tikz}
+#| label: fig-dag-multiple-version-treatment-applied-measurement
+#| fig-cap: "Multiple Versions of treatment applied to measuremen.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
 
 
 
-## Does the Multiple Versions of Treatments Approach Save Us? 
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=black] (L0) at (0, 0) {L};
+\node [rectangle, draw=white] (K1) at (2, 0) {$\eta$=K};
+\node [rectangle, draw=white] (X1) at (5, 0) {$(X_1, X_2, \dots X_n)$};
+\node [rectangle, draw=black] (A1) at (8, 0) {A};
+\node [rectangle, draw=white] (Y2) at (10, 0) {Y$_k$};
+
+\draw [-latex, draw=black] (L0) to (K1);
+\draw [-latex, bend right, draw=black] (L0) to (Y2);
+\draw [-latex, draw=black] (K1) to (X1);
+\draw [-latex, draw=black] (X1) to (A1);
+%\draw [-latex, draw=white, bend left] (K1) to (Y2); # fix later
+
+\end{tikzpicture}
+```
+
+## VanderWeele's model of reality
+
+VanderWeele's article concludes as follows:
+
+> A preliminary outline of a more adequate approach to the construction and use of psychosocial measures might thus be summarized by the following propositions, that I have argued for in this article: (1) Traditional univariate reflective and formative models do not adequately capture the relations between the underlying causally relevant phenomena and our indicators and measures. (2) The causally relevant constituents of reality related to our constructs are almost always multidimensional, giving rise both to our indicators from which we construct measures, and also to our language and concepts, from which we can more precisely define constructs. (3) In measure construction, we ought to always specify a definition of the underlying construct, from which items are derived, and by which analytic relations of the items to the definition are made clear. (4) The presumption of a structural univariate reflective model impairs measure construction, evaluation, and use. (5) If a structural interpretation of a univariate reflective factor model is being proposed this should be formally tested, not presumed; factor analysis is not sufficient for assessing the relevant evidence. (6) Even when the causally relevant constituents of reality are multidimensional, and a univariate measure is used, we can still interpret associations with outcomes using theory for multiple versions of treatment, though the interpretation is obscured when we do not have a clear sense of what the causally relevant constituents are. (7) When data permit, examining associations item-by-item, or with conceptually related item sets, may give insight into the various facets of the construct.
+
+> A new integrated theory of measurement for psychosocial constructs is needed in light of these points -- one that better respects the relations between our constructs, items, indicators, measures, and the underlying causally relevant phenomena. (VanderWeele 2022)
+
+```{tikz}
+#| label: fig-dag-multivariate-reality-complete
+#| fig-cap: "Multivariate reality gives rise to the latent variables.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
 
 
-Measurement error remeains a problem if errors are either directed or dependent (correlated) or both. (See: measurement link.)
+\node [rectangle, draw=white] (R) at (0, 0 ) {$\mathcal{R}$};
+\node [rectangle, draw=white] (c) at (2, -1 ) {concepts};
+\node [rectangle, draw=white] (cs) at (4, -2 ) {constructs};
+\node [rectangle, draw=white] (eta) at (4, 0 ) {$\eta$};
+\node [rectangle, draw=white] (X) at (6, 0 ) {(X$_1 \dots$X$_n$)};
+\node [rectangle, draw=white] (A) at (8, 0 ) {A};
+\node [rectangle, draw=white] (Y) at (10, 0 ) {Y};
 
 
+
+\draw [-latex, draw=black, dashed] (R) to (c);
+\draw [-latex, draw=black, dashed] (c) to (cs);
+\draw [-latex, draw=black] (R) to (eta);
+\draw [-latex, draw=black] (eta) to (X);
+\draw [-latex, draw=black] (X) to (A);
+
+
+
+\draw [-latex, bend left=80, draw=red] (eta) to (Y);
+
+
+
+\end{tikzpicture}
+```
+
+This seems to me sensible. However, @fig-dag-multivariate-reality-complete this is not a causal graph. The arrows to not clearly represent causal relations. It leaves me unclear about what to practically do.
+
+Let's return to the three wave many-outcomes model described in previous weeks. How should we revise this model in light of measurement theory?
+
+## How theory of dependent and directed measurement error might be usefully employed to develop a pragmatic responses to construct measurement
+
+By now you are all familiar with The New Zealand Attitudes and Values Study (NZAVS),which is a national probability survey collects a wide range of information, including data on distress, exercise habits, and cultural backgrounds.
+
+```{tikz}
+#| label: fig-dag-uu-null
+#| fig-cap: "Uncorrelated non-differential  measurement error does not bias estimates under the null. Note, however, we assume that L is measured with sufficient precision to block the path from A_eta --> L_eta --> Y_eta, which, otherwise, we would assume to be open. "
+#| out-width: 100%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (UL) at (0, 1) {U$_L$};
+\node [rectangle, draw=white] (UA) at (6, 2) {U$_A$};
+\node [rectangle, draw=white] (UY) at (9, 3) {U$_Y$};
+
+\node [rectangle, draw=black] (L0) at (3, 1) {L$_{f(X_1\dots X_n)}^{t0}$};
+\node [rectangle, draw=black] (A1) at (7, 1) {A$_{f(X_1\dots X_n)}^{t1}$};
+\node [rectangle, draw=black] (Y2) at (11, 1) {Y$_{f(X_1\dots X_n)}^{t2}$};
+
+\node [rectangle, draw=white] (Leta0) at (3, 0) {L$^{t0}_\eta$};
+\node [rectangle, draw=white] (Aeta1) at (7, 0) {A$^{t1}_\eta$};
+\node [rectangle, draw=white] (Yeta2) at (11, 0) {Y$^{t2}_\eta$};
+
+
+\draw [-latex, draw=black] (UL) to (L0);
+\draw [-latex, draw=black,bend left=20] (UA) to (A1);
+\draw [-latex, draw=black,bend left=30] (UY) to (Y2);
+\draw [-latex, draw=black] (Leta0) to (L0);
+\draw [-latex, draw=black] (Leta0) to (Aeta1);
+\draw [-latex, draw=black, bend right=30] (Leta0) to (Yeta2);
+\draw [-latex, draw=black] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+
+
+\draw [cor, draw=black, dashed,bend right=80] (UL) to (Leta0);
+\draw [cor, draw=black, dashed, bend right = 80] (UA) to (Aeta1);
+\draw [cor, draw=black, dashed, bend right = 80] (UY) to (Yeta2);
+
+
+
+\end{tikzpicture}
+```
+
+Consider a study that seeks to use this dataset to investigate the effect of regular exercise on psychological distress. In contrast to previous graphs, let us allow for latent reality to affect our measurements, as well as the discrepencies between our measurements and true underlying reality. We shall use @fig-dag-uu-null as our initial guide.
+
+We represent the true exercise by $\eta_A$. We represent true psychological distress by $\eta_Y$. Let $\eta_L$ denote a persons true workload, and assume that this state of work affects both levels of excercise and psychological distress.
+
+To bring the model into contact with measurement theory, Let us describe measurements of these latent true underlying realities as functions of multiple indicators: $L_{f(X_1\dots X_n)}$, $A_{f(X_1\dots X_n)}$, and $A_{f(X_1\dots X_n)}$. These constructs are measured realisations of the underlying true states. We assume that the true states of these variables affect their corresponding measured states, and so draw arrows from $\eta_L\rightarrow{L_{f(X_1\dots X_n)}}$, $\eta_A\rightarrow{A_{f(X_1\dots X_n)}}$, $\eta_Y\rightarrow{Y_{f(X_1\dots X_n)}}$.
+
+We also assume unmeasured sources of error that affect the measurements: $U_{L} \rightarrow$ $L_{f(X_1\dots X_n)}$, $U_{A} \rightarrow$ $A_{f(X_1\dots X_n)}$, and $U_{Y} \rightarrow$ $Y_{f(X_1\dots X_n)}$. That is, we allow that our measured indicators may "see as through a mirror, in darkness," the underlying true reality they hope to capture (Corinthians 13:12). We use $U_{L}$, $U_{A}$ and $U_{Y}$ to denote the unmeasured sources of error in the measured indicators. These are the unknown, and perhaps unknowable, darkness and mirror.
+
+Allow that the true underlying reality represented by the $\eta_{var}$ may be multivariate. Similarly, allow the true underlying reality represented by $\U_{var}$ is multivariate.
+
+We now have a causal diagramme that more precisely captures VanderWeele's thinking as presented in @fig-dag-multivariate-reality-complete. In our @fig-dag-uu-null, we have fleshed out $\mathcal{R}$ in a way that may include natural language concepts and scientific language, or constructs, as latent realities and latent unmeasured sources of error in our constructs.
+
+The utility of describing the measurement dynamics using causal graphs is apparrent. We can understand that the measured states, once conditioned upon create *collider biases* which opens path between the unmeasured sources of error and the true underlying state that gives rise to our measurements. This is depicted by a the arrows $U_{var}$ and from $\eta_{var}$ into each $var_{f(X1, X2,\dots X_n)}$
+
+Notice: **where true unmeasured (multivariate) psycho-physical states are related to true unmeasured (multivariate) sources of error in the measurement of those states, the very act of measurement opens pathways to confounding.**
+
+If for each measured construct $var_{f(X1, X2,\dots X_n)}$, the sources of error $U_{var}$ and the unmeasured consituents of reality that give rise to our measures $\eta_{var}$ are uncorrelated with other variables $U\prime_{var}$ and from $\eta\prime_{var}$ and $var\prime_{f(X1, X2,\dots X_n)}$, our estimates may be downwardly biased toward the null. However, d-separation is preserved. Where errors are uncorrelated with true latent realities, there is no new pathway that opens information between our exposure and outcome. Consider the relations presented in @fig-dag-dep-udir-effect-confounders-3wave
 
 ```{tikz}
 #| label: fig-dag-dep-udir-effect-confounders-3wave
-#| fig-cap: "Measurement error opens a pathway to confounding if either there are correlated errors, or a directed effect of the exposure on the errors of measured outcome."
+#| fig-cap: "Measurement error opens an additional pathway to confounding if either there are correlated errors, or a directed effect of the exposure on the errors of measured outcome."
 #| out-width: 100%
 #| echo: false
 \usetikzlibrary{positioning}
@@ -1167,20 +1793,133 @@ Measurement error remeains a problem if errors are either directed or dependent 
 
 \draw [cor, draw=red, dashed,bend right=80] (ULAY) to (Leta0);
 \draw [cor, draw=red, dashed, bend right = 80] (UA) to (Aeta1);
-%\draw [cor, draw=red, dashed, bend left = 80] (UY) to (Yeta2);
+\draw [cor, draw=red, dashed, bend left = 80] (UY) to (Yeta2);
 
 \end{tikzpicture}
 ```
 
+Here,
 
+$\eta_L \rightarrow L$: We assume that the true workload state affects its measurement. This measurement, however, may be affected by an unmeasured error source, $U_{L}$. Personal perceptions of workload can introduce this error. For instance, a person may perceive their workload differently based on recent personal experiences or cultural backgrounds. Additionally, unmeasured cultural influences like societal expectations of productivity could shape their responses independently of the true workload state. There may be cultural differences - Americans may verstate; the British may present effortless superiority.
+
+$\eta_A \rightarrow A$: When it comes to exercise, the true state may affect the measured frequency (questions about exercise are not totally uninformative). However, this measurement is also affected by an unmeasured source of error, which we denote by $U_{A}$. For example, a cultural shift towards valuing physical health might prompt participants toreport higher activity levels, introducing an error, $U_{A}$.
+
+$\eta_Y \rightarrow Y$: We assume questions about distress are not totally uninformative: actual distress affects the measured distress. However this measurement is subject to unmeasured error: $U_{Y}$. For instance, an increased societal acceptance of mental health might change how distress is reported creating an error, $U_{Y}$, in the measurement of distress. Such norms, moreover, may change over time.
+
+$U_{L} \rightarrow L$, $U_{A} \rightarrow A$, and $U_{Y} \rightarrow Y$: These edges between the nodes indicate how each unmeasured error source can influence its corresponding measurement, leading to a discrepancy between the true state and the measured state.
+
+$U_{L} \rightarrow U_{A}$ and $U_{L} \rightarrow U_{Y}$: These relationships indicate that the error in the stress measurement can correlate with those in the exercise and mood measurements. This could stem from a common cultural bias affecting how a participant self-reports across these areas.
+
+$\eta_A \rightarrow U_{Y}$ and $\eta_L \rightarrow U_{A}$: These relationships indicate that the actual state of one variable can affect the error in another variable's measurement. For example, a cultural emphasis on physical health leading to increased exercise might, in turn, affect the reporting of distress levels, causing an error, $U_{Y}$, in the distress measurement. Similarly, if a cultural trend pushes people to work more, it might cause them to over or underestimate their exercise frequency, introducing an error, $U_{A}$, in the exercise measurement.
+
+### Confounding control by baseline measures of exposure and outcome: Dependent Directed Measurement Error in Three-Wave Panels
+
+1.  We propose a three-wave panel design to control confounding. This design adjusts for baseline measurements of both exposure and the outcome.
+
+2.  Understanding this approach in the context of potential directed and correlated measurement errors gives us a clearer picture of its strengths and limitations.
+
+3.  This three-wave panel design incorporates baseline measurements of both exposure and confounders. As a result, any bias that could come from unmeasured sources of measurement errors should be uncorrelated with their baseline effects.
+
+4.  For instance, if individuals have a social desirability bias at the baseline, they would have to develop a different bias unrelated to the initial one for new bias to occur due to correlated unmeasured sources of measurement errors.
+
+5.  However, we cannot completely eliminate the possibility of such new bias development. There could also be potential new sources of bias from directed effects of the exposure on the error term of the outcome, which can often occur due to panel attrition.
+
+6.  To mitigate this risk, we adjust for panel attrition/non-response using methods like multiple imputation. We also consistently perform sensitivity analyses to detect any unanticipated bias.
+
+7.  Despite these potential challenges, it is worth noting that by including measures of both exposure and outcome at baseline, the chances of new confounding are significantly reduced.
+
+8.  Therefore, adopting this practice should be a standard procedure in multi-wave studies as it substantially minimizes the likelihood of introducing novel confounding factors.
+
+```{tikz}
+#| label: fig-dag-dep-udir-effect-confounders-3wave-new
+#| fig-cap: "TBA"
+#| out-width: 100%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (ULAY) at (0, 2) {U$_{t0/LAY}$};
+\node [rectangle, draw=white] (UA) at (6, 4) {U$_{t1/A}$};
+\node [rectangle, draw=white] (UY) at (8, 5) {U$_{t2/Y}$};
+
+\node [rectangle, draw=black] (L0) at (4, 2) {LAY$^{t0}$};
+\node [rectangle, draw=black] (A1) at (6, 2) {A$^{t1}$};
+\node [rectangle, draw=black] (Y2) at (8, 2) {Y$^{t2}$};
+\node [rectangle, draw=white] (Leta0) at (4, 0) {L$^{t0}_\eta$};
+\node [rectangle, draw=white] (Aeta1) at (6, 0) {A$^{t1}_\eta$};
+\node [rectangle, draw=white] (Yeta2) at (8, 0) {Y$^{t2}_\eta$};
+
+
+\draw [-latex, draw=black, dotted, bend left = 20] (ULAY) to (UA);
+\draw [-latex, draw=black, dotted, bend left = 30] (ULAY) to (UY);
+
+\draw [-latex, draw=black] (UA) to (A1);
+\draw [-latex, draw=red] (UY) to (Y2);
+\draw [-latex, draw=black] (ULAY) to (L0);
+\draw [-latex, draw=black] (Leta0) to (L0);
+\draw [-latex, draw=black] (Leta0) to (Aeta1);
+\draw [-latex, draw=black, bend right=30] (Leta0) to (Yeta2);
+
+\draw [-latex, draw=black] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+
+\draw [-latex, draw=red] (Aeta1) to (UY);
+\draw [-latex, draw=black] (Leta0) to (UA);
+
+
+
+\draw [cor, draw=black, dashed,bend right=30] (ULAY) to (Leta0);
+\draw [cor, draw=black, dashed, bend right = 30] (UA) to (Aeta1);
+\draw [cor, draw=black, dashed, bend right = 100] (ULAY) to (Yeta2);
+
+\end{tikzpicture}
+```
+
+### Comment on slow changes
+
+Over long periods of time we can expect additional sources of confounding. Changes in cultural norms and attitudes can occur over the duration of a longitudinal study like the NZAVS, leading to residual confounding. For example, if there is a cultural shift towards increased acceptance of mental health issues, this might change how psychological distress is reported over time, irrespective of baseline responses.
+
+<!-- It's also important to consider that cultural influences might not be entirely captured by the survey. Factors such as societal expectations, shared beliefs, and norms within a culture could influence both exercise behaviour and distress states. These could change over time due to sociocultural shifts, and if these changes aren't accounted for, could lead to residual confounding. For example, a societal shift towards valuing physical health might encourage more exercise independently of baseline responses -->
+
+<!-- 1.  **Baseline Measures and Cultural Differences:** The NZAVS contains data from diverse cultural backgrounds. Therefore, controlling for baseline measures of exercise and distress would also help account for cultural differences that might influence these variables at the outset. For instance, certain cultural groups might have different baseline physical activity or baseline distress states due to various socio-cultural factors. -->
+
+<!-- 2.  **Residual Confounding and Exercise:** Let's consider the construct $\eta_{A}$, representing the true state of exercise behaviour. If we control for baseline exercise, we're adjusting for the initial state of this behaviour. However, there could still be cultural factors that impact how exercise changes over time. For instance, a cultural event or festival that significantly increases physical activity for a certain period might occur. This change might be independent of the baseline state of exercise, thus leading to residual confounding. -->
+
+<!-- 3.  **Residual Confounding and Depression:** Similarly for $\eta_{Y}$, the true state of Depression/Anxiety. Controlling for baseline states adjusts for the initial emotional state. However, cultural factors such as societal norms or expectations about emotional expression could change over time independently of the baseline distress. These changes could result in residual confounding. For example, a significant cultural event might induce communal feelings of joy or sadness, influencing the distress state irrespective of the baseline level. -->
+
+<!-- 4.  **Unmeasured Cultural Factors**: It's also important to consider that cultural influences might not be entirely captured by the survey. Factors such as societal expectations, shared beliefs, and norms within a culture could influence both exercise behaviour and distress states. These could change over time due to sociocultural shifts, and if these changes aren't accounted for, could lead to residual confounding. For example, a societal shift towards valuing physical health might encourage more exercise independently of baseline responses -->
+
+<!-- 5.  **Change over time**: Finally, time itself can be a factor. Changes in cultural norms and attitudes can occur over the duration of a longitudinal study like the NZAVS. If the timing of these changes isn't aligned with the measurement times, this can also lead to residual confounding. For example, if there is a cultural shift towards increased acceptance of mental health issues, this might change how mood is reported over time, irrespective of baseline responses. -->
+
+<!-- 6.  **Directed Measurement Error:** Consider a situation where individuals from certain cultural backgrounds might systematically under-report their physical activity due to societal norms or expectations, introducing a directed measurement error. Similarly, reporting of mood states might also be influenced by cultural perspectives on expressing emotions. These culturally influenced errors in measurement can introduce bias, even after controlling for baseline measures. -->
+
+<!-- 7.  **Undirected Measurement Error:** Undirected errors could also occur due to random variations in understanding or interpreting survey questions across different cultures, introducing variability in the data. If these random errors correlate with the error in measuring other variables (for instance, if misunderstanding of exercise questions correlates with misunderstanding of mood questions), this can introduce bias. -->
+
+<!-- 8.  **Correlated Errors and Cultural Differences:** The culturally influenced measurement errors ($U_{A}$, $U_{Y}$) could be correlated, as the cultural factors influencing the reporting of exercise might also influence the reporting of mood. This correlation between errors introduces further complexity and potential bias. -->
+
+<!-- 9.  **Residual Confounding:** Despite controlling for baseline measures, there can still be residual confounding due to unmeasured cultural factors. For instance, even if we control for baseline exercise and mood, there might still be cultural factors that impact the changes in these variables over time independently of the baseline measures. -->
+
+<!-- In short, controlling for baseline measures in the NZAVS helps to reduce some bias and account for cultural differences that influence the exposure and outcome. However, potential bias due to unmeasured confounding and measurement error, for example, if these are influenced by cultural factors, still remain. -->
+
+10. **Need for Sensitivity Analysis** The Key takehome message is that we must always perform sensitivity analyses because we can never be certain that our confounding control strategy has worked.
 
 ## Add Graph on when we might want to condition on a post treatment indicator
 
-
-
 ## Stray points to address
 
-1. Structural equation models are not causal diagrammes
-2. Causal diagrammes are non-parametric
-3. Causal diagrammes represent interactions A -- > Y <--- B (two arrows into the outcome)
-4. We may distinguish between effect modification and interaction. 
+1.  Structural equation models are not causal diagrammes
+2.  Causal diagrammes are non-parametric
+3.  Causal diagrammes represent interactions A -- \> Y \<--- B (two arrows into the outcome)
+4.  We may distinguish between effect modification and interaction.
+
+## References
