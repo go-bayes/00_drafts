@@ -177,48 +177,66 @@ However, by substituting $Y_{observed}|A$ for $Y(a)$ we may recover counterfactu
 
 There are three reasons that applied researchers must understand the causal consistency assumption.
 
-First, the causal consistency assumption reveals *the priority of counterfactual outcomes over realised outcomes.* If statistics is data-science, causal estimation is *counterfactual data-science*.
+First, the causal consistency assumption reveals *the priority of counterfactual outcomes over realised outcomes.* If statistics is data-science, causal estimation is *counterfactual data-science*. Failure to appreciate this distinction is at the heart of much confusion from the unconsientious application causal diagrammes to data. I will return to this claim at the end.
 
-Second, causal consistency implies "treatment variation irrelevance," such that each of the many versions of a treatment $K$ are sufficiently well-defined to correspond to well-defined outcome $Y_k$ , and exposure $A$ corresponds to a coarsened indicator of the many versions $K$, then if there is no confounding for the effect of $K$ on $Y$ given measured confounders $L$ we may estimate consistent causal effects.[^3] However, although we may estimate consistent causal
+Second, causal consistency implies "treatment variation irrelevance" [@vanderweele2009]. We may assume that there are many versions of a treatment $A$. Given a differences in these versions of treatment, how can we substitute observed treatments with counterfactual treatments? The theory of causal inference under multiple versions of treatment holds that if there $K$ are sufficiently well-defined to correspond to well-defined outcome $Y_k$ and that exposure $A$ corresponds to a coarsened indicator for these many versions $K$, then if there is no confounding for the effect of $K$ on $Y$ given measured confounders $L$ we may estimate consistent causal effects. We write $Y_k$ is independent of $K$ conditional on $L$ [@vanderweele2009; @vanderweele2013; @vanderweele2018] as:
 
-[^3]: We write $Y_k$ is independent of $K$ conditional on $L$ [@vanderweele2009; @vanderweele2013; @vanderweele2018] as: $K \coprod Y_k | L$ (or equivalently $Y_k \coprod K | L$)
+$$K \coprod Y_k | L$$ or equivalently as
 
-Third, although treatement variation irrelevance implies that we may estimate consisten causal effects in a world where versions of treatment are not well controlled, if we well-defined interventions, as is typical in much observational research, our understanding of the phenonomenon is curtailed [@hernán2008]. For example, consider effect of weight-loss at age 40 on all cause mortality at age 50. Notably, there are many way in which people lose weight, including exercise, caloric restriction, liposuction, stomach stapling, smoking, cancer, and famine. To estimate the causal effect of weight-loss without specifying the intervention in question leaves it unclear which effect we are consistently estimating [@hernan2023a].
+$$Y_k \coprod K | L$$ We will return to the theory of causal inference under multiple versions of treatment below. For now, we may notice that we may assume the measured exposure $A$ is a coarsened indicator of multiple versions of exposure each of which must be independent of the counterfactual outcome under exposure conditional on measured covariates, i.e $A = A_{f(k_1\dots k_n)}$
 
-#### Identification assumption 2: Exchangability
+Third, although treatment variation irrelevance implies that we may consistently estimate causal effects under multiple versions of treatment where interventions are ill-defined we may not be able to assess conditional independence assumption. Even if we assume this assumption holds for all versions we might be at a loss to understand the causal effect we have estimated. For example, consider the effect of weight-loss at age 40 on all cause mortality at age 50, noting there are potentially many way in which people lose weight, including exercise, caloric restriction, liposuction, stomach stapling, smoking, cancer, and famine. To estimate "the causal effect of weight-loss" without specifying the intervention in question leaves it unclear precisely which effects we are consistently estimating much less whether such effects transport to populations in which the distribution of $k \in K$ interventions differs. For example, if the distribution of unhealthy interventions exceeds the distribution of health interventions, we might erroneously infer that all weight loss is unhealthy.
 
-Given the observed covariates, the treatment assignment is independent of the potential outcomes. Mathematically, this can be expressed as.
+Given the variability in measured observational data, human scientists must appreciate the limitations of validating and interpreting their results. We will return to this mission critical realisation in Part 3, when we attempt to put our causal graphs to use.
 
-$$Y^a\coprod A \text{ for all }a$$
+#### Identification assumption 2: Exchangability (or Ignorability)
 
-or with strata of confounding covarates:
+Given the observed covariates, the treatment assignment is independent of the potential outcomes. This assumption states that the treatment assignment is independent of the potential outcomes, given a set of observed covariates. This means that, after adjusting for these observed covariates, there is no confounding: the treatment assignment mechanism does not depend on the unobserved potential outcomes. We say "exchangeability" because, theoretically, we may "exchange" or "swap" individuals between the exposure and contrast conditions and the distribution of potential outcomes would remain the same.
 
-$$Y^a\coprod  A \text{ for all }a|L$$
+Mathematically, we may state that the counterfactual outcome is independent of the exposure within all levels of measured covariates $L$
 
-When conditional exchangability holds:
+$$Y(a)\coprod  A|L$$
+
+or equivalently:
+
+$$A \coprod  Y(a)|L$$
+
+Where conditional exchangeability holds, then:
 
 $$
 \begin{aligned}
-ATE = E[Y^{a=1}|L = l] - E[Y^{a=0}|L = l] ~ \text{for any value}~l
+ATE = E[Y(a*)|L = l] - E[Y(a)|L = l] 
 \end{aligned}
 $$
 
-> "We say that a set L of measured non-descendants of L is a sufficient set for confounding adjustment when conditioning on L blocks all backdoor paths--that is, the treated and the untreated are exchangeable within levels of L"[@hernan2023a]
+Put differently, exchangeability implies that the confounders that might lead to or affect the association between A and Y balanced within the levels of A [@hernan2023a]
 
 #### Identification assumption 3: Positivity
 
-The probability of receiving every value of the exposure within all strata of co-variates is greater than zero
+The positivity assumption is satisified if there is a positive probability of receiving the exposure or non-receiving the exposure within every level of the the covariates. This is crucial for causal inference because it ensures that for each set of covariates, there is a possibility of observing a the counterfactual outcomes that are being contrasted.
+
+The probability of receiving every value of the exposure within all strata of co-variates is greater than zero may be expressed:
 
 ```{=tex}
 \begin{equation}
 0 < \Pr(A=a|L)<1, ~ \forall a \in A, ~ \forall a \in L
 \end{equation}
 ```
-There are two types of positivity violations - Random non-positivity: the casual effect of aging with observations missing at ages 40-41 (we use parametric models as a work around.) - Deterministic non-positivity: the causal effect of hysterectomy in biological males (assumption violated).
+There are two types of positivity violations:
 
-For causal inference, correlation is not the problem. The problem is bias.
+-   Random non-positivity: the casual effect of ageing with observations missing within our data, but may be assumed to exist. For example every continuous exposure will lack (infitely many) realisations on the numberline, yet we may nevertheless use statisticalm models to estimate causal contrasts.
 
-## Part 2. The Four Canonical Causal Diagrammes
+-   Deterministic non-positivity: the causal effect is inconceivable. For example, the causal effect of hysterectomy in biological males violates deterministic non-positivity.
+
+In cultural evolution, the scope for violation of deterministic non-positivity would appear to be rather wide, because the constraints are history are arguably rather strong (we cannot unwind the tape of evolution$\dots$.)
+
+### Summary Part 1
+
+For causal inference, correlation is not the problem. The problem is bias when estimating contrasts between counterfactual outcomes. The data that we observe only give us insight into the counterfactual outcomes to be contrasted under the identifying assumptions of causal consistency, exchangeability, and positivity. When we ask a causal question we are must state our exposure question, outcome(s), and the variables that lead to an association between them, and these variables must correspond to well-defined features in our data. We cannot generally test the assumptions of "no-unmeasured confounding," and so must take every effort to examine unmeasured sources of bias. Only after we have stated our causal question may we use causal diagrammes to assist in answering that question.
+
+We next review how causal diagrammes may be used to diagnose -- and avoid -- four types of confounding and consider how adding chronological structure to our graphs assists in these tasks.
+
+## Part 2. Temporal action graphs for the four elemental confounds
 
 ```{r}
 #| include: false
@@ -235,6 +253,8 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 # read functions
 #source("/Users/joseph/GIT/templates/functions/funs.R")
 ```
+
+There are four elemental confounds [@mcelreath2020 p.185]
 
 ### 1. The problem of confounding by common cause
 
@@ -1136,29 +1156,13 @@ $$Y^{am}\coprod M^{a*}|L$$
 \end{tikzpicture}
 ```
 
-By the end of this lecture you will:
+By the end of this section you will:
 
 1.  Understand the causal assumptions implied by the factor analytic interpretation of the formative and reflective models.
 
 2.  Be able to distinguish between statistical and structural interpretations of these models.
 
 3.  Understand why Vanderweele thinks consistent causal estimation is possible using the theory of multiple versions of treatments for constructs with multiple indicators
-
-```{r}
-#| include: false
-#| echo: false
-#read libraries
-
-library("tinytex")
-library(extrafont)
-loadfonts(device = "all")
-
-# read libraries
-source("/Users/joseph/GIT/templates/functions/libs2.R")
-
-# read functions
-source("/Users/joseph/GIT/templates/functions/funs.R")
-```
 
 ## Two ways of thinking about measurement in psychometric research.
 
@@ -1715,7 +1719,7 @@ Consider a study that seeks to use this dataset to investigate the effect of reg
 
 We represent the true exercise by $\eta_A$. We represent true psychological distress by $\eta_Y$. Let $\eta_L$ denote a persons true workload, and assume that this state of work affects both levels of excercise and psychological distress.
 
-To bring the model into contact with measurement theory, Let us describe measurements of these latent true underlying realities as functions of multiple indicators: $L_{f(X_1\dots X_n)}$, $A_{f(X_1\dots X_n)}$, and $A_{f(X_1\dots X_n)}$. These constructs are measured realisations of the underlying true states. We assume that the true states of these variables affect their corresponding measured states, and so draw arrows from $\eta_L\rightarrow{L_{f(X_1\dots X_n)}}$, $\eta_A\rightarrow{A_{f(X_1\dots X_n)}}$, $\eta_Y\rightarrow{Y_{f(X_1\dots X_n)}}$.
+To bring the model into contact with measurement theory, Let us describe measurements of these latent true underlying realities as functions of multiple indicators: $L_{f(X_1\dots X_n)}$, $A_{f(X_1\dots X_n)}$, and $Y_{f(X_1\dots X_n)}$. These constructs are measured realisations of the underlying true states. We assume that the true states of these variables affect their corresponding measured states, and so draw arrows from $\eta_L\rightarrow{L_{f(X_1\dots X_n)}}$, $\eta_A\rightarrow{A_{f(X_1\dots X_n)}}$, $\eta_Y\rightarrow{Y_{f(X_1\dots X_n)}}$.
 
 We also assume unmeasured sources of error that affect the measurements: $U_{L} \rightarrow$ $L_{f(X_1\dots X_n)}$, $U_{A} \rightarrow$ $A_{f(X_1\dots X_n)}$, and $U_{Y} \rightarrow$ $Y_{f(X_1\dots X_n)}$. That is, we allow that our measured indicators may "see as through a mirror, in darkness," the underlying true reality they hope to capture (Corinthians 13:12). We use $U_{L}$, $U_{A}$ and $U_{Y}$ to denote the unmeasured sources of error in the measured indicators. These are the unknown, and perhaps unknowable, darkness and mirror.
 
