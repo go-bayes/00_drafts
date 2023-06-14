@@ -127,3 +127,64 @@ ATE = E(Y(a) - Y(a*))
 
 
 [^1]: It is tempting to call temporally organised causal diagrammes "temporal action graphs" - or "TAGs." However, we do not need more jargon.
+
+
+## Dags
+
+
+```{tikz}
+#| label: fig-dag-common-cause2
+#| fig-cap: "Counfounding by common cause."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [ellipse, draw=white] (L) at (0, 0) {L$_{t0}$};
+\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, draw=red, dashed] (A) to (Y);
+\draw [-latex, bend left, draw =black] (L) to (Y);
+\draw [-latex, black] (L) to (A);
+\end{tikzpicture}
+```
+
+
+```{tikz}
+#| label: fig-dag-descendent-solution-2
+#| fig-cap: "Solution: note that conditioning on a confounder that occurs after the exposure and outcome addresses the problem of unmeasured confounding. The dotted paths denote that the effect of U on A and Y is partially adjusted by conditioning on L, even though L occurs after the outcome. The dotted blue path suggest suppressing of the biased relationship between A and Y under the null. A genetic factor that affects the exposure and the outcome early in life, and that also expresses a measured indicator late in life, might constitute an example for which post-outcome confounding control might be possible."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (L) at (6, -1) {L$_{t3}$};
+\node [rectangle, draw=white](A) at (2, 0) {A$_{t1}$};
+\node [ellipse, draw=white] (Y) at (4, 0) {Y$_{t2}$};
+
+\draw [-latex, bend right = 10, draw=black] (U) to (L);
+\draw [-latex, draw=blue, dotted] (A) to (Y);
+\draw [-latex, bend right=20, draw =black, dotted] (U) to (Y);
+\draw [-latex, draw =black, dotted] (U) to (A);
+
+\end{tikzpicture}
+
+```
+

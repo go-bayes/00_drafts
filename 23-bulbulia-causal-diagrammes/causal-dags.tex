@@ -190,7 +190,7 @@
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, sharp corners, borderline west={3pt}{0pt}{shadecolor}, enhanced, breakable, boxrule=0pt, frame hidden]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, frame hidden, boxrule=0pt, interior hidden, borderline west={3pt}{0pt}{shadecolor}, breakable, enhanced]}{\end{tcolorbox}}\fi
 
 \listoffigures
 \listoftables
@@ -557,8 +557,16 @@ There are two types of positivity violations:
 
 In cultural evolution, the scope for violation of deterministic
 non-positivity would appear to be rather wide, because the constraints
-are history are arguably rather strong (we cannot unwind the tape of
-evolution\(\dots\).)
+are history are arguably rather strong. For example, the language one
+speaks, a cultural trait, is heavily influenced by one's historical and
+geographical context. For example, someone born in rural Japan will
+almost certainly grow up speaking Japanese, a deterministic `treatment'
+that violates the positivity assumption. History places substantial
+constraints on cultural evolution, often leading to near-absolute
+probabilities of certain cultural exposures such as language, arising
+from one's place and history. This arguably leads to widespread
+violations of deterministic non-positivity for many questions cultural
+evolution.
 
 \hypertarget{summary-part-1}{%
 \subsection{Summary Part 1}\label{summary-part-1}}
@@ -567,11 +575,93 @@ For causal inference, correlation is not the problem. The problem is
 bias when estimating contrasts between counterfactual outcomes. The data
 that we observe only give us insight into the counterfactual outcomes to
 be contrasted under the identifying assumptions of causal consistency,
-exchangeability, and positivity.
+exchangeability, and positivity. When we ask a causal question we are
+must state our exposure question, outcome(s), and the variables that
+lead to an association between them, and these variables must correspond
+to well-defined features in our data. We cannot generally test the
+assumptions of ``no-unmeasured confounding,'' and so must take every
+effort to examine unmeasured sources of bias. Only after we have stated
+our causal question may we use causal diagrammes to assist in answering
+that question.
 
-\hypertarget{part-2.-the-four-canonical-causal-diagrammes}{%
-\section{Part 2. The Four Canonical Causal
-Diagrammes}\label{part-2.-the-four-canonical-causal-diagrammes}}
+We next review how causal diagrammes may be used to diagnose -- and
+avoid -- four types of confounding and consider how adding chronological
+structure to our graphs assists in these tasks.
+
+\hypertarget{part-2.-temporal-action-graphs-for-the-four-basic-confounds}{%
+\section{Part 2. Temporal action graphs for the four basic
+confounds}\label{part-2.-temporal-action-graphs-for-the-four-basic-confounds}}
+
+\hypertarget{conventions}{%
+\subsection{Conventions}\label{conventions}}
+
+Causal diagrammes are composed of the following elements:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Nodes
+\item
+  Vertices
+\item
+  Markov factorisation
+\end{enumerate}
+
+By Convention
+
+\begin{itemize}
+\tightlist
+\item
+  Outcome: Y
+\item
+  Exposure or treatment: A or X
+\item
+  Confounders: C, L, D, generally should include A and Y at baseline
+\item
+  Selection: S
+\item
+  Box: conditioning
+\end{itemize}
+
+General Advice:
+
+\begin{itemize}
+\tightlist
+\item
+  Clearly define all variables
+\item
+  Clearly define novel conventions
+
+  \begin{itemize}
+  \tightlist
+  \item
+    dotted arrows
+  \item
+    colours
+  \end{itemize}
+\item
+  Minimalism (including avoiding graphs when words suffice).
+\item
+  \emph{Temporal order}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Left to right, top to bottom
+  \item
+    Index repeated measures
+  \item
+    Avoid enslavement: depart from this advice if doing so clarifies
+    your objective.
+  \end{itemize}
+\end{itemize}
+
+\hypertarget{elemental-counfounds}{%
+\subsection{Elemental counfounds}\label{elemental-counfounds}}
+
+There are four elemental confounds
+(\protect\hyperlink{ref-mcelreath2020}{McElreath 2020, 185})
 
 \hypertarget{the-problem-of-confounding-by-common-cause}{%
 \subsection{1. The problem of confounding by common
@@ -597,10 +687,10 @@ estimate the true causal effect of \(A\) on \(Y\).
 
 \end{figure}
 
-\hypertarget{solution-to-the-problem-of-confounding-by-a-common-cause-adjust-for-all-measured-pre-exposure-confounders.}{%
+\hypertarget{solution-to-the-problem-of-confounding-by-a-common-cause-adjust-for-all-measured-pre-exposure-confounders}{%
 \subsection{Solution to the problem of confounding by a common cause:
 adjust for all measured pre-exposure
-confounders.}\label{solution-to-the-problem-of-confounding-by-a-common-cause-adjust-for-all-measured-pre-exposure-confounders.}}
+confounders}\label{solution-to-the-problem-of-confounding-by-a-common-cause-adjust-for-all-measured-pre-exposure-confounders}}
 
 Confounding by common cause can be addressed by adjusting for it. If
 \(L\) is measured before the treatment (or exposure) is assigned, we may
@@ -609,6 +699,8 @@ adjust through through statistical techniques such as stratification,
 regression, matching, or inverse probability of treatment weighting.
 Such adjustment helps to mitigate the bias caused by the confounder,
 allowing for a more accurate estimation of the true causal relationship.
+It is beyond the scope of this tutorial to describe these techniques
+(though see (Bubulia b this issue)).
 
 \begin{figure}
 
@@ -629,10 +721,8 @@ effect)}\label{confounding-by-collider-stratification-conditioning-on-a-common-e
 Conditioning on a common effect occurs when a variable \(L\) is affected
 by both the treatment \(A\) and an outcome \(Y\). Conditioning on \(L\)
 creates a spurious association between \(A\) and \(Y\), biasing the true
-causal relationship. This occurs because the relationship between \(A\)
-and \(Y\) becomes confounded by the common effect \(L\). The observed
-association between \(A\) and \(Y\) may be solely driven by the
-influence of \(L\).
+causal relationship. This occurs because \(L\) gives information about
+the relationship of \(A\) and \(Y\).
 
 \begin{figure}
 
@@ -645,22 +735,19 @@ collider.}
 
 \end{figure}
 
-\hypertarget{solution-to-the-problem-of-conditioning-on-a-collider-ensure-that-all-confounders-are-measured-before-the-the-outcome-has-occurred}{%
+\hypertarget{solution-to-the-problem-of-conditioning-on-a-collider-typically-ensure-that-all-confounders-are-measured-before-the-exposure-and-outcome-has-occurred.}{%
 \subsection{Solution to the problem of conditioning on a collider:
-ensure that all confounders are measured before the the outcome has
-occurred}\label{solution-to-the-problem-of-conditioning-on-a-collider-ensure-that-all-confounders-are-measured-before-the-the-outcome-has-occurred}}
+(typically) ensure that all confounders are measured before the exposure
+and outcome has
+occurred.}\label{solution-to-the-problem-of-conditioning-on-a-collider-typically-ensure-that-all-confounders-are-measured-before-the-exposure-and-outcome-has-occurred.}}
 
-To address the problem of conditioning on a common effect, it is crucial
-to ensure that every potential confounder \(L\) that may affect \(A\) is
-measured before \(A\). If such temporal order is preserved, \(L\) cannot
-be an effect of \(A\), and thus neither of \(Y\). By measuring all
-relevant confounders in advance, researchers can minimize bias and
-obtain more reliable estimates of the true causal relationship between A
-and Y. Note that collider stratification may arise even if \(L\) occurs
-before \(A\), when \(L\) does not affect \(A\) or \(Y\). This is called
-M-bias. We describe this case below. Note, however, that if \(L\) is not
-a common cause of \(A\) and \(Y\), \(L\) should not be included in our
-model because it is not a source of confounding.
+To address the problem of conditioning on a common effect, we should
+generally ensure that the potential confounder \(L\) that may affect
+\(A\) is measured before \(A\). If such temporal order is preserved,
+\(L\) cannot be an effect of \(A\), and thus neither of \(Y\). By
+measuring all relevant confounders in advance, researchers can minimize
+bias and obtain more reliable estimates of the true causal relationship
+between A and Y.
 
 \begin{figure}
 
@@ -673,20 +760,45 @@ colliders}
 
 \end{figure}
 
-\hypertarget{conditioning-on-a-mediator}{%
-\subsection{3 Conditioning on a
-mediator}\label{conditioning-on-a-mediator}}
+As with any rule, the guideline that confounders should be measured
+before their exposures has exceptions.
 
-Conditioning on a mediator refers to a situation where \(L\) lies on the
-causal pathway between the treatment \(A\) and the outcome \(Y\).
-Conditioning on \(L\) can lead to biased estimates by blocking or
-distort the true causal pathway between \(A\) and \(Y\), obscuring the
-total effect of \(A\) on \(Y\). Where \(L\) is a collider between \(A\)
-and an unmeasured confouder \(U\), then including \(L\) may increase the
-strength of association between \(A\) and \(Y\). We review this second
-possibility next. In either case, unless one is interested in mediation
-analysis (see below), conditioning on a post-treatment variable is
-nearly always a bad idea. {[}JB to discuss the exception{]}
+For example, as shown in Figure~\ref{fig-m-bias}, collider
+stratification may arise even if \(L\) occurs before \(A\), when \(L\)
+does not affect \(A\) or \(Y\). This is called M-bias. We describe this
+case below. Note, however, that if \(L\) is not a common cause of \(A\)
+and \(Y\), \(L\) should not be included in our model because it is not a
+source of confounding.
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-m-bias-1.pdf}
+
+}
+
+\caption{\label{fig-m-bias}M-bias: confounding control by including
+previous measures of the outcome}
+
+\end{figure}
+
+However we will find another exception to the conditioning rule when we
+consider conditioning on descendants.
+
+\hypertarget{the-problem-of-conditioning-on-a-mediator}{%
+\subsection{3 The problem of conditioning on a
+mediator}\label{the-problem-of-conditioning-on-a-mediator}}
+
+Conditioning on a mediator occurs when \(L\) lies on the causal pathway
+between the treatment \(A\) and the outcome \(Y\). Conditioning on \(L\)
+can lead to biased estimates by blocking or distort the true causal
+pathway between \(A\) and \(Y\), obscuring the total effect of \(A\) on
+\(Y\). Where \(L\) is a collider between \(A\) and an unmeasured
+confouder \(U\), then including \(L\) may increase the strength of
+association between \(A\) and \(Y\) {[}JB to do: draw this graph{]}.
+
+In either case, unless one is interested in mediation analysis (see
+below), conditioning on a post-treatment variable is nearly always a bad
+idea. {[}JB to discuss the exception{]}
 
 \begin{figure}
 
@@ -698,9 +810,10 @@ nearly always a bad idea. {[}JB to discuss the exception{]}
 
 \end{figure}
 
-\hypertarget{solution-ensure-confounders-are-measured-before-the-exposure}{%
-\subsection{Solution: ensure confounders are measured before the
-exposure}\label{solution-ensure-confounders-are-measured-before-the-exposure}}
+\hypertarget{solution-generally-do-not-include-confounders-that-are-measured-before-the-exposure}{%
+\subsection{Solution: generally do not include confounders that are
+measured before the
+exposure}\label{solution-generally-do-not-include-confounders-that-are-measured-before-the-exposure}}
 
 To address the problem of mediator bias, when interested in total
 effects do not condition on a mediator. This can be done by ensuring
@@ -727,11 +840,11 @@ before exposures.}
 \subsection{4. Conditioning on a
 descendant}\label{conditioning-on-a-descendant}}
 
-Say \(A\) is a cause of \(A*\). There is a theorem that proves that when
-we condition on \(A*\) we partially condition on \(A\).
+Say \(X\) is a cause of \(X\prime\). If we condition on X we partially
+condition on \(X\prime\).
 
-There are both negative and positive implications of this theorem for
-causal estimation in real-world scenarios.
+There are both negative and positive implications for causal estimation
+in real-world scenarios.
 
 First the negative. Suppose there is a confounder \(L\) that is caused
 by an unobserved variable \(U\), and is affected by the treatment \(A\).
@@ -751,25 +864,22 @@ association between \(A\) and \(Y\) through the path
 
 \end{figure}
 
-\hypertarget{solution-ensure-that-counfounders-are-measured-before-the-exposure}{%
-\subsection{Solution: ensure that counfounders are measured before the
-exposure}\label{solution-ensure-that-counfounders-are-measured-before-the-exposure}}
+\hypertarget{solution-consider-the-role-of-descendents-carefully}{%
+\subsection{Solution: consider the role of descendents
+carefully}\label{solution-consider-the-role-of-descendents-carefully}}
 
 Ensuring the confounder (L) is measured before the exposure (A) has two
-beneficial properties. Firstly, if \(L\) is a confounder, that is, if
-\(L\) is a variable which if we fail to condition on it will bias the
-association between treatment and outcome, the strategy of including
-only pre-treatment indicators of \(L\) will eliminate collider bias.
-Secondly, there is the positive side to the theorem that conditioning on
-a descendent is equivalent to partially conditioning on its parent: if
-an unmeasured confounder is associated with both \(A\), \(Y\), and
-\(L\), then adjusting for \(L\) helps to reduce confounding caused by
-the unmeasured confounder. By obtaining measure of \(L\) that occur
-before \(A\), such advantages can be achieved, allowing for more
-accurate estimation for the causal effect of \(A\) on \(Y\). We use the
-convention of a blue dotted arrow to indicate that the association
-between \(A\) and \(Y\) may still be biased, but that bias is reduced by
-inluding \(L\)
+benefits.
+
+First, if \(L\) is a confounder, that is, if \(L\) is a variable which
+if we fail to condition on it will bias the association between
+treatment and outcome, the strategy of including only pre-treatment
+indicators of \(L\) will reduce bias.
+
+Secondly, if an unmeasured confounder \(U\) affects \(A\), \(Y\), and
+\(L\prime\), then adjusting for \(L\prime\) may help to reduce
+confounding caused by \(U\). Note that \(L\prime\) may occur after the
+exposure, and indeed after the outcome.
 
 \begin{figure}
 
@@ -782,86 +892,37 @@ temporal ordering in all measured variables.}
 
 \end{figure}
 
+\begin{figure}
+
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-solution-2-1.pdf}
+
+}
+
+\caption{\label{fig-dag-descendent-solution-2}Solution: note that
+conditioning on a confounder that occurs after the exposure and outcome
+addresses the problem of unmeasured confounding. The dotted paths denote
+that the effect of U on A and Y is partially adjusted by conditioning on
+L, even though L occurs after the outcome. The dotted blue path suggest
+suppressing of the biased relationship between A and Y under the null. A
+genetic factor that affects the exposure and the outcome early in life,
+and that also expresses a measured indicator late in life, might
+constitute an example for which post-outcome confounding control might
+be possible.}
+
+\end{figure}
+
 \textbf{This ends the examples of canonical casual diagrammes}
 
-\hypertarget{summary}{%
-\subsection{Summary}\label{summary}}
+\hypertarget{part-3.-applications}{%
+\section{Part 3. Applications}\label{part-3.-applications}}
 
-\hypertarget{common-cause-of-exposure-and-outcome.}{%
-\subsection{Common cause of exposure and
-outcome.}\label{common-cause-of-exposure-and-outcome.}}
+\hypertarget{on-the-benefits-of-three-wave-designs}{%
+\subsection{On the benefits of three wave
+designs}\label{on-the-benefits-of-three-wave-designs}}
 
-\begin{figure}
-
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-1-1.pdf}
-
-}
-
-\caption{\label{fig-dag-1}Common cause of exposure and outcome: example}
-
-\end{figure}
-
-\hypertarget{solution-adjust-for-confounder}{%
-\subsection{Solution: Adjust for
-Confounder}\label{solution-adjust-for-confounder}}
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-2-1.pdf}
-
-}
-
-\caption{\label{fig-dag-2}Solution to this problem.}
-
-\end{figure}
-
-\hypertarget{bias-exposure-at-baseline-is-a-common-cause-of-the-exposure-at-t1-and-outcome-at-t2}{%
-\subsection{Bias: exposure at baseline is a common cause of the exposure
-at t1 and outcome at
-t2}\label{bias-exposure-at-baseline-is-a-common-cause-of-the-exposure-at-t1-and-outcome-at-t2}}
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-3-1.pdf}
-
-}
-
-\caption{\label{fig-dag-3}Causal graph reveals bias from pre-exosure
-indicator}
-
-\end{figure}
-
-\hypertarget{solution-adjust-for-confounder-at-baseline}{%
-\subsection{Solution: adjust for confounder at
-baseline}\label{solution-adjust-for-confounder-at-baseline}}
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-4-1.pdf}
-
-}
-
-\caption{\label{fig-dag-4}Solution to this problem}
-
-\end{figure}
-
-\hypertarget{a-more-thorough-confounding-control}{%
-\subsection{A more thorough confounding
-control}\label{a-more-thorough-confounding-control}}
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-5-1.pdf}
-
-}
-
-\caption{\label{fig-dag-5}Causal graph:more general panel design}
-
-\end{figure}
-
-\hypertarget{generic-3-wave-panel-design-vanderweeele-2020}{%
-\subsection{Generic 3-wave panel design (VanderWeeele
-2020)}\label{generic-3-wave-panel-design-vanderweeele-2020}}
+\hypertarget{confounding-control-by-three-wave-panel-designs}{%
+\subsection{Confounding control by three-wave panel
+designs}\label{confounding-control-by-three-wave-panel-designs}}
 
 \begin{figure}
 
@@ -892,11 +953,11 @@ selection bias}
 
 \end{figure}
 
-\hypertarget{unmeasured-confounder-affects-a-measured-confounder-of-selection-and-the-outcome-and-there-are-unmeasured-confourders-that-affect-the-measured-confounder}{%
+\hypertarget{unmeasured-confounder-affects-a-measured-confounder-of-selection-and-the-outcome-and-there-are-unmeasured-confounders-that-affect-the-measured-confounder}{%
 \subsubsection{Unmeasured confounder affects a measured confounder of
-selection and the outcome, and there are unmeasured confourders that
+selection and the outcome, and there are unmeasured confounders that
 affect the measured
-confounder}\label{unmeasured-confounder-affects-a-measured-confounder-of-selection-and-the-outcome-and-there-are-unmeasured-confourders-that-affect-the-measured-confounder}}
+confounder}\label{unmeasured-confounder-affects-a-measured-confounder-of-selection-and-the-outcome-and-there-are-unmeasured-confounders-that-affect-the-measured-confounder}}
 
 \begin{figure}
 
@@ -963,9 +1024,9 @@ Diagrammes}\label{important-causal-diagrammes}}
 \section{How do we draw
 interactions?}\label{how-do-we-draw-interactions}}
 
-\hypertarget{common-cause-of-exposure-and-outcome.-1}{%
+\hypertarget{common-cause-of-exposure-and-outcome.}{%
 \section{Common cause of exposure and
-outcome.}\label{common-cause-of-exposure-and-outcome.-1}}
+outcome.}\label{common-cause-of-exposure-and-outcome.}}
 
 \begin{figure}
 
@@ -990,20 +1051,6 @@ interaction}\label{another-graph-for-interaction}}
 
 \caption{\label{fig-dag-effect-modfication-2}A simple graph for
 effect-modification.}
-
-\end{figure}
-
-\hypertarget{m-bias}{%
-\subsection{M-Bias}\label{m-bias}}
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-m-bias-1.pdf}
-
-}
-
-\caption{\label{fig-m-bias}M-bias: confounding control by including
-previous measures of the outcome}
 
 \end{figure}
 
@@ -1219,28 +1266,15 @@ as in Figure~\ref{fig-dag-reflective-assumptions_note}.
 
 \begin{figure}
 
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
-
-\begin{figure}
-
 {\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-structural-assumptions-reflective-model-1.pdf}
 
 }
 
-\caption{Reflective Model: causal assumptions. Figure adapted from
-VanderWeele: doi: 10.1097/EDE.0000000000001434}
+\caption{\label{fig-structural-assumptions-reflective-model}Reflective
+Model: causal assumptions. Figure adapted from VanderWeele: doi:
+10.1097/EDE.0000000000001434}
 
 \end{figure}
-
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
 
 \begin{figure}
 
@@ -1248,32 +1282,19 @@ VanderWeele: doi: 10.1097/EDE.0000000000001434}
 
 }
 
-\caption{Formative model: causal assumptions. Figure adapted from
-VanderWeele: doi: 10.1097/EDE.0000000000001434}
+\caption{\label{fig-dag-reflective-assumptions_note}Formative model:
+causal assumptions. Figure adapted from VanderWeele: doi:
+10.1097/EDE.0000000000001434}
 
 \end{figure}
-
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
 
 The reflective model implies \(X_i = \lambda_i \eta + \varepsilon_i\),
 which factor analysts take to imply
 Figure~\ref{fig-structural-assumptions-reflective-model}.
 
-}
-
-\end{minipage}%
-
-\caption{\label{fig-latent}The formative model implies
+The formative model implies
 \(\eta = \sum_i\lambda_i X_i + \varepsilon\), which factor analysts take
-to imply Figure~\ref{fig-dag-reflective-assumptions_note}.}
-
-\end{figure}
+to imply Figure~\ref{fig-dag-reflective-assumptions_note}.
 
 \hypertarget{problems-with-the-structural-interpretations-of-the-reflective-and-formative-factor-models.}{%
 \section{Problems with the structural interpretations of the reflective
@@ -1303,12 +1324,6 @@ Figure~\ref{fig-dag-multivariate-reality-bulbulia}.
 
 \begin{figure}
 
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
-
-\begin{figure}
-
 {\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-formative-assumptions-compatible-1.pdf}
 
 }
@@ -1318,14 +1333,6 @@ is compatible with indicators causing outcome.Figure adapted from
 VanderWeele: doi: 10.1097/EDE.0000000000001434}
 
 \end{figure}
-
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
 
 \begin{figure}
 
@@ -1339,14 +1346,6 @@ from VanderWeele: doi: 10.1097/EDE.0000000000001434}
 
 \end{figure}
 
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
-
 \begin{figure}
 
 {\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig_dag_multivariate_reality_again-1.pdf}
@@ -1358,14 +1357,6 @@ we draw our measures. Figure adapted from VanderWeele: doi:
 10.1097/EDE.0000000000001434}
 
 \end{figure}
-
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
 
 \begin{figure}
 
@@ -1380,71 +1371,24 @@ from VanderWeele: doi: 10.1097/EDE.0000000000001434}
 
 \end{figure}
 
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
-
 VanderWeele's key observation is this:
-
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
 
 \textbf{While cross-sectional data can provide insights into the
 relationships between variables, they cannot conclusively determine the
 causal direction of these relationships.}
-
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
 
 This results is worrying. The structural assumptions of factor analysis
 underpin nearly all psychological research. If the cross-sectional data
 used to derive factor structures cannot decide whether the structural
 interpretations of factor models are accurate, where does that leave us?
 
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
-
 More worrying still, VanderWeele discusses several longitudinal tests
 for structural interpretations of univariate latent variables that do
 not pass.
 
-}
-
-\end{minipage}%
-\newline
-\begin{minipage}[t]{\linewidth}
-
-{\centering 
-
 Where does that leave us? In psychology we have heard about a
 replication crisis. We might describe the reliance on factor models as
 an aspect of a much larger, and more worrying ``causal crisis''
-(\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022})
-
-}
-
-\end{minipage}%
-
-\end{figure}
 
 \hypertarget{review-of-the-theory-of-multiple-versions-of-treatment}{%
 \section{Review of the theory of multiple versions of
