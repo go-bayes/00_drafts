@@ -190,7 +190,7 @@
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, frame hidden, boxrule=0pt, interior hidden, borderline west={3pt}{0pt}{shadecolor}, breakable, enhanced]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[boxrule=0pt, frame hidden, breakable, borderline west={3pt}{0pt}{shadecolor}, interior hidden, enhanced, sharp corners]}{\end{tcolorbox}}\fi
 
 \listoffigures
 \listoftables
@@ -204,99 +204,101 @@
 \subsection{Objective}\label{objective}}
 
 Correlation is not causation. However, persistent confusion in the
-analysis and reporting of correlation across many human sciences has
-limited progress. Frequently, the correlations in observed data are
-biased, and may even run in the opposite direction to observed
-correlations. Where time series data are lacking, we generally cannot
-estimate consistent causal effects However, many researchers report
-correlations using hedging language that may suggest or imply causation.
-This widespread practice -- in which the author has regrettably
-participated -- has led to what might be called a ``causality crisis''
-(\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022}). Addressing this
-causality crisis is among the most science's pressing issues.
+analysis and reporting of correlations across many human sciences has
+limited their progress. The correlations in observed data are frequently
+biased indicators of causality. True causality may oppose observed
+correlations. These points are widely known. Nevertheless, many
+researchers report correlations using hedging language that may suggest
+or imply causation. This widespread practice -- in which the author has
+regrettably participated -- has led to what might be called a
+``causality crisis'' (\protect\hyperlink{ref-bulbulia2022}{Bulbulia
+2022}). Addressing the causality crisis is among science's most pressing
+issues.
 
 When integrated into causally conscientious workflows, causal diagrammes
-(also called directed acyclic graphs, or ``DAGs'') are powerful tools by
-which to assist in the identification of causality, and so, to address
-the causality crisis. However, unscrupulous applications of causal
-diagrammes may estimate causal effects. Causal diagrammes clarify
-assumptions. Science requires assumptions but it also requires data.
-Researchers armed with DAGs may be tempted to let themselves off the
-hook. However, it would be better if causal diagrammes directed
-researchers to pause, and collect data appropriate to their questions,
-or at least to name the clarify the obstacles.
+or directed acyclic graphs -- ``DAGs'' -- may be powerful tools by which
+to assist researchers with causal estimation. However, the unscrupulous
+application of DAGs perpetuates the causality crisis. For example, where
+time series data are lacking we generally cannot estimate unbaised
+causal effects. Cross-sectional researchers who use DAGs to report their
+unrealistic assumptions misappropriate the tools for an unwarrented
+confidence. Ideally the tool would prevent such misappropriation.
 
-Here, I offer a comprehensive tutorial that showcases the practical
-utility of temporally action graphs.\footnote{The term ``DAG'' is
-  unfortunate because not all directed acyclic graphs are causal. For a
-  graph to be causal it must satisfy the conditions of markov
-  factorisation (see Appendix A). In my utopia, we call causal
-  diagrammes ``temporal action graphs'' - or ``TAGs.'' However, the
-  causality crisis will not combatted with jargon. And again, for a
-  graph to be causal the central concept is not chronological action but
-  rather markov factorisation (see Appendix A).} Temporal action graphs
-are ordinary (causal) directed acyclic graphs in which the spatial
-structure of the graph is designed to reflected the temporal order of
-assumed causality. We may think of such temporally structured causal
-diagrammes as \textbf{chronologically conscientious DAGs}.
-
-We will discover that adding temporal order to the traditionally static
-structure of DAGs may greatly assist both in understanding causal
-assumptions and in directing attention to the data we need to address
-our questions. We will also discover opportunities for measuring
-confounders that occur after the exposure and outcome have occurred.
-This special case reveals the limitations of ready-made rules insisting
-that confounders must occur prior to the exposure, and that we should
-therefore never condition on post-exposure confounders.
+Here, I develop a guide to causal graphs that is grounding in temporally
+ordered representations of the key elements. We shall see that attention
+to chronology may greatly assist researchers in avoiding the pitfalls of
+unscrupulous DAGs.
 
 There are many good resources for drawing causal diagrammes
 (\protect\hyperlink{ref-rohrer2018}{Rohrer 2018};
 \protect\hyperlink{ref-hernan2023}{Hernan and Robins 2023a};
 \protect\hyperlink{ref-cinelli2022}{Cinelli, Forney, and Pearl 2022};
 \protect\hyperlink{ref-barrett2021}{Barrett 2021};
-\protect\hyperlink{ref-mcelreath2020}{McElreath 2020}).
-
-My primary purpose here is to explain the benefits of maintaining, where
-possible, the chronological ordering of events. Second, I demonstrate
-the utility of temporal for the the diagnosis of problems arising from
-measurement error. I believe these problems to be among the most
-important -- yet most ill-considered -- in the human sciences.
+\protect\hyperlink{ref-mcelreath2020}{McElreath 2020}).\footnote{Notice
+  that the causal consistency assumption reveals the priority of
+  counterfactual outcomes over actual outcomes.Causal inference is
+  \emph{counterfactual data-science}.}. One may reasonably question why
+another tutorial merely adds clutter. The approach to drawing causal
+diagrammes that I present hopes to contributes to previous attempts in
+five ways. First, I link graphs to the counterfactual frameworks that
+are necessary for conceptualising causality and its identification in
+data. Second, as mentioned, I underscore the importance of chronology in
+the presentation of the graph, arguing for the benefits of
+\textbf{chronologically conscientious DAGs}.\footnote{The term ``DAG''
+  is unfortunate because not all directed acyclic graphs are causal. For
+  a graph to be causal it must satisfy the conditions of markov
+  factorisation (see Appendix A). In my utopia, I would preferred that
+  causal diagrammes were called markov factorisation graphs (see
+  Appendix A).} Third, I devote sustained attention to both selection
+bias and measurement error -- topics for which, outside of epidemiology,
+there remains insufficient attention and for which causal graphs offer
+practically important insights. Fourth, I use the Parts 1 - 3 to derive
+practically useful advice for data collection, arguing that
+understanding of cultural evolution will be greatly enhanced by the
+creation of longitudinal panels. Fifth, I conclude with a brief
+compendium of practical advice to help researchers avoid producing
+abominable DAGs. Along the way, I use causal graphs to examine the
+concepts of interaction and mediation, again with the aim of guiding
+readers clear of trouble.
 
 The article is organised as follows:
 
 \textbf{Part 1.} develops the connection between causal diagrammes and
 the potential outcomes framework. Understanding this connection is
 important. Whereas causal diagrammes help researchers to answer
-questions, we must first understand how to ask causal questions. Absent
-such an understanding causal graphs are a best unhelpful and more likely
-misleading.
+questions, we must first understand how to ask causal questions. Without
+such comprehension, causal graphs can be, at best, unproductive, and at
+worst, deceptive.
 
-\textbf{Part 2.} reviews the four fundamental graphs that form the basis
-of causal understanding. This material replicates material in other
-tutorials. However, by emphasising the temporal order in spatial
-structure solutions to identifying causality in the presence of
-confounding are more apparent. We develop this four fundamental problems
-to concepts of interaction, mediations, and treatment-confounder
-feedback.
+\textbf{Part 2.} reviews the four elemental forms of confounding, and
+shows uses causal graphs to elucidate their properties. This discussion
+replicates material in other tutorials. However, by emphasising the
+temporal order in spatial structure solutions to identifying causality
+in the presence of confounding are more apparent. We develop this four
+fundamental problems to concepts of interaction, mediations, and
+treatment-confounder feedback.
 
-\textbf{Part 3.} Applies temporal action graphs to a substantative
-problem in measurement. Some of the enthusiasm for strategies we develop
-in \textbf{Part 2} is diminished by an appreciation for how measurement
-error may bias results. The upshot of Part 3 is to argue for the
-importance of attending to measurement error as a source of bias, and to
-perform sensitivity analyses even when carefully documented time-series
-data have been collected.
+\textbf{Part 3.} Applies chronologically sensitive causal graphs to the
+substanative problem in selection bias.
 
-A brief concluding section reviews advice. Technical details are
-presented in an appendix.
+\textbf{Part 4.} Applies chronologically sensitive causal graphs to the
+substantative problems of measurement error. Some of the enthusiasm for
+applied strategies we develop in \textbf{Part 2} is diminished by an
+appreciation for how measurement error may bias results. Here I argue
+for the importance of attending to, and wherever possible, avoiding
+measurement error, and to perform sensitivity analyses even when
+carefully documented time-series data have been collected.
+
+\textbf{Part 5.} Reviews advice. Technical details are presented in an
+Appendix.
 
 Causal diagrammes are tools we use to answer causal questions.
 \textbf{However before we can answer a causal question, we must first
 understand what is involved when we ask a causal question.}
 
-\hypertarget{part-1.-how-to-ask-causal-questions}{%
-\section{Part 1. How to ask causal
-questions}\label{part-1.-how-to-ask-causal-questions}}
+\hypertarget{part-1.-identifiability-assumptions}{%
+\section{Part 1. Identifiability
+assumptions}\label{part-1.-identifiability-assumptions}}
 
 \hypertarget{the-fundamental-problem-of-causal-inference.}{%
 \subsection{The fundamental problem of causal
@@ -333,21 +335,19 @@ defined as the difference between the two potential outcomes:
 Our interest is in a contrast between two states of the world, one in
 which a child hypothetically receives bilingual exposure (\(Y\) when
 exposure is set \(a=1\)) an one in which a child hypothetically does not
-(\(Y\) when exposure is set \(a=0\)).{[}\^{}3{]} Notice that any child
-can, at most, only receive one level of the exposure. Only one
-hypothetical exposure can be realised. The outcome under the exposure
-that the child does not receive is not generally observed. For this
-reason, causal inference has been described as a missing data problem
-(\protect\hyperlink{ref-westreich2015}{Westreich et al. 2015};
-\protect\hyperlink{ref-edwards2015}{Edwards, Cole, and Westreich 2015}).
-At least half the counterfactual outcomes we require for estimating
-individual causal effects are missing.
+(\(Y\) when exposure is set \(a=0\)).\footnote{The counter-factual
+  outcome under the exposure \(A = a\) may be written in different ways,
+  such as \(Y(a)\) (the notation we use here), \(Y^a\), and \(Y_a\).}
+Notice that any child can, at most, only receive one level of the
+exposure. Only one hypothetical exposure can be realised. The outcome
+under the exposure that the child does not receive is not generally
+observed. For this reason, causal inference has been described as a
+missing data problem (\protect\hyperlink{ref-westreich2015}{Westreich et
+al. 2015}; \protect\hyperlink{ref-edwards2015}{Edwards, Cole, and
+Westreich 2015}). At least half the counterfactual outcomes we require
+for estimating individual causal effects are missing.
 
-{[}3{]}: The counter-factual outcome under the exposure \(A = a\) may be
-written in different ways, such as \(Y(a)\) (the notation we use here),
-\(Y^a\), and \(Y_a\).
-
-Table Table~\ref{tbl-consistency} expresses the relationship between
+Table~\ref{tbl-consistency} expresses the relationship between
 observable and counterfactual outcomes as a contingency table (This
 table is modified from a table in
 (\protect\hyperlink{ref-morgan2014}{Morgan and Winship 2014})).
@@ -386,10 +386,10 @@ responses in the exposed an unexposed groups \footnote{Note that the
   ATE = E[Y(a) - Y(a*)]
   \end{align*}} Such that:
 
-\begin{align*}
-ATE = E(Y(1) - Y(0))\\
-          ~  = E(Y(1) - E(Y(0))
-\end{align*}
+\begin{alignat*}{2}
+ATE & = E(Y(1) - Y(0))\\
+& = E(Y(1)) - E(Y(0))
+\end{alignat*}
 
 \hypertarget{identification-assumption-1-causal-consistency}{%
 \subsubsection{Identification assumption 1: Causal
@@ -424,21 +424,32 @@ ATE = \large(\underbrace{E[Y(1)|A = 1]}_\text{observed} + \underbrace{E[Y(1)|A =
 
 However, by substituting \(Y_{observed}|A\) for \(Y(a)\) we may recover
 counterfactual outcomes required for our causal contrasts from realised
-outcomes under different levels of exposures.
+outcomes under different levels of exposures.\footnote{Notice that the
+  causal consistency assumption reveals the priority of counterfactual
+  outcomes over actual outcomes.Causal inference is \emph{counterfactual
+  data-science}.}
 
-There are three reasons that applied researchers must understand the
-causal consistency assumption.
+Casual consistency assumes no interference. The ``no interference''
+assumption can be represented as follows:
 
-First, the causal consistency assumption reveals \emph{the priority of
-counterfactual outcomes over realised outcomes.} If statistics is
-data-science, causal estimation is \emph{counterfactual data-science}.
-Failure to appreciate this distinction is at the heart of much confusion
-from the unconsientious application causal diagrammes to data. I will
-return to this claim at the end.
+For any units \(i\) and \(j\) (where \(i \neq j\)) and any treatment
+assignments \(a_i\) and \(a_j\), the potential outcome for unit \(i\)
+under treatment \(a_i\) is not affected by the treatment assignment to
+unit \(j\). This can be written as:
 
-Second, causal consistency implies ``treatment variation irrelevance''
-(\protect\hyperlink{ref-vanderweele2009}{Tyler J. VanderWeele 2009}). We
-may assume that there are many versions of a treatment \(A\). Given a
+\[Y_i(a_i, a_j) = Y_i(a_i, a'_j)\]
+
+for all \(a_j, a'_j\).
+
+This equation states that the potential outcome for unit \(i\) when it
+receives treatment \(a_i\) and unit \(j\) receives treatment \(a_j\) is
+the same as the potential outcome for unit \(i\) when it receives
+treatment \(a_i\) and unit \(j\) receives any other treatment \(a'_j\).
+
+In other words, the treatment assignment to any other unit \(j\) does
+not affect the potential outcome of unit \(i\).
+
+We may assume that there are many versions of a treatment \(A\). Given a
 differences in these versions of treatment, how can we substitute
 observed treatments with counterfactual treatments? The theory of causal
 inference under multiple versions of treatment holds that if there \(K\)
@@ -455,14 +466,14 @@ estimate consistent causal effects. We write \(Y_k\) is independent of
 
 \[K \coprod Y_k | L\] or equivalently as
 
-\[Y_k \coprod K | L\] We will return to the theory of causal inference
-under multiple versions of treatment below. For now, we may notice that
-we may assume the measured exposure \(A\) is a coarsened indicator of
-multiple versions of exposure each of which must be independent of the
+\[Y_k \coprod K | L\] Under the theory of causal inference under
+multiple versions of treatment we may interpret the measured exposure
+\(A\) as a coarsened indicator of multiple versions of exposure i.e
+\(A = f(k_1\dots k_n)\). Again,each treatment must be independent of the
 counterfactual outcome under exposure conditional on measured
-covariates, i.e \(A = A_{f(k_1\dots k_n)}\)
+covariates.
 
-Third, although treatment variation irrelevance implies that we may
+Notice, although treatment variation irrelevance implies that we may
 consistently estimate causal effects under multiple versions of
 treatment where interventions are ill-defined we may not be able to
 assess conditional independence assumption. Even if we assume this
@@ -555,34 +566,54 @@ There are two types of positivity violations:
   violates deterministic non-positivity.
 \end{itemize}
 
-In cultural evolution, the scope for violation of deterministic
-non-positivity would appear to be rather wide, because the constraints
-are history are arguably rather strong. For example, the language one
-speaks, a cultural trait, is heavily influenced by one's historical and
-geographical context. For example, someone born in rural Japan will
-almost certainly grow up speaking Japanese, a deterministic `treatment'
-that violates the positivity assumption. History places substantial
-constraints on cultural evolution, often leading to near-absolute
-probabilities of certain cultural exposures such as language, arising
-from one's place and history. This arguably leads to widespread
-violations of deterministic non-positivity for many questions cultural
-evolution.
-
 \hypertarget{summary-part-1}{%
 \subsection{Summary Part 1}\label{summary-part-1}}
 
 For causal inference, correlation is not the problem. The problem is
-bias when estimating contrasts between counterfactual outcomes. The data
-that we observe only give us insight into the counterfactual outcomes to
-be contrasted under the identifying assumptions of causal consistency,
-exchangeability, and positivity. When we ask a causal question we are
-must state our exposure question, outcome(s), and the variables that
-lead to an association between them, and these variables must correspond
-to well-defined features in our data. We cannot generally test the
-assumptions of ``no-unmeasured confounding,'' and so must take every
-effort to examine unmeasured sources of bias. Only after we have stated
-our causal question may we use causal diagrammes to assist in answering
-that question.
+that observational often fall short of the causal consistency
+assumption, the exchangeability assumption (even when measured
+confounders are insufficient), and the positivity assumption. Consider
+the causal consistency, exchangeability, and positivity assumptions in
+the setting where we are interested in estimating causal effects for
+religious beliefs and practices.
+
+\textbf{Causal Consistency and No Interference}: Historical context can
+lead to different `versions' of a cultural trait within the same nominal
+category, violating the causal consistency assumption. For example, the
+practice of Buddhism in Japan, influenced by historical interactions
+with Shinto beliefs, is different from the practice of Buddhism in
+India, where it originated. If we were studying the effect of practicing
+Buddhism on an outcome like stress levels, this historical variation
+could lead to different effects, violating the causal consistency
+assumption. Furthermore, in historical contexts where the treatment of
+one individual affects the outcomes of others, such as in the spread of
+cultural traits or practices, the assumption of no interference (which
+is part of the causal consistency assumption) could be violated.
+
+\textbf{Exchangeability and Ignorability}: Historical context can
+introduce unmeasured confounders that violate the exchangeability
+assumption, which includes the ignorability assumption. For instance,
+the historical prevalence of certain religions in different regions
+could be associated with both the religion one practices and other
+outcomes of interest. If these historical factors are not measured and
+controlled for, they could confound the relationship between religion
+and the outcome, violating the exchangeability (and ignorability)
+assumption.
+
+\textbf{Positivity}: As discussed earlier, historical context can lead
+to deterministic `treatments', violating the positivity assumption. For
+example, the historical dominance of Catholicism in Italy means that
+someone born in Italy is almost certainly exposed to Catholicism,
+leading to a violation of the positivity assumption.
+
+Thus, while history provides a rich context for understanding cultural
+evolution, it can also introduce complexities that challenge the key
+assumptions of causal inference. We should not ask causal questions --
+and therefore not attempt to write DAGs -- where the assumptions of
+causal inference are invalid.
+
+bias when estimating contrasts between counterfactual outcomes from
+observational data.
 
 We next review how causal diagrammes may be used to diagnose -- and
 avoid -- four types of confounding and consider how adding chronological
@@ -654,6 +685,14 @@ General Advice:
   \item
     Avoid enslavement: depart from this advice if doing so clarifies
     your objective.
+  \item
+    No multi-level models
+  \item
+    Good measures
+  \item
+    Retention
+  \item
+    Check positivity -- how many change.
   \end{itemize}
 \end{itemize}
 
@@ -683,7 +722,9 @@ estimate the true causal effect of \(A\) on \(Y\).
 
 }
 
-\caption{\label{fig-dag-common-cause}Counfounding by common cause.}
+\caption{\label{fig-dag-common-cause}Counfounding by common cause. The
+dashed red arrow indicates bias arising from the open backdoor path from
+A to Y.}
 
 \end{figure}
 
@@ -692,15 +733,15 @@ estimate the true causal effect of \(A\) on \(Y\).
 adjust for all measured pre-exposure
 confounders}\label{solution-to-the-problem-of-confounding-by-a-common-cause-adjust-for-all-measured-pre-exposure-confounders}}
 
-Confounding by common cause can be addressed by adjusting for it. If
-\(L\) is measured before the treatment (or exposure) is assigned, we may
-adjust for this confounder to account for its influence. Typically we
-adjust through through statistical techniques such as stratification,
-regression, matching, or inverse probability of treatment weighting.
-Such adjustment helps to mitigate the bias caused by the confounder,
-allowing for a more accurate estimation of the true causal relationship.
-It is beyond the scope of this tutorial to describe these techniques
-(though see (Bubulia b this issue)).
+Confounding by common cause can be addressed by adjusting for it.
+Typically we adjust through through statistical techniques such as
+regression, matching, or inverse probability of treatment weighting. It
+is beyond the scope of this tutorial to describe these techniques
+(though see (Bubulia b this issue)). Figure
+Figure~\ref{fig-dag-common-cause-solution} clarifies that any
+confounding that is a cause of \(A\) and \(Y\) will precede \(A\) (and
+so \(Y\)), because causes precede effects. Confounding control typically
+requires time-series data.
 
 \begin{figure}
 
@@ -1558,11 +1599,6 @@ weeks. How should we revise this model in light of measurement theory?
 usefully employed to develop a pragmatic responses to construct
 measurement}\label{how-theory-of-dependent-and-directed-measurement-error-might-be-usefully-employed-to-develop-a-pragmatic-responses-to-construct-measurement}}
 
-By now you are all familiar with The New Zealand Attitudes and Values
-Study (NZAVS),which is a national probability survey collects a wide
-range of information, including data on distress, exercise habits, and
-cultural backgrounds.
-
 \begin{figure}
 
 {\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-uu-null-1.pdf}
@@ -1611,7 +1647,7 @@ darkness and mirror.
 
 Allow that the true underlying reality represented by the \(\eta_{var}\)
 may be multivariate. Similarly, allow the true underlying reality
-represented by \(\U_{var}\) is multivariate.
+represented by \(U_{var}\) is multivariate.
 
 We now have a causal diagramme that more precisely captures
 VanderWeele's thinking as presented in
