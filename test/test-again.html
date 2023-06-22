@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Joseph A. Bulbulia">
+
+<title>Better causal diagrammes (DAGS) for counterfactual data science</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="test-again_files/libs/clipboard/clipboard.min.js"></script>
+<script src="test-again_files/libs/quarto-html/quarto.js"></script>
+<script src="test-again_files/libs/quarto-html/popper.min.js"></script>
+<script src="test-again_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="test-again_files/libs/quarto-html/anchor.min.js"></script>
+<link href="test-again_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="test-again_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="test-again_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="test-again_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="test-again_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Better causal diagrammes (DAGS) for counterfactual data science</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Joseph A. Bulbulia </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p><span class="math display">\[A \coprod Y(a)\]</span> <span class="math display">\[A \cancel{\coprod} Y(a)| L\]</span></p>
+<section id="objective" class="level3">
+<h3 class="anchored" data-anchor-id="objective">Objective</h3>
+<p>Correlation is not causation. However, across many human sciences, persistent confusion in the analysis and reporting of correlations has limited scientific progress. The correlations in observed data are frequently biased indicators of causality. This problem is widely known. Nevertheless, many researchers report correlations using hedging language that may suggest causation. Widespread practices of reporting correlations – in which I have regrettably participated – has led to a “causality crisis” <span class="citation" data-cites="bulbulia2022">(<a href="#ref-bulbulia2022" role="doc-biblioref">Bulbulia 2022</a>)</span>. The problem is a crisis, because we cannot generally estimate causal effects from observational data. Widely adopted strategies for “control” fail. Addressing the causality crisis is arguably among science’s most pressing issues.</p>
+<p>When integrated into methodologically rigorous workflows, causal diagrammes or causal directed acyclic graphs – causal “DAGs” – may be powerful tools for identifying causation.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Yet unscrupulous DAGs operate in much the same way as hedging correlational language, suggesting entitlement to causal inferences where none are warrented. For example, when researchers lack time-series data they cannot generally estimate unbiased causal effects<span class="citation" data-cites="vanderweele2015">(<a href="#ref-vanderweele2015" role="doc-biblioref">VanderWeele 2015</a>)</span>. Thus, cross-sectional researchers who use DAGs to report the unrealistic assumptions embedded in their analyses use the tool to disguise unwarrented confidence. Ideally causal diagrammes would be equipped with safety mechanisms that prevent such self-inflicted injuries.</p>
+<p>Here, I develop a guide to writing causal diagrammes that is grounding in temporally ordered representations of their key elements – what might be called <em>chronologically conscientious</em> causal DAGs. We shall see that attention to temporal order in the spatial organisation of a DAG may greatly assist researchers in avoiding the pitfalls of unscrupulous DAGs. Although no inferential tool is user-proof, the application of chronologically conscientious DAGs may improve saftey. Chronologically conscientious causal diagrammes are DAGs with airbags.</p>
+<p>There are many excellent resources for drawing causal diagrammes <span class="citation" data-cites="rohrer2018 hernan2023 cinelli2022 barrett2021 mcelreath2020">(<a href="#ref-rohrer2018" role="doc-biblioref">Rohrer 2018</a>; <a href="#ref-hernan2023" role="doc-biblioref">Hernan and Robins 2023</a>; <a href="#ref-cinelli2022" role="doc-biblioref">Cinelli, Forney, and Pearl 2022</a>; <a href="#ref-barrett2021" role="doc-biblioref">Barrett 2021</a>; <a href="#ref-mcelreath2020" role="doc-biblioref">McElreath 2020</a>)</span>.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> One may reasonably question whether another tutorial merely adds clutter. The approach to drawing causal diagrammes that I present hopes to contributes to previous attempts in five ways. First, I link graphs to the counterfactual frameworks that are necessary for conceptualising causality. Second, as mentioned, I underscore the importance of chronology in the presentation of the graph. Along the way, I use causal graphs to examine the concepts of interaction and mediation, again with the aim of guiding applied researchers clear of trouble. Third, I show how causal diagrammes to recommend a three-wave panel design for recording cultural evolutionary dynamics in the present. Fourth, I consider the problem of selection bias three-wave panel designs, and develop recommendations for applied researchers. Fifth, I consider the problem of measurement bias in three-wave panel designs, and develop recommendations for applied researchers. I conclude with a brief compendium of practical advice to help researchers avoid abominable DAGs and causal inferences.</p>
+<p>The article is organised as follows:</p>
+<p><strong>Part 1.</strong> develops the connection between causal diagrammes and the potential outcomes framework. Understanding this connection is important. Whereas causal diagrammes help researchers to answer questions, we must first understand how to ask causal questions. Without such comprehension, causal graphs can be, at best, unproductive, and at worst, deceptive.</p>
+<p><strong>Part 2.</strong> reviews the four elemental types of confounding, and uses chronologically conscientious causal diagrammes to elucidate their properties. Although this discussion replicates material from other tutorials, by emphasising the temporal order in spatial structure of the graph the conditions in which we may identify causality in the presence of confounding become more apparent. Here, I show how causal graphs may clarify concepts of interaction, mediation, and treatment-confounder feedback of the kind we may expect to be pervasive time-series data. Finally, I describe a simple template that may be useful for evolutionary human scientists, which clarifies how three-waves of data collection may be used to estimate causal effects.</p>
+<p><strong>Part 3.</strong> Applies chronologically conscientious causal diagrammes to motivate three-wave panel designs for evolutionary social sciences</p>
+<p><strong>Part 4</strong> Addresses substanative problems of selection bias, focussing attention on the imperatives for adequate sampling and retention in the three-wave panel design.</p>
+<p><strong>Part 5.</strong> Addresses substanative problems of measurement error, focussing attention on the imperatives of (a) ensuring good measures (b) assessing pathways for confounding (c) performing sensitivity analyses.</p>
+<p>Technical details are presented in an Appendix.</p>
+</section>
+</section>
+<section id="part-1.-identifiability-assumptions" class="level2">
+<h2 class="anchored" data-anchor-id="part-1.-identifiability-assumptions">Part 1. Identifiability assumptions</h2>
+<p>Causal diagrammes are powerful tools for answering causal questions. However before we can answer a causal question, we must first understand what is involved when we ask a causal question. In this section I review key concepts and identification assumptions.</p>
+<section id="the-fundamental-problem-of-causal-inference" class="level3">
+<h3 class="anchored" data-anchor-id="the-fundamental-problem-of-causal-inference">The fundamental problem of causal inference</h3>
+<p>We say that <span class="math inline">\(A\)</span> causes <span class="math inline">\(Y\)</span> if changing <span class="math inline">\(A\)</span> would have made a difference to the outcome of <span class="math inline">\(Y\)</span>. The use of the subjective “would have” reveals the need for counterfactuals when conceiving of causal effects. To infere a causal effect requires <em>counterfactual data-science</em>.</p>
+<p>Suppose there is evidence that cultures believing in Big Gods demonstrate greater social complexity. We are interested in estimating the causal effect of belief in Big Gods on social complexity. Here, the belief in Big Gods is the “exposure” or “treatment” of interest.</p>
+<p>We define two counterfactual (or “potential”) outcomes for each culture in a population:</p>
+<ul>
+<li><span class="math inline">\(Y_i(a = 1)\)</span>: The social complexity of culture <span class="math inline">\(i\)</span> if they believed in Big Gods. This is the counterfactual outcome when <span class="math inline">\(A_i = 1\)</span>.</li>
+<li><span class="math inline">\(Y_i(a = 0)\)</span>: The social complexity of culture <span class="math inline">\(i\)</span> if they did not believe in Big Gods. This is the counterfactual outcome when <span class="math inline">\(A_i = 0\)</span>.</li>
+</ul>
+<p>Within a counterfactual framework, the causal effect of belief in Big Gods on social complexity for culture <span class="math inline">\(i\)</span> may be defined as a contrast, on the difference scale, between two potential outcomes (<span class="math inline">\(Y_i(a)\)</span>) under the two different levels of the exposure (<span class="math inline">\(A_i = 1\)</span> (belief in Big Gods); <span class="math inline">\(A_i = 0\)</span> (no belief in Big Gods)). For simplicity we assume these exposures are exhaustive, and well-defined. Under these assumptions:</p>
+<p><span class="math display">\[
+\text{Causal Effect of Belief in Big Gods}_i = Y_i(1) - Y_i(0)
+\]</span></p>
+<p>We require a contrast between two states of the world only one of which the culture might actually receive <a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. When the culture receives one level of the belief in Big Gods the outcome under the other level(s) is ruled out by the natural order. The same holds for groups of cultures who are exposed or unexposed. This is called “the fundamental problem of causal inference” <span class="citation" data-cites="rubin1976 holland1986">(<a href="#ref-rubin1976" role="doc-biblioref">Rubin 1976</a>; <a href="#ref-holland1986" role="doc-biblioref">Holland 1986</a>)</span>. As shown in <a href="#tbl-consistency">Table&nbsp;1</a>, at least half the counterfactual outcomes we require for estimating individual causal effects are missing. For this reason, causal inference has been described as a missing data problem <span class="citation" data-cites="westreich2015 edwards2015">(<a href="#ref-westreich2015" role="doc-biblioref">Westreich et al. 2015</a>; <a href="#ref-edwards2015" role="doc-biblioref">Edwards, Cole, and Westreich 2015</a>)</span>.</p>
+<p><a href="#tbl-consistency">Table&nbsp;1</a> expresses the relationship between observable and counterfactual outcomes as a contingency table (This table is modified from a table in <span class="citation" data-cites="morgan2014">(<a href="#ref-morgan2014" role="doc-biblioref">Morgan and Winship 2014</a>)</span>).</p>
+<div class="cell" data-warnings="false">
+<div class="cell-output-display">
+<div id="tbl-consistency" class="anchored">
+<table class="table table-sm table-striped small">
+<caption>Table&nbsp;1: Causal estimation as a missing data problem.</caption>
+<colgroup>
+<col style="width: 7%">
+<col style="width: 44%">
+<col style="width: 48%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Group</th>
+<th style="text-align: left;">Units that receive exposure (A=1)</th>
+<th style="text-align: left;">Units that recieve no exposure (A=0)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Y(1)</td>
+<td style="text-align: left;">Observable</td>
+<td style="text-align: left;">Counterfactual</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Y(0)</td>
+<td style="text-align: left;">Counterfactual</td>
+<td style="text-align: left;">Observable</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-dag-mediation-assuptions" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="test-again_files/figure-html/fig-dag-mediation-assuptions-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
+<figcaption class="figure-caption">Figure&nbsp;1: Assumptions for mediation analysis</figcaption>
+</figure>
+</div>
+</div>
+</div>
+
+</section>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-barrett2021" class="csl-entry" role="listitem">
+Barrett, Malcolm. 2021. <em>Ggdag: Analyze and Create Elegant Directed Acyclic Graphs</em>. <a href="https://CRAN.R-project.org/package=ggdag">https://CRAN.R-project.org/package=ggdag</a>.
+</div>
+<div id="ref-bulbulia2022" class="csl-entry" role="listitem">
+Bulbulia, Joseph A. 2022. <span>“A Workflow for Causal Inference in Cross-Cultural Psychology.”</span> <em>Religion, Brain &amp; Behavior</em> 0 (0): 1–16. <a href="https://doi.org/10.1080/2153599X.2022.2070245">https://doi.org/10.1080/2153599X.2022.2070245</a>.
+</div>
+<div id="ref-cinelli2022" class="csl-entry" role="listitem">
+Cinelli, Carlos, Andrew Forney, and Judea Pearl. 2022. <span>“A Crash Course in Good and Bad Controls.”</span> <em>Sociological Methods &amp; Research</em>, May, 00491241221099552. <a href="https://doi.org/10.1177/00491241221099552">https://doi.org/10.1177/00491241221099552</a>.
+</div>
+<div id="ref-edwards2015" class="csl-entry" role="listitem">
+Edwards, Jessie K, Stephen R Cole, and Daniel Westreich. 2015. <span>“All Your Data Are Always Missing: Incorporating Bias Due to Measurement Error into the Potential Outcomes Framework.”</span> <em>International Journal of Epidemiology</em> 44 (4): 14521459.
+</div>
+<div id="ref-hernan2023" class="csl-entry" role="listitem">
+Hernan, M. A., and J. M. Robins. 2023. <em>Causal Inference</em>. Chapman &amp; Hall/CRC Monographs on Statistics &amp; Applied Probab. Taylor &amp; Francis. <a href="https://books.google.co.nz/books?id=\_KnHIAAACAAJ">https://books.google.co.nz/books?id=\_KnHIAAACAAJ</a>.
+</div>
+<div id="ref-holland1986" class="csl-entry" role="listitem">
+Holland, Paul W. 1986. <span>“Statistics and Causal Inference.”</span> <em>Journal of the American Statistical Association</em> 81 (396): 945960.
+</div>
+<div id="ref-mcelreath2020" class="csl-entry" role="listitem">
+McElreath, Richard. 2020. <em>Statistical Rethinking: A Bayesian Course with Examples in r and Stan</em>. CRC press.
+</div>
+<div id="ref-morgan2014" class="csl-entry" role="listitem">
+Morgan, Stephen L., and Christopher Winship. 2014. <em>Counterfactuals and Causal Inference: Methods and Principles for Social Research</em>. 2nd ed. Analytical Methods for Social Research. Cambridge: Cambridge University Press. <a href="https://doi.org/10.1017/CBO9781107587991">https://doi.org/10.1017/CBO9781107587991</a>.
+</div>
+<div id="ref-rohrer2018" class="csl-entry" role="listitem">
+Rohrer, Julia M. 2018. <span>“Thinking Clearly about Correlations and Causation: Graphical Causal Models for Observational Data.”</span> <em>Advances in Methods and Practices in Psychological Science</em> 1 (1): 2742.
+</div>
+<div id="ref-rubin1976" class="csl-entry" role="listitem">
+Rubin, D. B. 1976. <span>“Inference and Missing Data.”</span> <em>Biometrika</em> 63 (3): 581–92. <a href="https://doi.org/10.1093/biomet/63.3.581">https://doi.org/10.1093/biomet/63.3.581</a>.
+</div>
+<div id="ref-vanderweele2015" class="csl-entry" role="listitem">
+VanderWeele, Tyler. 2015. <em>Explanation in Causal Inference: Methods for Mediation and Interaction</em>. Oxford University Press.
+</div>
+<div id="ref-westreich2015" class="csl-entry" role="listitem">
+Westreich, Daniel, Jessie K Edwards, Stephen R Cole, Robert W Platt, Sunni L Mumford, and Enrique F Schisterman. 2015. <span>“Imputation Approaches for Potential Outcomes in Causal Inference.”</span> <em>International Journal of Epidemiology</em> 44 (5): 17311737.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>The term “DAG” is unfortunate because not all directed acyclic graphs are causal. For a graph to be causal it must satisfy the conditions of markov factorisation (see Appendix A). In my utopia, I would preferred that causal diagrammes were called markov factorisation graphs (see Appendix A).<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>In my view, currently the best resource is Miguel Hernan’s free course, here: <a href="https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions">https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The counter-factual outcome under the exposure <span class="math inline">\(A = a\)</span> may be written in different ways, such as <span class="math inline">\(Y(a)\)</span> (the notation we use here), <span class="math inline">\(Y^a\)</span>, and <span class="math inline">\(Y_a\)</span>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

@@ -7,11 +7,10 @@ affiliation: Victoria University of Wellington, New Zealand
 email: joseph.bulbulia@vuw.ac.nz
 corresponding: yes
 date-format: short
-sanitize: true
-keep-tex: true
-include-in-header:
-      - text: |
-          \usepackage{cancel}
+format:
+  html:
+    html-math-method:
+      method: mathjax
 execute:
   warning: false
   eval: true
@@ -23,6 +22,13 @@ execute:
 #| echo: false
 #| include: false
 #| eval: false
+
+# Include in YAML for Latex
+# sanitize: true
+# keep-tex: true
+# include-in-header:
+#       - text: |
+#           \usepackage{cancel}
 
 
 # for making graphs
@@ -55,36 +61,34 @@ push_mods <-
 
 ## Introduction
 
-### Objective
+Correlation is not causation. However, across many human sciences, persistent confusion in the analysis and reporting of correlations has limited scientific progress. The correlations in observed data are frequently biased indicators of causality. This problem is widely known. Nevertheless, many researchers report correlations using hedging language that may suggest causation. Making matters worse, widely adopted strategies for confounding control fail. The reasons these strategies fail are less well understood. The ubiquity of the problem suggests a "causality crisis" [@bulbulia2022]. The magnitude of the causality crisis is at least as great as that of the replication crisis. Addressing the causality crisis is among the human science's most pressing issues. The challenge is to clarify its basis, and to develop appropriate strategies for response. 
 
-Correlation is not causation. However, across many human sciences, persistent confusion in the analysis and reporting of correlations has limited scientific progress. The correlations in observed data are frequently biased indicators of causality. This problem is widely known. Nevertheless, many researchers report correlations using hedging language that may suggest causation. Widespread practices of reporting correlations -- in which I have regrettably participated -- has led to a "causality crisis" [@bulbulia2022]. The problem is a crisis, because we cannot generally estimate causal effects from observational data. Widely adopted strategies for "control" fail. Addressing the causality crisis is arguably among science's most pressing issues.
+When integrated into methodologically rigorous workflows, causal diagrammes or causal directed acyclic graphs -- causal "DAGs" -- may be powerful tools for identifying causation.[^1] Causal diagrammes are especially powerful tools for identifying appropriate strategies of confounding control. A system of formal mathematical proofs underpins their design. This brings confidence. However, no formal mathematical training is required to use them. Causal diagrammes are accessible. Their simplicity enchances their accessibility, augmenting their power. 
 
-When integrated into methodologically rigorous workflows, causal diagrammes or causal directed acyclic graphs -- causal "DAGs" -- may be powerful tools for identifying causation.[^1] Yet unscrupulous DAGs operate in much the same way as hedging correlational language, suggesting entitlement to causal inferences where none are warrented. For example, when researchers lack time-series data they cannot generally estimate unbiased causal effects[@vanderweele2015]. Thus, cross-sectional researchers who use DAGs to report the unrealistic assumptions embedded in their analyses use the tool to disguise unwarrented confidence. Ideally causal diagrammes would be equipped with safety mechanisms that prevent such self-inflicted injuries.
+Causal diagrammes offer hope. However the qualities that bring hope -- mathematical certainty and technical simplicity -- risk harm. All of causal inference relies on assumptions. Causal diagrammes are methods for encoding such assumptions. Using DAGs to encode unwarrented assumptions is arguably worse than using hedging causal language to describe biased correlations. DAGs may suggest entitlement to confident causal assertions where doubt is warrented. For example, when researchers lack time-series data, they cannot generally estimate unbiased causal effects [@vanderweele2015]. Cross-sectional researchers who use DAGs to report the unrealistic assumptions hide behind DAGs. Ideall,y causal diagrammes would be equipped with safety mechanisms that prevent these injuries.
 
-[^1]: The term "DAG" is unfortunate because not all directed acyclic graphs are causal. For a graph to be causal it must satisfy the conditions of markov factorisation (see Appendix A). In my utopia, I would preferred that causal diagrammes were called markov factorisation graphs (see Appendix A).
+[^1]: The term "DAG" is unfortunate because not all directed acyclic graphs are causal. For a graph to be causal it must satisfy the conditions of markov factorisation (see Appendix A).
 
-Here, I develop a guide to writing causal diagrammes that is grounding in temporally ordered representations of their key elements -- what might be called *chronologically conscientious* causal DAGs. We shall see that attention to temporal order in the spatial organisation of a DAG may greatly assist researchers in avoiding the pitfalls of unscrupulous DAGs. Although no inferential tool is user-proof, the application of chronologically conscientious DAGs may improve saftey. Chronologically conscientious causal diagrammes are DAGs with airbags.
+Here, I develop a guide to writing causal diagrammes that is grounding in temporally ordered representations the causal paths that a researcher assumes. I recommend what might be called *chronologically conscientious* causal DAGs. I explain why attention to temporal order in the spatial organisation of a causal diagramme may greatly assist researchers in avoiding the pitfalls. Although no inferential tool is user-proof, the application of chronologically conscientious DAGs may improve safety -- DAGs with airbags.
 
-There are many excellent resources for drawing causal diagrammes [@rohrer2018; @hernan2023; @cinelli2022; @barrett2021; @mcelreath2020].[^hernan_course] One may reasonably question whether another tutorial merely adds clutter. The approach to drawing causal diagrammes that I present hopes to contributes to previous attempts in five ways. First, I link graphs to the counterfactual frameworks that are necessary for conceptualising causality. Second, as mentioned, I underscore the importance of chronology in the presentation of the graph. Along the way, I use causal graphs to examine the concepts of interaction and mediation, again with the aim of guiding applied researchers clear of trouble. Third, I show how causal diagrammes to recommend a three-wave panel design for recording cultural evolutionary dynamics in the present. Fourth, I consider the problem of selection bias three-wave panel designs, and develop recommendations for applied researchers. Fifth, I consider the problem of measurement bias in three-wave panel designs, and develop recommendations for applied researchers. I conclude with a brief compendium of practical advice to help researchers avoid abominable DAGs and causal inferences.
- 
+There are many excellent resources for drawing causal diagrammes [@rohrer2018; @hernan2023; @cinelli2022; @barrett2021; @mcelreath2020].[^hernan_course]. One may reasonably ask whether another tutorial adds clutter. The approach to drawing causal diagrammes that I present hopes to contributes to previous attempts in five ways. 
+
 [^hernan_course]: In my view, currently the best resource is Miguel Hernan's free course, here: [https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions](https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions).
 
-The article is organised as follows:
+In **Part 1.** , I present the counterfactual frameworks that are necessary for conceptualising causality. In my view, the most serious obstacle to causal inference is a failure to understand that it is a form of *counterfactual* data science. We must do more than measure correlations between events that have been realised. We must simulate how the world would have been had events been different, and we must contrast these simulations. This simulations are credible only when specific data have been collected and only when the data meet the strict demands required for counterfactual datascience. Whereas causal diagrammes help researchers to answer questions, we must first understand how to ask causal questions.
 
-**Part 1.** develops the connection between causal diagrammes and the potential outcomes framework. Understanding this connection is important. Whereas causal diagrammes help researchers to answer questions, we must first understand how to ask causal questions. Without such comprehension, causal graphs can be, at best, unproductive, and at worst, deceptive.
+In **Part 2**, I review the four elemental forms of confounding, and use chronological causal diagrammes to elucidate their properties. Although this discussion replicates material from other tutorials, by emphasising the benefits of temporal order in spatial organisation of the graph the conditions in which we may identify causality in the presence of confounding become more apparent. Here, I also show how causal graphs may clarify poorly understood concepts of interaction, mediation, and repeated measures longitudinal data. Causal diagrammes will help us to understand why the commonplace modelling approaches such as multilevel modelling and structural equation modelling are poorly suited to the demands of counterfactual datascience.
 
-**Part 2.** reviews the four elemental types of confounding, and uses chronologically conscientious causal diagrammes to elucidate their properties. Although this discussion replicates material from other tutorials, by emphasising the temporal order in spatial structure of the graph the conditions in which we may identify causality in the presence of confounding become more apparent. Here, I show how causal graphs may clarify concepts of interaction, mediation, and treatment-confounder feedback of the kind we may expect to be pervasive time-series data. Finally, I describe a simple template that may be useful for evolutionary human scientists, which clarifies how three-waves of data collection may be used to estimate causal effects.
-
-**Part 3.** Applies chronologically conscientious causal diagrammes to motivate three-wave panel designs for evolutionary social sciences
+In **Part 3**, I explain how chronological causal diagrammes reveal strategies for data-collection in three-wave panel designs. Here, applied researchers will understand how they may collect data suited to their purposes. 
 
 
-**Part 4**  Addresses substanative problems of selection bias, focussing attention on the imperatives for adequate sampling and retention in the three-wave panel design.
+In **Part 4**, I focus on the problem of selection bias as it arises in a three-wave panel, using causal graphs to focus our minds on the mission-critical imperatives for (a) adequate sampling and (b) longitudinal retention. It has been said there is nothing like the gallows to focus the mind. Selection bias is the gallows. 
 
-**Part 5.** Addresses substanative problems of measurement error, focussing attention on the imperatives of (a) ensuring good measures (b) assessing pathways for confounding (c) performing sensitivity analyses.
+In **Part 5**, I focus on the problem of measurement error  as it arises in a three-wave panel, using causal graphs to focus on the mission-critical imperatives for  (a) ensuring good measures, (b) assessing pathways for confounding from correlated and directed measurement errors (c) performing sensitivity analyses.
 
- Technical details are presented in an Appendix.
+I conclude with by reviewing advice and summarising best-practices.  Technical details are presented in an Appendix.
 
-## Part 1. Identifiability assumptions
+## Part 1. The three fundamental identifiability assumption for counterfactual datascience (aka "causal inference")
 
 Causal diagrammes are powerful tools for answering causal questions. However before we can answer a causal question, we must first understand what is involved when we ask a causal question. In this section I review key concepts and identification assumptions.
 
@@ -210,7 +214,7 @@ Unfortunately, where interventions are ill-defined we may not be able to assess 
 Finally, note that although causal consistency assumption allow us to link observed outcomes with counterfactual outcomes, half of the observations that we require to obtain causal contrasts remain missing. Consider an experiment in which assignment to a binary treatment $A = {0,1}$ is random. We observe the realised outcomes $Y^{observed}|A = 1$ and $Y^{observed}|A = 0$, By causal consistency, $(Y^{observed}|A = 1) = Y(1)$ and $(Y^{observed}|A = 0) = Y(0)$. Nevertheless, the counterfactual outcomes for the treatments that participants did not receive are missing.
 
 $$
-ATE = \large(\underbrace{E[Y(1)|A = 1]}_\text{observed} + \underbrace{E[Y(1)|A = 0]}_\text{unobserved}\large) - \large(\underbrace{E[Y(0)|A = 0]}_\text{observed}  + \underbrace{E[Y(0)|A = 1]}_\text{unobserved}\large)
+ATE = \bigg(\underbrace{E[Y(1)|A = 1]}_\text{observed} + \underbrace{E[Y(1)|A = 0]}_\text{unobserved}\bigg) - \bigg(\underbrace{E[Y(0)|A = 0]}_\text{observed}  + \underbrace{E[Y(0)|A = 1]}_\text{unobserved}\bigg)
 $$ We next turn to the exchangability assumption, which when satisifed allows us to impute those missing counterfactuals required for estimating causal effects.
 
 We will next consider how the exchangability assumption allows us to recover the missing counterfactual outcomes.
@@ -248,7 +252,7 @@ This assumption is crucial for causal inference because we cannot conceive of ca
 
 -   **Random non-positivity**: the casual effect of ageing with observations missing within our data, but may be assumed to exist. For example every continuous exposure will lack (infinitely many) realisations on the number line, yet we may nevertheless use statistical models to estimate causal contrasts. This assumption is the only identifiability assumption that can be verified by data. Although our task here is not to guide researchers on how to model their data, we note that it is important for applied researchers to verify and report whether random non-positivity is violated in their data. 
 
--   **Deterministic non-positivity**: the causal effect is inconceivable. For example, the causal effect of hysterectomy in biological males violates deterministic non-positivity.
+- **Deterministic non-positivity**: the causal effect is inconceivable. For example, the causal effect of hysterectomy in biological males violates deterministic non-positivity.
 
 ### Relevance to cultural evolution
 
@@ -370,7 +374,7 @@ As with the *Causal Markov Condition*, *Faithfulness* is a strong assumption, an
 - Add time-stamps to your nodes. To bring additoinal clarity, it is almost always useful to time-stamp the nodes of your graph, for example, in schematic form:
 
 $$
-\framebox{L_{t0}} \rightarrow A_{t1} \rightarrow Y_{t2} \leftarrow \framebox{L_{t0}}
+L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 $$
 
 - Where exposures are not assigned randomly, we should nearly always assume unmeasured confounding. For this reason, your causal DAG should include a description of the sensitivity analyses you will perform to clarify the sensitivity of your findings to unmeasured confounding. Where there are known unmeasured confounders these should be described.  
@@ -414,7 +418,7 @@ The problem of confounding by common cause arises when there is a variable denot
 \end{tikzpicture}
 ```
 
-### Solution: attend to the  temporal order of cauasality
+### Advice: attend to the  temporal order of cauasality
 
 Confounding by a common cause can be addressed by adjusting for it. Typically we adjust through through statistical models such as regression, matching, or inverse probability of treatment weighting. Again, it is beyond the scope of this tutorial to describe causal estimation techniques. Figure @fig-dag-common-cause-solution clarifies that any confounding that is a cause of $A$ and $Y$ will precede $A$ (and so $Y$), because causes precede effects. By indexing the the nodes on the graph, we can see that confounding control typically requires time-series data.
 
@@ -498,7 +502,7 @@ The common effect $L$, once conditioned on, creates a non-causal association bet
 
 ```
 
-### Solution: attend to the  temporal order of cauasality
+### Advice: attend to the  temporal order of cauasality
 
 To address the problem of conditioning on a common effect, we should generally ensure that all confounders $L$ that are common causes of the exposure $A$ and the outcome $Y$ are measured before the occurance of the exposure $A$, and furthermore that the exposure $A$ is measured before the occurance of the outcome $Y$. If such temporal order is preserved, $L$ cannot be an effect of $A$, and thus neither of $Y$. By measuring all relevant confounders before the exposure, researchers can minimise the scope for collider confounding by conditioning on a common effect. This rule is not absolute. As indicated in @fig-dag-descendent-solution, it may be useful in certain circumstances to condition on a confounder that occurs after the outcome has occurred.
 
@@ -605,7 +609,7 @@ In either case, unless one is interested in mediation analysis, conditioning on 
 
 
 
-### Solution: attend to the  temporal order of cauasality
+### Advice: attend to the  temporal order of cauasality
 
 To address the problem of mediator bias, when interested in total effects do not condition on a mediator. This can be done by ensuring that $L$ occurs before $A$ (and $Y$). Again we discover the importance of an explicit temporal ordering for our variables. Although note, if $L$ is associated with $Y$ but is not associated with $A$ conditioning on $L$ will improve the efficiency of the causal effect estimate of $A$ on $Y$. However, if $A$ might affect $L$, then $L$ might be a mediator, and including $L$ risks bias. As with some much in causal estimation, we must understand the context.
 
@@ -669,7 +673,7 @@ First the negative. Suppose there is a confounder $L$ that is caused by an unobs
 
 ```
 
-### Solution: attend to the temporal order of causality, and use expert knowledge of all relevant nodes.
+### Advice: attend to the temporal order of causality, and use expert knowledge of all relevant nodes.
 
 Ensuring the confounder ($L$) is measured before the exposure ($A$) has two benefits.
 
@@ -740,13 +744,13 @@ Secondly, note that we may use descendent to reduce bias. For example, if an unm
 
 ```
 
-### Common question 1: what if interaction is of interest?
+### Causal Interaction?
 
 Applied researchers will often be interested in testing interactions. What is causal interaction and how may we represent it on a causal diagramme?  
 
 We must distinguish the concept of causal interaction from the concept of effect modification. 
 
-#### **Causal Interaction**
+#### **Causal interaction as two independent exposures**
 
 Causal interaction is the effect of two exosures that may occur jointly or separately (or not occur). We say there is interaction on the scale of interest when the effect of one exposure on an outcome depends on the level of another exposure. For example, the effect of a drug (exposure A) on recovery time from a disease (outcome Y) might depend on whether or not the patient is also receiving physical therapy (exposure B). In terms of causal quantities, if we denote the potential outcomes under different exposure combinations as $Y(a,b)$, a causal interaction on the difference scale would be present if $Y(1,1) - Y(1,0) \neq Y(0,1) - Y(0,0)$.
 
@@ -781,14 +785,14 @@ When drawing a causal diagram, we represent the two exposures as separate nodes 
 ```
 
 
-#### **Scale of effect measures for interaction**
+#### **Effect measures for causal interaction**
 
 On the difference scale, the total causal effect of an exposure $A$ on an outcome $Y$ is typically quantified as $Y(1) - Y(0)$, where $Y(a)$ represents the potential outcome under exposure level a. If there is another exposure $B$, the causal interaction effect on the difference scale would be quantified as $[Y(1,1) - Y(1,0)] - [Y(0,1) - Y(0,0)]$.
 
 Note that causal effect of interactions might differ on the ratio scale. For instance, the total causal effect on the ratio scale would be $Y(1) / Y(0)$, and the interaction effect would be $[Y(1,1) / Y(1,0)] / [Y(0,1) / Y(0,0)]$.
 
 
-#### **Effect Modification**
+#### **Causal interaction as effect modification**
 
 Effect modification models the effect the magnitude of of a single exposure on an outcome across different levels of another variable.
 
@@ -825,7 +829,7 @@ Note that there here, there is only one counterfactual outcome.
 
 
 
-### Common question 2: what if mediation is of interest?
+### Advice for causal mediation
 
 
 1. **No unmeasured exposure-outcome confounders given $L$**
@@ -886,21 +890,42 @@ These assumptions are fundamental for the identification of causal mediation eff
 
 ```
 
-### Common question 3: what if we have time series data with confounder-treatment feedback?
+### Advice for modelling repeated exposures in longitudinal data (confounder-treatment feedback)?
 
 
-Causal mediation is a special case in which we have multiple sequential exposures. We call these "time-varying" exposures. For example, consider two administration intervals after which one outcome is measured $A_{t1}, A_{t1}$. The counterfactual outcomes may be denoted $Y(a1,a2)$. There are four counterfactual outcomes corresponding to the "treatment regimes": 
+Causal mediation is a special case in which we have multiple sequential exposures.
 
-1. Always treat: Y(1,1)
-2. Never treat: Y(0,0)
-3. Treat once, first: Y(1,0)
-4. Treat once, second: Y(0,1)
+For example, consider temporally fixed multiple exposures. The counterfactual outcomes may be denoted $Y(a_{t1} ,a_{t2})$. There are four counterfactual outcomes corresponding to the four fixed "treatment regimes": 
+
+1. **Always treat (Y(1,1))**: This regime involves providing the treatment at every opportunity.
+
+2. **Never treat (Y(0,0))**: This regime involves abstaining from providing the treatment at any opportunity.
+
+3. **Treat once first (Y(1,0))**: This regime involves providing the treatment only at the first opportunity and not at subsequent one.
+
+4. **Treat once second (Y(0,1))**: This regime involves abstaining from providing the treatment at the first opportunity, but then providing it at the second one.
 
 
-To estimate the "effect" of a treatment regime, we must compare the counterfacutal quantities of interest. The same conditions that apply for causal identification apply for causal mediation. And notice, just as mediation opens the possibility of time-varying confounding (condition 4, in which the exposure effects the confounders of the mediator/outcome path), so too we find that with time-varying treatments comes the problem of time-varyign confounding. 
+There are six causal contrasts that we might compute.[^combine]
+
+1. **Always treat** vs. **Never treat**
+2. **Always treat** vs. **Treat once first**
+3. **Always treat** vs. **Treat once second**
+4. **Never treat** vs. **Treat once first**
+5. **Never treat** vs. **Treat once second**
+6. **Treat once first** vs. **Treat once second**
+[^combine]: We may compute the combination of contrasts by $C(n, r) = \frac{n!}{(n-r)! \cdot r!}$
 
 
-Suppose we are interested in the question of whether beliefs in big Gods affect social complexity. Suppose we have well-defined concept of social complexity and excellent measurements over time. Suppose we want to compare the effects of beliefs on big Gods on Social complexity using historical data measured over two centuries. Our question is whether the introduction and persistents of such beliefs differs from having no such beliefs. The treatment strategies are: "always believe in big Gods" versus "never believe in big Gods" on the level of social complexity. The a causal diagram illustrates two time points in our study the study. 
+We might also consider treatment to be a function of the previous outcome. For example, we might **Treat once first** and then **treat again** or **do not treat again** depending on the outcome of the previous treatment. This is called "time-varying treatment regimes." 
+
+
+Note that to estimate the "effect" of a treatment regime, we must compare the counterfactual quantities of interest. The same conditions that apply for causal identification in mediation analysis apply to causal idenification in multiple treatment settings. And notice, just as mediation opens the possibility of time-varying confounding (condition 4, in which the exposure effects the confounders of the mediator/outcome path), so too we find that with time-varying treatments comes the problem of time-varying confounding. Unlike traditional causal mediation analysis, the sequence of treatement regimes that we might consider is indefinitely long.
+
+
+Temporally organised causal diagrammes help us to discover the problems with traditional multi-level regression analysis and structural equation modelling. Suppose we are interested in the question of whether beliefs in big Gods affect social complexity. 
+
+First consider fixed regimes Suppose we have well-defined concept of social complexity and excellent measurements over time. Suppose we want to compare the effects of beliefs on big Gods on Social complexity using historical data measured over two centuries. Our question is whether the introduction and persistence of such beliefs differs from having no such beliefs. The treatment strategies are: "always believe in big Gods" versus "never believe in big Gods" on the level of social complexity. The a causal diagram illustrates two time points in our study the study. 
 
 Here, $A_{tx}$ represents the cultural belief in "big Gods" at time $x$, and $Y_{tx}$ is the outcome, social complexity, at time $x$. Economic trade, denoted as $L_{tx}$, is a time-varying confounder because it varies over time and confounds the effect of $A$ on $Y$ at several time points $x$. To complete our causal diagramme we include an unmeasured confounder $U$, such as geographical constraints, which might influence both the belief in "big Gods" and social complexity.
 
@@ -945,6 +970,8 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 \end{tikzpicture}
 ```
 
+More about SWIGS...
+
 
 
 ## Part 3. Applications
@@ -952,41 +979,26 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 ### On the benefits of three wave designs
 
 ```{tikz}
-
-#| label: fig-dag-1
-
+#| label: fig-dag-tw1
 #| fig-cap: "Common cause of exposure and outcome: example"
-
 #| out-width: 80%
-
 #| echo: false
 
 \usetikzlibrary{positioning}
-
 \usetikzlibrary{shapes.geometric}
 
 \usetikzlibrary{arrows}
-
 \usetikzlibrary{decorations}
-
 \tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-
 \tikzset{>=latex}
 
 \begin{tikzpicture}[{every node/.append style}=draw]
-
-\node [ellipse, draw=white] (L) at (0, 0) {t0/Male};
-
-\node [rectangle, draw=white] (A) at (4, 0) {t1/DoctorVisit};
-
-\node [rectangle, draw=white] (Y) at (8, 0) {t2/Heart Attack};
-
+\node [ellipse, draw=white] (L) at (0, 0) {Male$_{t0}$};
+\node [rectangle, draw=white] (A) at (4, 0) {Church Attendance$_{t0}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Charitable Donations$_{t2}$};
 \draw [-latex, draw=red, dashed] (A) to (Y);
-
 \draw [-latex, bend left, draw =black] (L) to (Y);
-
 \draw [-latex, black] (L) to (A);
-
 \end{tikzpicture}
 
 ```
@@ -994,50 +1006,34 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 ### Solution: Adjust for Confounder
 
 ```{tikz}
-
-#| label: fig-dag-2
-
+#| label: fig-dag-2dd
 #| fig-cap: "Solution to this problem."
-
 #| out-width: 80%
-
 #| echo: false
 
 \usetikzlibrary{positioning}
-
 \usetikzlibrary{shapes.geometric}
-
 \usetikzlibrary{arrows}
-
 \usetikzlibrary{decorations}
-
 \tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-
 \tikzset{>=latex}
 
 \begin{tikzpicture}[{every node/.append style}=draw]
-
 \node [rectangle, draw=black] (L) at (0, 0) {Male$_{t0}$};
-
-\node [ellipse, draw=white] (A) at (4, 0) {Church Attendance$_{t0}};
-
-\node [rectangle, draw=white] (Y) at (8, 0)  {Charitable Donations$_{t2}};
-
+\node [ellipse, draw=white] (A) at (4, 0) {Church Attendance$_{t0}$};
+\node [rectangle, draw=white] (Y) at (8, 0)  {Charitable Donations$_{t2}$};
 \draw [-latex, draw=white] (A) to (Y);
-
 \draw [-latex, bend left, draw =black] (L) to (Y);
-
 \draw [-latex, black] (L) to (A);
 
 \end{tikzpicture}
 
 ```
 
-### Bias: exposure at baseline is a common cause of the exposure at t1 and outcome at t2
+### Bias: exposure at time 0 is a common cause of the exposure at time 1 and the outcome at time 2
 
 ```{tikz}
-
-#| label: fig-dag-3
+#| label: fig-dag-3-dd
 #| fig-cap: "Causal graph reveals bias from pre-exosure indicator"
 #| out-width: 80%
 #| echo: false
@@ -1052,27 +1048,21 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 \tikzset{>=latex}
 
 \begin{tikzpicture}[{every node/.append style}=draw]
-
-\node [rectangle, draw=white] (L) at (0, 0) {Charitable Donations$_{t0}};
-
-\node [ellipse, draw=white] (A) at (4, 0) {Church Attendance$_{t0}};
-
-\node [rectangle, draw=white] (Y) at (8, 0) {Charitable Donations$_{t2}};
-
+\node [rectangle, draw=white] (L) at (0, 0) {Charitable Donations$_{t0}$};
+\node [ellipse, draw=white] (A) at (4, 0) {Church Attendance$_{t0}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Charitable Donations$_{t2}$};
 \draw [-latex, draw=red, dashed] (A) to (Y);
-
 \draw [-latex, bend left, draw =black] (L) to (Y);
-
 \draw [-latex, black] (L) to (A);
 
 \end{tikzpicture}
 
 ```
 
-### Solution: adjust for confounder at baseline
+### Advice: adjust for confounder at baseline
 
 ```{tikz}
-#| label: fig-dag-4
+#| label: fig-dag-4-dd
 #| fig-cap: "Solution to this problem"
 #| out-width: 80%
 #| echo: false
@@ -1086,9 +1076,9 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 
 \begin{tikzpicture}[{every node/.append style}=draw]
 
-\node [rectangle, draw=white, align=left] (L) at (0, 0) {Charitable Donations$_{t0}};
-\node [ellipse, draw=white] (A) at (4, 0) {Church Attendance$_{t0}};
-\node [rectangle, draw=white] (Y) at (8, 0) {Charitable Donations$_{t2}};
+\node [rectangle, draw=white, align=left] (L) at (0, 0) {Charitable Donations$_{t0}$};
+\node [ellipse, draw=white] (A) at (4, 0) {Church Attendance$_{t0}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Charitable Donations$_{t2}$};
 
 \draw [-latex, draw=red, dashed] (A) to (Y);
 \draw [-latex, bend left, draw =black] (L) to (Y);
@@ -1099,6 +1089,10 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 ```
 
 ### Confounding control by three-wave panel designs
+
+
+
+
 
 ```{tikz}
 #| label: fig-dag-6
@@ -1129,7 +1123,20 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 \end{tikzpicture}
 ```
 
+
+
+
 ## Part 4. Selection bias in the three wave panel design.
+
+#### Generalisability
+
+#### Transportability 
+
+
+#### Selection on Sample
+
+(Imagine a randomised trial ... )
+
 
 #### Unmeasured confounder affects selection and the outcome
 
@@ -1195,7 +1202,6 @@ What happens if we condition on the time-varying confounder $L_{t3}$. Two things
 \tikzstyle{cor} = [-, dotted, preaction = {decorate}]
 
 \begin{tikzpicture}[{every node/.append style}=draw]
-
 \node [rectangle, draw=white] (U) at (0, 0) {U};
 \node [rectangle, draw=black, align=left] (L) at (2, 0) {t0/L \\t0/A \\t0/Y};
 \node [rectangle, draw=white] (A) at (4, 0) {t1/A};
@@ -1840,14 +1846,10 @@ However, it's important to mention that the degree of this attenuation can depen
 \end{tikzpicture}
 ```
 
-
-
-
-
 ### How theory of dependent and directed measurement error might be usefully employed to develop a pragmatic responses to construct measurement
 
 ```{tikz}
-#| label: fig-dag-uu-null
+#| label: fig-dag-uu-null-2
 #| fig-cap: "Uncorrelated non-differential  measurement error does not bias estimates under the null. Note, however, we assume that L is measured with sufficient precision to block the path from A_eta --> L_eta --> Y_eta, which, otherwise, we would assume to be open."
 #| out-width: 100%
 #| echo: false
@@ -1914,8 +1916,9 @@ Notice: **where true unmeasured (multivariate) psycho-physical states are relate
 
 If for each measured construct $var_{f(X1, X2,\dots X_n)}$, the sources of error $U_{var}$ and the unmeasured consituents of reality that give rise to our measures $\eta_{var}$ are uncorrelated with other variables $U\prime_{var}$ and from $\eta\prime_{var}$ and $var\prime_{f(X1, X2,\dots X_n)}$, our estimates may be downwardly biased toward the null. However, d-separation is preserved. Where errors are uncorrelated with true latent realities, there is no new pathway that opens information between our exposure and outcome. Consider the relations presented in @fig-dag-dep-udir-effect-confounders-3wave
 
+
 ```{tikz}
-#| label: fig-dag-dep-udir-effect-confounders-3wave
+#| label: fig-dag-dep-udir-effect-confounders-3wave22
 #| fig-cap: "Measurement error opens an additional pathway to confounding if either there are correlated errors, or a directed effect of the exposure on the errors of measured outcome."
 #| out-width: 100%
 #| echo: false
@@ -1923,9 +1926,6 @@ If for each measured construct $var_{f(X1, X2,\dots X_n)}$, the sources of error
 \usetikzlibrary{shapes.geometric}
 \usetikzlibrary{arrows}
 \usetikzlibrary{decorations}
-
-
-
 \tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
 \tikzset{>=latex}
 
@@ -1968,14 +1968,7 @@ If for each measured construct $var_{f(X1, X2,\dots X_n)}$, the sources of error
 \draw [-latex, draw=red] (Aeta1) to (UY);
 \draw [-latex, draw=red] (Leta0) to (UA);
 
-
-
-
-
 %\draw [-latex, draw=black] (Leta0) to (UA);
-
-
-
 \draw [cor, draw=red, dashed,bend right=80] (ULAY) to (Leta0);
 \draw [cor, draw=red, dashed, bend right = 80] (UA) to (Aeta1);
 \draw [cor, draw=red, dashed, bend left = 80] (UY) to (Yeta2);
@@ -2072,7 +2065,7 @@ $\eta_A \rightarrow U_{Y}$ and $\eta_L \rightarrow U_{A}$: These relationships i
 
 ### Comment on slow changes
 
-Over long periods of time we can expect additional sources of confounding. Changes in cultural norms and attitudes can occur over the duration of a longitudinal study like the NZAVS, leading to residual confounding. For example, if there is a cultural shift towards increased acceptance of mental health issues, this might change how psychological distress is reported over time, irrespective of baseline responses.
+Over long periods of time we can expect additional sources of confounding. Changes in cultural norms and attitudes can occur over the duration of a longitudinal study, leading to residual confounding. For example, if there is a cultural shift towards increased acceptance of mental health issues, this might change how psychological distress is reported over time, irrespective of baseline responses.
 
 <!-- It's also important to consider that cultural influences might not be entirely captured by the survey. Factors such as societal expectations, shared beliefs, and norms within a culture could influence both exercise behaviour and distress states. These could change over time due to sociocultural shifts, and if these changes aren't accounted for, could lead to residual confounding. For example, a societal shift towards valuing physical health might encourage more exercise independently of baseline responses -->
 
@@ -2106,13 +2099,18 @@ Over long periods of time we can expect additional sources of confounding. Chang
 4.  We may distinguish between effect modification and interaction.
 
 ### ELSE (for conclusion) 
-    -   No multi-level models
-    -   Good measures
-    -   Retention
-    -   Check positivity -- how many change.
-    -  (causation not all of science)
-    -  (need for assumpitions)
-    -  Causal estimation is not all of science. And it is not all of causality.
+  -  Where possible do experiments, but we cannot always perform experiments  
+  -   No multi-level models
+  -   Good measures
+  -   Retention
+  -   Check positivity -- how many change.
+  -  (causation not all of science)
+  -  (need for assumpitions)
+  -  Causal estimation is not all of science. And it is not all of causality.
+  -  Curse of dimensionality
+  -  Tracking change
+    
+    
 
 ## Appendix 1: Review of the theory of multiple versions of treatment
 
