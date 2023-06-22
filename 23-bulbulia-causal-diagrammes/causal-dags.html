@@ -551,14 +551,14 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <li><p><strong>Treat once first (Y(1,0))</strong>: This regime involves providing the treatment only at the first opportunity and not at subsequent one.</p></li>
 <li><p><strong>Treat once second (Y(0,1))</strong>: This regime involves abstaining from providing the treatment at the first opportunity, but then providing it at the second one.</p></li>
 </ol>
-<p>There are six causal contrasts that we might compute.[^combine]</p>
+<p>There are six causal contrasts that we might compute.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
 <ol type="1">
 <li><strong>Always treat</strong> vs.&nbsp;<strong>Never treat</strong></li>
 <li><strong>Always treat</strong> vs.&nbsp;<strong>Treat once first</strong></li>
 <li><strong>Always treat</strong> vs.&nbsp;<strong>Treat once second</strong></li>
 <li><strong>Never treat</strong> vs.&nbsp;<strong>Treat once first</strong></li>
 <li><strong>Never treat</strong> vs.&nbsp;<strong>Treat once second</strong></li>
-<li><strong>Treat once first</strong> vs.&nbsp;<strong>Treat once second</strong> [^combine]: We may compute the combination of contrasts by <span class="math inline">\(C(n, r) = \frac{n!}{(n-r)! \cdot r!}\)</span></li>
+<li><strong>Treat once first</strong> vs.&nbsp;<strong>Treat once second</strong></li>
 </ol>
 <p>We might also consider treatment to be a function of the previous outcome. For example, we might <strong>Treat once first</strong> and then <strong>treat again</strong> or <strong>do not treat again</strong> depending on the outcome of the previous treatment. This is called “time-varying treatment regimes.”</p>
 <p>Note that to estimate the “effect” of a treatment regime, we must compare the counterfactual quantities of interest. The same conditions that apply for causal identification in mediation analysis apply to causal idenification in multiple treatment settings. And notice, just as mediation opens the possibility of time-varying confounding (condition 4, in which the exposure effects the confounders of the mediator/outcome path), so too we find that with time-varying treatments comes the problem of time-varying confounding. Unlike traditional causal mediation analysis, the sequence of treatement regimes that we might consider is indefinitely long.</p>
@@ -566,17 +566,29 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <p>First consider fixed regimes Suppose we have well-defined concept of social complexity and excellent measurements over time. Suppose we want to compare the effects of beliefs on big Gods on Social complexity using historical data measured over two centuries. Our question is whether the introduction and persistence of such beliefs differs from having no such beliefs. The treatment strategies are: “always believe in big Gods” versus “never believe in big Gods” on the level of social complexity. The a causal diagram illustrates two time points in our study the study.</p>
 <p>Here, <span class="math inline">\(A_{tx}\)</span> represents the cultural belief in “big Gods” at time <span class="math inline">\(x\)</span>, and <span class="math inline">\(Y_{tx}\)</span> is the outcome, social complexity, at time <span class="math inline">\(x\)</span>. Economic trade, denoted as <span class="math inline">\(L_{tx}\)</span>, is a time-varying confounder because it varies over time and confounds the effect of <span class="math inline">\(A\)</span> on <span class="math inline">\(Y\)</span> at several time points <span class="math inline">\(x\)</span>. To complete our causal diagramme we include an unmeasured confounder <span class="math inline">\(U\)</span>, such as geographical constraints, which might influence both the belief in “big Gods” and social complexity.</p>
 <p>We know that the level of economic trade at time <span class="math inline">\(0\)</span>, <span class="math inline">\(L_{t0}\)</span>, influences the belief in “big Gods” at time <span class="math inline">\(1\)</span>, <span class="math inline">\(A_{t1}\)</span>. We therefore draw an arrow from <span class="math inline">\(L_{t0}\)</span> to <span class="math inline">\(A_{t1}\)</span>. But we also know that the belief in “big Gods”, <span class="math inline">\(A_{t1}\)</span>, affects the future level of economic trade, <span class="math inline">\(L_{t(2)}\)</span>. This means that we need to add an arrow from <span class="math inline">\(A_{t1}\)</span> to <span class="math inline">\(L_{t(2)}\)</span>. This causal graph represents a feedback process between the time-varying exposure <span class="math inline">\(A\)</span> and the time-varying confounder <span class="math inline">\(L\)</span>. This is the simplest graph with exposure-confounder feedback. In real world setting there could be arrows. However, our DAG however need show the minimum number of arrows to exhibit the problem of exposure-confounder feedback.</p>
-<p>What happens if we condition on the time-varying confounder <span class="math inline">\(L_{t3}\)</span>. Two things occur. First, we block all the backdoor paths between the exposure <span class="math inline">\(A_{t2}\)</span> and the outcome. We need to block those paths to eliminate confounding. Therefore, condition on the time-varying confounding would appear to be essential. Second, paths that were previously blocked are now open. For example, the path <span class="math inline">\(A_{t1}\)</span>, L_{t2}, U, Y_{t(4)}$, which was previous closed is opened because the time varying confounder is the common effect of <span class="math inline">\(A_{t1}\)</span> and <span class="math inline">\(U\)</span>. Conditioning opens the path <span class="math inline">\(A_{t1}, L_{t2}, U, Y_{3}\)</span>. The same problem occurs if the time-varying exposure and time-varying confounder share a common cause (without the exposure affecting the confounder). And the problem is only more entrenched when the exposures <span class="math inline">\(A_{t1}\)</span> affects the outcome <span class="math inline">\(Y_{t4}\)</span>. Because <span class="math inline">\(L_{t2}\)</span> is along the path from <span class="math inline">\(A_{t1}\)</span> to <span class="math inline">\(Y_{t4}\)</span> conditioning on <span class="math inline">\(L_{t2}\)</span> partially blocks the path between the exposure and the outcome. Conditioning on <span class="math inline">\(L_{t2}\)</span> in this setting induces both collider stratification bias and mediator bias. Yet we must conditoin on <span class="math inline">\(L_{t2}\)</span> to block the open backdoor path between <span class="math inline">\(L_{t2}\)</span> and <span class="math inline">\(Y_{t4}\)</span>. The general problem of xposure-confounder feedback is described in detail in <span class="citation" data-cites="hernan2023">(<a href="#ref-hernan2023" role="doc-biblioref">Hernan and Robins 2023</a>)</span>. This problem presents a serious issue for cultural evolutionary studies. The bad news is that nearly traditional regresion based methods cannot address this problem. The good new is that</p>
+<p>What happens if we condition on the time-varying confounder <span class="math inline">\(L_{t3}\)</span>? Two things occur. First, we block all the backdoor paths between the exposure <span class="math inline">\(A_{t2}\)</span> and the outcome. We need to block those paths to eliminate confounding. Therefore, conditioning on the time-varying confounding is essential. However, paths that were previously blocked are now open. For example, the path <span class="math inline">\(A_{t1}, L_{t2}, U, Y_{t(4)}\)</span>, which was previous closed is opened because the time varying confounder is the common effect of <span class="math inline">\(A_{t1}\)</span> and <span class="math inline">\(U\)</span>. Conditioning opens the path <span class="math inline">\(A_{t1}, L_{t2}, U, Y_{3}\)</span>. Therefore we must avoid conditioning on the time varying confounder. Damned either way.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-dag-9" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="causal-dags_files/figure-html/fig-dag-9-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;14: Exposure confounder feedback is a problem for time-series models. Unfortunately, this problem cannot be addressed with regression-based methods, whatever the combination of Bayesian, multi-level, and phylogentic sophistication. We may only estimate controlled (simulated) effects in these setting using G-methods. Currently, outside of epidemiology, g-methods are rarely used.</figcaption>
+<p><img src="causal-dags_files/figure-html/fig-dag-9-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption class="figure-caption">Figure&nbsp;14: Exposure confounder feedback is a problem for time-series models. If we do not condition on L_t2, a backdoor path is open from A_t3 to Y_t4. However, if conditioning on L_t2 introduces collider bias, opening a path, coloured red, between A_t2 and Y_t4. Here, we may not use conventional methods to estimate the effects of multiple exposures. Instead, at best, we may only simulate controlled effects using G-methods. Multi-level models will eliminate bias. Currently, outside of epidemiology, G-methods are rarely used.</figcaption>
 </figure>
 </div>
 </div>
 </div>
+<p>The same problem occurs if the time-varying exposure and time-varying confounder share a common cause (without the exposure affecting the confounder).</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-dag-time-vary-common-cause-A1-l1" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="causal-dags_files/figure-html/fig-dag-time-vary-common-cause-A1-l1-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption class="figure-caption">Figure&nbsp;15: Exposure confounder feedback is a problem for time-series models. Here, the problem arises from an unmeasured variable (U2) that affects both the exposure A at time 1 and the counfounder L at time 2. The red line shows the back door path that is opened when we condition on the L at time 2. Again, this problem cannot be addressed with regression-based methods. In this setting we may only use simulation based G-methods.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>And the problem is only more entrenched when the exposures <span class="math inline">\(A_{t1}\)</span> affects the outcome <span class="math inline">\(Y_{t4}\)</span>. Because <span class="math inline">\(L_{t2}\)</span> is along the path from <span class="math inline">\(A_{t1}\)</span> to <span class="math inline">\(Y_{t4}\)</span> conditioning on <span class="math inline">\(L_{t2}\)</span> partially blocks the path between the exposure and the outcome. Conditioning on <span class="math inline">\(L_{t2}\)</span> in this setting induces both collider stratification bias and mediator bias. Yet we must conditoin on <span class="math inline">\(L_{t2}\)</span> to block the open backdoor path between <span class="math inline">\(L_{t2}\)</span> and <span class="math inline">\(Y_{t4}\)</span>. The general problem of xposure-confounder feedback is described in detail in <span class="citation" data-cites="hernan2023">(<a href="#ref-hernan2023" role="doc-biblioref">Hernan and Robins 2023</a>)</span>. This problem presents a serious issue for cultural evolutionary studies. The bad news is that nearly traditional regresion based methods cannot address this problem. The good new is that</p>
 <p>More about SWIGS…</p>
 </section>
 </section>
@@ -589,7 +601,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-tw1" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-tw1-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;15: Common cause of exposure and outcome: example</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;16: Common cause of exposure and outcome: example</figcaption>
 </figure>
 </div>
 </div>
@@ -602,7 +614,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-2dd" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-2dd-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;16: Solution to this problem.</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;17: Solution to this problem.</figcaption>
 </figure>
 </div>
 </div>
@@ -615,7 +627,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-3-dd" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-3-dd-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;17: Causal graph reveals bias from pre-exosure indicator</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;18: Causal graph reveals bias from pre-exosure indicator</figcaption>
 </figure>
 </div>
 </div>
@@ -628,7 +640,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-4-dd" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-4-dd-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;18: Solution to this problem</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;19: Solution to this problem</figcaption>
 </figure>
 </div>
 </div>
@@ -641,7 +653,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-6" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-6-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;19: Causal graph: three-wave panel design</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;20: Causal graph: three-wave panel design</figcaption>
 </figure>
 </div>
 </div>
@@ -667,7 +679,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-8" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-8-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;20: Causal graph: three-wave panel design with selection bias</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;21: Causal graph: three-wave panel design with selection bias</figcaption>
 </figure>
 </div>
 </div>
@@ -680,7 +692,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-8-2" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-8-2-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;21: Causal graph: three-wave panel design with selection bias: example 2</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;22: Causal graph: three-wave panel design with selection bias: example 2</figcaption>
 </figure>
 </div>
 </div>
@@ -693,7 +705,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-8-4" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-8-4-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;22: Causal graph: three-wave panel design with selection bias: selection into the study (D) affects attrition</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;23: Causal graph: three-wave panel design with selection bias: selection into the study (D) affects attrition</figcaption>
 </figure>
 </div>
 </div>
@@ -706,7 +718,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-8-5" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-8-5-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;23: Causal graph:outcome and exposure affect attrition (Y measured with directed measurement error)</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;24: Causal graph:outcome and exposure affect attrition (Y measured with directed measurement error)</figcaption>
 </figure>
 </div>
 </div>
@@ -719,7 +731,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-directed-measurement-error" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-directed-measurement-error-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;24: TBA</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;25: TBA</figcaption>
 </figure>
 </div>
 </div>
@@ -730,7 +742,6 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <h2 class="anchored" data-anchor-id="part-5.-measurement-and-confounding-in-the-three-wave-panel-design.">Part 5. Measurement and confounding in the three wave panel design.</h2>
 <section id="undirected-uncorrellated-measurement-error-under-the-null" class="level3">
 <h3 class="anchored" data-anchor-id="undirected-uncorrellated-measurement-error-under-the-null">Undirected uncorrellated measurement error under the null</h3>
-<p>Sure, I’d be happy to elaborate more on these concepts:</p>
 <ol type="1">
 <li><p><strong>Non-Differential Measurement Error:</strong> This type of error is unrelated to the levels of the exposure or outcome. Simply put, the inaccuracies in measuring the exposure or outcome don’t depend on the actual levels of these variables. It’s “non-differential” because the errors do not “differ” based on the level of exposure or outcome. This means that they are just as likely to overestimate as they are to underestimate the true values.</p></li>
 <li><p><strong>Uncorrelated Measurement Error:</strong> Uncorrelated (or non-dependent) measurement error refers to a situation where the measurement errors of the exposure and the outcome are not related to each other. That is, a mistake in measuring the exposure doesn’t predict a mistake in measuring the outcome, and vice versa.</p></li>
@@ -743,7 +754,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-uu-null" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-uu-null-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;25: Uncorrelated non-differential measurement error does not bias estimates under the null.</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;26: Uncorrelated non-differential measurement error does not bias estimates under the null.</figcaption>
 </figure>
 </div>
 </div>
@@ -756,13 +767,13 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-uu-effect" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-uu-effect-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;26: Uncorrelated undirected measurement error can dilute the estimates of true effects</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;27: Uncorrelated undirected measurement error can dilute the estimates of true effects</figcaption>
 </figure>
 </div>
 </div>
 </div>
 <p>If there is a true effect of the exposure on the outcome, non-differential measurement error in both the exposure and the outcome can lead to an attenuation of the effect estimate. This phenomenon is often referred to as “regression dilution bias” or “attenuation bias”.</p>
-<p>Let’s take a moment to understand these concepts. Non-differential measurement error refers to the situation where the measurement error does not differ based on the level of exposure or the outcome. It’s called “non-differential” because the degree of error doesn’t “differ” based on these factors.</p>
+<p>Take a moment to understand these concepts. Non-differential measurement error refers to the situation where the measurement error does not differ based on the level of exposure or the outcome. It’s called “non-differential” because the degree of error doesn’t “differ” based on these factors.</p>
 <p>When it comes to independent non-differential measurement error, it means that the errors in the measurements of exposure and outcome are uncorrelated with each other, and they don’t depend on the true values of exposure and outcome.</p>
 <p>Now, if there’s a true effect of the exposure on the outcome, the presence of measurement error in both variables can lead to attenuation bias, because the effect size is underestimated due to the ‘noise’ introduced by these errors.</p>
 <p>When you measure the exposure or outcome with error, the variability of these variables increases, thus the signal (i.e., the true relationship) gets ‘diluted’ in the increased ‘noise’. This can lead to an underestimation of the true effect size.</p>
@@ -776,7 +787,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-dep-u-effect" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-dep-u-effect-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;27: Uncorrelated undirected measurement error can dilute the estimates of true effects</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;28: Uncorrelated undirected measurement error can dilute the estimates of true effects</figcaption>
 </figure>
 </div>
 </div>
@@ -789,7 +800,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-indep-d-effect" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-indep-d-effect-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;28: Directed independent (uncorrelated) measurement error biases effect estimates</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;29: Directed independent (uncorrelated) measurement error biases effect estimates</figcaption>
 </figure>
 </div>
 </div>
@@ -802,7 +813,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-d-d" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-d-d-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;29: Directed independent (uncorrelated) measurement error biases effect estimates</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;30: Directed independent (uncorrelated) measurement error biases effect estimates</figcaption>
 </figure>
 </div>
 </div>
@@ -815,7 +826,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-uu-effect-confounders" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-uu-effect-confounders-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;30: TBA</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;31: TBA</figcaption>
 </figure>
 </div>
 </div>
@@ -870,7 +881,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-dep-undir-effect-confounders-3wave" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-dep-undir-effect-confounders-3wave-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;31: TBA</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;32: TBA</figcaption>
 </figure>
 </div>
 </div>
@@ -883,7 +894,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-dep-udir-effect-confounders-3wave" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-dep-udir-effect-confounders-3wave-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;32: TBA</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;33: TBA</figcaption>
 </figure>
 </div>
 </div>
@@ -896,26 +907,26 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-uu-null-2" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-uu-null-2-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;33: Uncorrelated non-differential measurement error does not bias estimates under the null. Note, however, we assume that L is measured with sufficient precision to block the path from A_eta –&gt; L_eta –&gt; Y_eta, which, otherwise, we would assume to be open.</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;34: Uncorrelated non-differential measurement error does not bias estimates under the null. Note, however, we assume that L is measured with sufficient precision to block the path from A_eta –&gt; L_eta –&gt; Y_eta, which, otherwise, we would assume to be open.</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Consider a study that seeks to use this dataset to investigate the effect of regular exercise on psychological distress. In contrast to previous graphs, let us allow for latent reality to affect our measurements, as well as the discrepencies between our measurements and true underlying reality. We shall use <a href="#fig-dag-uu-null">Figure&nbsp;25</a> as our initial guide.</p>
+<p>Consider a study that seeks to use this dataset to investigate the effect of regular exercise on psychological distress. In contrast to previous graphs, let us allow for latent reality to affect our measurements, as well as the discrepencies between our measurements and true underlying reality. We shall use <a href="#fig-dag-uu-null">Figure&nbsp;26</a> as our initial guide.</p>
 <p>We represent the true exercise by <span class="math inline">\(\eta_A\)</span>. We represent true psychological distress by <span class="math inline">\(\eta_Y\)</span>. Let <span class="math inline">\(\eta_L\)</span> denote a persons true workload, and assume that this state of work affects both levels of excercise and psychological distress.</p>
 <p>To bring the model into contact with measurement theory, Let us describe measurements of these latent true underlying realities as functions of multiple indicators: <span class="math inline">\(L_{f(X_1\dots X_n)}\)</span>, <span class="math inline">\(A_{f(X_1\dots X_n)}\)</span>, and <span class="math inline">\(Y_{f(X_1\dots X_n)}\)</span>. These constructs are measured realisations of the underlying true states. We assume that the true states of these variables affect their corresponding measured states, and so draw arrows from <span class="math inline">\(\eta_L\rightarrow{L_{f(X_1\dots X_n)}}\)</span>, <span class="math inline">\(\eta_A\rightarrow{A_{f(X_1\dots X_n)}}\)</span>, <span class="math inline">\(\eta_Y\rightarrow{Y_{f(X_1\dots X_n)}}\)</span>.</p>
 <p>We also assume unmeasured sources of error that affect the measurements: <span class="math inline">\(U_{L} \rightarrow\)</span> <span class="math inline">\(L_{f(X_1\dots X_n)}\)</span>, <span class="math inline">\(U_{A} \rightarrow\)</span> <span class="math inline">\(A_{f(X_1\dots X_n)}\)</span>, and <span class="math inline">\(U_{Y} \rightarrow\)</span> <span class="math inline">\(Y_{f(X_1\dots X_n)}\)</span>. That is, we allow that our measured indicators may “see as through a mirror, in darkness,” the underlying true reality they hope to capture (Corinthians 13:12). We use <span class="math inline">\(U_{L}\)</span>, <span class="math inline">\(U_{A}\)</span> and <span class="math inline">\(U_{Y}\)</span> to denote the unmeasured sources of error in the measured indicators. These are the unknown, and perhaps unknowable, darkness and mirror.</p>
 <p>Allow that the true underlying reality represented by the <span class="math inline">\(\eta_{var}\)</span> may be multivariate. Similarly, allow the true underlying reality represented by <span class="math inline">\(U_{var}\)</span> is multivariate.</p>
-<p>We now have a causal diagramme that more precisely captures VanderWeele’s thinking as presented in <a href="#fig-dag-multivariate-reality-complete">Figure&nbsp;44</a>. In our <a href="#fig-dag-uu-null">Figure&nbsp;25</a>, we have fleshed out <span class="math inline">\(\mathcal{R}\)</span> in a way that may include natural language concepts and scientific language, or constructs, as latent realities and latent unmeasured sources of error in our constructs.</p>
+<p>We now have a causal diagramme that more precisely captures VanderWeele’s thinking as presented in <a href="#fig-dag-multivariate-reality-complete">Figure&nbsp;45</a>. In our <a href="#fig-dag-uu-null">Figure&nbsp;26</a>, we have fleshed out <span class="math inline">\(\mathcal{R}\)</span> in a way that may include natural language concepts and scientific language, or constructs, as latent realities and latent unmeasured sources of error in our constructs.</p>
 <p>The utility of describing the measurement dynamics using causal graphs is apparrent. We can understand that the measured states, once conditioned upon create <em>collider biases</em> which opens path between the unmeasured sources of error and the true underlying state that gives rise to our measurements. This is depicted by a the arrows <span class="math inline">\(U_{var}\)</span> and from <span class="math inline">\(\eta_{var}\)</span> into each <span class="math inline">\(var_{f(X1, X2,\dots X_n)}\)</span></p>
 <p>Notice: <strong>where true unmeasured (multivariate) psycho-physical states are related to true unmeasured (multivariate) sources of error in the measurement of those states, the very act of measurement opens pathways to confounding.</strong></p>
-<p>If for each measured construct <span class="math inline">\(var_{f(X1, X2,\dots X_n)}\)</span>, the sources of error <span class="math inline">\(U_{var}\)</span> and the unmeasured consituents of reality that give rise to our measures <span class="math inline">\(\eta_{var}\)</span> are uncorrelated with other variables <span class="math inline">\(U\prime_{var}\)</span> and from <span class="math inline">\(\eta\prime_{var}\)</span> and <span class="math inline">\(var\prime_{f(X1, X2,\dots X_n)}\)</span>, our estimates may be downwardly biased toward the null. However, d-separation is preserved. Where errors are uncorrelated with true latent realities, there is no new pathway that opens information between our exposure and outcome. Consider the relations presented in <a href="#fig-dag-dep-udir-effect-confounders-3wave">Figure&nbsp;32</a></p>
+<p>If for each measured construct <span class="math inline">\(var_{f(X1, X2,\dots X_n)}\)</span>, the sources of error <span class="math inline">\(U_{var}\)</span> and the unmeasured consituents of reality that give rise to our measures <span class="math inline">\(\eta_{var}\)</span> are uncorrelated with other variables <span class="math inline">\(U\prime_{var}\)</span> and from <span class="math inline">\(\eta\prime_{var}\)</span> and <span class="math inline">\(var\prime_{f(X1, X2,\dots X_n)}\)</span>, our estimates may be downwardly biased toward the null. However, d-separation is preserved. Where errors are uncorrelated with true latent realities, there is no new pathway that opens information between our exposure and outcome. Consider the relations presented in <a href="#fig-dag-dep-udir-effect-confounders-3wave">Figure&nbsp;33</a></p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-dag-dep-udir-effect-confounders-3wave22" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-dep-udir-effect-confounders-3wave22-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;34: Measurement error opens an additional pathway to confounding if either there are correlated errors, or a directed effect of the exposure on the errors of measured outcome.</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;35: Measurement error opens an additional pathway to confounding if either there are correlated errors, or a directed effect of the exposure on the errors of measured outcome.</figcaption>
 </figure>
 </div>
 </div>
@@ -945,7 +956,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-dep-udir-effect-confounders-3wave-new" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-dep-udir-effect-confounders-3wave-new-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;35: TBA</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;36: TBA</figcaption>
 </figure>
 </div>
 </div>
@@ -1028,7 +1039,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-multiple-version-treatment-applied-measurement" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-multiple-version-treatment-applied-measurement-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;36: Multiple Versions of treatment applied to measuremen.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;37: Multiple Versions of treatment applied to measuremen.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
@@ -1040,17 +1051,17 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <p>In psychometric research, formative and reflective models describe the relationship between latent variables and their respective indicators.</p>
 <section id="reflective-model-factor-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="reflective-model-factor-analysis">Reflective Model (Factor Analysis)</h3>
-<p>In a reflective measurement model, also known as an effect indicator model, the latent variable is understood to cause the observed variables. In this model, changes in the latent variable cause changes in the observed variables. Each indicator (observed variable) is a ‘reflection’ of the latent variable. In other words, they are effects or manifestations of the latent variable. These relations are presented in <a href="#fig-dag-latent-1">Figure&nbsp;37</a>.</p>
+<p>In a reflective measurement model, also known as an effect indicator model, the latent variable is understood to cause the observed variables. In this model, changes in the latent variable cause changes in the observed variables. Each indicator (observed variable) is a ‘reflection’ of the latent variable. In other words, they are effects or manifestations of the latent variable. These relations are presented in <a href="#fig-dag-latent-1">Figure&nbsp;38</a>.</p>
 <p>The reflective model may be expressed:</p>
 <p><span class="math display">\[X_i = \lambda_i \eta + \varepsilon_i\]</span></p>
 <p>Here, <span class="math inline">\(X_i\)</span> is an observed variable (indicator), <span class="math inline">\(\lambda_i\)</span> is the factor loading for <span class="math inline">\(X_i\)</span>, <span class="math inline">\(\eta\)</span> is the latent variable, and <span class="math inline">\(\varepsilon_i\)</span> is the error term associated with <span class="math inline">\(X_i\)</span>. It is assumed that all the indicators are interchangeable and have a common cause, which is the latent variable <span class="math inline">\(\eta\)</span>.</p>
-<p>In the conventional approach of factor analysis, the assumption is that a common latent variable is responsible for the correlation seen among the indicators. Thus, any fluctuation in the latent variable should immediately lead to similar changes in the indicators.These assumptions are presented in <a href="#fig-dag-latent-1">Figure&nbsp;37</a>.</p>
+<p>In the conventional approach of factor analysis, the assumption is that a common latent variable is responsible for the correlation seen among the indicators. Thus, any fluctuation in the latent variable should immediately lead to similar changes in the indicators.These assumptions are presented in <a href="#fig-dag-latent-1">Figure&nbsp;38</a>.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-dag-latent-1" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-latent-1-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;37: Reflective model: assume univariate latent variable η giving rise to indicators X1…X3. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;38: Reflective model: assume univariate latent variable η giving rise to indicators X1…X3. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
@@ -1058,7 +1069,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 </section>
 <section id="the-formative-model-factor-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="the-formative-model-factor-analysis">The Formative Model (Factor Analysis)</h3>
-<p>In a formative measurement model, the observed variables are seen as causing or determining the latent variable. Here again, there is a single latent variable. However this latent variable is taken to be an effect of the underlying indicators. These relations are presented in <a href="#fig-dag-latent-formative_0">Figure&nbsp;38</a>.</p>
+<p>In a formative measurement model, the observed variables are seen as causing or determining the latent variable. Here again, there is a single latent variable. However this latent variable is taken to be an effect of the underlying indicators. These relations are presented in <a href="#fig-dag-latent-formative_0">Figure&nbsp;39</a>.</p>
 <p>The formative model may be expressed:</p>
 <p><span class="math display">\[\eta = \sum_i\lambda_i X_i + \varepsilon\]</span></p>
 <p>In this equation, <span class="math inline">\(\eta\)</span> is the latent variable, <span class="math inline">\(\lambda_i\)</span> is the weight for <span class="math inline">\(X_i\)</span> (the observed variable), and <span class="math inline">\(\varepsilon\)</span> is the error term. The latent variable <span class="math inline">\(\eta\)</span> is a composite of the observed variables <span class="math inline">\(X_i\)</span>.</p>
@@ -1068,7 +1079,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-latent-formative_0" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-latent-formative_0-1.png" class="img-fluid figure-img" style="width:80.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;38: Formative model:: assume univariate latent variable from which the indicators X1…X3 give rise. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;39: Formative model:: assume univariate latent variable from which the indicators X1…X3 give rise. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
@@ -1084,16 +1095,16 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <p>VanderWeele distinguishes between statistical and structural interpretations of the equations preesented above.</p>
 <ol type="1">
 <li><p><strong>Statistical Model:</strong> a mathematical construct that shows how observable variables, also known as indicators, are related to latent or unseen variables. These are presented in the equations above</p></li>
-<li><p><strong>Structural Model:</strong> A structural model refers to the causal assumptions or hypotheses about the relationships among variables in a statistical model. The assumptions of the factor analytic tradition are presented in <a href="#fig-dag-latent-formative_0">Figure&nbsp;38</a> and <a href="#fig-dag-latent-1">Figure&nbsp;37</a> are structural models.</p></li>
+<li><p><strong>Structural Model:</strong> A structural model refers to the causal assumptions or hypotheses about the relationships among variables in a statistical model. The assumptions of the factor analytic tradition are presented in <a href="#fig-dag-latent-formative_0">Figure&nbsp;39</a> and <a href="#fig-dag-latent-1">Figure&nbsp;38</a> are structural models.</p></li>
 </ol>
-<p>We have seen that the <strong>reflective model</strong> statistically implies that the observed variables (indicators) are reflections or manifestations of the latent variable, expressed as <span class="math inline">\(X_i = \lambda_i \eta + \varepsilon_i\)</span>. However, the factor analytic tradition makes the additional structural assumption that a univariate latent variable is causally efficacious and influences the observed variables, as in: <a href="#fig-structural-assumptions-reflective-model">Figure&nbsp;39</a>.</p>
-<p>We have also seen that the <strong>formative model</strong> statistically implies that the latent variable is formed or influenced by the observed variables, expressed as <span class="math inline">\(\eta = \sum_i\lambda_i X_i + \varepsilon\)</span>. However, the factor analytic tradition makes the additional assumption that the observed variables give rise to a univariate latent variable, as in <a href="#fig-dag-reflective-assumptions_note">Figure&nbsp;40</a>.</p>
+<p>We have seen that the <strong>reflective model</strong> statistically implies that the observed variables (indicators) are reflections or manifestations of the latent variable, expressed as <span class="math inline">\(X_i = \lambda_i \eta + \varepsilon_i\)</span>. However, the factor analytic tradition makes the additional structural assumption that a univariate latent variable is causally efficacious and influences the observed variables, as in: <a href="#fig-structural-assumptions-reflective-model">Figure&nbsp;40</a>.</p>
+<p>We have also seen that the <strong>formative model</strong> statistically implies that the latent variable is formed or influenced by the observed variables, expressed as <span class="math inline">\(\eta = \sum_i\lambda_i X_i + \varepsilon\)</span>. However, the factor analytic tradition makes the additional assumption that the observed variables give rise to a univariate latent variable, as in <a href="#fig-dag-reflective-assumptions_note">Figure&nbsp;41</a>.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-structural-assumptions-reflective-model" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-structural-assumptions-reflective-model-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;39: Reflective Model: causal assumptions. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;40: Reflective Model: causal assumptions. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
@@ -1103,25 +1114,25 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-reflective-assumptions_note" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-reflective-assumptions_note-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;40: Formative model: causal assumptions. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;41: Formative model: causal assumptions. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>The reflective model implies <span class="math inline">\(X_i = \lambda_i \eta + \varepsilon_i\)</span>, which factor analysts take to imply <a href="#fig-structural-assumptions-reflective-model">Figure&nbsp;39</a>.</p>
-<p>The formative model implies <span class="math inline">\(\eta = \sum_i\lambda_i X_i + \varepsilon\)</span>, which factor analysts take to imply <a href="#fig-dag-reflective-assumptions_note">Figure&nbsp;40</a>.</p>
+<p>The reflective model implies <span class="math inline">\(X_i = \lambda_i \eta + \varepsilon_i\)</span>, which factor analysts take to imply <a href="#fig-structural-assumptions-reflective-model">Figure&nbsp;40</a>.</p>
+<p>The formative model implies <span class="math inline">\(\eta = \sum_i\lambda_i X_i + \varepsilon\)</span>, which factor analysts take to imply <a href="#fig-dag-reflective-assumptions_note">Figure&nbsp;41</a>.</p>
 </section>
 <section id="problems-with-the-structural-interpretations-of-the-reflective-and-formative-factor-models." class="level2">
 <h2 class="anchored" data-anchor-id="problems-with-the-structural-interpretations-of-the-reflective-and-formative-factor-models.">Problems with the structural interpretations of the reflective and formative factor models.</h2>
-<p>While the statistical model <span class="math inline">\(X_i = \lambda_i \eta + \varepsilon_i\)</span> aligns with <a href="#fig-structural-assumptions-reflective-model">Figure&nbsp;39</a>, it also alings with <a href="#fig-dag-formative-assumptions-compatible">Figure&nbsp;41</a>. Cross-sectional data, unfortunately, do not provide enough information to discern between these different structural interpretations.</p>
-<p>Similarly, the statistical model <span class="math inline">\(\eta = \sum_i\lambda_i X_i + \varepsilon\)</span> agrees with <a href="#fig-dag-reflective-assumptions_note">Figure&nbsp;40</a> but it also agrees with <a href="#fig-dag-reflectiveassumptions-compatible_again">Figure&nbsp;42</a>. Here too, cross-sectional data cannot decide between these two potential structural interpretations.</p>
-<p>There are other, compatible structural interprestations as well. The formative and reflective conceptions of factor analysis are compatible with indicators having causal effects as shown in <span class="citation" data-cites="fig_dag_multivariate_reality_again">(<a href="#ref-fig_dag_multivariate_reality_again" role="doc-biblioref"><strong>fig_dag_multivariate_reality_again?</strong></a>)</span>. They are also compatible with a multivariate reality giving rise to multiple indicators as shown in <a href="#fig-dag-multivariate-reality-bulbulia">Figure&nbsp;43</a>.</p>
+<p>While the statistical model <span class="math inline">\(X_i = \lambda_i \eta + \varepsilon_i\)</span> aligns with <a href="#fig-structural-assumptions-reflective-model">Figure&nbsp;40</a>, it also alings with <a href="#fig-dag-formative-assumptions-compatible">Figure&nbsp;42</a>. Cross-sectional data, unfortunately, do not provide enough information to discern between these different structural interpretations.</p>
+<p>Similarly, the statistical model <span class="math inline">\(\eta = \sum_i\lambda_i X_i + \varepsilon\)</span> agrees with <a href="#fig-dag-reflective-assumptions_note">Figure&nbsp;41</a> but it also agrees with <a href="#fig-dag-reflectiveassumptions-compatible_again">Figure&nbsp;43</a>. Here too, cross-sectional data cannot decide between these two potential structural interpretations.</p>
+<p>There are other, compatible structural interprestations as well. The formative and reflective conceptions of factor analysis are compatible with indicators having causal effects as shown in <span class="citation" data-cites="fig_dag_multivariate_reality_again">(<a href="#ref-fig_dag_multivariate_reality_again" role="doc-biblioref"><strong>fig_dag_multivariate_reality_again?</strong></a>)</span>. They are also compatible with a multivariate reality giving rise to multiple indicators as shown in <a href="#fig-dag-multivariate-reality-bulbulia">Figure&nbsp;44</a>.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-dag-formative-assumptions-compatible" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-formative-assumptions-compatible-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;41: Formative model is compatible with indicators causing outcome.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;42: Formative model is compatible with indicators causing outcome.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
@@ -1131,7 +1142,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-reflectiveassumptions-compatible_again" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-reflectiveassumptions-compatible_again-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;42: Reflective model is compatible with indicators causing the outcome. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;43: Reflective model is compatible with indicators causing the outcome. Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
@@ -1151,7 +1162,7 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-multivariate-reality-bulbulia" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-multivariate-reality-bulbulia-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;43: Although we take our constructs, A, to be functions of indicators, X, such that, perhaps only one or several of the indicators are efficacious.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;44: Although we take our constructs, A, to be functions of indicators, X, such that, perhaps only one or several of the indicators are efficacious.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
@@ -1176,12 +1187,12 @@ L_{t0} \rightarrow A_{t1} \rightarrow Y_{t2}
 <div id="fig-dag-multivariate-reality-complete" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="causal-dags_files/figure-html/fig-dag-multivariate-reality-complete-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Figure&nbsp;44: Multivariate reality gives rise to the latent variables.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;45: Multivariate reality gives rise to the latent variables.Figure adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>This seems to me sensible. However, <a href="#fig-dag-multivariate-reality-complete">Figure&nbsp;44</a> this is not a causal graph. The arrows to not clearly represent causal relations. It leaves me unclear about what to practically do. My thoughts on measurement presented in the main article offer my best attempt to think of psychometric theory in light of causal inference.</p>
+<p>This seems to me sensible. However, <a href="#fig-dag-multivariate-reality-complete">Figure&nbsp;45</a> this is not a causal graph. The arrows to not clearly represent causal relations. It leaves me unclear about what to practically do. My thoughts on measurement presented in the main article offer my best attempt to think of psychometric theory in light of causal inference.</p>
 </section>
 <section id="references" class="level2 unnumbered">
 
@@ -1246,6 +1257,7 @@ Westreich, Daniel, Jessie K Edwards, Stephen R Cole, Robert W Platt, Sunni L Mum
 <li id="fn3"><p>The counter-factual outcome under the exposure <span class="math inline">\(A = a\)</span> may be written in different ways, such as <span class="math inline">\(Y(a)\)</span> (the notation we use here), <span class="math inline">\(Y^a\)</span>, and <span class="math inline">\(Y_a\)</span>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn4"><p>Note that mathematically, the difference in the average expectation is equivalent to the average of the differences in expectation.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn5"><p>Notice that the specification of our causal question is vague. Miguel Hernán argues that to ask a causal question requires specifying an hypothetical randomised experiment, which, although perhaps implausible, clarifies the precise causal contrast in which we are interested. On how to state a causal question in reference to a target trial see:<span class="citation" data-cites="bulbulia2022">(<a href="#ref-bulbulia2022" role="doc-biblioref">Bulbulia 2022</a>)</span>. We are setting this problem aside to focus on problems of evaluating the three fundamental identification assumptions. However there are certainly problems elsewhere.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>We compute the number of possible combinations of contrasts by <span class="math inline">\(C(n, r) = \frac{n!}{(n-r)! \cdot r!}\)</span><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main>
 <!-- /main column -->
