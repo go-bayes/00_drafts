@@ -1,26 +1,24 @@
 ---
-title: "Outcome-Wide Income Effects"
+title: "Effect of extraversion on Multi-dimensionsal well-being"
 subtitle: ""
 abstract: |
   Counterfactual Prediction
 author: 
-  - name: Joseph Bulbulia
+  - name: Authors
     affiliation: Victoria University of Wellington
-    email: joseph.bulbulia@vuw.ac.nz
-    corresponding: yes
   - name: Chris G. Sibley
     affiliation: School of Psychology, University of Auckland
     orcid_id: 0000-0002-4064-8800
-  - name: Others
-    orcid: 0000-0000-0000-0000
-    affiliation: 
-    email: 
+  - name: Joseph Bulbulia
+    orcid: 0000-0002-5861-2056
+    affiliation: Victoria University of Wellington, New Zealand
+    email: joseph.bulbulia@vuw.ac.nz
     corresponding: no
 execute:
   warning: false
   eval: false
 keywords:
-  - church
+  - measurement
 date: last-modified
 editor_options: 
   chunk_output_type: console
@@ -61,7 +59,7 @@ pull_path <-
 # for saving models. # set path fo your computer
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23_income"
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23_extraversion"
   )
 
 # read data: note that you need use the arrow package in R
@@ -74,32 +72,51 @@ dat <- arrow::read_parquet(pull_path)
 #| include: false
 #| eval: false
 
-dat_long <- dat |> 
-  arrange(id, wave) |> 
-    # select variables 
-  mutate(across(where(is.double), as.numeric)) |> 
-  mutate(male = as.numeric(male)-1) |> 
-  mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |> 
-  mutate(religion_religious = as.numeric(religion_religious)-1) |>
-  mutate(rural_gch2018 = as.integer(as.factor(rural_gch2018))) |> 
-  mutate(eth_cat = as.integer(as.factor(eth_cat))) |> 
-  # mutate(perfectionism_high = ifelse(perfectionism > 4, 1, 0 )) |> 
-  select("wave", 
+
+# Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
+# https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
+
+
+dat_long <- dat |>
+  arrange(id, wave) |>
+  mutate(urban = factor(ifelse(
+      rural_gch2018 == "Medium Urban Accessibility" |
+        # Define urban condition
+        rural_gch2018 == "High Urban Accessibility",
+      "urban",
+      # Label 'urban' if condition is met
+      "rural"  # Label 'rural' if condition is not met
+    ) ))|> 
+  # select variables
+  # mutate(across(where(is.double), as.numeric)) |>
+  mutate(male = as.numeric(male) - 1) |>
+  rename(religion_religious = religious) |>  # religious yes/no
+  mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
+  mutate(religion_religious = as.numeric(religion_religious) - 1) |>
+  #mutate(rural_gch2018 = as.integer(as.factor(rural_gch2018))) |>
+ # mutate(eth_cat = as.integer(as.factor(eth_cat))) |>
+  # mutate(perfectionism_high = ifelse(perfectionism > 4, 1, 0 )) |>
+  select(
+    "wave",
     "year_measured",
-    "sample_frame",# see NZAVS
     "id",
-    "edu",
-    # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing) See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
+    # "edu",
+    "sample_origin_names_combined",
+    # Sample origin names combined
+    #"alert_level_combined_lead",  not needed because all receive all levels by the point the outcome is measured
+    # covid alert levels -> 2019-2020
+    "education_level_coarsen",
+    # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing)  Combined highschool levels See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
     "male",
     # 0 = female, 0.5 = neither female nor male, 1 = male.
+    "age",
     "born_nz",
     # value label 0    No 1   Yes
     "eth_cat",
     #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
     "employed",
     # Are you currently employed? (this includes self-employment or casual work)
-    "gen_cohort",
-    #What is your gender? (open-ended)
+   # "gen_cohort",
     "household_inc",
     # Please estimate your total household income (before tax) for the last year.
     "nz_dep2018",
@@ -114,7 +131,7 @@ dat_long <- dat |>
     #Please rate how politically liberal versus conservative you see yourself as being.
     "pol_wing",
     # Please rate how politically left-wing versus right-wing you see yourself as being.
-    "rural_gch2018",
+    "urban",
     # see NZAVS
     "agreeableness",
     # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
@@ -158,97 +175,167 @@ dat_long <- dat |>
     # I am an ordinary person who is no better than others.
     # I wouldn’t want people to treat me as though I were superior to them.
     # I think that I am entitled to more respect than the average person is
-    "sdo",
-    "rwa",
-    "brk_relationship",
-    "began_relationship",
-    "religion_religious", # Do you identify with a religion and/or spiritual group?
-    "religion_identification_level", #How important is your religion to how you see yourself?"
-    "religion_church_binary", # at least once per month
-    "religion_prayer", # How many times did you pray in the last week?
-    "religion_scripture", # How many times did you read religious scripture in the last week?
-    "religion_church2", # How many times did you attend a church or place of worship in the last month?
-    "religion_believe_spirit",#Do you believe in some form of spirit or lifeforce?
-    "religion_believe_god",#Do you believe in a God
-    "religion_spiritual_identification", #w8,w10,w12-13 "I identify as a spiritual person."
-    "religion_perceive_religious_discrim", #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
-    "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers 
-    "w_gend_age_euro", # sample_weights
-    "alcohol_frequency", #"How often do you have a drink containing alcohol?"
-    "alcohol_intensity", # How many drinks containing alcohol do you have on a typical day when drinking?
-    "hlth_bmi", # " What is your height? (metres)\nWhat is your weight? (kg)\nKg 
-    "hours_exercise", # Hours spent … exercising/physical activity
-   # "sfhealth", 
-    "sfhealth_your_health",# "In general, would you say your health is...
-    "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
-    "sfhealth_expect_worse_health",#\nI expect my health to get worse." ****
-    "hlth_sleep_hours", #During the past month, on average, how many hours of actual sleep did you get per night?
-    "smoker",#Do you currently smoke?
-    "hlth_fatigue", #During the last 30 days, how often did.... you feel exhausted?
-    "rumination",# During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
-    "kessler_depressed", #During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
-    "kessler_effort",#During the last 30 days, how often did.... you feel that everything was an effort?
-    "kessler_hopeless",# During the last 30 days, how often did.... you feel hopeless?
-    "kessler_nervous",#During the last 30 days, how often did.... you feel nervous?
-    "kessler_restless", #During the last 30 days, how often did.... you feel restless or fidgety?
-    "kessler_worthless",# During the last 30 days, how often did.... you feel worthless?
-    "sexual_satisfaction", #  How satisfied are you with your sex life?
-    "bodysat", ## Am satisfied with the appearance, size and shape of my body.
-    "vengeful_rumin",# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-    "perfectionism",  # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-    "power_self_nocontrol",# I do not have enough power or control over\nimportant parts of my life.
-    "power_others_control", # Other people have too much power or control over\nimportant parts of my life
-    "selfesteem_satself", #  On the whole am satisfied with myself.
-    "selfesteem_postiveself",# Take a positive attitude toward myself
-    "selfesteem_rfailure", # Am inclined to feel that I am a failure.
-    "self_control_have_lots",#In general, I have a lot of self-control.
-    "self_control_wish_more_r",#I wish I had more self-discipline.(r)
-    "emotion_regulation_out_control", # When I feel negative emotions, my emotions feel out of control. w10 - w13
-    "emotion_regulation_hide_neg_emotions", # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
-    "emotion_regulation_change_thinking_to_calm", # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
-    "emp_work_life_balance",# I have a good balance between work and other important things in my life.
-    "gratitude", ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-    "pwi_health",#Your health.
-    "pwi_relationships",#Your personal relationships.
-    "pwi_security",#Your future security.
-    "pwi_standardliving",#Your standard of living.
-    "lifesat_satlife",# I am satisfied with my life.
-    "lifesat_ideal",# In most ways my life is close to ideal.
-    "meaning_purpose",# My life has a clear sense of purpose.
-    "meaning_sense",# I have a good sense of what makes my life meaningful.
-    "permeability_individual",#I believe I am capable, as an individual\nof improving my status in society.
-    "impermeability_group", #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
-    "neighbourhood_community", #I feel a sense of community with others in my local neighbourhood.
-    "support_help",# 'There are people I can depend on to help me if I really need it.
-    "support_turnto",# There is no one I can turn to for guidance in times of stress.
-    "support_rnoguidance", #There is no one I can turn to for guidance in times of stress.
-    "belong_accept", #Know that people in my life accept and value me.
-    "belong_routsider",# Feel like an outsider.
-    "belong_beliefs",# Know that people around me share my attitudes and beliefs.
-    "charity_donate",#How much money have you donated to charity in the last year?
-    "hours_charity",#Hours spent in activities/Hours spent … voluntary/charitable work
-    "nwi", # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
-  ) |> 
-   dplyr::rename(sample_weights = w_gend_age_euro) |> 
-   dplyr::filter((wave == 2018 & year_measured  == 1) |
+    # "sdo",
+    # "rwa",
+    # "brk_relationship",
+    # "began_relationship",
+    "religion_religious",
+    # Do you identify with a religion and/or spiritual group?
+    "religion_identification_level",
+    #How important is your religion to how you see yourself?"
+    "religion_church_binary",
+    "religion_prayer",
+    # How many times did you pray in the last week?
+    "religion_scripture",
+    # How many times did you read religious scripture in the last week?
+    "religion_church2",
+    # How many times did you attend a church or place of worship in the last month?
+    "religion_believe_spirit",
+    #Do you believe in some form of spirit or lifeforce?
+    "religion_believe_god",
+    #Do you believe in a God
+    "religion_spiritual_identification",
+    #w8,w10,w12-13 "I identify as a spiritual person."
+    "religion_perceive_religious_discrim",
+    #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
+    # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
+    "w_gend_age_euro",
+    # sample_weights
+    "alcohol_frequency",
+    #"How often do you have a drink containing alcohol?"
+    "alcohol_intensity",
+    # How many drinks containing alcohol do you have on a typical day when drinking?
+    "hlth_bmi",
+    # " What is your height? (metres)\nWhat is your weight? (kg)\nKg
+    "hours_exercise",
+    # Hours spent … exercising/physical activity
+    # "sfhealth",
+    "sfhealth_your_health",
+    # "In general, would you say your health is...
+    "sfhealth_get_sick_easier",
+    #\nI seem to get sick a little easier than other people.
+    "sfhealth_expect_worse_health",
+    #\nI expect my health to get worse." ****
+    "hlth_sleep_hours",
+    #During the past month, on average, how many hours of actual sleep did you get per night?
+    "smoker",
+    #Do you currently smoke?
+    "hlth_fatigue",
+    #During the last 30 days, how often did.... you feel exhausted?
+    "rumination",
+    # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
+    "kessler_depressed",
+    #During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
+    "kessler_effort",
+    #During the last 30 days, how often did.... you feel that everything was an effort?
+    "kessler_hopeless",
+    # During the last 30 days, how often did.... you feel hopeless?
+    "kessler_nervous",
+    #During the last 30 days, how often did.... you feel nervous?
+    "kessler_restless",
+    #During the last 30 days, how often did.... you feel restless or fidgety?
+    "kessler_worthless",
+    # During the last 30 days, how often did.... you feel worthless?
+    "sexual_satisfaction",
+    #  How satisfied are you with your sex life?
+    "bodysat",
+    ## Am satisfied with the appearance, size and shape of my body.
+    "vengeful_rumin",
+    # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+    "perfectionism",
+    # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+    # I am hardly ever satisfied with my performance.
+    "power_self_nocontrol",
+    # I do not have enough power or control over\nimportant parts of my life.
+    "power_others_control",
+    # Other people have too much power or control over\nimportant parts of my life
+    "self_esteem",
+    "selfesteem_satself",
+    #  On the whole am satisfied with myself.
+    "selfesteem_postiveself",
+    # Take a positive attitude toward myself
+    "selfesteem_rfailure",
+    # Am inclined to feel that I am a failure.
+  #  "self_control",
+    "self_control_have_lots",
+    #In general, I have a lot of self-control.
+    "self_control_wish_more_r",
+    #I wish I had more self-discipline.(r)
+    "emotion_regulation_out_control",
+    # When I feel negative emotions, my emotions feel out of control. w10 - w13
+    "emotion_regulation_hide_neg_emotions",
+    # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
+    "emotion_regulation_change_thinking_to_calm",
+    # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
+    # "emp_work_life_balance",# I have a good balance between work and other important things in my life. # not measured at baseline
+    "gratitude",
+    ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+    "pwi_health",
+    #Your health.
+    "pwi_relationships",
+    #Your personal relationships.
+    "pwi_security",
+    #Your future security.
+    "pwi_standardliving",
+    #Your standard of living.
+    "lifesat",
+    "lifesat_satlife",
+    # I am satisfied with my life.
+    "lifesat_ideal",
+    # In most ways my life is close to ideal.
+    "meaning_purpose",
+    # My life has a clear sense of purpose.
+    "meaning_sense",
+    # I have a good sense of what makes my life meaningful.
+    "permeability_individual",
+    #I believe I am capable, as an individual\nof improving my status in society.
+    "impermeability_group",
+    #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
+    "neighbourhood_community",
+    #I feel a sense of community with others in my local neighbourhood.
+   "support",
+    "support_help",
+    # 'There are people I can depend on to help me if I really need it.
+    "support_turnto",
+    # There is no one I can turn to for guidance in times of stress.
+    "support_rnoguidance",
+    #There is no one I can turn to for guidance in times of stress.
+    "belong",
+    "belong_accept",
+    #Know that people in my life accept and value me.
+    "belong_routsider",
+    # Feel like an outsider.
+    "belong_beliefs",
+    # Know that people around me share my attitudes and beliefs.
+    "charity_donate",
+    #How much money have you donated to charity in the last year?
+    "hours_charity"#,#Hours spent in activities/Hours spent … voluntary/charitable work
+    # "nwi", # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
+  ) |>
+  dplyr::rename(sample_weights = w_gend_age_euro) |>
+  dplyr::filter((wave == 2018 & year_measured  == 1) |
                   (wave == 2019  &
-                  year_measured  == 1) |
+                     year_measured  == 1) |
                   (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                !is.na(household_inc) & household_inc > 30975, 1, 0)) |>   # creating an indicator for the first wave
+                                 !is.na(extraversion), 1, 0)) |>   # creating an indicator for the first wave
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
-  dplyr::mutate(k_19 =  ifelse(wave == 2019 &
-                                 year_measured == 1 &
-                                  !is.na(household_inc) == 1 & household_inc > 30975, 1, 0)) |>   # creating an indicator for the first wave; note that we allow people t
+  dplyr::mutate(k_19 =  ifelse(
+    wave == 2019 &
+      year_measured == 1 &
+      !is.na(extraversion),
+    1,
+    0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
   dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
- # mutate(perfectionism_coarsen = cut(perfectionism, 4)) |> 
-  droplevels() |> 
-  select(-c("h_19", "k_19", "h_18", "k_18")) |> 
+  # mutate(perfectionism_coarsen = cut(perfectionism, 4)) |>
+  droplevels() |>
+  select(-c("h_19", "k_19", "h_18", "k_18")) |>
   data.frame()
+
+str(dat_long)
 
 
 ## Tests 
@@ -276,133 +363,66 @@ dat_long <- dat |>
 
 
 
-length(unique(dat_long$id))# 28518
+length(unique(dat_long$id))# 34189
 
-str(dat_long$edu)
+str(dat_long$education_level_coarsen)
 ### Find quantile for T1 (wave 2019) and then look at change
 
 # first filter the exposure wave
 dt_19 <- dat_long |> 
   filter( wave == "2019") |> 
-  select(id, wave, household_inc) #|> 
+  select(id, wave, extraversion) #|> 
   # mutate(perfectionism_coarsen_n = as.numeric(perfectionism_coarsen),
   #        perfectionism_coarsen_crude_n = as.numeric( perfectionism_coarsen_crude))
-quantile_breaks <- quantile(dt_19$household_inc, probs = seq(0, 1, 1/4), na.rm = TRUE)
+quantile_breaks <- quantile(dt_19$extraversion, probs = seq(0, 1, 1/4), na.rm = TRUE)
 
 # Create labels based on the cut points in the desired format
 cut_labels <- paste0(quantile_breaks[-length(quantile_breaks)], "_", quantile_breaks[-1])
 
 quantile_breaks
-dt_19$household_inc_quartile <- cut(dt_19$household_inc,
+dt_19$extraversion_quartile <- cut(dt_19$extraversion,
                                         breaks = quantile_breaks,
                                         labels = cut_labels,
                                         ordered_result = TRUE,
                                         include.lowest = TRUE)
 
-quantile_breaks
 # create coarsened variable 
-
+table(dt_19$extraversion_quartile)
 
 dt_18_19 <- dat_long |> 
   filter(wave == "2018" | wave == "2019") |> 
   mutate(
-    household_inc_quantile =  cut(
-      household_inc,
-      breaks = c(30975, 74000, 110000, 160000, 4000001),
+     extraversion_quantile =  cut(
+      extraversion,
+      breaks = c(1, 3, 3.75, 4.75, 7),
       include.lowest = TRUE,
       include.highest = TRUE,
       na.rm = TRUE,
       right = FALSE
     ))|>
-  mutate(household_inc_quantile = factor(
-      household_inc_quantile,
-      levels = c("[3.1e+04,7.4e+04)", "[7.4e+04,1.1e+05)", "[1.1e+05,1.6e+05)", "[1.6e+05,4e+06]"),
-      labels = c("q1", "q2", "q3", "q4"),
+  mutate(extraversion_quantile = factor(
+      extraversion_quantile,
+      levels = c("[1,3)", "[3,3.75)", "[3.75,4.75)", "[4.75,7]"),
+      labels = c("q_1", "q_2", "q_3", "q_4"),
       ordered = TRUE
     )  ) |> 
-  mutate(household_inc_quantile_n = as.numeric( household_inc_quantile)) |> 
-  select(id, wave, household_inc_quantile, household_inc_quantile_n) #|> 
-  # mutate(perfectionism_coarsen_n = as.numeric(perfectionism_coarsen),
-  #        perfectionism_coarsen_crude_n = as.numeric( perfectionism_coarsen_crude))
+  mutate(extraversion_quantile_n = as.numeric( extraversion_quantile)) |> 
+  select(id, wave, extraversion_quantile, extraversion_quantile_n) 
 
-table(dt_18_19$household_inc_quantile)
+table(dt_18_19$extraversion_quantile)
 
 
-out <- msm::statetable.msm(round(household_inc_quantile_n, 0), id, data = dt_18_19)
+out <- msm::statetable.msm(round(extraversion_quantile_n, 0), id, data = dt_18_19)
 
 # for a function I wrote to create state tables
-state_names <- c("30k-74k", "74k-110k", "110k-160k", "over-160k")
+state_names <- c("q_1", "q_2", "q_3", "q_4")
 
 # transition table
 
 t_tab <- transition_table(out, state_names)
 
 cat(t_tab$explanation)
-print(t_tab$table)
-
-
-
-##. try thirds
-
-dt_19_n <- dat_long |> 
-  filter( wave == "2019") |> 
-  select(id, wave, household_inc) #|> 
-  # mutate(perfectionism_coarsen_n = as.numeric(perfectionism_coarsen),
-  #        perfectionism_coarsen_crude_n = as.numeric( perfectionism_coarsen_crude))
-third_breaks <- quantile(dt_19_n$household_inc, probs = seq(0, 1, 1/3), na.rm = TRUE)
-
-# Create labels based on the cut points in the desired format
-cut_labels <- paste0(third_breaks[-length(third_breaks)], "_", third_breaks[-1])
-
-third_breaks
-dt_19_n$household_inc_thirds <- cut(dt_19_n$household_inc,
-                                        breaks = third_breaks,
-                                        labels = cut_labels,
-                                        ordered_result = TRUE,
-                                        include.lowest = TRUE)
-
-third_breaks
-# create coarsened variable 
-
-
-dt_18_19_third <- dat_long |> 
-  filter(wave == "2018" | wave == "2019") |> 
-  mutate(
-    household_inc_thirds =  cut(
-      household_inc,
-      breaks = c(31000, 85000, 145000, 4000001),
-      include.lowest = TRUE,
-      include.highest = TRUE,
-      na.rm = TRUE,
-      right = FALSE
-    ))|>
- # mutate(household_inc_thirds = factor(
-   #   household_inc_thirds,
-     # levels = c("[3.1e+04,7.4e+04)", "[7.4e+04,1.1e+05)", "[1.1e+05,1.6e+05)", "[1.6e+05,4e+06]"),
-  #    labels = c("low", "med", "high"),
-  #    ordered = TRUE
-  #  )  ) |> 
-  mutate(household_inc_thirds_n = as.numeric( household_inc_thirds)) |> 
-  select(id, wave, household_inc_thirds, household_inc_thirds_n) #|> 
-  # mutate(perfectionism_coarsen_n = as.numeric(perfectionism_coarsen),
-  #        perfectionism_coarsen_crude_n = as.numeric( perfectionism_coarsen_crude))
-
-table(dt_18_19$household_inc_thirds)
-
-
-out <- msm::statetable.msm(round(household_inc_thirds_n, 0), id, data = dt_18_19_third)
-
-
-# for a function I wrote to create state tables
-state_names <- c("low", "med", "high")
-
-# transition table
-
-t_tab <- transition_table(out, state_names)
-
-cat(t_tab$explanation)
-print(t_tab$table)
-
+print(t_tab$table, state_names)
 
 
 
@@ -411,32 +431,40 @@ print(t_tab$table)
 
 dat_long <- dat_long|> 
   mutate(
-    household_inc_quantile =  cut(
-      household_inc,
-      breaks = c(30975, 74000, 110000, 160000, 4000001),
+     extraversion_quantile =  cut(
+      extraversion,
+      breaks = c(1, 3, 3.75, 4.75, 7),
       include.lowest = TRUE,
       include.highest = TRUE,
       na.rm = TRUE,
       right = FALSE
     ))|>
-  mutate(household_inc_quantile = factor(
-      household_inc_quantile,
-      levels = c("[3.1e+04,7.4e+04)", "[7.4e+04,1.1e+05)", "[1.1e+05,1.6e+05)", "[1.6e+05,4e+06]"),
-      labels = c("q1", "q2", "q3", "q4"),
+  mutate(extraversion_quantile = factor(
+      extraversion_quantile,
+      levels = c("[1,3)", "[3,3.75)", "[3.75,4.75)", "[4.75,7]"),
+      labels = c("q_1", "q_2", "q_3", "q_4"),
       ordered = TRUE
     )  ) |> 
-  mutate(household_inc_quantile_n = as.numeric( household_inc_quantile)) |> 
   droplevels() |> 
   arrange(id, wave)
 
 
-str(dat_long)
+# only look at vars at baseline
+dat_18 <- dat_long |> 
+  dplyr::filter(wave == 2018)
+
+saveRDS(dat_18, here::here(push_mods, "dat_18"))
+
+
+dat_long <- dat_long |> 
+  mutate( eth_cat = as.integer( eth_cat),
+          urban = as.numeric(urban),
+          education_level_coarsen = as.integer(education_level_coarsen))
 
 
 saveRDS(dat_long, here::here(push_mods, "dat_long"))
 
 dat_long <- readRDS(here::here(push_mods, "dat_long"))
-
 
 ```
 
@@ -444,21 +472,24 @@ dat_long <- readRDS(here::here(push_mods, "dat_long"))
 
 
 ```{r}
+#|label: create-wide-data
 # Create wide data frame
-
 baseline_vars = c(
     "male",
+    "age",
+    # Sample origin names combined
+    "education_level_coarsen", # factors
     "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
     "employed", # Are you currently employed? (this includes self-employment or casual work)
-    "edu",
-    "gen_cohort", #What is your gender? (open-ended)
+    #"gen_cohort", #age
     "nz_dep2018",
     "nzsei13",
     "partner",
     "parent",
-    "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
+   # "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
     #"pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
-    "rural_gch2018",
+    "sample_origin_names_combined",
+    "urban",
     "agreeableness",
     "conscientiousness",
     "extraversion",
@@ -466,7 +497,7 @@ baseline_vars = c(
     "openness",
     "neuroticism",
     "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
-    "religion_religious", # Do you identify with a religion and/or spiritual group?
+  #  "religion_religious", # Do you identify with a religion and/or spiritual group?
     #"religion_identification_level", #How important is your religion to how you see yourself?"
     "religion_church_binary",
     "sample_weights"
@@ -474,7 +505,7 @@ baseline_vars = c(
 
 baseline_vars
 
-exposure_var = c("household_inc_quantile", "household_inc") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
+exposure_var = c("extraversion_quantile", "extraversion") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
 
 outcome_vars_health = c(
     "alcohol_frequency",
@@ -500,7 +531,6 @@ outcome_vars_embodied = c(
   )
 
 #rm(outcome_vars_social)
-
 # nzsei
 outcome_vars_practical = c(
     "nzsei13", # objective job success
@@ -513,6 +543,7 @@ outcome_vars_practical = c(
     "selfesteem_satself", #  On the whole am satisfied with myself.
     "selfesteem_postiveself",# Take a positive attitude toward myself
     "selfesteem_rfailure", # Am inclined to feel that I am a failure.
+    "sexual_satisfaction",
     "self_control_have_lots",#In general, I have a lot of self-control.
     "self_control_wish_more_r",#I wish I had more self-discipline.(r)
     "emotion_regulation_out_control", # When I feel negative emotions, my emotions feel out of control. w10 - w13
@@ -553,14 +584,11 @@ outcome_vars_social = c(
 # typically not needed -- optional 
 #exclude_vars = c("year_measured")
 
-
-
 # data for mice
 prep_health <- create_wide_data_general(dat_long, 
   baseline_vars = baseline_vars, 
   exposure_var = exposure_var,
   outcome_vars = outcome_vars_health)
-
 
 str(prep_health)
 nrow(prep_health)
@@ -629,6 +657,7 @@ prep_embodied <- create_wide_data_general(dat_long,
 
 str(prep_health)
 
+
 prep_practical <- create_wide_data(dat_long, 
   baseline_vars = baseline_vars, 
   exposure_var = exposure_var,
@@ -650,40 +679,40 @@ prep_social <- create_wide_data(dat_long,
 
 str(prep_social)
 
-exposure_vars = "t1_household_inc_quantile"
+exposure_vars = "t1_extraversion_quantile"
 
 # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
 
 
-prep_health_multiple <- create_filtered_wide_dataframes(prep_health, exposure_vars = "t1_household_inc_quantile") 
-
+prep_health_multiple <- create_filtered_wide_dataframes(prep_health, exposure_vars = "t1_extraversion_quantile") 
 # table(prep_health_multiple$q4$t1_household_inc_quantile)
 # table(prep_health_multiple$q3$t1_household_inc_quantile)
 # table(prep_health_multiple$q2$t1_household_inc_quantile)
 # table(prep_health_multiple$q1$t1_household_inc_quantile)
 
 
-prep_embodied_multiple <- create_filtered_wide_dataframes(prep_embodied, exposure_vars = "t1_household_inc_quantile") 
+prep_embodied_multiple <- create_filtered_wide_dataframes(prep_embodied, exposure_vars = "t1_extraversion_quantile") 
 
 
 
-prep_practical_multiple <- create_filtered_wide_dataframes(prep_practical, exposure_vars = "t1_household_inc_quantile") 
+prep_practical_multiple <- create_filtered_wide_dataframes(prep_practical, exposure_vars = "t1_extraversion_quantile") 
 
 
 
-prep_reflective_multiple <- create_filtered_wide_dataframes(prep_reflective, exposure_vars = "t1_household_inc_quantile") 
+prep_reflective_multiple <- create_filtered_wide_dataframes(prep_reflective, exposure_vars = "t1_extraversion_quantile") 
 
 
 
-prep_social_multiple <- create_filtered_wide_dataframes(prep_social, exposure_vars = "t1_household_inc_quantile") 
+prep_social_multiple <- create_filtered_wide_dataframes(prep_social, exposure_vars = "t1_extraversion_quantile") 
 
 
-a <- nrow( prep_social_multiple$q1 )
-b <-nrow( prep_social_multiple$q2 )
-c <-nrow( prep_social_multiple$q3 )
-d <-nrow( prep_social_multiple$q4 )
-
+a <- nrow( prep_social_multiple$q_1)
+b <-nrow( prep_social_multiple$q_2)
+c <-nrow( prep_social_multiple$q_3)
+d <-nrow( prep_social_multiple$q_4)
+a
+b
 # check
 a + b + c + d == nrow(prep_social)
 
@@ -696,17 +725,7 @@ str(prep_embodied)
 #| echo: false
 #| include: false
 #| eval: false
-
-
-# only look at vars at baseline
-dat_18 <- dat_long |> 
-  dplyr::filter(wave == 2018)
-
-saveRDS(dat_18, here::here(push_mods, "dat_18"))
-
 # check 
-
-  
 #table
 # functions for table
 my_render_cont <- function(x) {
@@ -746,361 +765,12 @@ table_baseline |>
 ```
 
 ```{r}
-#| label: test mi 
-## TEST 
-exclude_vars = c("t0_sample_frame", "id")
-init = mice::mice(prep_health, maxit = 0)
-predictorMatrix = init$predictorMatrix
-
-# Check if columns exist before excluding
-for (var in exclude_vars) {
-  if (var %in% colnames(predictorMatrix)) {
-    predictorMatrix[, var] = 0
-  }
-}
-
-test_data <- mice(prep_health, m = 2, predictorMatrix = predictorMatrix)
-saveRDS(test_data, here::here(push_mods, "test_data"))
-test_data <- readRDS( here::here(push_mods, "test_data"))
-
-
-test_data_c  <- mice::complete(test_data, action = 'long', include = TRUE)
-
-# remove bad cols
-#test_data_c <- test_data_c |> select(-c(.id.1, .imp.1))
-
-
-vis_miss(mice_health_c, warn_large_data = FALSE)
-
-
-table(test_data_c$t1_household_inc_quantile)
-table(test_data_c$.imp)
-
-
-row.names(mice_health_c) <- NULL
-
-# table(mice_health_c$.imp)
-# table(mice_health_c$.imp)
-# max(mice_health_c$.id)
-
-test_data_mids <- test_data_c %>%
-    arrange(.imp, id) |> 
-  rename(sample_weights = t0_sample_weights) |> 
-  mutate(t0_eth_cat = as.factor(t0_eth_cat),
-         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
-         t0_smoker = as.factor(t0_smoker),
-         t2_smoker = as.factor(t2_smoker),
-         t0_hours_exercise = log(t0_hours_exercise + 1),
-         t2_hours_exercise =  log(t2_hours_exercise +1)) |>
-  dplyr::group_by(.imp, id) |>
- # rowwise() |> # group by id within .imp 
-  dplyr::mutate(t0_sfhealth = mean(
-    c(
-      t0_sfhealth_your_health,
-      t0_sfhealth_get_sick_easier,
-      t0_sfhealth_expect_worse_health  ),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_sfhealth = mean(
-    c(
-      t2_sfhealth_your_health,
-      t2_sfhealth_get_sick_easier,
-      t2_sfhealth_expect_worse_health  ),
-    na.rm = TRUE
-  )) |>
-  dplyr::ungroup() |>
-  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
-  select(-c(.imp_z, .id_z)) %>%
-   select(
-    where(is.factor),
-    sample_weights,
-    ends_with("_z"),
-    .imp,
-    .id
-  ) |> 
-  relocate(sample_weights, .before = starts_with("t1_"))  %>%
-  relocate(id, .before = sample_weights)  %>%
-  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
-  arrange(.imp, id) |> 
-  droplevels() |> 
-  mutate_if(is.matrix, as.vector) |> 
-  as.mids()
-  
-head(mice_practical_long)
-test_data_long <- mice::complete(test_data_mids, "long", inc = TRUE)
-
-skimr::skim(test_data_long)
-
-
-saveRDS(test_data_mids, here::here(push_mods, "test_data_mids"))
-saveRDS(test_data_long, here::here(push_mods, "test_data_long"))
-
-head(test_data_long)
-head(mice_health_long) 
-
-```
-
-
-```{r}
-#|label: test-function
-
-
-mice_health_test_fun <- impute_and_combine(prep_health_multiple,  m = 2 )
-
-
-# save imputed data
-saveRDS(mice_health_test_fun,
-        here::here(push_mods, "mice_health_test_fun"))
-
-mice_health_test_fun <- readRDS(
-        here::here(push_mods, "mice_health_test_fun"))
-
-
-mice_health_test_fun_c  <- mice::complete(mice_health_test_fun, action = 'long', include = TRUE)
-
-# remove bad cols
-mice_health_test_fun_c <- mice_health_test_fun_c |> select(-c(.id.1, .imp.1))
-
-
-vis_miss(mice_health_test_fun_c, warn_large_data = FALSE)
-
-
-table(mice_health_test_fun_c$t1_household_inc_quantile)
-table(mice_health_test_fun_c$.imp)
-
-
-row.names(mice_health_test_fun_c) <- NULL
-
-# table(mice_health_c$.imp)
-# table(mice_health_c$.imp)
-# max(mice_health_c$.id)
-
-mice_health_test_fun_mids <- mice_health_test_fun_c %>%
-    arrange(.imp, id) |> 
-  rename(sample_weights = t0_sample_weights) |> 
-  mutate(t0_eth_cat = as.factor(t0_eth_cat),
-         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
-         t0_smoker = as.factor(t0_smoker),
-         t2_smoker = as.factor(t2_smoker),
-         t0_hours_exercise = log(t0_hours_exercise + 1),
-         t2_hours_exercise =  log(t2_hours_exercise +1)) |>
-  dplyr::group_by(.imp, id) |>
- # rowwise() |> # group by id within .imp 
-  dplyr::mutate(t0_sfhealth = mean(
-    c(
-      t0_sfhealth_your_health,
-      t0_sfhealth_get_sick_easier,
-      t0_sfhealth_expect_worse_health  ),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_sfhealth = mean(
-    c(
-      t2_sfhealth_your_health,
-      t2_sfhealth_get_sick_easier,
-      t2_sfhealth_expect_worse_health  ),
-    na.rm = TRUE
-  )) |>
-  dplyr::ungroup() |>
-  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
-  select(-c(.imp_z, .id_z)) %>%
-   select(
-    where(is.factor),
-    sample_weights,
-    ends_with("_z"),
-    .imp,
-    .id
-  ) |> 
-  relocate(sample_weights, .before = starts_with("t1_"))  %>%
-  relocate(id, .before = sample_weights)  %>%
-  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
-  arrange(.imp, id) |> 
-  droplevels() |> 
-  mutate_if(is.matrix, as.vector) |> 
-  as.mids()
-  
-head(mice_health_test_fun_mids)
-mice_health_test_fun_long <- mice::complete(mice_health_test_fun_mids, "long", inc = TRUE)
-
-skimr::skim(mice_health_test_fun_long)
-
-table(mice_health_test_fun_long$.imp)
-
-saveRDS(mice_health_test_fun_mids, here::here(push_mods, "mice_health_test_fun_mids"))
-saveRDS(mice_health_test_fun_long, here::here(push_mods, "mice_health_test_fun_long"))
-```
-
-
-
-  ```{r}
-#| label: models-HEALTH
-#| eval: false
-
-mice_health_test_fun_mids <- readRDS(here::here(push_mods, "mice_health_test_fun_mids"))
-mice_health_test_fun_long <- readRDS(here::here(push_mods, "mice_health_test_fun_long"))
-
-
-table( test_data_long$.imp)
-table( mice_health_test_fun_long$.imp)
-
-
-# longform data if necessary
-test_data_long <- readRDS(here::here(push_mods, "test_data_long"))
-test_data_mids <- readRDS(here::here(push_mods, "test_data_mids"))
-
-
-# other data
-# other data
-mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
-
-mice_health_long <- readRDS(here::here(push_mods, "mice_health_long"))
-
-table( test_data_long$.imp )
-
-
-# table( mice_health_long$.imp )
-# table( mice_health_long$.imp )
-# 
-# mice_health_long_imp0 <- mice_health_long|> dplyr::filter (.imp == 0)
-# mice_health_long_imp1 <- mice_health_long|> dplyr::filter (.imp == 1)
-# 
-# test_data_long_imp0 <- test_data_long|> dplyr::filter (.imp == 0)
-# 
-# test_data_long_imp1 <- test_data_long|> dplyr::filter (.imp == 1)
-# 
-# head( test_data_long_imp0)
-# head( test_data_long_imp1) # Problem 
-# 
-# head( mice_health_long_imp1)
-# head( test_data_long_imp1)
-# 
-# head( mice_health_mids$data )
-# head( mice_health_mids$data )
-
-# Set exposure 
-X <- "t1_household_inc_quantile"
-
-
-# baselin vars ---------------------------------------------------------
-library(MatchThem)
-baseline_vars_health = mice_health_test_fun_long |> 
-  dplyr::select(starts_with("t0"), -c("t0_household_inc_z", "t0_nz_dep2018_z",
-"t0_nzsei13_z"))|> colnames() # strange to include these -- as they  are income by other names
-
-baseline_vars_health
-
-options(scipen = 999)
-
-
-# ebalance
-test_ebal <- match_mi(data = mice_health_test_fun_mids, 
-                                 X = X, 
-                                 baseline_vars = baseline_vars_health, 
-                                 estimand = "ATE",  
-                                 method = "ebal", 
-                                 sample_weights = "sample_weights")
-
-saveRDS(test_ebal, here::here(push_mods, "test_ebal"))
-
-warnings()
-
-sum_ebal <- summary(test_ebal)
-
-
-sum_ebal
-plot(sum_ebal)
-
-
-# if trim is needed
-test_ebal_trim <- WeightIt::trim(test_ebal, at = .99)
-sum_ebal_trim <- summary(test_ebal_trim)
-sum_ebal_trim
-
-plot(sum_ebal_trim)
-bal.tab(test_ebal_trim)
-
-love.plot(test_ebal_trim, binary = "std", thresholds = c(m = .1))
-love.plot(test_ebal_trim, binary = "std", thresholds = c(m = .1))
-
-dev.off()
-
-# settings 
-
-# Set DF 
-dt_health = test_ebal_trim
-
-# bootstrap simulations
-nsims <- 1000
-
-# cores
-cl =  parallel::detectCores () 
-
-
-# x variable 
-# Set exposure 
-X <- "t1_household_inc_quantile"
-
-Y = "t2_alcohol_frequency_z"
-
-
-levels( prep_health$t1_household_inc_quantile )
-
-treat_0 = "q1"
-treat_1 = "q3"
-# as specified
-vcov = "HC3" # robust standard errors. 
-
-
-# cores
-cores = parallel::detectCores () # use all course
-cores 
-
-# outcomes
-
-#outcome_vars_health
-
-test_health_alcohol_frequency  <- gcomp_sim(
-  df = test_ebal_trim,  # note change
-  Y = "t2_alcohol_frequency_z",
-  X = X,
-  baseline_vars = baseline_vars_health,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "alcohol_frequency_z"
-)
-
-test_health_alcohol_frequency
-# save model
-saveRDS(test_health_alcohol_frequency, here::here(push_mods, "test_health_alcohol_frequency"))
-
-#other <- readRDS( here::here(push_mods, "mod_health_alcohol_frequency"))
-
-
-```
-
-
-
-```{r}
-#| label: imputations health
+#| label: imputations-health
 #| echo: false
 #| include: false
 #| eval: false
 
 # reduce missingness by looking at +2 only , and remove factor for faster imputation
-
-
 
 
 # check missing in all datasets
@@ -1112,210 +782,8 @@ naniar::vis_miss(prep_health, warn_large_data = FALSE)
 # check for collinear vars
 mice:::find.collinear(prep_health)
 
-# 
-# impute_and_combine <- function(list_df, m = 2, exclude_vars = c("t0_sample_frame", "id")) {
-#   if (!require(mice, quietly = TRUE)) {
-#     stop("The 'mice' package is required for this function to work. Please install it using install.packages('mice').")
-#   }
-#   
-#   if (!require(miceadds, quietly = TRUE)) {
-#     stop("The 'miceadds' package is required for this function to work. Please install it using install.packages('miceadds').")
-#   }
-# 
-#   completed_dfs <- list()
-#   
-#   for (i in seq_along(list_df)) {
-#     data_frame_example <- list_df[[i]]
-# 
-#     init = mice::mice(data_frame_example, maxit = 0) 
-#     predictorMatrix = init$predictorMatrix
-#     
-#     # Check if columns exist before excluding
-#     for (var in exclude_vars) {
-#       if (var %in% colnames(predictorMatrix)) {
-#         predictorMatrix[, var] = 0
-#       }
-#     }
-# 
-#     mice_df <- mice::mice(data_frame_example, m = m, predictorMatrix = predictorMatrix)
-#     completed_df <- mice::complete(mice_df, action = "long", include = TRUE)
-#     completed_df$.id <- paste0("df", i, "_imp", completed_df$.imp)
-#     completed_dfs[[i]] <- completed_df
-#   }
-# 
-#   combined_df <- dplyr::bind_rows(completed_dfs)
-#   data_list <- split(combined_df, combined_df$.imp)
-#   mids_df <- miceadds::datalist2mids(data_list, progress=FALSE)
-# 
-#   return(mids_df)
-# }
-
-
-# 
-# # Apply mice imputation
-# 
-# library(mice)
-# library(dplyr)
-# library(tidyr)
-# library(miceadds)
-# 
-# # Apply mice imputation
-
-
-
-
-# 
-# t1 <- mice(prep_health_multiple[[1]], m = 10, predictorMatrix = predictorMatrix)
-# t2 <- mice(prep_health_multiple[[2]], m = 10, predictorMatrix = predictorMatrix)
-# t3 <- mice(prep_health_multiple[[3]], m = 10, predictorMatrix = predictorMatrix)
-# t4 <- mice(prep_health_multiple[[4]], m = 10, predictorMatrix = predictorMatrix)
-# 
-# # Complete the data
-# completed_t1 <- complete(t1, action = "long")
-# completed_t2 <- complete(t2, action = "long")
-# completed_t4 <- complete(t3, action = "long")
-# completed_t3 <- complete(t4, action = "long") #, include = TRUE
-# # Reset rownames of the completed dataframes
-# rownames(completed_t1) <- NULL
-# rownames(completed_t2) <- NULL
-# rownames(completed_t3) <- NULL
-# rownames(completed_t4) <- NULL
-# 
-# # Bind rows
-# complete_df <- bind_rows(completed_t1, completed_t2, completed_t4, completed_t3)
-# 
-# # Assign new .imp and .id values
-# complete_df <- complete_df %>%
-#   group_by(.imp) %>%
-#   mutate(
-#     .id = row_number()
-#   ) %>%
-#   ungroup()
-# 
-# # Convert to a list of data frames for miceadds::datalist2mids
-# data_list <- split(complete_df, complete_df$.imp)
-# 
-# # Convert to mids
-# mids_df <- miceadds::datalist2mids(data_list, progress=FALSE)
-# 
-# is.mids(mids_df)
-# # 
-
-#mice_reflective_c  <- mice::complete(mice_reflective, "long", inc = T)
-# 
-# impute_and_combine <- function(list_df, m = 10, exclude_vars = c("t0_sample_frame", "id")) {
-#   if (!require(mice, quietly = TRUE)) {
-#     stop("The 'mice' package is required for this function to work. Please install it using install.packages('mice').")
-#   }
-# 
-#   if (!require(miceadds, quietly = TRUE)) {
-#     stop("The 'miceadds' package is required for this function to work. Please install it using install.packages('miceadds').")
-#   }
-# 
-#   completed_dfs <- list()
-# 
-#   for (i in seq_along(list_df)) {
-#     data_frame_example <- list_df[[i]]
-# 
-#     init = mice::mice(data_frame_example, maxit = 0)
-#     predictorMatrix = init$predictorMatrix
-# 
-#     # Check if columns exist before excluding
-#     for (var in exclude_vars) {
-#       if (var %in% colnames(predictorMatrix)) {
-#         predictorMatrix[, var] = 0
-#       }
-#     }
-# 
-#     mice_df <- mice::mice(data_frame_example, m = m, predictorMatrix = predictorMatrix)
-#     completed_df <- mice::complete(mice_df) #action = "long", include = FALSE)
-#     completed_df$.id <- paste0("df", i, "_imp", completed_df$.imp)
-#     completed_dfs[[i]] <- completed_df
-#   }
-# 
-#   combined_df <- dplyr::bind_rows(completed_dfs)
-#   data_list <- split(combined_df, combined_df$.imp)
-#   mids_df <- miceadds::datalist2mids(data_list, progress=FALSE)
-# 
-#   return(mids_df)
-# }
-
-
-# exclude_vars = c("t0_sample_frame", "id")
-# init = mice::mice(prep_health, maxit = 0)
-# predictorMatrix = init$predictorMatrix
-# 
-# # Check if columns exist before excluding
-# for (var in exclude_vars) {
-#   if (var %in% colnames(predictorMatrix)) {
-#     predictorMatrix[, var] = 0
-#   }
-# }
-# # test
-# mice_health_test <- mice(prep_health, m = 2, predictorMatrix = predictorMatrix)
-
-# 
-# mice_health_c_test  <- mice::complete(mice_health_test, action = 'long', include = TRUE)
-# 
-# 
-# 
-# vis_miss(mice_health_c_test, warn_large_data = FALSE)
-# vis_miss(mice_health_c, warn_large_data = FALSE)
-# 
-# colnames( mice_health_c )
-# table(mice_health_c$t1_household_inc_quantile)
-# 
-# row.names(mice_health_c_test) <- NULL
-# 
-# mice_health_mids_test <- mice_health_c_test %>%
-#   rename(sample_weights = t0_sample_weights) |> 
-#   mutate(t0_eth_cat = as.factor(t0_eth_cat),
-#          t0_rural_gch2018 = as.factor(t0_rural_gch2018),
-#          t0_smoker = as.factor(t0_smoker),
-#          t0_hours_exercise = log(t0_hours_exercise + 1),
-#          t2_hours_exercise =  log(t2_hours_exercise +1)) |>
-#   dplyr::group_by(id) |>
-#   dplyr::mutate(t0_sfhealth = mean(
-#     c(
-#       t0_sfhealth_your_health,
-#       t0_sfhealth_get_sick_easier,
-#       t0_sfhealth_expect_worse_health  ),
-#     na.rm = TRUE
-#   )) |>
-#     dplyr::mutate(t2_sfhealth = mean(
-#     c(
-#       t2_sfhealth_your_health,
-#       t2_sfhealth_get_sick_easier,
-#       t2_sfhealth_expect_worse_health  ),
-#     na.rm = TRUE
-#   )) |>
-#   dplyr::ungroup() |>
-#   dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
-#   select(-c(.imp_z, .id_z)) %>%
-#    select(
-#     where(is.factor),
-#     sample_weights,
-#     ends_with("_z"),
-#     .imp,
-#     .id
-#   ) |> 
-#   relocate(sample_weights, .before = starts_with("t1_"))  %>%
-#   relocate(id, .before = sample_weights)  %>%
-#   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-#   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-#   relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
-#  # arrange(id) |> 
-#   droplevels() |> 
-#   mutate_if(is.matrix, as.vector) |> 
-#   as.mids()
-#   
-#mice_health_long_test <- mice::complete(mice_health_mids_test, "long", inc = TRUE)
-#skimr::skim(mice_health_long_test)
-
-
-#. real model 
+# impute  
 mice_health <- impute_and_combine(prep_health_multiple,  m = 10 )
-
 
 # save imputed data
 saveRDS(mice_health,
@@ -1325,51 +793,43 @@ mice_health <- readRDS(
         here::here(push_mods, "mice_health"))
 
 
-mice_health_c  <- mice::complete(mice_health, action = 'long', include = TRUE)
+mice_health_c <- mice::complete(mice_health, action = 'long', include = TRUE)
 
 # remove bad cols
 mice_health_c <- mice_health_c |> select(-c(.id.1, .imp.1))
 
-
 #vis_miss(mice_health_c, warn_large_data = FALSE)
-
-dev.off()
-
-table(mice_health_c$t1_household_inc_quantile)
+table(mice_health_c$t1_extraversion_quantile)
 table(mice_health_c$.imp)
 
 
 row.names(mice_health_c) <- NULL
 
-# table(mice_health_c$.imp)
-# table(mice_health_c$.imp)
-# max(mice_health_c$.id)
-
 mice_health_mids <- mice_health_c %>%
     arrange(.imp, id) |> 
   rename(sample_weights = t0_sample_weights) |> 
   mutate(t0_eth_cat = as.factor(t0_eth_cat),
-         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
          t0_smoker = as.factor(t0_smoker),
          t2_smoker = as.factor(t2_smoker),
          t0_hours_exercise = log(t0_hours_exercise + 1),
          t2_hours_exercise =  log(t2_hours_exercise +1)) |>
   dplyr::group_by(.imp, id) |>
  # rowwise() |> # group by id within .imp 
-  dplyr::mutate(t0_sfhealth = mean(
-    c(
-      t0_sfhealth_your_health,
-      t0_sfhealth_get_sick_easier,
-      t0_sfhealth_expect_worse_health  ),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_sfhealth = mean(
-    c(
-      t2_sfhealth_your_health,
-      t2_sfhealth_get_sick_easier,
-      t2_sfhealth_expect_worse_health  ),
-    na.rm = TRUE
-  )) |>
+  # dplyr::mutate(t0_sfhealth = mean(
+  #   c(
+  #     t0_sfhealth_your_health,
+  #     t0_sfhealth_get_sick_easier,
+  #     t0_sfhealth_expect_worse_health  ),
+  #   na.rm = TRUE
+  # # )) |>
+  #   dplyr::mutate(t2_sfhealth = mean(
+  #   c(
+  #     t2_sfhealth_your_health,
+  #     t2_sfhealth_get_sick_easier,
+  #     t2_sfhealth_expect_worse_health  ),
+  #   na.rm = TRUE
+  # )) |>
   dplyr::ungroup() |>
   dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) %>%
@@ -1392,27 +852,23 @@ mice_health_mids <- mice_health_c %>%
   
 
 mice_health_long <- mice::complete(mice_health_mids, "long", inc = TRUE)
+warnings()
 
 # correct
 table(mice_health_long$.imp)
-
+str(mice_health_long$t0_education_level_coarsen)
+str(mice_health_long$t0_alert_level_combined_lead)
+str(mice_health_long$t0_sample_origin_names_combined)
 
 saveRDS(mice_health_mids, here::here(push_mods, "mice_health_mids"))
 saveRDS(mice_health_long, here::here(push_mods, "mice_health_long"))
 ```
 
 ```{r}
-#| label: imputations embodied
+#| label: imputations-embodied
 #| echo: false
 #| include: false
 #| eval: false
-
-#| label: imputations health
-#| echo: false
-#| include: false
-#| eval: false
-
-
 # embodied
 naniar::vis_miss(prep_embodied, warn_large_data = FALSE)
 
@@ -1421,8 +877,7 @@ dev.off()
 # check for collinear vars
 mice:::find.collinear(prep_embodied)
 
-
-colnames(prep_embodied)
+colnames(prep_embodied_multiple)
 # prep factors remove for speed
 
 mice_embodied <- impute_and_combine(prep_embodied_multiple,  m=10)
@@ -1446,7 +901,7 @@ mice_embodied_c <- mice_embodied_c |> select(-c(.id.1, .imp.1))
 skimr::skim(mice_embodied_c)
 
 # checks
-table(mice_embodied_c$t1_household_inc_quantile)
+table(mice_embodied_c$t1_extraversion_quantile)
 table(mice_embodied_c$.imp)
 
 
@@ -1459,42 +914,42 @@ mice_embodied_mids <- mice_embodied_c %>%
   rename(sample_weights = t0_sample_weights) |> 
   mutate( 
          t0_eth_cat = as.factor(t0_eth_cat),
-         t0_rural_gch2018 = as.factor(t0_rural_gch2018)) |> 
+         t0_education_level_coarsen = as.factor(t0_education_level_coarsen)) |> 
   dplyr::group_by(.imp) |> # means within imputations 
   rowwise() |> 
-  dplyr::mutate(t0_kessler_6 = mean(
-    c(
-    t0_kessler_depressed,
-    t0_kessler_effort,
-    t0_kessler_hopeless,
-    t0_kessler_nervous,
-    t0_kessler_restless,
-    t0_kessler_worthless ),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_kessler_6 = mean(
-    c(
-    t2_kessler_depressed,
-    t2_kessler_effort,
-    t2_kessler_hopeless,
-    t2_kessler_nervous,
-    t2_kessler_restless,
-    t2_kessler_worthless ),
-    na.rm = TRUE
-  )) |> 
-    dplyr::mutate(t2_kessler_6_depression = mean(
-    c(
-    t2_kessler_depressed,
-    t2_kessler_hopeless,
-    t2_kessler_worthless ),
-    na.rm = TRUE
-    )) |>
-  dplyr::mutate(t2_kessler_6_anxiety = mean(
-    c(t2_kessler_effort,
-      t2_kessler_nervous,
-      t2_kessler_restless ),
-    na.rm = TRUE
-  )) |> 
+  # dplyr::mutate(t0_kessler_6 = mean(
+  #   c(
+  #   t0_kessler_depressed,
+  #   t0_kessler_effort,
+  #   t0_kessler_hopeless,
+  #   t0_kessler_nervous,
+  #   t0_kessler_restless,
+  #   t0_kessler_worthless ),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t2_kessler_6 = mean(
+  #   c(
+  #   t2_kessler_depressed,
+  #   t2_kessler_effort,
+  #   t2_kessler_hopeless,
+  #   t2_kessler_nervous,
+  #   t2_kessler_restless,
+  #   t2_kessler_worthless ),
+  #   na.rm = TRUE
+  # )) |> 
+  #   dplyr::mutate(t2_kessler_6_depression = mean(
+  #   c(
+  #   t2_kessler_depressed,
+  #   t2_kessler_hopeless,
+  #   t2_kessler_worthless ),
+  #   na.rm = TRUE
+  #   )) |>
+  # dplyr::mutate(t2_kessler_6_anxiety = mean(
+  #   c(t2_kessler_effort,
+  #     t2_kessler_nervous,
+  #     t2_kessler_restless ),
+  #   na.rm = TRUE
+  # )) |> 
   dplyr::ungroup() |> 
   dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) %>%
@@ -1518,19 +973,19 @@ mice_embodied_long <- mice::complete(mice_embodied_mids, "long", inc = TRUE)
 saveRDS(mice_embodied_mids, here::here(push_mods, "mice_embodied_mids"))
 saveRDS(mice_embodied_long, here::here(push_mods, "mice_embodied_long"))
 
+str(mice_embodied_long$t0_education_level_coarsen)
+
 ```
 
 ```{r}
-#| label: imputations practical
+#| label: imputations-practical
 #| echo: false
 #| include: false
 #| eval: false
 
-
 # embodied
 naniar::vis_miss(prep_practical, warn_large_data = FALSE)
 
-dev.off()
 
 # check for collinear vars
 mice:::find.collinear(prep_practical)
@@ -1550,111 +1005,123 @@ saveRDS(mice_practical,
 mice_practical <- readRDS(here::here(push_mods, "mice_practical"))
 
 
-mice_practical_c  <- mice::complete(mice_practical, action = 'long', include = TRUE)
+mice_practical  <- mice::complete(mice_practical, action = 'long', include = TRUE)
 
-mice_practical_c <- mice_practical_c |> select(-c(.id.1, .imp.1))
+mice_practical <- mice_practical |> select(-c(.id.1, .imp.1))
 
-table(mice_practical_c$.imp)
+table(mice_practical$.imp)
 
 # check data
-skimr::skim(mice_practical_c)
+skimr::skim(mice_practical)
 
-# check exposure
-table(mice_practical_c$t1_household_inc_quantile)
-
-row.names(mice_practical_c) <- NULL
+row.names(mice_practical) <- NULL
 
 
-mice_practical_mids <- mice_practical_c %>%
-  arrange(.imp, id) |> 
-  rename(sample_weights = t0_sample_weights) |> 
-  mutate( t0_eth_cat = as.factor(t0_eth_cat),
-         t0_rural_gch2018 = as.factor(t0_rural_gch2018)) |> 
+mice_practical_mids <- mice_practical %>%
+  arrange(.imp, id) |>
+  rename(sample_weights = t0_sample_weights) |>
+  mutate(
+    t0_eth_cat = as.factor(t0_eth_cat),
+    t0_education_level_coarsen = as.factor(t0_education_level_coarsen)
+  ) |>
   dplyr::group_by(.imp) |>
-  rowwise() |> 
-  dplyr::mutate(t0_powerdependence = mean(
-    c(
-    t0_power_self_nocontrol,
-    t0_power_others_control),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t0_selfesteem = mean(
-    c(
-    t0_selfesteem_satself,
-    t0_selfesteem_postiveself,
-    t0_selfesteem_rfailure),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t0_self_control = mean(
-    c(
-    t0_self_control_have_lots,
-    t0_self_control_wish_more_r),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t0_emotion_regulation = mean(
-    c(
-    t0_emotion_regulation_out_control,
-    t0_emotion_regulation_hide_neg_emotions,
-    t0_emotion_regulation_change_thinking_to_calm),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_powerdependence = mean(
-    c(
-    t2_power_self_nocontrol,
-    t2_power_others_control),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_selfesteem = mean(
-    c(
-    t2_selfesteem_satself,
-    t2_selfesteem_postiveself,
-    t2_selfesteem_rfailure),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_self_control = mean(
-    c(
-    t2_self_control_have_lots,
-    t2_self_control_wish_more_r),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_emotion_regulation = mean(
-    c(
-    t2_emotion_regulation_out_control,
-    t2_emotion_regulation_hide_neg_emotions,
-    t2_emotion_regulation_change_thinking_to_calm),
-    na.rm = TRUE
-  )) |>
-  dplyr::ungroup() |> 
-  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  rowwise() |>
+  # dplyr::mutate(t0_powerdependence = mean(
+  #   c(
+  #   t0_power_self_nocontrol,
+  #   t0_power_others_control),
+  #   na.rm = TRUE
+#  )) |>
+  # dplyr::mutate(t0_selfesteem = mean(
+  #   c(
+  #     t0_selfesteem_satself,
+  #     t0_selfesteem_postiveself,
+  #     t0_selfesteem_rfailure
+  #   ),
+  #   na.rm = TRUE
+  # )) |>
+  # dplyr::select(-c(
+  #   t0_selfesteem_satself,
+  #   t0_selfesteem_postiveself,
+  #   t0_selfesteem_rfailure
+  # )) |>
+  # dplyr::mutate(t0_self_control = mean(
+  #   c(t0_self_control_have_lots,
+  #     t0_self_control_wish_more_r),
+  #   na.rm = TRUE
+  # )) |>
+  # dplyr::select(-c(t0_self_control_have_lots,
+  #                  t0_self_control_wish_more_r)) |>
+  # dplyr::mutate(t0_emotion_regulation = mean(
+  #   c(
+  #     t0_emotion_regulation_out_control,
+  #     t0_emotion_regulation_hide_neg_emotions,
+  #     t0_emotion_regulation_change_thinking_to_calm
+  #   ),
+  #   na.rm = TRUE
+  # )) |>
+  # dplyr::select(-c(
+  #     t0_emotion_regulation_out_control,
+  #     t0_emotion_regulation_hide_neg_emotions,
+  #     t0_emotion_regulation_change_thinking_to_calm
+  #   )
+  # ) |>
+  #   dplyr::mutate(t2_powerdependence = mean(
+  #   c(
+  #   t2_power_self_nocontrol,
+  #   t2_power_others_control),
+  #   na.rm = TRUE
+  # )) |>
+  # dplyr::mutate(t2_selfesteem = mean(
+  #   c(
+  #     t2_selfesteem_satself,
+  #     t2_selfesteem_postiveself,
+  #     t2_selfesteem_rfailure
+  #   ),
+  #   na.rm = TRUE
+  # )) |>
+  # dplyr::mutate(t2_self_control = mean(
+  #   c(t2_self_control_have_lots,
+  #     t2_self_control_wish_more_r),
+  #   na.rm = TRUE
+  # )) |>
+  # dplyr::mutate(t2_emotion_regulation = mean(
+  #   c(
+  #     t2_emotion_regulation_out_control,
+  #     t2_emotion_regulation_hide_neg_emotions,
+  #     t2_emotion_regulation_change_thinking_to_calm
+  #   ),
+  #   na.rm = TRUE
+  # )) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(across(where(is.numeric) &
+                         !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) %>%
-   select(
-    where(is.factor),
-    sample_weights,
-    ends_with("_z"),
-    .imp,
-    .id
-  ) |> 
+  select(where(is.factor),
+         sample_weights,
+         ends_with("_z"),
+         .imp,
+         .id) |>
   relocate(sample_weights, .before = starts_with("t1_"))  %>%
   relocate(id, .before = sample_weights)  %>%
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_"))  |> 
-  droplevels() |> 
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  |>
+  droplevels() |>
   mutate_if(is.matrix, as.vector) %>%
   as.mids()
-
 
 mice_practical_long <- mice::complete(mice_practical_mids, "long", inc = TRUE)
 
 saveRDS(mice_practical_mids, here::here(push_mods, "mice_practical_mids"))
 saveRDS(mice_practical_long, here::here(push_mods, "mice_practical_long"))
+
 ```
 
 ```{r}
-#| label: imputations reflective
+#| label: imputations-reflective
 #| echo: false
 #| include: false
 #| eval: false
-
 
 # reflective
 naniar::vis_miss(prep_reflective, warn_large_data = FALSE)
@@ -1662,10 +1129,14 @@ naniar::vis_miss(prep_reflective, warn_large_data = FALSE)
 # check for collinear vars
 mice:::find.collinear(prep_reflective)
 
-
+prep_reflective_multiple
+colnames(prep_reflective)
+str(prep_reflective)
+prep_reflective<- data.frame(prep_reflective)
+str(prep_reflective)
 # impute
-mice_reflective <- impute_and_combine(prep_reflective_multiple, m = 10)
 
+mice_reflective <- impute_and_combine(prep_reflective_multiple, m = 10)
 
 # save imputed data
 saveRDS(mice_reflective,
@@ -1692,49 +1163,49 @@ mice_reflective_mids <- mice_reflective_c %>%
   arrange(.imp, id) |> 
   rename(sample_weights = t0_sample_weights) |> 
   mutate( t0_eth_cat = as.factor(t0_eth_cat),
-         t0_rural_gch2018 = as.factor(t0_rural_gch2018)) |> 
+         t0_education_level_coarsen = as.factor(t0_education_level_coarsen)) |> 
   dplyr::group_by(.imp) |>
   rowwise() |> 
-  dplyr::mutate(t0_pwi = mean(
-    c(
-    t0_pwi_health,
-    t0_pwi_relationships,
-    t0_pwi_security,
-    t0_pwi_standardliving),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t0_lifesat = mean(
-    c(
-    t0_lifesat_satlife,
-    t0_lifesat_ideal),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t0_meaning = mean(
-    c(
-    t0_meaning_purpose,
-    t0_meaning_sense),
-    na.rm = TRUE
-  )) |> 
-    dplyr::mutate(t2_pwi = mean(
-    c(
-    t2_pwi_health,
-    t2_pwi_relationships,
-    t2_pwi_security,
-    t2_pwi_standardliving),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_lifesat = mean(
-    c(
-    t2_lifesat_satlife,
-    t2_lifesat_ideal),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_meaning = mean(
-    c(
-    t2_meaning_purpose,
-    t2_meaning_sense),
-    na.rm = TRUE
-  )) |> 
+  # dplyr::mutate(t0_pwi = mean(
+  #   c(
+  #   t0_pwi_health,
+  #   t0_pwi_relationships,
+  #   t0_pwi_security,
+  #   t0_pwi_standardliving),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t0_lifesat = mean(
+  #   c(
+  #   t0_lifesat_satlife,
+  #   t0_lifesat_ideal),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t0_meaning = mean(
+  #   c(
+  #   t0_meaning_purpose,
+  #   t0_meaning_sense),
+  #   na.rm = TRUE
+  # )) |> 
+  #   dplyr::mutate(t2_pwi = mean(
+  #   c(
+  #   t2_pwi_health,
+  #   t2_pwi_relationships,
+  #   t2_pwi_security,
+  #   t2_pwi_standardliving),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t2_lifesat = mean(
+  #   c(
+  #   t2_lifesat_satlife,
+  #   t2_lifesat_ideal),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t2_meaning = mean(
+  #   c(
+  #   t2_meaning_purpose,
+  #   t2_meaning_sense),
+  #   na.rm = TRUE
+  # )) |> 
   dplyr::ungroup() |> 
   dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) %>%
@@ -1763,7 +1234,7 @@ saveRDS(mice_reflective_long, here::here(push_mods, "mice_reflective_long"))
 ```
 
 ```{r}
-#| label: imputations social
+#| label: imputations-social
 #| echo: false
 #| include: false
 #| eval: false
@@ -1801,45 +1272,46 @@ table(mice_social_c$t1_household_inc_quantile)
 
 row.names(mice_social_c) <- NULL
 
+
 mice_social_mids <- mice_social_c %>%
   arrange(.imp, id) |> 
   rename(sample_weights = t0_sample_weights) |> 
   mutate(t0_eth_cat = as.factor(t0_eth_cat),
-         t0_rural_gch2018 = as.factor(t0_rural_gch2018),
+         t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
          t0_charity_donate = log(t0_charity_donate + 1),
          t2_charity_donate = log(t2_charity_donate + 1),
          t0_volunteers = as.factor(ifelse(t0_hours_charity > 1,1,0)),
-        t2_volunteers = as.factor(ifelse(t2_hours_charity > 1,1,0)))|>
+         t2_volunteers = as.factor(ifelse(t2_hours_charity > 1,1,0)))|>
   dplyr::group_by(.imp) |>
   rowwise() |> 
-  dplyr::mutate(t0_support = mean(
-    c(
-    t0_support_help,
-    t0_support_turnto,
-    t0_support_rnoguidance),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t0_belong = mean(
-    c(
-    t0_belong_accept,
-    t0_belong_routsider,
-    t0_belong_beliefs),
-    na.rm = TRUE
-  )) |> 
-   dplyr::mutate(t2_support = mean(
-    c(
-    t2_support_help,
-    t2_support_turnto,
-    t2_support_rnoguidance),
-    na.rm = TRUE
-  )) |>
-    dplyr::mutate(t2_belong = mean(
-    c(
-    t2_belong_accept,
-    t2_belong_routsider,
-    t2_belong_beliefs),
-    na.rm = TRUE
-  )) |> 
+  # dplyr::mutate(t0_support = mean(
+  #   c(
+  #   t0_support_help,
+  #   t0_support_turnto,
+  #   t0_support_rnoguidance),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t0_belong = mean(
+  #   c(
+  #   t0_belong_accept,
+  #   t0_belong_routsider,
+  #   t0_belong_beliefs),
+  #   na.rm = TRUE
+  # )) |> 
+  #  dplyr::mutate(t2_support = mean(
+  #   c(
+  #   t2_support_help,
+  #   t2_support_turnto,
+  #   t2_support_rnoguidance),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t2_belong = mean(
+  #   c(
+  #   t2_belong_accept,
+  #   t2_belong_routsider,
+  #   t2_belong_beliefs),
+  #   na.rm = TRUE
+  # )) |> 
   dplyr::ungroup() |> 
   dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) %>%
@@ -1866,8 +1338,9 @@ saveRDS(mice_social_mids, here::here(push_mods, "mice_social_mids"))
 saveRDS(mice_social_long, here::here(push_mods, "mice_social_long"))
 ```
 
+
 ```{r}
-#| label: models HEALTH
+#| label: models-health-quantile
 #| eval: false
 
 mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
@@ -1877,31 +1350,41 @@ mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
 mice_health_long <- readRDS(here::here(push_mods, "mice_health_long"))
 
 
-
 # Set exposure 
-X <- "t1_household_inc_quantile"
+X <- "t1_extraversion_quantile"
 
+X
 
 # baselin vars ---------------------------------------------------------
 library(MatchThem)
 baseline_vars_health = mice_health_long |> 
-  dplyr::select(starts_with("t0"), -c("t0_household_inc_z", "t0_nz_dep2018_z",
-"t0_nzsei13_z"))|> colnames() # strange to include these -- as they  are income by other names
-
+  dplyr::select(starts_with("t0"), -c("t0_extraversion_z",
+))|> colnames() # strange to include these -- as they  are income by other names
 baseline_vars_health
+
+# "t0_sample_origin_names_combined", "t0_alert_level_combined_lead", 
+# "t0_education_level_coarsen"
+
+table( mice_health_long$t0_education_level_coarsen)
+table( mice_health_long$t0_sample_origin_names_combined)
+
+
 
 options(scipen = 999)
 
 str(mice_health_mids)
 
 #vis_miss(mice_health_long, warn_large_data = FALSE)
+X <- "t1_extraversion_quantile"
+baseline_vars_health
 
-
+table( mice_health_long$sample_weights) # sparce urban
 # ebalance
-dt_match_health_ebal <- match_mi(data = mice_health_mids, 
+dt_match_health_ebal <- match_mi_general(data = mice_health_mids, 
                                  X = X, 
                                  baseline_vars = baseline_vars_health, 
                                  estimand = "ATE",  
+                                # focal = "q_2", for ATT
                                  method = "ebal", 
                                  sample_weights = "sample_weights")
 
@@ -1910,12 +1393,12 @@ saveRDS(dt_match_health_ebal, here::here(push_mods, "dt_match_health_ebal"))
 warnings()
 
 # energy balance
-dt_match_health_energy <- match_mi(data = mice_health_mids, 
-                                   X = X, 
-                                   baseline_vars = baseline_vars_health, 
-                                   estimand = "ATE",  
-                                   method = "energy", 
-                                   sample_weights = "sample_weights")
+# dt_match_health_energy <- match_mi(data = mice_health_mids, 
+#                                    X = X, 
+#                                    baseline_vars = baseline_vars_health, 
+#                                    estimand = "ATE",  
+#                                    method = "energy", 
+#                                    sample_weights = "sample_weights")
 
 saveRDS(dt_match_health_energy, here::here(push_mods, "dt_match_health"))
 
@@ -1925,8 +1408,8 @@ saveRDS(dt_match_health_ps, here::here(push_mods, "dt_match_health"))
 
 
 sum_ebal <- summary(dt_match_health_ebal)
-sum_energy <- summary(dt_match_health_energy)
-sum_ps <- summary(dt_match_health_ps)
+# sum_energy <- summary(dt_match_health_energy)
+# sum_ps <- summary(dt_match_health_ps)
 
 sum_ebal
 plot(sum_ebal)
@@ -1942,13 +1425,14 @@ bal.tab(dt_match_health_ps)
 # if trim is needed
 dt_match_health_ebal_trim <- WeightIt::trim(dt_match_health_ebal, at = .99)
 sum_ebal_trim <- summary(dt_match_health_ebal_trim)
+
 sum_ebal_trim
 
 plot(sum_ebal_trim)
-bal.tab(dt_match_health_ebal_trim)
+bal.tab(dt_match_health_ebal_trim,stats = c("m", "ks"), abs = TRUE)
 
 love.plot(dt_match_health_ebal_trim, binary = "std", thresholds = c(m = .1))
-love.plot(dt_match_health_ps, binary = "std", thresholds = c(m = .1))
+#love.plot(dt_match_health_ps, binary = "std", thresholds = c(m = .1))
 
 dev.off()
 
@@ -1957,26 +1441,24 @@ dev.off()
 # Set DF 
 dt_health = dt_match_health_ebal_trim
 
+
 # bootstrap simulations
-nsims <- 1000
+nsims <- 200
 
 # cores
 cl =  parallel::detectCores () 
 
 
-# x variable 
-# Set exposure 
-X <- "t1_household_inc_quantile"
-
+# outcome 
 Y = "t2_alcohol_frequency_z"
 
 
 levels( prep_health$t1_household_inc_quantile )
 
-treat_0 = "q1"
-treat_1 = "q3"
+treat_0 = "q_2"
+treat_1 = "q_4"
 # as specified
-vcov = "HC3" # robust standard errors. 
+vcov = "HC2" # robust standard errors. 
 
 
 # cores
@@ -1984,6 +1466,40 @@ cores = parallel::detectCores () # use all course
 cores 
 
 # outcomes
+
+#################################### THIS IS HOW WE MODEL (UNDER THE HOOD) 
+X
+
+Y = "t2_hours_exercise_z"
+#formula_str_A <- paste(X, "~", paste(baseline_vars_health, collapse = "+"))
+formula_str_Y <- paste(Y, "~", X , "*", "(", paste(baseline_vars_health, collapse = "+"), ")")
+
+# check
+formula_str_Y
+
+fits <- lapply(complete(dt_health, "all"), function(d) {
+  lm(formula_str_Y, data = d,
+      weights = weights
+     )
+})
+
+#pool(fits) |> summary() |> select(term, estimate, std.error)
+
+sim.imp <- misim(fits, n = 200, vcov = "HC2")
+
+sim.att <- sim_ame(sim.imp, var = X,
+                   subset = t1_extraversion_quantile == treat_1, cl = 3,
+                   verbose = TRUE)
+
+
+est_1 <- transform(sim.att, RD = `E[Y(q_4)]` - `E[Y(q_2)]`)
+
+sum_mod <- summary( est_1, level = .9) 
+sum_mod
+
+plot(sim.att ,  ci = TRUE, level = .95, reference = FALSE, method = "wald")
+
+#######################
 
 #outcome_vars_health
 
@@ -2010,7 +1526,7 @@ mod_health_alcohol_frequency
 # save model
 saveRDS(mod_health_alcohol_frequency, here::here(push_mods, "mod_health_alcohol_frequency"))
 
-other <- readRDS( here::here(push_mods, "mod_health_alcohol_frequency"))
+# other <- readRDS( here::here(push_mods, "mod_health_alcohol_frequency"))
 
 
 mod_health_alcohol_intensity  <- gcomp_sim(
@@ -2077,10 +1593,12 @@ mod_health_hours_exercise  <- gcomp_sim(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "hours_exercise_log_z"
+  new_name = "hours_exercise_log_z",
+  vcov = "HC3"
 )
 
 mod_health_hours_exercise
+
 # save model
 saveRDS(mod_health_hours_exercise, here::here(push_mods, "mod_health_hours_exercise"))
 
@@ -2169,30 +1687,30 @@ saveRDS(mod_health_sfhealth_expect_worse_health, here::here(push_mods, "mod_heal
 
 
 
+# 
+# mod_health_sfhealth_comp  <- gcomp_sim(
+#   df = dt_health,  # note change
+#   X = X,
+#   Y = "t2_sfhealth_z",
+#   baseline_vars = baseline_vars_health,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "sfhealth_z (composite)"
+# )
+# 
+# mod_health_sfhealth_comp
 
-mod_health_sfhealth_comp  <- gcomp_sim(
-  df = dt_health,  # note change
-  X = X,
-  Y = "t2_sfhealth_z",
-  baseline_vars = baseline_vars_health,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "sfhealth_z (composite)"
-)
-
-mod_health_sfhealth_comp
-
-# save model
-saveRDS(mod_health_sfhealth_comp, here::here(push_mods, "mod_health_sfhealth_comp"))
+# # save model
+# saveRDS(mod_health_sfhealth_comp, here::here(push_mods, "mod_health_sfhealth_comp"))
 
 
 
@@ -2223,8 +1741,7 @@ saveRDS(mod_health_hlth_sleep_hours, here::here(push_mods, "mod_health_hlth_slee
 
 
 
-## Risk Ratio
-
+## Risk Ratio - not working
 mod_health_smoker  <- gcomp_sim(
   df = dt_health,  
   X = X,
@@ -2235,16 +1752,14 @@ mod_health_smoker  <- gcomp_sim(
   estimand = "ATE",
   scale = "RR",
   type = "RR",
-  nsims = 10,
+  nsims = 200,
   cores = cores,
-  delta = 1,
-  sd = 1,
   family = quasibinomial(),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "smoker",
-  vcov = FALSE)
+  new_name = "Smoker_y/n",
+  vcov ="HC")
 
 
 mod_health_smoker
@@ -2260,18 +1775,17 @@ saveRDS(mod_health_smoker, here::here(push_mods, "mod_health_smoker"))
 
 tab_health <-
   rbind(
+mod_health_hlth_bmi,
 mod_health_alcohol_frequency,
 mod_health_alcohol_intensity,
-mod_health_hlth_bmi,
 mod_health_hours_exercise,
 mod_health_sfhealth_your_health,
 mod_health_sfhealth_get_sick_easier,
 mod_health_sfhealth_expect_worse_health,
-mod_health_sfhealth_comp,
+#mod_health_sfhealth_comp,
 mod_health_hlth_sleep_hours
   )
 
-push_mods
 tab_health
 
 #tab_cont_df <- as.data.frame(tab_cont)
@@ -2285,7 +1799,7 @@ group_tab_health
 
 group_plot_ate_health <- group_plot_ate(group_tab_health,    
                            type = "RD", 
-                           title = "ATE: causal contrast:first to third quartile of income", 
+                           title = "ATE: causal contrast:second to fourth quartile of extraversion", 
                            subtitle = "Health outcomes", 
                            xlab = "(sd units)", 
                            ylab = "test",
@@ -2301,7 +1815,7 @@ ggsave(
   width = 8,
   height = 4,
   units = "in",
-  filename = "group_plot_ate_health.png",
+  filename = "group_plot_ate_health_use.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -2311,7 +1825,7 @@ dev.off()
 ```
 
 ```{r}
-#| label: models EMBODIED
+#| label: models-embodied-quantile
 #| eval: false
 
 mice_embodied_mids <- readRDS(here::here(push_mods, "mice_embodied_mids"))
@@ -2320,19 +1834,16 @@ mice_embodied_mids <- readRDS(here::here(push_mods, "mice_embodied_mids"))
 mice_embodied_long <- readRDS(here::here(push_mods, "mice_embodied_long"))
 
 
-# Set exposure 
-X <- "t1_household_inc_quantile"
-
 
 # baselin vars ---------------------------------------------------------
 library(MatchThem)
 baseline_vars_embodied = mice_embodied_long |> 
-  dplyr::select(starts_with("t0"), -c("t0_household_inc_z", "t0_nz_dep2018_z",
-"t0_nzsei13_z"))|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"), -c("t0_extraversion_z")
+)|> colnames() # strange to include these -- as they  are income by other names
 
 baseline_vars_embodied
 
-names_t2<- mice_embodied_long |> 
+names_t2 <- mice_embodied_long |> 
   dplyr::select(starts_with("t2"))|> colnames() 
 names_t2
 
@@ -2352,14 +1863,14 @@ mice_embodied_ebal <- match_mi(data = mice_embodied_mids,
 saveRDS(mice_embodied_ebal, here::here(push_mods, "mice_embodied_ebal"))
 
 # energy balance
-dt_match_health_energy <- match_mi(data = mice_health_mids, 
-                                   X = X, 
-                                   baseline_vars = baseline_vars_health, 
-                                   estimand = "ATE",  
-                                   method = "energy", 
-                                   sample_weights = "sample_weights")
-
-saveRDS(dt_match_health_energy, here::here(push_mods, "dt_match_health"))
+# dt_match_health_energy <- match_mi(data = mice_health_mids, 
+#                                    X = X, 
+#                                    baseline_vars = baseline_vars_health, 
+#                                    estimand = "ATE",  
+#                                    method = "energy", 
+#                                    sample_weights = "sample_weights")
+# 
+# saveRDS(dt_match_health_energy, here::here(push_mods, "dt_match_health"))
 
 # propensity score
 dt_match_health_ps <- match_mi(data = mice_health_mids, X = X, baseline_vars = baseline_vars_health, estimand = "ATE",  method = "ps", sample_weights = "sample_weights")
@@ -2387,7 +1898,7 @@ sum_ebal_trim <- summary(mice_embodied_ebal_trim)
 sum_ebal_trim
 
 plot(sum_ebal_trim)
-bal.tab(mice_embodied_ebal_trim)
+bal.tab(mice_embodied_ebal_trim,stats = c("m", "ks"), abs = TRUE)
 
 love.plot(mice_embodied_ebal_trim, binary = "std", thresholds = c(m = .1))
 love.plot(dt_match_health_ps, binary = "std", thresholds = c(m = .1))
@@ -2400,7 +1911,7 @@ dev.off()
 dt_embodied = mice_embodied_ebal_trim
 
 # bootstrap simulations
-nsims <- 1000
+nsims <- 200
 
 # cores
 cl =  parallel::detectCores () 
@@ -2408,15 +1919,15 @@ cl =  parallel::detectCores ()
 
 # x variable 
 # Set exposure 
-X <- "t1_household_inc_quantile"
+X <- "t1_extraversion_quantile"
 
 
-treat_0 = "q1"
-treat_1 = "q3"
+treat_0 = "q_2"
+treat_1 = "q_4"
 # as specified
-vcov = "HC3" # robust standard errors. 
+vcov = "HC2" # robust standard errors. 
 
-
+X
 # cores
 cores = parallel::detectCores () # use all course
 cores 
@@ -2625,86 +2136,86 @@ mod_embodied_kessler_worthless
 saveRDS(mod_embodied_kessler_worthless, here::here(push_mods, "mod_embodied_kessler_worthless"))
 
 
-
-## t2_kessler_6
-mod_embodied_kessler_6  <- gcomp_sim(
-  df = dt_embodied,  # note change
-  Y = "t2_kessler_6_z",
-  X = X,
-  baseline_vars = baseline_vars_embodied,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "kessler_6_z (composite)"
-)
-
-mod_embodied_kessler_6
-# save model
-saveRDS(mod_embodied_kessler_6, here::here(push_mods, "mod_embodied_kessler_6"))
-
-
-
-
-
-mod_embodied_kessler_6_depression  <- gcomp_sim(
-  df = dt_embodied,  # note change
-  Y = "t2_kessler_6_depression_z",
-  X = X,
-  baseline_vars = baseline_vars_embodied,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "kessler_6_depression_z (composite)"
-)
-
-mod_embodied_kessler_6_depression
+# 
+# ## t2_kessler_6
+# mod_embodied_kessler_6  <- gcomp_sim(
+#   df = dt_embodied,  # note change
+#   Y = "t2_kessler_6_z",
+#   X = X,
+#   baseline_vars = baseline_vars_embodied,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "kessler_6_z (composite)"
+# )
+# 
+# mod_embodied_kessler_6
+# # save model
+# saveRDS(mod_embodied_kessler_6, here::here(push_mods, "mod_embodied_kessler_6"))
+# 
+# 
 
 
-# save model
-saveRDS(mod_embodied_kessler_6_depression, here::here(push_mods, "mod_embodied_kessler_6_depression"))
+# 
+# mod_embodied_kessler_6_depression  <- gcomp_sim(
+#   df = dt_embodied,  # note change
+#   Y = "t2_kessler_6_depression_z",
+#   X = X,
+#   baseline_vars = baseline_vars_embodied,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "kessler_6_depression_z (composite)"
+# )
+# 
+# mod_embodied_kessler_6_depression
 
+# 
+# # save model
+# saveRDS(mod_embodied_kessler_6_depression, here::here(push_mods, "mod_embodied_kessler_6_depression"))
+# 
+# 
+# 
+# mod_embodied_kessler_6_anxiety <- gcomp_sim(
+#   df = dt_embodied,  # note change
+#   Y = "t2_kessler_6_anxiety_z",
+#   X = X,
+#   baseline_vars = baseline_vars_embodied,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "kessler_6_anxiety_z (composite)"
+# )
+# 
+# mod_embodied_kessler_6_anxiety
 
-
-mod_embodied_kessler_6_anxiety <- gcomp_sim(
-  df = dt_embodied,  # note change
-  Y = "t2_kessler_6_anxiety_z",
-  X = X,
-  baseline_vars = baseline_vars_embodied,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "kessler_6_anxiety_z (composite)"
-)
-
-mod_embodied_kessler_6_anxiety
-
-
-# save model
-saveRDS(mod_embodied_kessler_6_anxiety, here::here(push_mods, "mod_embodied_kessler_6_anxiety"))
+# 
+# # save model
+# saveRDS(mod_embodied_kessler_6_anxiety, here::here(push_mods, "mod_embodied_kessler_6_anxiety"))
 
 
 ## combo-table
@@ -2718,10 +2229,10 @@ mod_embodied_kessler_effort,
 mod_embodied_kessler_hopeless,
 mod_embodied_kessler_nervous,
 mod_embodied_kessler_restless,
-mod_embodied_kessler_worthless,
-mod_embodied_kessler_6,
-mod_embodied_kessler_6_depression,
-mod_embodied_kessler_6_anxiety
+mod_embodied_kessler_worthless#``  `,
+#mod_embodied_kessler_6,
+#mod_embodied_kessler_6_depression,
+#mod_embodied_kessler_6_anxiety
   )
 
 tab_embodied
@@ -2736,7 +2247,7 @@ group_tab_embodied
 group_plot_ate_embodied <- group_plot_ate(
   group_tab_embodied,
   type = "RD",
-  title = "ATE: causal contrast:first to third quartile of income", 
+  title = "ATE: causal contrast:second to fourth quartile of extraversion", 
   subtitle = "Embodied Outcomes",
   xlab = "(sd units)",
   ylab = "test",
@@ -2765,7 +2276,7 @@ dev.off()
 ```
 
 ```{r}
-#| label: models PRACTICAL
+#| label: models-practical-quantile
 #| eval: false
 
 
@@ -2776,13 +2287,12 @@ mice_practical_long <- readRDS(here::here(push_mods, "mice_practical_long"))
 
 
 # Set exposure 
-X <- "t1_household_inc_quantile"
+#X <- "t1_extraversion_quantile"
 
 
 
 baseline_vars_practical = mice_practical_long |> 
-  dplyr::select(starts_with("t0"), -c("t0_household_inc_z", "t0_nz_dep2018_z",
-"t0_nzsei13_z", "t0_emotion_regulation_z"))|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"), -c("t0_extraversion_quantile"))|> colnames() # strange to include these -- as they  are income by other names
 
 
 baseline_vars_practical
@@ -2803,16 +2313,16 @@ mice_practical_ebal <- match_mi(data = mice_practical_mids,
 saveRDS(mice_practical_ebal, here::here(push_mods, "mice_practical_ebal"))
 
 # energy balance
-dt_match_health_energy <- match_mi(data = mice_health_mids, 
-                                   X = X, 
-                                   baseline_vars = baseline_vars_health, 
-                                   estimand = "ATE",  
-                                   method = "energy", 
-                                   sample_weights = "sample_weights")
+# dt_match_health_energy <- match_mi(data = mice_health_mids, 
+#                                    X = X, 
+#                                    baseline_vars = baseline_vars_health, 
+#                                    estimand = "ATE",  
+#                                    method = "energy", 
+#                                    sample_weights = "sample_weights")
 
-saveRDS(dt_match_health_energy, here::here(push_mods, "dt_match_health"))
-
-# propensity score
+# saveRDS(dt_match_health_energy, here::here(push_mods, "dt_match_health"))
+# 
+# # propensity score
 dt_match_health_ps <- match_mi(data = mice_health_mids, X = X, baseline_vars = baseline_vars_health, estimand = "ATE",  method = "ps", sample_weights = "sample_weights")
 saveRDS(dt_match_health_ps, here::here(push_mods, "dt_match_health"))
 
@@ -2838,7 +2348,7 @@ sum_ebal_trim <- summary(mice_practical_ebal_trim)
 sum_ebal_trim
 
 plot(sum_ebal_trim)
-bal.tab(mice_practical_ebal_trim)
+bal.tab(mice_practical_ebal_trim, stats = c("m", "ks"), abs = TRUE)
 
 love.plot(mice_practical_ebal_trim, binary = "std", thresholds = c(m = .1))
 
@@ -2875,10 +2385,9 @@ cores = parallel::detectCores () # use all course
 outcome_vars_practical
                                 
 
-
-mod_practical_nzsei13  <- gcomp_sim(
+mod_practical_sexual_satisfaction <- gcomp_sim(
   df = dt_practical,  # note change
-  Y = "t2_nzsei13_z",
+  Y = "t2_sexual_satisfaction_z",
   X = X,
   baseline_vars = baseline_vars_practical,
   treat_1 = treat_1,
@@ -2892,13 +2401,59 @@ mod_practical_nzsei13  <- gcomp_sim(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "t2_nzsei13_z"
-)
+  new_name = "sexual_satisfaction_z"
+ )
 
-mod_practical_nzsei13 # no effect on employment
+saveRDS(mod_practical_sexual_satisfaction, here::here(push_mods, "mod_practical_sexual_satisfaction"))
+
+
+mod_practical_perfectionism <- gcomp_sim(
+  df = dt_practical,  # note change
+  Y = "t2_perfectionism_z",
+  X = X,
+  baseline_vars = baseline_vars_practical,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "perfectionism_z"
+ )
+
+saveRDS(mod_practical_perfectionism, here::here(push_mods, "mod_practical_perfectionism"))
+
+
+
+# 
+# mod_practical_nzsei13  <- gcomp_sim(
+#   df = dt_practical,  # note change
+#   Y = "t2_nzsei13_z",
+#   X = X,
+#   baseline_vars = baseline_vars_practical,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "t2_nzsei13_z"
+# )
+
+#mod_practical_nzsei13 # no effect on employment
 
 # save model
-saveRDS(mod_practical_nzsei13, here::here(push_mods, "mod_practical_nzsei13"))
+#saveRDS(mod_practical_nzsei13, here::here(push_mods, "mod_practical_nzsei13"))
 
 mod_practical_bodysat  <- gcomp_sim(
   df = dt_practical,  # note change
@@ -3000,30 +2555,30 @@ mod_practical_power_others_control
 # save model
 saveRDS(mod_practical_power_others_control, here::here(push_mods, "mod_practical_power_others_control"))
 
+# 
+# mod_practical_powerdependence  <- gcomp_sim(
+#   df = dt_practical,  # note change
+#   Y = "t2_powerdependence_z",
+#   X = X,
+#   baseline_vars = baseline_vars_practical,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "powerdependence_z"
+# )
 
-mod_practical_powerdependence  <- gcomp_sim(
-  df = dt_practical,  # note change
-  Y = "t2_powerdependence_z",
-  X = X,
-  baseline_vars = baseline_vars_practical,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "powerdependence_z"
-)
-
-mod_practical_powerdependence
+#mod_practical_powerdependence
 
 # save model
-saveRDS(mod_practical_powerdependence, here::here(push_mods, "mod_practical_powerdependence"))
+#saveRDS(mod_practical_powerdependence, here::here(push_mods, "mod_practical_powerdependence"))
 
 
 
@@ -3101,30 +2656,30 @@ mod_practical_selfesteem_rfailure
 # save model
 saveRDS(mod_practical_selfesteem_rfailure, here::here(push_mods, "mod_practical_selfesteem_rfailure"))
 
-
-mod_practical_selfesteem  <- gcomp_sim(
-  df = dt_practical,  # note change
-  Y = "t2_selfesteem_z",
-  X = X,
-  baseline_vars = baseline_vars_practical,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "selfesteem_z"
-)
-
-mod_practical_selfesteem
+# 
+# mod_practical_selfesteem  <- gcomp_sim(
+#   df = dt_practical,  # note change
+#   Y = "t2_selfesteem_z",
+#   X = X,
+#   baseline_vars = baseline_vars_practical,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "selfesteem_z"
+# )
+# 
+# mod_practical_selfesteem
 
 # save model
-saveRDS(mod_practical_selfesteem, here::here(push_mods, "mod_practical_selfesteem"))
+# saveRDS(mod_practical_selfesteem, here::here(push_mods, "mod_practical_selfesteem"))
 
 
 mod_practical_self_control_have_lots  <- gcomp_sim(
@@ -3175,30 +2730,30 @@ mod_practical_self_control_wish_more_r
 # save model
 saveRDS(mod_practical_self_control_wish_more_r, here::here(push_mods, "mod_practical_self_control_wish_more_r"))
 
-
-mod_practical_self_control <- gcomp_sim(
-  df = dt_practical,  # note change
-  Y = "t2_self_control_z",
-  X = X,
-  baseline_vars = baseline_vars_practical,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "self_control_z"
-)
-
-mod_practical_self_control
+# 
+# mod_practical_self_control <- gcomp_sim(
+#   df = dt_practical,  # note change
+#   Y = "t2_self_control_z",
+#   X = X,
+#   baseline_vars = baseline_vars_practical,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "self_control_z"
+# )
+# 
+# mod_practical_self_control
 
 # save model
-saveRDS(mod_practical_self_control, here::here(push_mods, "mod_practical_self_control"))
+#saveRDS(mod_practical_self_control, here::here(push_mods, "mod_practical_self_control"))
 
 
 
@@ -3275,29 +2830,29 @@ mod_practical_emotion_regulation_change_thinking_to_calm
 # save model
 saveRDS(mod_practical_emotion_regulation_change_thinking_to_calm, here::here(push_mods, "mod_practical_emotion_regulation_change_thinking_to_calm"))
 
-
-mod_practical_emotion_regulation <- gcomp_sim(
-  df = dt_practical,  # note change
-  Y = "t2_emotion_regulation_z",
-  X = X,
-  baseline_vars = baseline_vars_practical,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "emotion_regulation_z"
-)
-
-mod_practical_emotion_regulation
+# 
+# mod_practical_emotion_regulation <- gcomp_sim(
+#   df = dt_practical,  # note change
+#   Y = "t2_emotion_regulation_z",
+#   X = X,
+#   baseline_vars = baseline_vars_practical,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "emotion_regulation_z"
+# )
+# 
+# mod_practical_emotion_regulation
 # save model
-saveRDS(mod_practical_emotion_regulation, here::here(push_mods, "mod_practical_emotion_regulation"))
+# saveRDS(mod_practical_emotion_regulation, here::here(push_mods, "mod_practical_emotion_regulation"))
 
 
 # 
@@ -3326,30 +2881,29 @@ saveRDS(mod_practical_emotion_regulation, here::here(push_mods, "mod_practical_e
 
 
 
-
-mod_practical_perfectionism <- gcomp_sim(
-  df = dt_practical,  # note change
-  Y = "t2_perfectionism_z",
-  X = X,
-  baseline_vars = baseline_vars_practical,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "perfectionism_z"
-)
-
-mod_practical_emp_work_life_balance
-# save model
-saveRDS(mod_practical_emp_work_life_balance, here::here(push_mods, "mod_practical_emp_work_life_balance"))
-
+# 
+# mod_practical_perfectionism <- gcomp_sim(
+#   df = dt_practical,  # note change
+#   Y = "t2_perfectionism_z",
+#   X = X,
+#   baseline_vars = baseline_vars_practical,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "perfectionism_z"
+# )
+# 
+# # save model
+# saveRDS(mod_practical_emp_work_life_balance, here::here(push_mods, "mod_practical_emp_work_life_balance"))
+# 
 
 ## combo-table
 
@@ -3357,23 +2911,25 @@ saveRDS(mod_practical_emp_work_life_balance, here::here(push_mods, "mod_practica
 
 tab_practical <-
   rbind(
-    mod_practical_nzsei13,
+  #  mod_practical_nzsei13,
+    mod_practical_sexual_satisfaction,
+    mod_practical_perfectionism,
     mod_practical_bodysat,
     mod_practical_vengeful_rumin,
     mod_practical_power_self_nocontrol,
     mod_practical_power_others_control,
-    mod_practical_powerdependence,
+   # mod_practical_powerdependence,
     mod_practical_selfesteem_satself,
     mod_practical_selfesteem_postiveself,
     mod_practical_selfesteem_rfailure,
-    mod_practical_selfesteem,
+  #  mod_practical_selfesteem,
     mod_practical_self_control_have_lots,
     mod_practical_self_control_wish_more_r,
-    mod_practical_self_control,
+   # mod_practical_self_control,
     mod_practical_emotion_regulation_out_control,
     mod_practical_emotion_regulation_hide_neg_emotions,
-    mod_practical_emotion_regulation_change_thinking_to_calm,
-    mod_practical_emotion_regulation#,
+    mod_practical_emotion_regulation_change_thinking_to_calm
+   # mod_practical_emotion_regulation#,
    # mod_practical_emp_work_life_balance
    # mod_practical_perfectionism
   )
@@ -3418,7 +2974,7 @@ ggsave(
 ```
 
 ```{r}
-#| label: models REFLECTIVE
+#| label: models-reflective-quantile
 #| eval: false
 
 mice_reflective_mids <- readRDS(here::here(push_mods, "mice_reflective_mids"))
@@ -3426,21 +2982,20 @@ mice_reflective_mids <- readRDS(here::here(push_mods, "mice_reflective_mids"))
 # longform data if necessary
 mice_reflective_long <- readRDS(here::here(push_mods, "mice_reflective_long"))
 
-
+X
 # Set exposure 
-X <- "t1_household_inc_quantile"
+#X <- "t1_extraversion_quantile"
 
 
 
 baseline_vars_reflective = mice_reflective_long |> 
-  dplyr::select(starts_with("t0"), -c("t0_household_inc_z", "t0_nz_dep2018_z",
-"t0_nzsei13_z"))|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"), -c("t0_extraversion_z"))|> colnames() # strange to include these -- as they  are income by other names
 
 
 
 exposure_vars_reflective = mice_reflective_long |> dplyr::select(starts_with("t1")) |> colnames()
 outcome_vars_reflective = mice_reflective_long |> dplyr::select(starts_with("t2")) |> colnames()
-outcome_vars_practical
+outcome_vars_reflective
 
 
 
@@ -3456,7 +3011,7 @@ saveRDS(mice_reflective_ebal, here::here(push_mods, "mice_reflective_ebal"))
 
 # energy balance
 
-sum_ebal <- summary(mice_reflective_ebal)
+sum_ebal <- summary(mice_reflective_ebal, stats = c("m", "ks"), abs = TRUE)
 sum_ebal
 
 plot(sum_ebal)
@@ -3470,7 +3025,7 @@ sum_ebal_trim <- summary(mice_reflective_ebal_trim)
 sum_ebal_trim
 
 plot(sum_ebal_trim)
-bal.tab(mice_reflective_ebal_trim)
+bal.tab(mice_reflective_ebal_trim,stats = c("m", "ks"), abs = TRUE)
 
 love.plot(mice_reflective_ebal_trim, binary = "std", thresholds = c(m = .1))
 
@@ -3482,7 +3037,7 @@ dev.off()
 dt_reflective = mice_reflective_ebal_trim
 
 # bootstrap simulations
-nsims <- 1000
+nsims <- 200
 
 # cores
 cl =  parallel::detectCores () 
@@ -3490,13 +3045,13 @@ cl =  parallel::detectCores ()
 
 # x variable 
 # Set exposure 
-X <- "t1_household_inc_quantile"
+X 
 
 
-treat_0 = "q1"
-treat_1 = "q3"
+treat_0 = "q_2"
+treat_1 = "q_4"
 # as specified
-vcov = "HC3" # robust standard errors. 
+vcov = "HC2" # robust standard errors. 
 
 
 # cores
@@ -3632,31 +3187,31 @@ mod_reflective_pwi_standardliving
 saveRDS(mod_reflective_pwi_standardliving, here::here(push_mods, "mod_reflective_pwi_standardliving"))
 
 
-
-mod_reflective_pwi  <- gcomp_sim(
-  df = dt_reflective,  # note change
-  Y = "t2_pwi_z",
-  X = X,
-  baseline_vars = baseline_vars_reflective,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "pwi_z"
-)
-
-mod_reflective_pwi
-
-# save model
-saveRDS(mod_reflective_pwi, here::here(push_mods, "mod_reflective_pwi"))
-
+# 
+# mod_reflective_pwi  <- gcomp_sim(
+#   df = dt_reflective,  # note change
+#   Y = "t2_pwi_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "pwi_z"
+# )
+# 
+# mod_reflective_pwi
+# 
+# # save model
+# saveRDS(mod_reflective_pwi, here::here(push_mods, "mod_reflective_pwi"))
+# 
 
 # lifesat
 
@@ -3708,32 +3263,32 @@ mod_reflective_lifesat_ideal
 
 # save model
 saveRDS(mod_reflective_lifesat_ideal, here::here(push_mods, "mod_reflective_lifesat_ideal"))
-
-
-## lifesat
-mod_reflective_lifesat  <- gcomp_sim(
-  df = dt_reflective,  # note change
-  Y = "t2_pwi_z",
-  X = X,
-  baseline_vars = baseline_vars_reflective,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "lifesat_z"
-)
-
-mod_reflective_lifesat
+# 
+# 
+# ## lifesat
+# mod_reflective_lifesat  <- gcomp_sim(
+#   df = dt_reflective,  # note change
+#   Y = "t2_pwi_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "lifesat_z"
+# )
+# 
+# mod_reflective_lifesat
 
 # save model
-saveRDS(mod_reflective_lifesat, here::here(push_mods, "mod_reflective_lifesat"))
+# saveRDS(mod_reflective_lifesat, here::here(push_mods, "mod_reflective_lifesat"))
 
 
 # meaning
@@ -3787,30 +3342,30 @@ mod_reflective_meaning_sense
 
 # save model
 saveRDS(mod_reflective_meaning_sense, here::here(push_mods, "mod_reflective_meaning_sense"))
+# 
+# mod_reflective_meaning  <- gcomp_sim(
+#   df = dt_reflective,  # note change
+#   Y = "t2_meaning_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "meaning_z"
+# )
 
-mod_reflective_meaning  <- gcomp_sim(
-  df = dt_reflective,  # note change
-  Y = "t2_meaning_z",
-  X = X,
-  baseline_vars = baseline_vars_reflective,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "meaning_z"
-)
-
-mod_reflective_meaning
+#mod_reflective_meaning
 
 # save model
-saveRDS(mod_reflective_meaning, here::here(push_mods, "mod_reflective_meaning"))
+#saveRDS(mod_reflective_meaning, here::here(push_mods, "mod_reflective_meaning"))
 
 
 ## combo-table
@@ -3820,13 +3375,13 @@ tab_reflective <- rbind(
   mod_reflective_pwi_relationships,
   mod_reflective_pwi_security,
   mod_reflective_pwi_standardliving,
-  mod_reflective_pwi,
+  #mod_reflective_pwi,
   mod_reflective_lifesat_satlife,
   mod_reflective_lifesat_ideal,
-  mod_reflective_lifesat,
+#  mod_reflective_lifesat,
   mod_reflective_meaning_purpose,
-  mod_reflective_meaning_sense,
-  mod_reflective_meaning
+  mod_reflective_meaning_sense#,
+ # mod_reflective_meaning
 )
 
 tab_reflective
@@ -3841,7 +3396,7 @@ group_tab_reflective
 group_plot_ate_reflective <- group_plot_ate(
   group_tab_reflective,
   type = "RD",
-  title = "ATE: causal contrast:first to third quartile of income", 
+  title = "ATE: causal contrast:second to fourth quartile of extraversion", 
   subtitle = "Reflective Outcomes",
   xlab = "(sd units)",
   ylab = "test",
@@ -3869,7 +3424,7 @@ dev.off()
 ```
 
 ```{r}
-#| label: models social
+#| label: models-social-quantile
 #| eval: false
 
 mice_social_mids <- readRDS(here::here(push_mods, "mice_social_mids"))
@@ -3877,15 +3432,14 @@ mice_social_mids <- readRDS(here::here(push_mods, "mice_social_mids"))
 # longform data if necessary
 mice_social_long <- readRDS(here::here(push_mods, "mice_social_long"))
 
-
+X
 # Set exposure 
-X <- "t1_household_inc_quantile"
+X <- "t1_extraversion_quantile"
 
 
 
 baseline_vars_social = mice_social_long |> 
-  dplyr::select(starts_with("t0"), -c("t0_household_inc_z", "t0_nz_dep2018_z",
-"t0_nzsei13_z"))|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"), -c("t0_extraversion_z"))|> colnames() # strange to include these -- as they  are income by other names
 
 
 baseline_vars_social
@@ -3921,7 +3475,8 @@ sum_ebal_trim <- summary(mice_social_ebal_trim)
 sum_ebal_trim
 
 plot(sum_ebal_trim)
-bal.tab(mice_social_ebal_trim)
+bal.tab(mice_social_ebal_trim,stats = c("m", "ks"), abs = TRUE)
+
 
 love.plot(mice_social_ebal_trim, binary = "std", thresholds = c(m = .1))
 
@@ -3933,21 +3488,17 @@ dev.off()
 dt_social = mice_social_ebal_trim
 
 # bootstrap simulations
-nsims <- 1000
+nsims <- 200
 
 # cores
 cl =  parallel::detectCores () 
 
 
-# x variable 
-# Set exposure 
-X <- "t1_household_inc_quantile"
 
-
-treat_0 = "q1"
-treat_1 = "q3"
+treat_0 = "q_2"
+treat_1 = "q_4"
 # as specified
-vcov = "HC3" # robust standard errors. 
+vcov = "HC2" # robust standard errors. 
 
 
 # cores
@@ -3957,56 +3508,55 @@ cores = parallel::detectCores () # use all course
 outcome_vars_social
                                 
 
-# save model
-mod_social_belong  <- gcomp_sim(
-  df = dt_social,  # note change
-  Y = "t2_belong_z",
-  X = X,
-  baseline_vars = baseline_vars_social,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "belong_z"
-)
+# # save model
+# mod_social_belong  <- gcomp_sim(
+#   df = dt_social,  # note change
+#   Y = "t2_belong_z",
+#   X = X,
+#   baseline_vars = baseline_vars_social,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "belong_z"
+# )
 
-mod_social_belong
+# 
+# # save model
+# saveRDS(mod_social_belong, here::here(push_mods, "mod_social_belong"))
+# 
+# 
+# mod_social_support  <- gcomp_sim(
+#   df = dt_social,  # note change
+#   Y = "t2_support_z",
+#   X = X,
+#   baseline_vars = baseline_vars_social,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = "ATE",
+#   scale = "RD",
+#   type = "RD",
+#   nsims = 200,
+#   cores = cores,
+#   family = gaussian,
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "support_z"
+# )
+# 
+# mod_social_support
 
-# save model
-saveRDS(mod_social_belong, here::here(push_mods, "mod_social_belong"))
-
-
-mod_social_support  <- gcomp_sim(
-  df = dt_social,  # note change
-  Y = "t2_support_z",
-  X = X,
-  baseline_vars = baseline_vars_social,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = "ATE",
-  scale = "RD",
-  type = "RD",
-  nsims = 200,
-  cores = cores,
-  family = gaussian,
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "support_z"
-)
-
-mod_social_support
-
-# save model
-saveRDS(mod_social_support, here::here(push_mods, "mod_social_support"))
-
+# # save model
+# saveRDS(mod_social_support, here::here(push_mods, "mod_social_support"))
+# 
 
 
 mod_social_permeability_individual  <- gcomp_sim(
@@ -4177,7 +3727,7 @@ mod_social_belong_accept  <- gcomp_sim(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "support_belong_accept"
+  new_name = "belong_accept"
 )
 
 mod_social_belong_accept
@@ -4203,7 +3753,7 @@ mod_social_belong_routsider  <- gcomp_sim(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "support_belong_outsider (reversed)"
+  new_name = "belong_outsider (reversed)"
 )
 
 mod_social_belong_routsider
@@ -4230,7 +3780,7 @@ mod_social_belong_beliefs  <- gcomp_sim(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "support_belong_beliefs"
+  new_name = "belong_beliefs"
 )
 # save model
 saveRDS(mod_social_belong_beliefs, here::here(push_mods, "mod_social_belong_beliefs"))
@@ -4276,13 +3826,68 @@ mod_social_volunteers_RR  <- gcomp_sim(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "Volunteers (yes/no)"
+  new_name = "Volunteers_y/n",
+  vcov ="HC"
 )
 
 mod_social_volunteers_RR 
 
 # save model
 saveRDS(mod_social_volunteers_RR, here::here(push_mods, "mod_social_volunteers_RR"))
+
+
+tab_social <- rbind(
+ # mod_social_belong,
+ # mod_social_support,
+  mod_social_permeability_individual,
+  mod_social_impermeability_group,
+  mod_social_neighbourhood_community,
+  mod_social_support_help,
+  mod_social_support_turnto,
+  mod_social_support_rnoguidance,
+  mod_social_belong_accept,
+  mod_social_belong_routsider,
+  mod_social_belong_beliefs,
+  mod_social_charity_donate
+)
+
+tab_social
+
+
+group_tab_social <- group_tab(tab_social, type = "RD")
+
+group_tab_social
+
+
+
+group_plot_ate_social <- group_plot_ate(
+  group_tab_social,
+  type = "RD",
+  title = "ATE: causal contrast:second to fourth quartile of extraversion", 
+  subtitle = "Social Outcomes",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.7,
+  x_lim_lo = -.7,
+  x_lim_hi = .3
+)
+
+group_plot_ate_social
+
+ggsave(
+  group_plot_ate_social,
+  path = here::here(here::here(push_mods, "group_plot_ate_social")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "group_plot_ate_social.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
 ```
 
 
@@ -4695,6 +4300,8 @@ Although the timing of the attacks was random with respect to NAVS data collecti
 We first identified covariates for which balance is required, following VanderWeeles modified disjunctive cause criterion [@vanderweele2019; @vanderweele2020]
 
 Clarify [@greifer2023] and the original King citation [@king2000] following [@rainey2023].
+
+
 
 We also used the WeightIt Package in R [@greifer2023a].
 
@@ -5643,3 +5250,358 @@ dat |>
 
 ::: {#refs}
 :::
+
+
+
+## TESTS
+
+
+```{r}
+#| label: test-mi 
+## TEST 
+exclude_vars = c("id")
+init = mice::mice(prep_health, maxit = 0)
+predictorMatrix = init$predictorMatrix
+
+# Check if columns exist before excluding
+for (var in exclude_vars) {
+  if (var %in% colnames(predictorMatrix)) {
+    predictorMatrix[, var] = 0
+  }
+}
+
+test_data <- mice(prep_health, m = 1, predictorMatrix = predictorMatrix)
+
+head(test_data$loggedEvents, 10)
+
+saveRDS(test_data, here::here(push_mods, "test_data"))
+test_data <- readRDS( here::here(push_mods, "test_data"))
+
+
+test_data_c  <- mice::complete(test_data, action = 'long', include = TRUE)
+
+# remove bad cols
+#test_data_c <- test_data_c |> select(-c(.id.1, .imp.1))
+
+
+#vis_miss(mice_health_c, warn_large_data = FALSE)
+
+
+table(test_data_c$t1_household_inc_quantile)
+table(test_data_c$.imp)
+
+
+row.names(mice_health_c) <- NULL
+
+# table(mice_health_c$.imp)
+# table(mice_health_c$.imp)
+# max(mice_health_c$.id)
+
+test_data_mids <- test_data_c %>%
+    arrange(.imp, id) |> 
+  rename(sample_weights = t0_sample_weights) |> 
+  mutate(t0_eth_cat = as.factor(t0_eth_cat),
+         t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+         t0_smoker = as.factor(t0_smoker),
+         t2_smoker = as.factor(t2_smoker),
+         t0_hours_exercise = log(t0_hours_exercise + 1),
+         t2_hours_exercise =  log(t2_hours_exercise +1)) |>
+  dplyr::group_by(.imp, id) |>
+ # rowwise() |> # group by id within .imp 
+  # dplyr::mutate(t0_sfhealth = mean(
+  #   c(
+  #     t0_sfhealth_your_health,
+  #     t0_sfhealth_get_sick_easier,
+  #     t0_sfhealth_expect_worse_health  ),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t2_sfhealth = mean(
+  #   c(
+  #     t2_sfhealth_your_health,
+  #     t2_sfhealth_get_sick_easier,
+  #     t2_sfhealth_expect_worse_health  ),
+  #   na.rm = TRUE
+  # )) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
+    where(is.factor),
+    sample_weights,
+    ends_with("_z"),
+    .imp,
+    .id
+  ) |> 
+  relocate(sample_weights, .before = starts_with("t1_"))  %>%
+  relocate(id, .before = sample_weights)  %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
+  arrange(.imp, id) |> 
+  droplevels() |> 
+  mutate_if(is.matrix, as.vector) |> 
+  as.mids()
+  
+head(test_data_mids$loggedEvents, 10)
+
+test_data_long <- mice::complete(test_data_mids, "long", inc = TRUE)
+
+skimr::skim(test_data_long)
+
+
+saveRDS(test_data_mids, here::here(push_mods, "test_data_mids"))
+saveRDS(test_data_long, here::here(push_mods, "test_data_long"))
+
+head(test_data_long)
+head(mice_health_long) 
+
+```
+
+
+```{r}
+#|label: test-function
+
+
+mice_health_test_fun <- impute_and_combine(prep_health_multiple,  m = 2 )
+
+
+# save imputed data
+saveRDS(mice_health_test_fun,
+        here::here(push_mods, "mice_health_test_fun"))
+
+mice_health_test_fun <- readRDS(
+        here::here(push_mods, "mice_health_test_fun"))
+
+
+mice_health_test_fun_c  <- mice::complete(mice_health_test_fun, action = 'long', include = TRUE)
+
+# remove bad cols
+mice_health_test_fun_c <- mice_health_test_fun_c |> select(-c(.id.1, .imp.1))
+
+
+vis_miss(mice_health_test_fun_c, warn_large_data = FALSE)
+
+
+table(mice_health_test_fun_c$t1_household_inc_quantile)
+table(mice_health_test_fun_c$.imp)
+
+
+row.names(mice_health_test_fun_c) <- NULL
+
+# table(mice_health_c$.imp)
+# table(mice_health_c$.imp)
+# max(mice_health_c$.id)
+
+mice_health_test_fun_mids <- mice_health_test_fun_c %>%
+    arrange(.imp, id) |> 
+  rename(sample_weights = t0_sample_weights) |> 
+  mutate(t0_eth_cat = as.factor(t0_eth_cat),
+         t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+         t0_smoker = as.factor(t0_smoker),
+         t2_smoker = as.factor(t2_smoker),
+         t0_hours_exercise = log(t0_hours_exercise + 1),
+         t2_hours_exercise =  log(t2_hours_exercise +1)) |>
+  dplyr::group_by(.imp, id) |>
+ # rowwise() |> # group by id within .imp 
+  # dplyr::mutate(t0_sfhealth = mean(
+  #   c(
+  #     t0_sfhealth_your_health,
+  #     t0_sfhealth_get_sick_easier,
+  #     t0_sfhealth_expect_worse_health  ),
+  #   na.rm = TRUE
+  # )) |>
+  #   dplyr::mutate(t2_sfhealth = mean(
+  #   c(
+  #     t2_sfhealth_your_health,
+  #     t2_sfhealth_get_sick_easier,
+  #     t2_sfhealth_expect_worse_health  ),
+  #   na.rm = TRUE
+  # )) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+  select(-c(.imp_z, .id_z)) %>%
+   select(
+    where(is.factor),
+    sample_weights,
+    ends_with("_z"),
+    .imp,
+    .id
+  ) |> 
+  relocate(sample_weights, .before = starts_with("t1_"))  %>%
+  relocate(id, .before = sample_weights)  %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate(starts_with("t3_"), .after = starts_with("t3_"))  %>%
+  arrange(.imp, id) |> 
+  droplevels() |> 
+  mutate_if(is.matrix, as.vector) |> 
+  as.mids()
+  
+head(mice_health_test_fun_mids)
+mice_health_test_fun_long <- mice::complete(mice_health_test_fun_mids, "long", inc = TRUE)
+
+skimr::skim(mice_health_test_fun_long)
+
+table(mice_health_test_fun_long$.imp)
+
+saveRDS(mice_health_test_fun_mids, here::here(push_mods, "mice_health_test_fun_mids"))
+saveRDS(mice_health_test_fun_long, here::here(push_mods, "mice_health_test_fun_long"))
+```
+
+
+```{r}
+#| label: models-HEALTH
+#| eval: false
+
+# mice_health_test_fun_mids <- readRDS(here::here(push_mods, "mice_health_test_fun_mids"))
+# mice_health_test_fun_long <- readRDS(here::here(push_mods, "mice_health_test_fun_long"))
+
+
+table( test_data_long$.imp)
+table( mice_health_test_fun_long$.imp)
+
+
+# longform data if necessary
+test_data_long <- readRDS(here::here(push_mods, "test_data_long"))
+test_data_mids <- readRDS(here::here(push_mods, "test_data_mids"))
+
+
+# other data
+# other data
+mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
+
+mice_health_long <- readRDS(here::here(push_mods, "mice_health_long"))
+
+table( test_data_long$.imp )
+
+
+# table( mice_health_long$.imp )
+# table( mice_health_long$.imp )
+# 
+# mice_health_long_imp0 <- mice_health_long|> dplyr::filter (.imp == 0)
+# mice_health_long_imp1 <- mice_health_long|> dplyr::filter (.imp == 1)
+# 
+# test_data_long_imp0 <- test_data_long|> dplyr::filter (.imp == 0)
+# 
+# test_data_long_imp1 <- test_data_long|> dplyr::filter (.imp == 1)
+# 
+# head( test_data_long_imp0)
+# head( test_data_long_imp1) # Problem 
+# 
+# head( mice_health_long_imp1)
+# head( test_data_long_imp1)
+# 
+# head( mice_health_mids$data )
+# head( mice_health_mids$data )
+
+# Set exposure
+X <- "t1_household_inc_quantile"
+
+
+# baselin vars ---------------------------------------------------------
+library(MatchThem)
+baseline_vars_health = mice_health_test_fun_long |> 
+  dplyr::select(starts_with("t0"), -c("t0_household_inc_z", "t0_nz_dep2018_z",
+"t0_nzsei13_z"))|> colnames() # strange to include these -- as they  are income by other names
+
+baseline_vars_health
+
+options(scipen = 999)
+
+
+# ebalance
+test_ebal <- match_mi(data = mice_health_test_fun_mids, 
+                                 X = X, 
+                                 baseline_vars = baseline_vars_health, 
+                                 estimand = "ATE",  
+                                 method = "ebal", 
+                                 sample_weights = "sample_weights")
+
+#saveRDS(test_ebal, here::here(push_mods, "test_ebal"))
+
+warnings()
+
+sum_ebal <- summary(test_ebal)
+
+
+sum_ebal
+plot(sum_ebal)
+
+
+# if trim is needed
+test_ebal_trim <- WeightIt::trim(test_ebal, at = .99)
+sum_ebal_trim <- summary(test_ebal_trim)
+sum_ebal_trim
+
+plot(sum_ebal_trim)
+bal.tab(test_ebal_trim)
+
+love.plot(test_ebal_trim, binary = "std", thresholds = c(m = .1))
+love.plot(test_ebal_trim, binary = "std", thresholds = c(m = .1))
+
+dev.off()
+
+# settings 
+
+# Set DF 
+dt_health = test_ebal_trim
+
+# bootstrap simulations
+nsims <- 200
+
+# cores
+cl =  parallel::detectCores () 
+
+# x variable 
+# Set exposure 
+X <- "t1_household_inc_quantile"
+
+Y = "t2_alcohol_frequency_z"
+
+
+levels( prep_health$t1_household_inc_quantile )
+
+treat_0 = "q1"
+treat_1 = "q3"
+# as specified
+vcov = "HC" # robust standard errors. 
+
+
+# cores
+cores = parallel::detectCores () # use all course
+cores 
+
+# outcomes
+
+#outcome_vars_health
+
+test_health_hours_exercise_z  <- gcomp_sim(
+  df = test_ebal_trim,  # note change
+  Y = "t2_hours_exercise_z",
+  X = X,
+  baseline_vars = baseline_vars_health,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = "ATE",
+  scale = "RD",
+  type = "RD",
+  nsims = 200,
+  cores = cores,
+  family = gaussian,
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "hours_exercise_z"
+)
+
+test_health_hours_exercise_z
+
+# save model
+saveRDS(test_health_alcohol_frequency, here::here(push_mods, "test_health_alcohol_frequency"))
+
+other <- readRDS( here::here(push_mods, "mod_health_alcohol_frequency"))
+
+```
+
+
+

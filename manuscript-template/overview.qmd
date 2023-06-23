@@ -1,0 +1,131 @@
+---
+title: "Overview"
+format: html
+---
+
+
+
+## Overview
+
+**Introduction**
+
+-   State the Question: is my question clearly stated? If not, state it.
+-   Relevance of the Question: Have I explained its importance? If not, explain.
+-   Causality of the Question: Is my question causal? Briefly explain what this means with reference to the potential outcomes framework.
+-   Define your exposure.
+-   Define your outcome(s)
+-   State how you will use time-series data to address causality.
+-   Explain how the the exposure and outcome is relevant to your question.
+-   Define your causal estimand
+
+**Method**
+
+-   Report ethics. Consider any ethical implications.
+-   Explain the sample. Provide descriptive statistics
+-   Discuss inclusion criteria.
+-   Discuss how your sample relates to the "source population"
+-   Explain NZAVS measures. State the questions used in the items
+-   Describe how the data meet the following assumptions required for causal inference:
+
+**Assumptions of causal inference**
+
+-   Positivity: Can we intervene on the exposure at all levels of the covariates? 
+-   Consistency: Can I interpret what it means to intervene on the exposure?
+-   Exchangeability: Are different versions of the exposure conditionally exchangeable given measured baseline confounders? This requires stating baseline confounders and explaining how they may be related to both the exposure and outcome. As part of this, **you must explain why the baseline measure of your exposure and outcome are included as potential confounders.**
+-   Note: Unmeasured Confounders: Does previous science suggest the presence of unmeasured confounders? (e.g. childhood exposures that are not measured). Always include in discussion
+-   Draw a causal diagram: Have I drawn a causal diagram (DAG) to highlight both measured and unmeasured sources of confounding?
+-   Measurement Error: Have I described potential biases from measurement errors? Return to lecture 11.
+-   Missing data: 
+-   Estimator: State what your estimator will be. Note I've given you the following text to modify:
+
+> The Doubly Robust Estimation method for Subgroup Analysis Estimator is a method for obtaining counterfactual contrasts. It combines features of both IPTW and G-computation methods. The estimator provides unbiased estimates if either the propensity score or outcome model is correctly specified. The process involves five main steps:
+
+> Step 1 involves the estimation of the propensity score. This is a measure of the conditional probability of exposure given the covariates and the subgroup indicator. This score is calculated using statistical models such as logistic regression, with the model choice depending on the nature of the data and exposure. Weights for each individual are then calculated using this propensity score. These weights depend on the exposure status and are computed differently for exposed and unexposed individuals. The estimation of propensity scores is performed separately within each subgroup stratum.
+
+> Step 2 focuses on fitting a weighted outcome model, making use of the previously calculated weights from the propensity scores. This model estimates the outcome conditional on exposure, covariates, and subgroup, integrating the weights into the estimation process. Unlike in propensity score model estimation, covariates are included as variables in the outcome model. This inclusion makes the method doubly robust - providing a consistent effect estimate if either the propensity score or the outcome model is correctly specified, thereby reducing the assumption of correct model specification.
+
+> Step 3 entails the simulation of potential outcomes for each individual in each subgroup. These hypothetical scenarios assume universal exposure to the intervention across the relevant population, regardless of actual exposure levels. The expectation for each potential outcomes is calculated for each individual, using individual-specific weights and individual-specific regression coefficients. 
+
+> Step 4 is the estimation of the average causal effect for each expsoure. We do this comparing the expected values of potential outcomes under each intervention level. The difference represents the average causal effect of changing the exposure within each subgroup.
+
+> Step 5 involves comparing differences in causal effects across groups by calculating the differences in the estimated causal effects under each exposure. For continuous variables we calculate the causal-risk difference. For binary outcomes we calculate the causal  Confidence intervals and standard errors for these calculations are determined using simulation-based inference methods (Greifer et al. 2023). This step allows for a comprehensive comparison of the impact of different interventions across various subgroups, while encorporating uncertainty.
+
+Also see the appendix [here](https://go-bayes.github.io/psych-434-2023/content/09-content.html#comprehensive-checklist-for-detailed-reporting-of-a-causal-inferenctial-study-e.g.-assessment-3-option-2)
+
+-   Describe E-values are state how we will use them to assess the robustness of results to unmeasured confounding
+
+**Results**
+
+  -   Propensity Score Reporting: Detail the process of propensity score derivation, including the model used and any variable transformations: e.g.: `A ~ x1 + x2 + x3 + ....` using logistic regression, all continuous predictors were transformed to z-scores
+  -   WeightIt Package Utilisation: Explicitly mention the use of the 'WeightIt' package in R, including any specific options or parameters used in the propensity score estimation process [@greifer2023a]. (Cobalt) (MatchThem)
+    -   Report if different methods were used to obtain propensity scores, and the reasons behind the choice of methods such as 'ebal', 'energy', and 'ps'.
+    -   If your exposure is continuous only the 'energy' option was used for propensity score estimation.
+    -   Subgroup Estimation (if relevant) Confirm that the propensity scores for subgroups were estimated separately, and discuss how the weights were subsequently combined with the original data.
+    -   Covariate Balance: Include a Love plot to visually represent covariate balance on the exposure both before and after weighting. The script will generate these plots.
+    -   Weighting Algorithm Statistics: Report the statistics for the weighting algorithms as provided by the WeightIt package, including any measures of balance or fit. The script I gave you will generate this information
+
+Example:
+
+> We estimated propensity scores by fitting a model for the exposure A as it is predicted by the set of baseline covariates defined by L. Because we are interested in effect modification by group, we fit different propensity score models for within strata of G using the `subgroup` command of the `WeightIt` package. Thus the propensity score is the the probability of receiving a value of a treatment (A=a) conditional on the covariates L, and stratum within G. We compared balance using the following methods of weighting: "ebal" or entropy balancing, "energy" or energy balancing, and "ps" or traditional inverse probability of weighting balancing. Of these methods "ebal" performed the best. Table X and Figure Y present the results of the ebalancing method.
+
+-   Interpretation of Propensity Scores: we interpret the proposensity scores as yeilding good balance across the exposure conditions.
+
+-   Outcome Regression Model: Clearly report the type of regression model used to estimate outcome model coefficients (e.g., linear regression, Poisson, binomial), and mention if the exposure was interacted with the baseline covariates. Do not report model coefficients as these have no interpretation. Example
+
+> We fit a linear model using maximum likelihood estimation with the outcome Y predicted by the exposure A. We interacted the exposure with all baseline confounders L. Continuous baseline confounders were converted to z-scores, whereas categorical exposures were not. Also interacted with all baseline confounders was a term for the subgroup, which was also interacted with the exposure and baseline covariates. This allowed uas to flexibily fit non-linearities for the modification of the effect of the exposure within levels of the cultural group strata of interest. We note that model coefficients have no interpretation in this context so are not reported. The remaining steps of Doubly-Robust estimation were performed as outlined in the *Method* section. We calculated confidence intervals and standard errors, using the `clarify` package in R, which relies on simulation based inference for these quantities of interest [@greifer2023]
+
+-   Report the causal estimates.
+    -   ATE contrasts for groups in setting the exposure to for each group in setting level A = a and A = a\*
+    -   differences between groups in the magnitude of the effects. (ATE_group 1 - ATE_group_2)
+-   Report the E-value: how sensitive are your results to unmeasured confounding? Hint: see the code below. I've substantially automated this task.
+
+
+**Discussion**
+
+Make sure to hit these points:
+
+Consider the following ideas about what to discuss in one's findings. The order of exposition might be different.
+
+1.  **Summary of results**: What did you find?
+
+2.  **Interpretation of E-values:** Interpret the E-values used for sensitivity analysis. State what they represent in terms of the robustness of the findings to potential unmeasured confounding.
+
+3.  **Causal Effect Interpretation:** What is the interest of the effect, if any, if an effect was observed? Interpret the average causal effect of changing the exposure level within each subgroup, and discuss its relevance to the research question.
+
+4.  **Comparison of Subgroups:** Discuss how differences in causal effect estimates between different subgroups, if observed, or if not observed, contribute to the overall findings of the study.
+
+5.  **Uncertainty and Confidence Intervals:** Consider the uncertainty around the estimated causal effects, and interpret the confidence intervals to understand the precision of the estimates.
+
+6.  **Generalisability and Transportability:** Reflect on the generalizability of the study results to other contexts or populations. Discuss any factors that might influence the transportability of the causal effects found in the study. (Again see lecture 9.)
+
+7.  **Assumptions and Limitations:** Reflect on the assumptions made during the study and identify any limitations in the methodology that could affect the interpretation of results. State that the implications of different intervention levels on potential outcomes are not analysed.
+
+8.  **Theoretical Relevance**: How are these findings relevant to existing theories.
+
+9.  **Replication and Future Research:** Consider how the study could be replicated or expanded upon in future research, and how the findings contribute to the existing body of knowledge in the field.
+
+10. **Real-world Implications:** Discuss the real-world implications of the findings, and how they could be applied in policy, practice, or further research.
+
+
+
+
+
+
+## Appendix
+
+
+### Multiple comparisons in outcomewide studies
+
+The concern for multiple comparisons is legitimate in many research settings. However, there are compelling reasons not to adjust for it in the case of outcome-wide science, as proposed by Tyler VanderWeele.
+
+1. **Nature of the analysis:** Outcome-wide studies are inherently exploratory. They aim to generate hypotheses rather than testing pre-specified ones. In such a scenario, adjusting for multiple comparisons is out of place. Such testing might limit our ability to discover.
+
+2. **False negatives vs. false positives:** Adjusting for multiple comparisons often results in an increased risk of Type II errors (false negatives). In the context of public health, false negatives could be more problematic than false positives. We might overlook potentially significant associations that could lead to beneficial interventions.
+
+3. **Independence of outcomes:** The standard corrections for multiple comparisons, such as the Bonferroni or the Holm method, assume that tests are independent. In an outcome-wide study, outcomes are likely to be correlated, so these corrections could be overly conservative.
+
+4. **Magnitude of effects:** Outcome-wide studies do not only focus on p-values, but also the magnitude of effects, confidence intervals, and their scientific or clinical significance. We advocate assessing E-values, or unmeasured confounding, in place of assessing p-values. Adjusting for multiple comparisons focuses primarily on p-values, potentially undermining the importance of effect sizes. P-values are often a measure of sample size.
+
+5. **Replication and robustness:** Findings from outcome-wide studies are not intended to be conclusive, but rather to guide further research. Consequently, potential false positives should be addressed in future replication studies and through robustness checks.
+
+To summarise, although controlling for multiple comparisons makes sense in many research settings, in the case of outcome-wide studies, it may limit the capacity to generate new hypotheses, increase the risk of missing potential public health interventions, and over-emphasize p-values at the expense of sensitivity analyses and E-values. Instead, ensuring robustness and replicability of findings should be emphasised.
