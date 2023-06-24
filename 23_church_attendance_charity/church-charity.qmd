@@ -856,23 +856,23 @@ mice_support_mids <- mice_support_c %>%
   rename(sample_weights = t0_sample_weights) |> 
   mutate(t0_eth_cat = as.factor(t0_eth_cat),
         t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
-        t0_family_time_log =   log(as.integer(round(pmax(t0_family_time, 0)))+1),# to improve model convergence
-        t2_family_time_log =   log(as.integer(round(pmax(t2_family_time, 0)))+1),# to improve model convergence
-        t0_friends_time_log =   log(as.integer(round(pmax(t0_friends_time, 0)))+1),# to improve model convergence
-        t2_friends_time_log =   log(as.integer(round(pmax(t2_friends_time, 0)))+1),# to improve model convergence
-        t0_community_time_log =   log(as.integer(round(pmax(t0_community_time, 0)))+1),# to improve model convergence
-        t2_community_time_log =   log(as.integer(round(pmax(t2_community_time, 0)))+1),# to improve model convergence
-        t0_family_money_log =   log(as.integer(round(pmax(t0_family_money, 0)))+1),# to improve model convergence
-        t2_family_money_log =   log(as.integer(round(pmax(t2_family_money, 0)))+1),# to improve model convergence
-        t0_friends_money_log =   log(as.integer(round(pmax(t0_friends_money, 0)))+1),# to improve model convergence
-        t2_friends_money_log =   log(as.integer(round(pmax(t2_friends_money, 0)))+1),# to improve model convergence
-        t0_community_money_log =   log(as.integer(round(pmax(t0_community_money, 0)))+1),# to improve model convergence
-        t2_community_money_log =   log(as.integer(round(pmax(t2_community_money, 0)))+1),# to improve model convergence
+        t0_family_time_log =   log(t0_family_time+1),# to improve model convergence
+        t2_family_time_log =   log(t2_family_time+1),# to improve model convergence
+        t0_friends_time_log =   log(t0_friends_time+1),# to improve model convergence
+        t2_friends_time_log =   log(t2_friends_time+1),# to improve model convergence
+        t0_community_time_log =   log(t0_community_time+1),# to improve model convergence
+        t2_community_time_log =   log(t2_community_time+1),# to improve model convergence
+        t0_family_money_log =   log(t0_family_money+1),# to improve model convergence
+        t2_family_money_log =   log(t2_family_money+1),# to improve model convergence
+        t0_friends_money_log =   log(t0_friends_money+1),# to improve model convergence
+        t2_friends_money_log =   log(t2_friends_money+1),# to improve model convergence
+        t0_community_money_log =   log(t0_community_money+1),# to improve model convergence
+        t2_community_money_log =   log(t2_community_money+1),# to improve model convergence
         t2_family_time_binary = ifelse(t2_family_time > 0, 1, 0),
-        t2_friends_time_binary = ifelse(t2_family_time > 0, 1, 0),
+        t2_friends_time_binary = ifelse(t2_friends_time > 0, 1, 0),
         t2_community_time_binary = ifelse(t2_community_time > 0, 1, 0),
         t2_family_money_binary = ifelse(t2_family_money > 0, 1, 0),
-        t2_friends_money_binary = ifelse(t2_family_money > 0, 1, 0),
+        t2_friends_money_binary = ifelse(t2_friends_money > 0, 1, 0),
         t2_community_money_binary = ifelse(t2_community_money > 0, 1, 0)
   ) |>
   dplyr::select(-t0_family_time, -t0_friends_time, -t0_community_time, -t0_family_money, -t0_friends_money,-t0_community_money) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
@@ -918,6 +918,10 @@ mice_support_mids <- mice_support_c %>%
 mice_support_long <- mice::complete(mice_support_mids, "long", inc = TRUE)
 
 skim(mice_support_long)
+
+table(mice_support_long$t2_family_time_binary)
+table(mice_support_long$t2_friends_time_binary)
+table(mice_support_long$t2_community_time_binary)
 
 # save
 saveRDS(mice_support_mids, here::here(push_mods, "mice_support_mids"))
