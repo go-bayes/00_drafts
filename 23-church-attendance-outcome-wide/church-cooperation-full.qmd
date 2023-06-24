@@ -30,6 +30,7 @@ editor_options:
 #| include: false
 #| eval: false
 
+# notes use vcov = hc2 here
 # uncomment and use these links to load your functions
 # source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
@@ -376,36 +377,9 @@ length(unique(dat_long$id))# 34189
 str(dat_long$education_level_coarsen)
 ### Find quantile for T1 (wave 2019) and then look at change
 
-# first filter the exposure wave
-dt_19 <- dat_long |> 
-  filter( wave == "2019") |> 
-  select(id, wave, religion_church2) 
-hist( dt_19$religion_church2, breaks = 100 )
-# 
-# quantile_breaks <- quantile(dt_19$religion_church2, probs = seq(0, 1, 1/4), na.rm = TRUE)
-# quantile_breaks
-# 
-# # Create labels based on the cut points in the desired format
-# cut_labels <- paste0(quantile_breaks[-length(quantile_breaks)], "_", quantile_breaks[-1])
-# 
-# quantile_breaks
-# dt_19$religion_church2_quartile <- cut(dt_19$religion_church2,
-#                                         breaks = quantile_breaks,
-#                                         labels = cut_labels,
-#                                         ordered_result = TRUE,
-#                                         include.lowest = TRUE)
 
-
-dt_19 <- dt_19 |> 
- mutate(religion_church_coarsen = round( ifelse(religion_church2 > 4, 5, religion_church2),0))
-
-# create coarsened variable 
-table(dt_19$religion_church_coarsen)
-
-# dt_18_19 <- dat_long |> 
-#   mutate(religion_church_coarsen = round( ifelse(religion_church2 > 4, 5, religion_church2),0))
-
-
+dt_18_19 <- dat_long |>
+  mutate(religion_church_coarsen = round( ifelse(religion_church2 > 4, 5, religion_church2),0))
 
 out <- msm::statetable.msm(round(religion_church_coarsen, 0), id, data = dt_18_19)
 
@@ -3467,6 +3441,9 @@ mice_social_mids <- readRDS(here::here(push_mods, "mice_social_mids"))
 
 # longform data if necessary
 mice_social_long <- readRDS(here::here(push_mods, "mice_social_long"))
+mice_social_long <- readRDS(here::here(push_mods_temp, "mice_social_long"))
+table(mice_social_long$t2_volunteers)
+
 
 mice_social_long$t1_religion_church_coarsen
 # Set exposure 
@@ -3863,8 +3840,17 @@ mod_social_volunteers_RR  <- gcomp_sim(
 
 mod_social_volunteers_RR 
 
+push_mods_temp <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23_church_coop_full"
+  )
+
 # save model
 saveRDS(mod_social_volunteers_RR, here::here(push_mods, "mod_social_volunteers_RR"))
+
+mod_social_volunteers_RR <- readRDS( here::here(push_mods_temp, "mod_social_volunteers_RR"))
+mod_social_volunteers_RR
+
 
 
 tab_social <- rbind(
