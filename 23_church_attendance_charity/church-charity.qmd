@@ -74,18 +74,19 @@ dat <- arrow::read_parquet(pull_path)
 #| include: false
 #| eval: false
 
-# note that religion church NA we impute zero to those who are not religous in the "religion_church2" variable
+# note that religion church NA we impute zero to those who are not religious in the "religion_church2" variable
 
-
+# check here
 # table(is.na( dat$religion_church)) 
 # table(is.na( dat$religion_church2)) 
 
 # Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
 
-dat |> 
-  select(ends_with( "siblings")| starts_with("number")) |> 
-  colnames()
+
+# select variables and emulate a target trial according to eligibility criteria
+# you may need to select different confounders. note that the more you include, the less efficient the estimates,
+# particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 
 
 dat_long <- dat |>
   arrange(id, wave) |>
@@ -304,59 +305,62 @@ dat_long <- dat |>
 
 
 ## Why we did the conversions -- zero inflation
-table(round( log(dat_long$family_money+1), 0))
-table(round( log(dat_long$friends_money+1), 0))
-table(round( log(dat_long$community_money+1),0))
+## NOTE we ultimatedly opted for binary variables because the data do not clearly fit a useable distribution
+# table(round( log(dat_long$family_money+1), 0))
+# table(round( log(dat_long$friends_money+1), 0))
+# table(round( log(dat_long$community_money+1),0))
+# 
+# ## Why we did the conversions -- zero inflation
+# table(round( log(dat_long$family_time+1), 0))
+# table(round( log(dat_long$friends_time+1), 0))
+# table(round( log(dat_long$community_time+1),0))
+# 
+# 
+# table(round( (dat_long$family_time), 0))
+# table(round( (dat_long$friends_time), 0))
+# table(round( (dat_long$community_time),0))
+# 
+# hist(log(dat_long$family_time+1))
+# hist(log(dat_long$friends_time+1))
+# hist(log(dat_long$community_time+1))
+# 
+# table(round( log(dat_long$family_money+1), 0))
+# table(round( log(dat_long$friends_money+1), 0))
+# table(round( log(dat_long$community_money+1),0))
+# 
+# # try neg binomial
+# dt_test <- dat_long |> 
+#   filter(wave == 2018) 
+# dat_long$religion_religious
+# 
+# table1::table1(data = dt_test, ~ total_siblings | religion_religious)
+# 
+# min( dat_long$family_money, na.rm=TRUE)
+# 
+# 
+# m_fam_ps <- glm(family_money ~ religion_church_binary2, data = dt_test, family = poisson)
+# m_frm_ps <- glm(friends_money ~ religion_church_binary2, data = dt_test, family = poisson)
+# m_com_ps <- glm(community_money ~ religion_church_binary2, data = dt_test, family = poisson)
+# 
+# m_fam_time_ps <- glm(family_time ~ religion_church_binary2, data = dt_test, family = poisson)
+# m_frm_time_ps <- glm(friends_time ~ religion_church_binary2, data = dt_test, family = poisson)
+# m_com_time_ps <- glm(community_time ~ religion_church_binary2, data = dt_test, family = poisson)
+# 
+# m_vol_ps <- glm(hours_charity ~ religion_church_binary2, data = dt_test, family = poisson)
+# summary(m_vol_ps)
+# 
+# ## summary of poisson models.
+# summary(m_fam_ps)
+# summary(m_frm_ps)
+# summary(m_com_ps)
+# summary(m_fam_time_ps)
+# summary(m_frm_time_ps)
+#summary(m_com_time_ps)
 
-## Why we did the conversions -- zero inflation
-table(round( log(dat_long$family_time+1), 0))
-table(round( log(dat_long$friends_time+1), 0))
-table(round( log(dat_long$community_time+1),0))
+```
 
-
-table(round( (dat_long$family_time), 0))
-table(round( (dat_long$friends_time), 0))
-table(round( (dat_long$community_time),0))
-
-hist(log(dat_long$family_time+1))
-hist(log(dat_long$friends_time+1))
-hist(log(dat_long$community_time+1))
-
-table(round( log(dat_long$family_money+1), 0))
-table(round( log(dat_long$friends_money+1), 0))
-table(round( log(dat_long$community_money+1),0))
-
-# try neg binomial
-dt_test <- dat_long |> 
-  filter(wave == 2018) 
-dat_long$religion_religious
-
-table1::table1(data = dt_test, ~ total_siblings | religion_religious)
-
-min( dat_long$family_money, na.rm=TRUE)
-
-
-m_fam_ps <- glm(family_money ~ religion_church_binary2, data = dt_test, family = poisson)
-m_frm_ps <- glm(friends_money ~ religion_church_binary2, data = dt_test, family = poisson)
-m_com_ps <- glm(community_money ~ religion_church_binary2, data = dt_test, family = poisson)
-
-m_fam_time_ps <- glm(family_time ~ religion_church_binary2, data = dt_test, family = poisson)
-m_frm_time_ps <- glm(friends_time ~ religion_church_binary2, data = dt_test, family = poisson)
-m_com_time_ps <- glm(community_time ~ religion_church_binary2, data = dt_test, family = poisson)
-
-m_vol_ps <- glm(hours_charity ~ religion_church_binary2, data = dt_test, family = poisson)
-summary(m_vol_ps)
-
-## summary of poisson models.
-summary(m_fam_ps)
-summary(m_frm_ps)
-summary(m_com_ps)
-
-summary(m_fam_time_ps)
-summary(m_frm_time_ps)
-summary(m_com_time_ps)
-
-
+```{r}
+#| label: verify-positivity
 
 dt_18_19_full <- dat_long |>
   mutate(
@@ -374,52 +378,37 @@ dt_18_19_full <- dat_long |>
 
 out <- msm::statetable.msm(round(religion_church_coarsen_n, 0), id, data = dt_18_19_full)
 
-# for a function I wrote to create state tables
+# for a function i wrote to create state tables
 state_names <- c("zero", "one", "one_to_four", "four_above")
 
 # transition table
-
 t_tab <- transition_table(out)
 
+# print 
 cat(t_tab$explanation)
 print(t_tab$table, state_names)
 
-# binary
-
-out <- msm::statetable.msm(round(religion_church_binary2, 0), id, data = dt_18_19)
-
-# for a function I wrote to create state tables
-#state_names <- c("q_1", "q_2", "q_3", "q_4")
-
-# transition table
-
-t_tab <- transition_table(out)
-
-cat(t_tab$explanation)
-print(t_tab$table)
-
 
 ## Check only religious
-
 ####################### select religious ############
 
-# sample n
-n_unique(dat_long$id)
-
+# filter religious
 dt_18_religious_18 <- dt_18_19 %>% 
   filter(wave == 2018 & religion_religious == 1) 
 
+# check n
 n_unique(dt_18_religious_18$id)
 
+# inspect table
 table1::table1(data= dat_long, ~as.factor( religion_religious) |wave)
 
+# filter religious 
 religious_ids_2018 <- dt_18_religious_18$id
 
-length(religious_ids_2018)
-
+# check n
 nrow(dt_18_religious_18)
 
-#  select data of these individuals from the entire dataset
+#  select data of these religious individuals from the entire dataset
 dt_18_19_religious <- dt_18_19 %>%
   filter(id %in% religious_ids_2018) %>%  
   mutate(
@@ -441,10 +430,7 @@ table( dt_18_19_religious$religion_church_coarsen)
 
 table( dt_18_19_religious$religion_church2)
 
-
-n_unique(dt_18_19_religious)
-
-
+# test positivity 
 t_tab <- transition_table(out)
 
 cat(t_tab$explanation)
@@ -452,27 +438,27 @@ print(t_tab$table, state_names)
 
 out <- msm::statetable.msm(religion_church_binary2, id, data = dt_18_19_religious)
 
-# transition table
-
-t_tab <- transition_table(out)
-
-cat(t_tab$explanation)
-print(t_tab$table, state_names)
-
-#check
-n_unique(dat_long$id)
+# note almost all change occurred among religious people.
+```
 
 
-##
+```{r}
+#|label: fix-strategy-in-light-of-target-trial
+
+# get ids of people who are religious
 dt_18_religious <- dat_long %>% 
   filter(wave == 2018 & religion_religious == 1) 
 
+# check n
 nrow(dt_18_religious)
 
+# prepare data for modelling
 # get unique identifiers of these individuals (replace `id` with your actual id variable)
 religious_ids <- dt_18_religious$id
 
 #  select data of these individuals from the entire dataset
+# also create meaningful exposure variable
+
 dat_long_t  <- dat_long %>%
   filter(id %in% religious_ids) %>%  
   mutate(
@@ -491,30 +477,32 @@ dat_long_t  <- dat_long %>%
   arrange(id, wave) |> 
   data.frame()
 
-# check
+# check n again
 n_unique(dat_long_t$id)
 
-# check path
+# double check path
 push_mods
 
 # only look at vars at baseline
 dat_18 <- dat_long_t |> 
   dplyr::filter(wave == 2018)
 
+# save data for table
 saveRDS(dat_18, here::here(push_mods, "dat_18"))
 
 
-# better for imputation
+# better for imputation - make factors numeric. the mice package likes this
 # rename to work with workflow
 dat_long_t <- dat_long_t |> 
   mutate( eth_cat = as.integer( eth_cat),
           urban = as.numeric(urban),
           education_level_coarsen = as.integer(education_level_coarsen))
 
-
+# save
 saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
 
-dat_long_t <- readRDS(here::here(push_mods, "dat_long_t"))
+# read if needed
+#dat_long_t <- readRDS(here::here(push_mods, "dat_long_t"))
 
 #check
 n_unique(dat_long_t$id)
@@ -525,19 +513,18 @@ n_unique(dat_long_t$id)
 
 
 ```{r}
-#|label: data wrangling for imputatons
+#|label: data-wrangling-for-imputatons
 # Create wide data frame
 baseline_vars = c(
     "male",
     "age",
-    # Sample origin names combined
     "education_level_coarsen", # factors
     "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
     "employed", # Are you currently employed? (this includes self-employment or casual work)
     #"gen_cohort", #age
     "nz_dep2018",
     "nzsei13",
-    "total_siblings",# added
+    "total_siblings",# added: needed because we are dealing with family giving/receiving
     "born_nz",  # added 
     "hlth_disability",  # added 
     "household_inc_log", # added: measured with error but OK for imputations
@@ -545,10 +532,10 @@ baseline_vars = c(
    # "parent",  # newly changed - have information in child number
     "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
     #"pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
-    "sample_origin_names_combined",
+    "sample_origin_names_combined",    # Sample origin names combined
     "urban",
     "children_num",
-    "household_inc_log", # new
+    "household_inc_log", # new from previous study. needed because we are dealing with family giving/receiving
     "hours_children_log", # new
     "hours_work_log", # new
     "hours_housework_log", #new
@@ -560,10 +547,9 @@ baseline_vars = c(
     "neuroticism",
     "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
   #  "religion_religious", # Do you identify with a religion and/or spiritual group?
-    #"religion_identification_level", #How important is your religion to how you see yourself?"
+    #"religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
     "sample_weights"
 )
-
 
 
 # check
@@ -1365,8 +1351,8 @@ group_plot_ate_donate_rd <- group_plot_ate(
   subtitle = "Annual charity donations and weekly volunteering",
   xlab = "(sd units)",
   ylab = "test",
-  x_offset = -.2,
-  x_lim_lo = -.2,
+  x_offset = -.5,
+  x_lim_lo = -.5,
   x_lim_hi = .4
 )
 group_plot_ate_donate_rd
@@ -1400,17 +1386,16 @@ group_tab_donate_rr <- group_tab(tab_donate_rr, type = "RR")
 group_tab_donate_rr
 
 saveRDS(group_tab_donate_rr, here::here(push_mods, "group_tab_donate_rr"))
+group_tab_donate_rr <- readRDS( here::here(push_mods, "group_tab_donate_rr"))
 
-group_plot_ate_donate_rr <- group_plot_ate(
+margot_plot(group_tab_donate_rr)
+
+group_plot_ate_donate_rr <- margot_plot(
   group_tab_donate_rr,
   type = "RR",
   title = "ATE: causal contrast:zero to weekly church attendance", 
   subtitle = "Weekly volunteering rate ratio",
-  xlab = "(sd units)",
-  ylab = "test",
-   x_offset = .5,
-   x_lim_lo = .1,
-  x_lim_hi = 2
+  xlab = "(sd units)"
 )
 group_plot_ate_donate_rr
 
@@ -1905,6 +1890,7 @@ group_tab_warmth <- group_tab(tab_warmth, type = "RD")
 group_tab_warmth
 
 saveRDS(group_tab_warmth, here::here(push_mods, "group_tab_warmth"))
+group_tab_warmth <- readRDS( here::here(push_mods, "group_tab_warmth"))
 
 group_plot_ate_warmth <- group_plot_ate(
   group_tab_warmth,
@@ -1932,7 +1918,20 @@ ggsave(
   dpi = 600
 )
 
+
+
+
+
+margot_plot(group_tab_warmth, 
+            type = "RD", 
+            title = "ATE: causal contrast:zero to weekly church attendance", 
+            subtitle = "Warmth to others and perceived religious prejudice",
+            xlab = "(sd units)"
+            )
+
 ```
+
+
 
 ```{r}
 #|label: models-support
@@ -2382,6 +2381,76 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
+
+
+
+
+
+```
+
+
+```{r}
+#|label: extra-stuff
+
+# 
+# margot_plot <- function(.data,
+#                         type = c("RD", "RR"),
+#                         title,
+#                         subtitle,
+#                         xlab,
+#                         ylab,
+#                         estimate_scale = 1,
+#                         base_size = 11,
+#                         text_size = 2.75,
+#                         point_size = .5,
+#                         title_size = 12,
+#                         subtitle_size = 11,
+#                         legend_text_size = 9,
+#                         legend_title_size = 10) {  # added argument
+#   type <- match.arg(type)
+#   
+#   xintercept <- if (type == "RR") 1 else 0
+#   x_axis_label <- if (type == "RR") "Causal Risk Ratio" else "Causal Risk Difference"
+#   
+#   x_offset <- ifelse(type == "RR", 0, -.4)
+#   x_lim_lo <- ifelse(type == "RR", .1, -.4)
+#   x_lim_hi <- ifelse(type == "RR", 2.5, .5)
+#   
+#   .data$Reliability <- ifelse(.data$`2.5 %` > 0 & .data$`97.5 %` > 0, "positive", 
+#                               ifelse(.data$`2.5 %` < 0 & .data$`97.5 %` < 0, "negative", "zero_crossing"))
+# 
+#   out <- ggplot(
+#     data = .data,
+#     aes(
+#       y = reorder(outcome, .data[[paste0("E[Y(1)]", ifelse(type == "RR", "/", "-"), "E[Y(0)]")]]),
+#       x = .data[[paste0("E[Y(1)]", ifelse(type == "RR", "/", "-"), "E[Y(0)]")]],
+#       xmin = `2.5 %`,
+#       xmax = `97.5 %`,
+#       group = Estimate,
+#       color = Reliability
+#     )
+#   ) +
+#     geom_errorbarh(aes(color = Reliability), height = .3, position = position_dodge(width = 0.3)) +
+#     geom_point(size = point_size, position = position_dodge(width = 0.3)) +
+#     geom_vline(xintercept = xintercept, linetype = "solid") +
+#     theme_classic(base_size = base_size) +
+#     scale_color_manual(values = c("positive" = "dodgerblue", "zero_crossing" = "black", "negative" = "orange")) +
+#     labs(x = x_axis_label, y = " ", title = title, subtitle = subtitle) +
+#     geom_text(aes(x = x_offset * estimate_scale, label = estimate_lab), size = text_size, hjust = 0, 
+#               fontface = ifelse(.data$Estimate == "unreliable", "plain", "bold")) +
+#     coord_cartesian(xlim = c(x_lim_lo, x_lim_hi)) +
+#     theme(
+#       legend.position = "top",
+#       legend.direction = "horizontal",
+#       plot.title = element_text(face = "bold", size = title_size, hjust = 0),
+#       plot.subtitle = element_text(size = subtitle_size, hjust = 0),
+#       legend.text = element_text(size = legend_text_size),
+#       legend.title = element_text(size = legend_title_size),  # added line
+#       plot.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt")
+#     )
+#   
+#   return(out)
+#}
 
 ```
 
