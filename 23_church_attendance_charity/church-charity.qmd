@@ -66,6 +66,8 @@ push_mods <-
 dat <- arrow::read_parquet(pull_path)
 ```
 
+## ADD BMI, ADD CHILDREN NUMBER # Humilty # Vengence # humil # Gratitude # Charity
+
 ```{r}
 #| label: clean data
 #| echo: false
@@ -75,8 +77,8 @@ dat <- arrow::read_parquet(pull_path)
 # note that religion church NA we impute zero to those who are not religous in the "religion_church2" variable
 
 
-table(is.na( dat$religion_church)) 
-table(is.na( dat$religion_church2)) 
+# table(is.na( dat$religion_church)) 
+# table(is.na( dat$religion_church2)) 
 
 # Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
@@ -148,6 +150,10 @@ dat_long <- dat |>
     "number_sisters_younger", #	How many younger sisters do you have? 
     "number_brothers_older",#	How many older brothers do you have?
     "number_brothers_younger", #	How many older brothers do you have?
+    "children_num", # How many children have you given birth to, fathered, or adopted?
+    "hours_children", #Hours - Looking after children
+    "hours_work",#Hours - Working in paid employment
+    "hours_housework", # Hours - Housework/cooking
     "agreeableness",
     # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
     # Sympathize with others' feelings.
@@ -217,12 +223,12 @@ dat_long <- dat |>
     # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
     "w_gend_age_euro",
     # sample_weights.
-    "vengeful_rumin",
     # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
     "gratitude",
     ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of peopl
     "modesty",
     # see above
+    "vengeful_rumin",
     "charity_donate",
     #How much money have you donated to charity in the last year?
     "hours_charity",
@@ -257,6 +263,7 @@ dat_long <- dat |>
     "family_money",
     "friends_money",
     "community_money",
+    #Please estimate how much help you have received from the following sources in the last week?
     # Received help and support - hours
     # family
     # friends
@@ -286,7 +293,10 @@ dat_long <- dat |>
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
   dplyr::mutate(
     friends_money = ifelse(friends_money < 0, 0, friends_money), # someone gave neg number
-    household_inc_log = log(household_inc + 1)
+    household_inc_log = log(household_inc + 1),
+    hours_children_log = log(hours_children + 1),
+    hours_work_log = log(hours_work + 1),
+    hours_housework_log = log(hours_housework + 1),
   ) |> 
   droplevels() |>
   select(-c("h_19", "k_19", "h_18", "k_18")) |>
@@ -324,6 +334,7 @@ dat_long$religion_religious
 table1::table1(data = dt_test, ~ total_siblings | religion_religious)
 
 min( dat_long$family_money, na.rm=TRUE)
+
 
 m_fam_ps <- glm(family_money ~ religion_church_binary2, data = dt_test, family = poisson)
 m_frm_ps <- glm(friends_money ~ religion_church_binary2, data = dt_test, family = poisson)
@@ -415,7 +426,7 @@ dt_18_19_religious <- dt_18_19 %>%
     religion_church_coarsen = cut(
       religion_church2,
       breaks = c(-Inf, 0, 1, 3.99, Inf),
-      labels = c("0", "(0_1]", "(1_4)", "[4,200]"),
+      labels = c("0", "(0_1]", "(1_4)", "[4,Inf]"),
       include.lowest = TRUE,
       right = TRUE
     )
@@ -531,12 +542,17 @@ baseline_vars = c(
     "hlth_disability",  # added 
     "household_inc_log", # added: measured with error but OK for imputations
     "partner",
-    "parent",
+   # "parent",  # newly changed - have information in child number
     "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
     #"pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
     "sample_origin_names_combined",
     "urban",
-    "agreeableness",
+    "children_num",
+    "household_inc_log", # new
+    "hours_children_log", # new
+    "hours_work_log", # new
+    "hours_housework_log", #new
+    "agreeableness", 
     "conscientiousness",
     "extraversion",
     "honesty_humility",
@@ -557,6 +573,10 @@ exposure_var = c("religion_church_coarsen") # we could construct this after impu
 
 
 outcome_vars_donate = c(
+   "modesty",
+   "honesty_humility",
+   "vengeful_rumin",
+   "gratitude",
    "hours_charity",
    "charity_donate"
   )
@@ -667,6 +687,7 @@ mice:::find.collinear(prep_donate)
 # impute
 mice_donate <- impute_and_combine(prep_multiple_donate, m = 10)
 
+#check
 push_mods
 # save imputed data
 saveRDS(mice_donate,
@@ -676,15 +697,15 @@ saveRDS(mice_donate,
 mice_donate <- readRDS(here::here(push_mods, "mice_donate"))
 
 mice_donate_c  <- mice::complete(mice_donate, action = 'long', include = TRUE)
-
 mice_donate_c <-mice_donate_c |> select(-c(.id.1, .imp.1))
-
 # check data
-skimr::skim(mice_donate_c)
-
+#skimr::skim(mice_donate_c)
 # prepare
 row.names(mice_donate_c) <- NULL
 
+# note that poisson models for rates inference await development.  Evalues are invalid, and se estimates are invalid.
+# we keep the code here for that day
+# poisson models do work for binary data though.
 
 mice_donate_mids <- mice_donate_c %>%
   arrange(.imp, id) |> 
@@ -696,9 +717,9 @@ mice_donate_mids <- mice_donate_c %>%
         t0_charity_donate_log =  log(t0_charity_donate+1), # to improve model convergence
         t2_charity_donate_log =   log(t2_charity_donate+1),# to improve model convergence
     #    t0_volunteers = as.numeric(ifelse(t0_hours_charity > 1,1,0)),
-        t2_volunteers = as.integer(ifelse(t2_hours_charity > 1,1,0)),
-        t2_hours_charity_ord = as.integer(round(t2_hours_charity)), 
-        t2_charity_donate_ord = as.integer(round(t2_charity_donate))) |> 
+        t2_volunteers = as.integer(ifelse(t2_hours_charity > 0,1,0)),
+        t2_hours_charity_ord = as.integer(round(t2_hours_charity,0)), 
+        t2_charity_donate_ord = as.integer(round(t2_charity_donate,0))) |> 
   select(-t0_hours_charity, -t0_charity_donate) %>%
   dplyr::group_by(.imp) |>
   rowwise() |>
@@ -728,24 +749,24 @@ mice_donate_mids <- mice_donate_c %>%
 
 mice_donate_long <- mice::complete(mice_donate_mids, "long", inc = TRUE)
 
-# rar
+# checks
 skim(mice_donate_long)
+
 table(mice_donate_long$t2_hours_charity_log)
 table(mice_donate_long$t2_hours_charity_log_z)
-
-table(mice_donate_long$t2_volunteers)
-str(mice_donate_long$t2_volunteers)
-
-
 table(mice_donate_long$t2_hours_charity_ord)
-str(mice_donate_long$t2_hours_charity_ord)
+table(mice_donate_long$t2_volunteers)
+
+
+table(mice_donate_long$t2_charity_donate_log)
+table(mice_donate_long$t2_charity_donate_log_z)
+table(mice_donate_long$t2_charity_donate_ord)
 
 
 test <- dat_long |> 
   filter(wave == 2020) |> 
   select(hours_charity) |> 
   mutate(volunteers = ifelse(hours_charity>1, 1, 0))
-mice_donate_long$t2_volunteers
 
 # save
 saveRDS(mice_donate_mids, here::here(push_mods, "mice_donate_mids"))
@@ -762,23 +783,18 @@ saveRDS(mice_donate_long, here::here(push_mods, "mice_donate_long"))
 #| eval: false
 
 naniar::vis_miss(prep_warmth, warn_large_data = FALSE)
-
 dev.off()
-
 # check for collinear vars
 mice:::find.collinear(prep_warmth)
-
-
 # impute
 mice_warmth <- impute_and_combine(prep_multiple_warmth, m = 10)
-
 # check
 push_mods
 # save imputed data
 saveRDS(mice_warmth,
         here::here(push_mods, "mice_warmth"))
 
-
+# read (if needed)
 mice_warmth <- readRDS(here::here(push_mods, "mice_warmth"))
 
 mice_warmth_c  <- mice::complete(mice_warmth, action = 'long', include = TRUE)
@@ -786,7 +802,7 @@ mice_warmth_c  <- mice::complete(mice_warmth, action = 'long', include = TRUE)
 mice_warmth_c <-mice_warmth_c |> select(-c(.id.1, .imp.1))
 
 # check data
-skimr::skim(mice_warmth_c)
+#skimr::skim(mice_warmth_c)
 
 # prepare
 row.names(mice_warmth_c) <- NULL
@@ -834,12 +850,10 @@ saveRDS(mice_warmth_long, here::here(push_mods, "mice_warmth_long"))
 #| eval: false
 
 naniar::vis_miss(prep_support, warn_large_data = FALSE)
-
 dev.off()
 
 # check for collinear vars
 mice:::find.collinear(prep_support)
-
 
 # impute
 mice_support <- impute_and_combine(prep_multiple_support, m = 10)
@@ -850,18 +864,24 @@ push_mods
 saveRDS(mice_support,
         here::here(push_mods, "mice_support"))
 
-
+# read (if nec)
 mice_support <- readRDS(here::here(push_mods, "mice_support"))
 
+# complete
 mice_support_c  <- mice::complete(mice_support, action = 'long', include = TRUE)
 
 mice_support_c <-mice_support_c |> select(-c(.id.1, .imp.1))
 
 # check data
-skimr::skim(mice_support_c)
+#skimr::skim(mice_support_c)
 
 # prepare
 row.names(mice_support_c) <- NULL
+
+
+# note that poisson models for rates inference await development.  Evalues are invalid, and se estimates are invalid.
+# we keep the code here for that day
+# poisson models do work for binary data though.
 
 mice_support_mids <- mice_support_c %>%
   arrange(.imp, id) |> 
@@ -880,13 +900,18 @@ mice_support_mids <- mice_support_c %>%
         t2_friends_money_log =   log(t2_friends_money+1),# to improve model convergence
         t0_community_money_log =   log(t0_community_money+1),# to improve model convergence
         t2_community_money_log =   log(t2_community_money+1),# to improve model convergence
-        t2_family_time_binary = ifelse(t2_family_time > 0, 1, 0),
-        t2_friends_time_binary = ifelse(t2_friends_time > 0, 1, 0),
-        t2_community_time_binary = ifelse(t2_community_time > 0, 1, 0),
-        t2_family_money_binary = ifelse(t2_family_money > 0, 1, 0),
-        t2_friends_money_binary = ifelse(t2_friends_money > 0, 1, 0),
-        t2_community_money_binary = ifelse(t2_community_money > 0, 1, 0)
-  ) |>
+        t2_family_time_binary = as.integer(ifelse(t2_family_time > 0, 1, 0)),
+        t2_friends_time_binary = as.integer(ifelse(t2_friends_time > 0, 1, 0)),
+        t2_community_time_binary = as.integer(ifelse(t2_community_time > 0, 1, 0)),
+        t2_family_money_binary = as.integer(ifelse(t2_family_money > 0, 1, 0)),
+        t2_friends_money_binary = as.integer(ifelse(t2_friends_money > 0, 1, 0)),
+        t2_community_money_binary = as.integer(ifelse(t2_community_money > 0, 1, 0)),
+        t2_family_time_ord = as.integer(round(t2_family_time,0)), 
+        t2_family_money_ord = as.integer(round(t2_family_money,0)), 
+        t2_friends_time_ord = as.integer(round(t2_friends_time,0)), 
+        t2_friends_money_ord = as.integer(round(t2_friends_money,0)), 
+        t2_community_time_ord = as.integer(round(t2_community_time,0)), 
+        t2_community_money_ord = as.integer(round(t2_community_money,0)))|>
   dplyr::select(-t0_family_time, -t0_friends_time, -t0_community_time, -t0_family_money, -t0_friends_money,-t0_community_money) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
   dplyr::group_by(.imp) |>
   rowwise() |>
@@ -899,7 +924,13 @@ mice_support_mids <- mice_support_c %>%
         !t2_community_time_binary &
         !t2_family_money_binary &
         !t2_friends_money_binary &
-        !t2_community_money_binary,
+        !t2_community_money_binary &
+        !t2_family_time_ord & 
+        !t2_family_money_ord & 
+        !t2_friends_time_ord & 
+        !t2_friends_money_ord & 
+        !t2_community_time_ord & 
+        !t2_community_money_ord, 
       ~ scale(.x),
       .names = "{col}_z"
     )
@@ -914,6 +945,12 @@ mice_support_mids <- mice_support_c %>%
       t2_family_money_binary,
       t2_friends_money_binary, 
       t2_community_money_binary,
+       t2_family_time_ord, 
+        t2_family_money_ord, 
+        t2_friends_time_ord, 
+        t2_friends_money_ord, 
+        t2_community_time_ord, 
+        t2_community_money_ord,
     ends_with("_z"),
     .imp,
     .id
@@ -929,10 +966,29 @@ mice_support_mids <- mice_support_c %>%
 
 mice_support_long <- mice::complete(mice_support_mids, "long", inc = TRUE)
 
+
+# check
+table( mice_support_long$t2_family_money_binary)
+table( mice_support_long$t2_family_time_binary)
+table( mice_support_long$t2_family_time_ord)
+
+table( mice_support_long$t2_friends_money_binary)
+table( mice_support_long$t2_friends_time_binary)
+
+
+table( mice_support_long$t2_community_money_binary)
+table( mice_support_long$t2_community_time_binary)
+
+# troubleshoot
 skim(mice_support_long)
 
+# this outcome not rare
 table(mice_support_long$t2_family_time_binary)
+
+# not rare
 table(mice_support_long$t2_friends_time_binary)
+
+# rare
 table(mice_support_long$t2_community_time_binary)
 
 # save
@@ -943,7 +999,7 @@ saveRDS(mice_support_long, here::here(push_mods, "mice_support_long"))
 
 
 ```{r}
-#| label: models-donate-cat
+#| label: models-donate
 #| eval: false
 
 mice_donate_mids <- readRDS(here::here(push_mods, "mice_donate_mids"))
@@ -955,9 +1011,9 @@ sd(mice_donate_long$t2_hours_charity_log, na.rm=TRUE)
 # check
 skim(mice_donate_long)
 
+#name exposure
+levels( mice_donate_long$t1_religion_church_coarsen )
 
-
-mice_social_long$t1_religion_church_coarsen
 # Set exposure 
 X <- "t1_religion_church_coarsen"
 
@@ -970,6 +1026,7 @@ outcome_vars_donate = mice_donate_long |> dplyr::select(starts_with("t2")) |> co
 outcome_vars_donate
 
 estimand = "ATE"
+
 # ebalance
 mice_donate_ebal <- match_mi_general(data = mice_donate_mids, 
                                  X = X, 
@@ -987,6 +1044,8 @@ sum_ebal
 plot(sum_ebal)
 bal.tab(mice_donate_ebal)
 
+hist(mice_donate_long)
+
 # if trim is needed
 mice_donate_ebal_trim <- WeightIt::trim(mice_donate_ebal, at = .99)
 sum_ebal_trim <- summary(mice_donate_ebal_trim)
@@ -995,7 +1054,7 @@ sum_ebal_trim
 plot(sum_ebal_trim)
 bal.tab(mice_donate_ebal_trim,stats = c("m", "ks"), abs = TRUE)
 love.plot(mice_donate_ebal_trim, binary = "std", thresholds = c(m = .1))
-
+mice_donate_ebal_trim
 # settings 
 dt_donate = mice_donate_ebal_trim
 # cores
@@ -1013,6 +1072,7 @@ treat_1 = "four_up"
 # 
 # ### Model by hand
 # X
+# set outcome, e.g.
 # Y = "t2_charity_donate_log_z"
 # Y = "t2_hours_charity_log_z"
 # Y = "t2_volunteers"
@@ -1020,7 +1080,7 @@ treat_1 = "four_up"
 # # etc.
 # 
 # 
-# #formula_str_A <- paste(X, "~", paste(baseline_vars_health, collapse = "+"))
+# formula_str_A <- paste(X, "~", paste(baseline_vars_health, collapse = "+"))
 # formula_str_Y <- paste(Y, "~", X , "*", "(", paste(baseline_vars_donate, collapse = "+"), ")")
 # formula_str_Yps <- paste(Y, "~", X , "*", "(", paste(1, collapse = "+"), ")")
 # formula_str_Yord <- paste(Y, "~", X , "*", "(", paste(baseline_vars_donate, collapse = "+"), ")")
@@ -1065,150 +1125,65 @@ treat_1 = "four_up"
 # 
 # sim.imp <- misim(fits, n = 100, vcov = "HC")
 # 
-# sim.att <- sim_ame(sim.imp, var = X,
-#                    subset = t1_religion_church_coarsen == treat_1, cl = 4,
-#                    verbose = TRUE)
-# 
-# 
-# est_RD <- transform(sim.att, RD = `E[Y(four_up)]` - `E[Y(zero)]`)
-# 
-# 
-# 
-# 
 # sim_estimand <- sim_ame(sim.imp, var = X, cl = cores, verbose = FALSE)
-# est_rr <- transform(sim_estimand, RR = `E[Y(four_up)]` / `E[Y(zero)]`, 
+# summary_sim_estimand <- transform(sim_estimand, RR = `E[Y(four_up)]` / `E[Y(zero)]`, 
 #                     RD =`E[Y(four_up)]` - `E[Y(zero)]` )
-# summary(est_rr)
+# summary_sim_estimand
 # 
 # 
 # 
-# plot(sim.att ,  ci = TRUE, level = .95, reference = FALSE, method = "wald")
-# 
-# # poisson outcome
-#                 Estimate   5 %  95 %
-# E[Y(zero)]         1.577 1.521 1.884
-# E[Y(one)]          1.343 1.404 2.491
-# E[Y(less_four)]    1.823 1.851 3.502
-# E[Y(four_up)]      2.120 2.074 2.731
-# RD                 0.543 0.292 1.078
-# RR                 1.344 1.159 1.677
-
-
-
-treat_0
-treat_1
-
-
-# slightly older
-
-
-# test_dev <- causal_contrast_engine(df = dt_donate,  # note change
-#   Y = "t2_volunteers",
-#   X = X, 
-#   baseline_vars = 1,# baseline_vars_donate,# will not converge
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   #scale = "RR",
-#   type = "RR",
-#   nsims = 20,
-#   cores = cores,
-#   family = quasibinomial(),
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE, 
-# #  new_name = "Volunteers_y/n",
-#   vcov ="HC"
-# )
-# 
-# test_dev
-# double_robust <- function(df, Y, X, new_name, baseline_vars = "1", treat_0 = 0, treat_1 = 1, estimand = "ATE", scale = c("RR","RD"), nsims = 200, cores = parallel::detectCores(), family = "gaussian", weights = TRUE, continuous_X = FALSE, splines = FALSE, delta = 1, sd = 1, type = c("RD", "RR"), vcov = "HC") {
-#   
-#   # Call the causal_contrast_general() function
-#   causal_contrast_result <- causal_contrast_engine(df, Y, X, baseline_vars, treat_0, treat_1,estimand, scale, nsims, cores, family, weights, continuous_X, splines, vcov = "HC")
-# 
-#   # Call the tab_ate() function with the result from causal_contrast()
-#   tab_ate_result <- tab_ate_engine(causal_contrast_result, new_name, delta, sd, scale, continuous_X)
-# 
-#   return(tab_ate_result)
-# }
-# 
-
-# 
-# # general contrast table --------------------------------------------------
-# 
-# tab_ate_engine <- function(x, new_name, delta = 1, sd = 1, scale = c("RD","RR"), continuous_X = FALSE) {
-#   require("EValue")
-#   require(dplyr)
-# 
-#   scale <- match.arg(scale)
-# 
-#   x <- as.data.frame(x)
-# 
-#   if (continuous_X) {
-#     rownames(x) <- scale
-#   } else{
-#    x
-#   }
-# 
-#   out <- x %>%
-#     dplyr::filter(row.names(x) == scale) %>%
-#     dplyr::mutate(across(where(is.numeric), round, digits = 4))
-# 
-#   if (scale == "RD") {
-#     out <- out %>%
-#       dplyr::rename("E[Y(1)]-E[Y(0)]" = Estimate)
-#   } else {
-#     out <- out %>%
-#       dplyr::rename("E[Y(1)]/E[Y(0)]" = Estimate)
-#   }
-# 
-#   rownames(out)[1] <- paste0(new_name)
-#   out <- as.data.frame(out)
-# 
-#   if (scale == "RD") {
-#     tab0 <- out |>  dplyr::mutate(standard_error = abs(`2.5 %` - `97.5 %`) / 3.92)
-#     evalout <- as.data.frame(round(EValue::evalues.OLS(tab0[1, 1],
-#                                                        se = tab0[1, 4],
-#                                                        sd = sd,
-#                                                        delta = delta,
-#                                                        true = 0
-#     ),
-#     3
-#     ))
-#   } else {
-#     evalout <- as.data.frame(round(EValue::evalues.RR(out[1, 1],
-#                                                       lo = out[1, 2],
-#                                                       hi = out[1, 3],
-#                                                       true = 1
-#     ),
-#     3
-#     ))
-#   }
-# 
-#   evalout2 <- subset(evalout[2, ])
-#   evalout3 <- evalout2 |>
-#     select_if( ~ !any(is.na(.)))
-#   colnames(evalout3) <- c("E_Value", "E_Val_bound")
-# 
-#   if (scale == "RD") {
-#     tab <- cbind.data.frame(tab0, evalout3) |> dplyr::select(-c(standard_error))
-#   } else {
-#     tab <- cbind.data.frame(out, evalout3)
-#   }
-# 
-#   return(tab)
-# }
-# 
-# 
-
-
+# plot(sim_estimand ,  ci = TRUE, level = .95, reference = FALSE, method = "wald")
 
 
 ### Models 
 
+#### Volunteering Hours
+mod_donate_volunteers_gauss_rd  <- double_robust(
+  df = dt_donate,  # note change
+  Y = "t2_hours_charity_log_z",
+  X = X,
+  baseline_vars = baseline_vars_donate,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name =  "Volunteers (sd)"
+)
+mod_donate_volunteers_gauss_rd
+saveRDS(mod_donate_volunteers_gauss_rd, here::here(push_mods, "mod_donate_volunteers_gauss_rd"))
 
-mod_donate_volunteer_rr  <- double_robust(
+## not meaningful
+# mod_donate_volunteer_pois_rr  <- double_robust(
+#   df = dt_donate, 
+#   Y = "t2_hours_charity_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_donate,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#   vcov = "HC",
+#   new_name = "Volunteers (poisson rr)"
+# )
+# mod_donate_volunteer_pois_rd
+# saveRDS(mod_donate_volunteer_pois_rd, here::here(push_mods, "mod_donate_volunteer_pois_rd"))
+
+
+
+mod_donate_volunteer_binary_rr  <- double_robust(
   df = dt_donate,  # note change
   Y = "t2_volunteers",
   X = X, 
@@ -1223,114 +1198,18 @@ mod_donate_volunteer_rr  <- double_robust(
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
-  new_name = "Volunteers_y/n",
+  new_name = "Volunteers (y/n)",
   vcov ="HC"
 )
 
-mod_donate_volunteer_rr
-saveRDS(mod_donate_volunteer_rr, here::here(push_mods, "mod_donate_volunteer_rr"))
-
-
-mod_donate_hours_charity_rd  <- double_robust(
-  df = dt_donate, 
-  Y = "t2_hours_charity_log_z",
-  X = X,
-  baseline_vars = baseline_vars_donate,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE,
-  vcov = "HC",
-  new_name = "Hours Volunteer (log_z)"
-)
-mod_donate_hours_charity_rd
-saveRDS(mod_donate_hours_charity_rd, here::here(push_mods, "mod_donate_hours_charity_rd"))
+mod_donate_volunteer_binary_rr
+saveRDS(mod_donate_volunteer_binary_rr, here::here(push_mods, "mod_donate_volunteer_binary_rr"))
 
 
 
-# not valid for evalues
-#sd_hours_charity_ord <- sd(mice_donate_long$t2_hours_charity_ord, na.rm = TRUE)
-# 
-# mod_donate_hours_charity_pois_rd  <- double_robust(
-#   df = dt_donate, 
-#   Y = "t2_hours_charity_ord",
-#   X = X,
-#   baseline_vars = baseline_vars_donate,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RD",
-#   nsims = 20,
-#   cores = cores,
-#   family = "poisson",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE,
-#   vcov = "HC",
-#   sd = sd_hours_charity_ord,
-#   new_name = "Hours Volunteer (poisson RD)"
-# )
-# mod_donate_hours_charity_pois_rd
-# 
-# 
-# saveRDS(mod_donate_hours_charity_pois_rd, here::here(push_mods, "mod_donate_hours_charity_pois_rd"))
-# 
+#### annual charity donations
 
-
-# better model 
-mod_hours_charity_pois_rr  <- double_robust(
-  df = dt_donate,  # note change
-  Y = "t2_hours_charity_ord",
-  X = X,
-  baseline_vars = baseline_vars_donate,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Hours Volunteer (poisson RR)"
-)
-mod_hours_charity_pois_rr
-saveRDS(mod_hours_charity_pois_rr, here::here(push_mods, "mod_hours_charity_pois_rr"))
-
-# note used
-# mod_donate_charity_donate_pois_rr  <- double_robust(
-#   df = dt_donate,  # note change
-#   Y = "t2_charity_donate_ord",
-#   X = X,
-#   baseline_vars = baseline_vars_donate,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RR",
-#   nsims = nsims,
-#   cores = cores,
-#   family = "poisson",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE, 
-#   vcov = "HC",
-#   new_name = "Charity Donations (log)"
-# )
-# mod_donate_charity_donate_pois_rr
-# 
-# saveRDS(mod_donate_charity_donate_pois_rr, here::here(push_mods, "mod_donate_charity_donate_pois_rr"))
-
-
-
-mod_donate_charity_donate_rd  <- double_robust(
+mod_donate_charity_dollars_gauss_rd  <- double_robust(
   df = dt_donate,  # note change
   Y = "t2_charity_donate_log_z",
   X = X,
@@ -1346,18 +1225,127 @@ mod_donate_charity_donate_rd  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Charity Donations (log z)"
+  new_name =  "Annual charity (sd)"
 )
+mod_donate_charity_dollars_gauss_rd
+saveRDS(mod_donate_charity_dollars_gauss_rd, here::here(push_mods, "mod_donate_charity_dollars_gauss_rd"))
+
+# not meaningful for evalues
+# mod_donate_charity_dollars_pois_rd  <- double_robust(
+#   df = dt_donate, 
+#   Y = "t2_charity_donate_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_donate,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#   vcov = "HC",
+#   new_name = "Annual charity (poisson)"
+# )
+# mod_donate_charity_dollars_pois_rd
+# saveRDS(mod_donate_charity_dollars_pois_rd, here::here(push_mods, "mod_donate_charity_dollars_pois_rd"))
+
+mod_donate_modesty  <- double_robust(
+  df = dt_donate, 
+  Y = "t2_modesty_z",
+  X = X,
+  baseline_vars = baseline_vars_donate,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE,
+  vcov = "HC",
+  new_name = "Modesty/Humility (sd)"
+)
+mod_donate_modesty
+saveRDS(mod_donate_modesty, here::here(push_mods, "mod_donate_modesty"))
+
+mod_donate_honesty_humility  <- double_robust(
+  df = dt_donate, 
+  Y = "t2_honesty_humility_z",
+  X = X,
+  baseline_vars = baseline_vars_donate,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE,
+  vcov = "HC",
+  new_name = "Honesty/Humility (sd)"
+)
+mod_donate_honesty_humility
+saveRDS(mod_donate_honesty_humility, here::here(push_mods, "mod_donate_honesty_humility"))
 
 
-mod_donate_charity_donate_rd
+mod_donate_vengeful_rumin  <- double_robust(
+  df = dt_donate, 
+  Y = "t2_vengeful_rumin_z",
+  X = X,
+  baseline_vars = baseline_vars_donate,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE,
+  vcov = "HC",
+  new_name = "Vengeful (sd)"
+)
+mod_donate_vengeful_rumin
+saveRDS(mod_donate_honesty_humility, here::here(push_mods, "mod_donate_vengeful_rumin"))
 
-saveRDS(mod_donate_charity_donate_rd, here::here(push_mods, "mod_donate_charity_donate_rd"))
+
+mod_donate_gratitude <- double_robust(
+  df = dt_donate, 
+  Y = "t2_gratitude_z",
+  X = X,
+  baseline_vars = baseline_vars_donate,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE,
+  vcov = "HC",
+  new_name = "Gratitude (sd)"
+)
+mod_donate_gratitude
+saveRDS(mod_donate_gratitude, here::here(push_mods, "mod_donate_gratitude"))
 
 
 tab_donate_rd <- rbind(
-  mod_donate_hours_charity_rd,
-  mod_donate_charity_donate_rd
+  mod_donate_modesty,
+  mod_donate_honesty_humility,
+  mod_donate_vengeful_rumin,
+  mod_donate_gratitude,
+  mod_donate_volunteers_gauss_rd,
+  mod_donate_charity_dollars_gauss_rd
 )
 
 tab_donate_rd
@@ -1365,6 +1353,7 @@ tab_donate_rd
 
 group_tab_donate_rd <- group_tab(tab_donate_rd, type = "RD")
 
+# view
 group_tab_donate_rd
 
 saveRDS(group_tab_donate_rd, here::here(push_mods, "group_tab_donate_rd"))
@@ -1398,12 +1387,9 @@ ggsave(
 # The interpretation of the rate ratio depends on the context. For example, if we looking at the number of volunteering cases in different church attending populations over a certain period, the rate ratio would be interpreted as the ratio of the rate of volunteering in the exposed population to the rate of volunteering in the unexposed population.
 # save model
 
-mod_donate_volunteer_rr
-mod_donate_volunteer_rr
 
 tab_donate_rr <- rbind(
-  mod_hours_charity_pois_rr,
-  mod_donate_volunteer_rr
+  mod_donate_volunteer_binary_rr
 )
 
 tab_donate_rr
@@ -1419,7 +1405,7 @@ group_plot_ate_donate_rr <- group_plot_ate(
   group_tab_donate_rr,
   type = "RR",
   title = "ATE: causal contrast:zero to weekly church attendance", 
-  subtitle = "Annual charity donations and weekly volunteering",
+  subtitle = "Weekly volunteering rate ratio",
   xlab = "(sd units)",
   ylab = "test",
    x_offset = .5,
@@ -1429,8 +1415,8 @@ group_plot_ate_donate_rr <- group_plot_ate(
 group_plot_ate_donate_rr
 
 ggsave(
-  group_plot_ate_donate_rd,
-  path = here::here(here::here(push_mods, "group_plot_ate_donate_rd")),
+  group_plot_ate_donate_rr,
+  path = here::here(here::here(push_mods, "group_plot_ate_donate_rr")),
   width = 8,
   height = 4,
   units = "in",
@@ -1440,6 +1426,80 @@ ggsave(
   dpi = 600
 )
 
+
+# not valid for evalues
+#sd_hours_charity_ord <- sd(mice_donate_long$t2_hours_charity_ord, na.rm = TRUE)
+# 
+# mod_donate_hours_charity_pois_rd  <- double_robust(
+#   df = dt_donate, 
+#   Y = "t2_hours_charity_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_donate,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = 20,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#   vcov = "HC",
+#   sd = sd_hours_charity_ord,
+#   new_name = "Hours Volunteer (poisson RD)"
+# )
+# mod_donate_hours_charity_pois_rd
+# 
+# 
+# saveRDS(mod_donate_hours_charity_pois_rd, here::here(push_mods, "mod_donate_hours_charity_pois_rd"))
+# 
+
+# 
+# # better model 
+# mod_hours_charity_pois_rr  <- double_robust(
+#   df = dt_donate,  # note change
+#   Y = "t2_hours_charity_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_donate,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Hours Volunteer (poisson RR)"
+# )
+# mod_hours_charity_pois_rr
+# saveRDS(mod_hours_charity_pois_rr, here::here(push_mods, "mod_hours_charity_pois_rr"))
+
+# note used
+# mod_donate_charity_donate_pois_rr  <- double_robust(
+#   df = dt_donate,  # note change
+#   Y = "t2_charity_donate_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_donate,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Charity Donations (log)"
+# )
+# mod_donate_charity_donate_pois_rr
+# 
+# saveRDS(mod_donate_charity_donate_pois_rr, here::here(push_mods, "mod_donate_charity_donate_pois_rr"))
 
 ```
 
@@ -1525,12 +1585,11 @@ mod_warmth_asians  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Asians (SD)"
+  new_name = "Warmth Asians (sd)"
 )
 
 
 mod_warmth_asians
-
 saveRDS(mod_warmth_asians, here::here(push_mods, "mod_warmth_asians"))
 
 
@@ -1550,7 +1609,7 @@ mod_warmth_chinese  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Chinese (SD)"
+  new_name = "Warmth Chinese (sd)"
 )
 
 mod_warmth_chinese
@@ -1573,7 +1632,7 @@ mod_warmth_immigrants  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Immigrants (SD)"
+  new_name = "Warmth Immigrants (sd)"
 )
 
 
@@ -1598,14 +1657,12 @@ mod_warmth_indians  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Indians (SD)"
+  new_name = "Warmth Indians (sd)"
 )
 
 
 mod_warmth_indians
 saveRDS(mod_warmth_indians, here::here(push_mods, "mod_warmth_indians"))
-
-
 
 mod_warmth_elderly  <- double_robust(
   df = dt_warmth,  # note change
@@ -1623,7 +1680,7 @@ mod_warmth_elderly  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Elderly (SD)"
+  new_name = "Warmth Elderly (sd)"
 )
 
 
@@ -1647,7 +1704,7 @@ mod_warmth_maori  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Māori (SD)"
+  new_name = "Warmth Māori (sd)"
 )
 
 
@@ -1671,7 +1728,7 @@ mod_warmth_mental  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Mental Illness (SD)"
+  new_name = "Warmth Mental Illness (sd)"
 )
 
 
@@ -1694,7 +1751,7 @@ mod_warmth_muslims  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Muslims (SD)"
+  new_name = "Warmth Muslims (sd)"
 )
 
 
@@ -1718,7 +1775,7 @@ mod_warmth_nzeuro  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth NZ Europeans (SD)"
+  new_name = "Warmth NZ Europeans (sd)"
 )
 
 
@@ -1743,7 +1800,7 @@ mod_warmth_overweight  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Overweight (SD)"
+  new_name = "Warmth Overweight (sd)"
 )
 
 
@@ -1769,7 +1826,7 @@ mod_warmth_pacific  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Pacific (SD)"
+  new_name = "Warmth Pacific (sd)"
 )
 
 
@@ -1793,7 +1850,7 @@ mod_warmth_refugees  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Warmth Pacific (SD)"
+  new_name = "Warmth Refugees (sd)"
 )
 
 
@@ -1816,7 +1873,7 @@ mod_warmth_per_rel_discrimination  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE, 
   vcov = "HC",
-  new_name = "Perceived Religious Discrimination (SD)"
+  new_name = "Perceived Religious Discrimination (sd)"
 )
 
 mod_warmth_per_rel_discrimination
@@ -1856,8 +1913,8 @@ group_plot_ate_warmth <- group_plot_ate(
   subtitle = "Warmth to others and perceived religious prejudice",
   xlab = "(sd units)",
   ylab = "test",
-  x_offset = -.2,
-  x_lim_lo = -.2,
+  x_offset = -.4,
+  x_lim_lo = -.4,
   x_lim_hi = .5
 )
 group_plot_ate_warmth
@@ -1877,5 +1934,454 @@ ggsave(
 
 ```
 
+```{r}
+#|label: models-support
 
+mice_support_mids <- readRDS(here::here(push_mods, "mice_support_mids"))
+
+# longform data if necessary
+mice_support_long <- readRDS(here::here(push_mods, "mice_support_long"))
+
+# check
+skim(mice_support_long)
+
+# Set exposure 
+X <- "t1_religion_church_coarsen"
+
+baseline_vars_support = mice_support_long |> 
+  dplyr::select(starts_with("t0"))|> colnames() # strange to include these -- as they  are income by other names
+
+baseline_vars_support
+outcome_vars_support = mice_support_long |> dplyr::select(starts_with("t2")) |> colnames()
+outcome_vars_support
+
+estimand = "ATE"
+# ebalance
+mice_support_ebal <- match_mi_general(data = mice_support_mids, 
+                                 X = X, 
+                                 baseline_vars = baseline_vars_support, 
+                                 estimand = estimand,  
+                                # focal = "zero",
+                                 method = "ebal", 
+                                 sample_weights = "sample_weights")
+saveRDS(mice_support_ebal, here::here(push_mods, "mice_support_ebal"))
+
+#mice_support_ebal <- readRDS(here::here(push_mods, "mice_support_ebal"))
+
+
+# summary
+sum_ebal <- summary(mice_support_ebal)
+sum_ebal
+
+plot(sum_ebal)
+bal.tab(mice_support_ebal)
+
+# if trim is needed
+mice_trim_ebal_support <- WeightIt::trim(mice_support_ebal, at = .99)
+sum_trim_ebal <- summary(mice_trim_ebal_support)
+sum_trim_ebal
+
+plot(sum_trim_ebal)
+bal.tab(mice_trim_ebal_support,stats = c("m", "ks"), abs = TRUE)
+love.plot(mice_trim_ebal_support, binary = "std", thresholds = c(m = .1))
+
+# settings 
+dt_support = mice_trim_ebal_support
+# cores
+cl =  parallel::detectCores () 
+cores =  parallel::detectCores () 
+#levels(dat_long_t$religion_church_coarsen)
+nsims = 1000
+
+#check
+treat_0 = "zero"
+#check
+treat_1 = "four_up" 
+ 
+X
+
+outcome_vars_support
+baseline_vars_support
+
+## models
+
+mod_support_family_time_gauss_rd  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_family_time_log_z",
+  X = X,
+  baseline_vars = baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Family time (sd)"
+)
+
+mod_support_family_time_gauss_rd
+saveRDS(mod_support_family_time_gauss_rd, here::here(push_mods, "mod_support_family_time_gauss_rd"))
+
+
+mod_support_family_time_gauss_rd <- readRDS( here::here(push_mods, "mod_support_family_time_gauss_rd"))
+mod_support_family_time_gauss_rd
+
+# for reporting effect (evalues not valid)
+# mod_support_family_time_pois_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_family_time_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Family time (poisson rr)"
+# )
+# 
+# mod_support_family_time_pois_rr
+# 
+# saveRDS(mod_support_family_time_pois_rr, here::here(push_mods, "mod_support_family_time_pois_rr"))
+
+#mod_support_family_time_pois_rr <- readRDS( here::here(push_mods, "mod_support_family_time_pois_rr"))
+#mod_support_family_time_pois_rr
+
+# for reporting effect (evalues not valid)
+mod_support_family_time_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_family_time_binary",
+  X = X,
+  baseline_vars = baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Family time (y/n)"
+)
+
+
+mod_support_family_time_binary_rr
+
+saveRDS(mod_support_family_time_binary_rr, here::here(push_mods, "mod_support_family_time_binary_rr"))
+
+#mod_support_family_time_binary_rr <- readRDS( here::here(push_mods, "mod_support_family_time_binary_rr"))
+#mod_support_family_time_binary_rr
+
+
+## friends (not stble)
+# mod_support_friends_time_gauss_rd  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_friends_time_log_z",
+#   X = X,
+#   baseline_vars = baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Friends time (sd)"
+# )
+# 
+# mod_support_friends_time_gauss_rd
+# saveRDS(mod_support_friends_time_gauss_rd, here::here(push_mods, "mod_support_friends_time_gauss_rd"))
+# 
+# mod_support_friends_time_gauss_rd <- readRDS( here::here(push_mods, "mod_support_friends_time_gauss_rd"))
+# mod_support_friends_time_gauss_rd
+
+#  Not meaningful
+# # for reporting effect (evalues not valid)
+# mod_support_friends_time_pois_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_friends_time_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Friends time (poisson rr)"
+# )
+# 
+# mod_support_friends_time_pois_rr
+# saveRDS(mod_support_friends_time_pois_rr, here::here(push_mods, "mod_support_friends_time_pois_rr"))
+
+
+
+# for reporting effect (evalues not valid)
+mod_support_friends_time_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_friends_time_binary",
+  X = X,
+  baseline_vars = baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Friends time (y/n)"
+)
+
+
+mod_support_friends_time_binary_rr
+saveRDS(mod_support_friends_time_binary_rr, here::here(push_mods, "mod_support_friends_time_binary_rr"))
+
+
+## community
+
+## not stable
+# mod_support_community_time_gauss_rd  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_community_time_log_z",
+#   X = X,
+#   baseline_vars = baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Community time (sd)"
+# )
+# mod_support_community_time_gauss_rd -- Not stable
+# saveRDS(mod_support_community_time_gauss_rd, here::here(push_mods, "mod_support_community_time_gauss_rd"))
+
+#mod_support_community_time_gauss_rd <- readRDS( here::here(push_mods, "mod_support_community_time_gauss_rd"))
+#mod_support_community_time_gauss_rd
+
+
+# for reporting effect (evalues not valid)
+# mod_support_community_time_pois_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_community_time_ord",
+#   X = X,
+#   baseline_vars = baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Community time (poisson rr)"
+# )
+#mod_support_community_time_pois_rr
+#saveRDS(mod_support_community_time_pois_rr, here::here(push_mods, "mod_support_community_time_pois_rr"))
+
+
+# binary
+# not converging so use prop scores only
+mod_support_community_time_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_community_time_binary",
+  X = X,
+  baseline_vars = 1, #baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Community time (y/n)"
+)
+
+mod_support_community_time_binary_rr
+saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support_community_time_binary_rr"))
+
+
+### money
+
+mod_support_family_money_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_family_money_binary",
+  X = X,
+  baseline_vars = 1, # baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Family money (y/n)"
+)
+
+mod_support_family_money_binary_rr
+saveRDS(mod_support_family_money_binary_rr, here::here(push_mods, "mod_support_family_money_binary_rr"))
+
+
+
+mod_support_friends_money_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_friends_money_binary",
+  X = X,
+  baseline_vars = 1, #baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Friends money (y/n)"
+)
+
+mod_support_friends_money_binary_rr
+saveRDS(mod_support_friends_money_binary_rr, here::here(push_mods, "mod_support_friends_money_binary_rr"))
+
+
+mod_support_community_money_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_community_money_binary",
+  X = X,
+  baseline_vars = 1,# baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Community money (y/n)"
+)
+
+mod_support_community_money_binary_rr
+saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
+
+
+
+
+
+
+### support
+mod_donate_support <- double_robust(
+  df = dt_support, 
+  Y = "t2_support_z",
+  X = X,
+  baseline_vars = baseline_vars_support,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE,
+  vcov = "HC",
+  new_name = "Social Support (sd)"
+)
+
+mod_donate_support
+
+saveRDS(mod_donate_support, here::here(push_mods, "mod_donate_support"))
+
+
+## table
+tab_support_rd <- rbind(
+  # mod_support_family_time_gauss_rd,
+  # mod_support_friends_time_gauss_rd,
+  # mod_support_community_time_gauss_rd,
+  mod_donate_support
+)
+
+tab_support_rd
+
+
+group_tab_support_rd <- group_tab(tab_support_rd, type = "RD")
+
+group_tab_support_rd
+
+saveRDS(group_tab_support_rd, here::here(push_mods, "group_tab_support_rd"))
+
+group_plot_ate_support_rd <- group_plot_ate(
+  group_tab_support,
+  type = "RD",
+  title = "ATE: causal contrast:zero to weekly church attendance", 
+  subtitle = "Support: family gives time in last week",
+  xlab = "(sd units)",
+  ylab = "test",
+  x_offset = -.4,
+  x_lim_lo = -.4,
+  x_lim_hi = .5
+)
+group_plot_ate_support_rd
+
+ggsave(
+  group_plot_ate_support_rd,
+  path = here::here(here::here(push_mods, "group_plot_ate_support_rd")),
+  width = 8,
+  height = 4,
+  units = "in",
+  filename = "group_plot_ate_warmth.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+```
 
