@@ -1,15 +1,18 @@
 ---
-title: "Effect Work on Wellbeing"
+title: "Effect of religious de-identification on multi-dimensionsal well-being"
 subtitle: ""
 abstract: |
   Counterfactual Prediction
 author: 
-  - name: Bella Chong
-    affiliation: Victoria University of Wellington
+  - name: Daryl Van Tongeren
+    affiliation: Hope College
+  - name: Don E Davis
+    affiliation: Georgia State University
+    orcid_id: 0000-0003-3169-6576 
   - name: Chris G. Sibley
     affiliation: School of Psychology, University of Auckland
     orcid_id: 0000-0002-4064-8800
-   - name: Joseph Bulbulia
+  - name: Joseph Bulbulia
     orcid: 0000-0002-5861-2056
     affiliation: Victoria University of Wellington, New Zealand
     email: joseph.bulbulia@vuw.ac.nz
@@ -30,17 +33,14 @@ editor_options:
 #| include: false
 #| eval: false
 
-# on imputation see: 
-# create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
-# https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
-
-# notes use vcov = hc2 here
 # uncomment and use these links to load your functions
 # source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
 # # read functions
 # source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
 
+### ALWAYS RESTART R IN A FRESH SESSION ####
+# regularly update tinytex: quarto update tinytex
 
 # libraries for jb (when internet is not accessible)
 # read libraries
@@ -64,15 +64,37 @@ pull_path <-
 # for saving models. # set path fo your computer
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-outcomewide-work"
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-target-trial-meaning-religious-loss"
   )
-
-# check
-push_mods
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
+
+
+# check path
+push_mods
 ```
+
+
+```{r}
+#| label: clean data
+#| echo: false
+#| include: false
+#| eval: false
+
+# note that religion church NA we impute zero to those who are not religious in the "religion_church2" variable
+
+# check here
+# table(is.na( dat$religion_church)) 
+# table(is.na( dat$religion_church2)) 
+
+# Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
+# https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
+
+
+# select variables and emulate a target trial according to eligibility criteria
+# you may need to select different confounders. note that the more you include, the less efficient the estimates,
+# particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 
 
 ```{r}
 #| label: clean data
@@ -95,8 +117,9 @@ dat <- arrow::read_parquet(pull_path)
 
 # select variables and emulate a target trial according to eligibility criteria
 # you may need to select different confounders. note that the more you include, the less efficient the estimates,
-# particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 
+# particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 0
 
+religion_believe_spirit
 dat_long <- dat |>
   arrange(id, wave) |>
  dplyr::filter(id != 9630) %>% # problematic reports no income but works full time and owns home.
@@ -116,7 +139,12 @@ dat_long <- dat |>
   rename(religion_religious = religious) |>  # religious yes/no
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
   mutate(religion_church_binary2 = ifelse(religion_church2 > 0, 1, 0)) |>
-  mutate(religion_religious = as.numeric(religion_religious) - 1) |>
+  mutate(religion_religious = as.integer(as.numeric(as.character(religion_religious))) - 1) |> 
+  mutate(religion_religious_not = abs(religion_religious - 1)) |> 
+  mutate(religion_believe_spirit = as.integer(as.numeric(as.character(religion_believe_spirit))) - 1) |> 
+  mutate(religion_believe_spirit_not = abs(religion_believe_spirit - 1)) |> 
+  mutate(religion_believe_god = as.integer(as.numeric(as.character(religion_believe_god))) - 1) |> 
+  mutate(religion_believe_god_not = abs(religion_believe_god - 1)) |> 
   dplyr::select(
     "wave",
     "year_measured",
@@ -213,6 +241,7 @@ dat_long <- dat |>
     # "began_relationship",
     "religion_religious",
     # Do you identify with a religion and/or spiritual group?
+    "religion_religious_not",  # reverse this indicator
     "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
@@ -225,8 +254,10 @@ dat_long <- dat |>
     # How many times did you attend a church or place of worship in the last month?
     "religion_believe_spirit",
     #Do you believe in some form of spirit or lifeforce?
+    "religion_believe_spirit",  #inverse believe in god
     "religion_believe_god",
     #Do you believe in a God
+    "religion_believe_god_not",  #inverse believe in god
     "religion_spiritual_identification",
     #w8,w10,w12-13 "I identify as a spiritual person."
     "religion_perceive_religious_discrim",
@@ -418,20 +449,20 @@ dat_long <- dat |>
     # "nwi", # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
   )|> 
   dplyr::rename(sample_weights = w_gend_age_euro) |>
-  dplyr::mutate(meets_criteria = if_else(hours_work >=10 & age <=57, 1, 0)) |> 
+  dplyr::mutate(meets_criteria_baseline = if_else(religion_religious_not == 1, 1, 0)) |> 
   arrange(id) |>
   filter((wave == 2018 & year_measured == 1) |
            (wave == 2019 & year_measured == 1) |
            (wave == 2020)) %>%
   group_by(id) |> 
-  mutate(k_18 = ifelse(wave == 2018 & meets_criteria == 1, 1, 0)) %>%
+  mutate(k_18 = ifelse(wave == 2018 & ! is.na(religion_religious_not) &  meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
   mutate(h_18 = mean(k_18, na.rm = TRUE)) %>%
-  mutate(k_19 = ifelse(wave == 2019 & meets_criteria == 1, 1, 0)) %>%
+  mutate(k_19 = ifelse(wave == 2019 & !is.na(religion_religious_not), 1,0)) %>% # selection criteria
   mutate(h_19 = mean(k_19, na.rm = TRUE)) %>%
   dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
   ungroup() %>%
-  mutate(
+  mutate(# for outcomewide cooperation studies
     friends_money = ifelse(friends_money < 0, 0, friends_money),
     household_inc_log = log(household_inc + 1),
     hours_children_log = log(hours_children + 1),
@@ -440,39 +471,31 @@ dat_long <- dat |>
   ) |> 
   droplevels() |> 
   ungroup() |> 
-  select(-c("h_19", "k_19", "h_18", "k_18", "meets_criteria")) %>%
+  select(-c("h_19", "k_19", "h_18", "k_18", "meets_criteria_baseline")) %>%
   as.data.frame()
 
 
-n_unique(dat_long$id) # 13637
-
-hist(dat_long$hours_work)
+n_unique(dat_long$id) # 12600. # sample size
 
 # checks
 dat_18 <- dat_long |> 
-  filter(wave == 2018) |> 
-  mutate(hours_work_sd = scale(hours_work))
+  filter(wave == 2018) 
 
 dat_19 <- dat_long |> 
-  filter(wave == 2019)
+  filter(wave == 2019) 
+
+
 dat_20 <- dat_long |> 
   filter(wave == 2020)
 
-table(dat_19$hours_work)
-table(dat_19$hours_work)
-table(dat_19$hours_work)
+table(dat_18$religion_religious_not)
+table(dat_19$religion_religious_not)
+table(dat_20$religion_religious_not)
 
 # examples of bad correlations
+summary(lm(meaning_purpose ~ religion_religious_not, data = dat_19))
+summary(lm(meaning_sense ~ religion_religious_not, data = dat_19))
 
-summary(lm(lifesat ~ hours_work_sd, data = dat_18))
-summary(lm(self_esteem ~ hours_work_sd, data = dat_18))
-
-summary(lm(self_esteem ~ hours_work_sd, data = dat_18))
-summary(lm(selfesteem_satself ~ hours_work_sd, data = dat_18))
-summary(lm(selfesteem_postiveself ~ hours_work_sd, data = dat_18))
-summary(lm(selfesteem_rfailure ~ hours_work_sd, data = dat_18))
-summary(lm(selfesteem_rfailure ~ hours_work_sd, data = dat_18))
-summary(lm(power_others_control ~ hours_work_sd, data = dat_18))
 # Other people have too much power or control over\nimportant parts of my life
 ```
 
