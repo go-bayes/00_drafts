@@ -1,8 +1,8 @@
 ---
-title: "Causal effects of religious de-identification on multi-dimensional well-being"
+title: "Causal effects of religious affiation on multi-dimensional well-being"
 subtitle: "An outcome-wide study"
 abstract: |
-  Max Weber described the loss of religion as "the disenchantment of the world." Yet, cross-sectional data fail to adequately measure the scale of this disenchantment, if it indeed exists. Our research combines extensive and representative national panel data with advanced causal inference. We quantify the one-year impact of religious disaffiliation on various facets of well-being. The most profound consequences of religious disaffiliation are declines in charitable giving and volunteering. Frequency of alcohol consumption increases. Disaffiliation is causally associated with greater vengeful rumination, decreased desire for self-control, and reduced clarity of purpose. Interestingly, we find that an individual's sense of meaning remains constant, irrespective of changes in religious affiliation. Across other dimensions we find no evidence for change in average well-being. This findings suggest future investigations into the behavioral repercussions of religious disaffiliation on charitable behaviours. How change in religious behaviors affect people also merits further study.
+  Religious change itself.
   
 author: 
   - name: Joseph A. Bulbulia
@@ -29,6 +29,8 @@ execute:
   eval: false
   echo: false
   include: false
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -85,13 +87,17 @@ pull_path <-
 # for saving models. # set path fo your computer
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-target-trial-meaning-religious-loss"
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-outcomewide-religious-affiliation"
   )
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
-# check path
+
+
+# check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
+
+
 ```
 
 ```{r}
@@ -140,7 +146,7 @@ dat_long <- dat |>
   mutate(religion_religious = as.integer(as.numeric(as.character(religion_religious)))) |> 
   mutate(religion_religious_not = abs(religion_religious - 1)) |> 
   mutate(religion_believe_spirit = as.integer(as.numeric(as.character(religion_believe_spirit))) - 1) |> 
-  mutate(religion_believe_spirit_not = abs(religion_believe_spirit - 1)) |> 
+ # mutate(religion_believe_spirit_not = abs(religion_believe_spirit - 1)) |> # see target trial for use of this variable
   mutate(religion_believe_god = as.integer(as.numeric(as.character(religion_believe_god))) - 1) |> 
   mutate(religion_believe_god_not = abs(religion_believe_god - 1)) |> 
   dplyr::select(
@@ -239,7 +245,7 @@ dat_long <- dat |>
     # "began_relationship",
     "religion_religious",
     # Do you identify with a religion and/or spiritual group?
-    "religion_religious_not",  # reverse this indicator
+   # "religion_religious_not",  # reverse this indicator
     "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
@@ -447,11 +453,12 @@ dat_long <- dat |>
     "hours_charity",#,#Hours spent in activities/Hours spent … voluntary/charitable work
     # "nwi", # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
     "emp_job_sat", # How satisfied are you with your current job? #Eisenbarth, H., Hart, C. M., Zubielevitch, E., Keilor, T., Wilson, M. S., Bulbulia, J. A., Sibley, C. G., & Sedikides, C. (in press). Aspects of psychopathic personality relate to lower subjective and objective professional success. Personality and Individual Differences, 186, 111340.
-    "emp_job_secure",
+    "emp_job_secure",  #only for employed people
     "emp_job_valued"
   )|> 
   dplyr::rename(sample_weights = w_gend_age_euro) |>
-  dplyr::mutate(meets_criteria_baseline = ifelse(religion_religious == 1, 1, 0)) |> 
+  dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1, 1, 0) )|> 
+  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   arrange(id) |>
   filter((wave == 2018 & year_measured == 1) |
            (wave == 2019 & year_measured == 1) |
@@ -459,7 +466,7 @@ dat_long <- dat |>
   group_by(id) |> 
   mutate(k_18 = ifelse(wave == 2018 & ! is.na(religion_religious) &  meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
   mutate(h_18 = mean(k_18, na.rm = TRUE)) %>%
-  mutate(k_19 = ifelse(wave == 2019 & !is.na(religion_religious_not), 1,0)) %>% # selection criteria
+  mutate(k_19 = ifelse(wave == 2019 & !is.na(religion_religious), 1,0)) %>% # selection criteria
   mutate(h_19 = mean(k_19, na.rm = TRUE)) %>%
   dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
@@ -471,53 +478,27 @@ dat_long <- dat |>
     hours_work_log = log(hours_work + 1),
     hours_housework_log = log(hours_housework + 1)
   ) |> 
-  droplevels() |> 
   ungroup() |> 
+  droplevels() |> 
   select(-c("h_19", "k_19", "h_18", "k_18", "meets_criteria_baseline")) %>%
   as.data.frame()
 
 # check unique n
-n_unique(dat_long$id) # 12600. # sample size
+n_unique(dat_long$id) # 34742 # sample size
 
 # checks
 table(dat_long$wave, dat_long$religion_religious)
 
-# checks
-dat_18 <- dat_long |> 
-  dplyr::filter(wave == 2018) 
-
-dat_19 <- dat_long |> 
-  filter(wave == 2019) 
-
-
-dat_20 <- dat_long |> 
-  filter(wave == 2020)
-
-table(dat_18$religion_religious_not)
-table(dat_19$religion_religious_not)
-table(dat_20$religion_religious_not)
 
 # examples of bad correlations
-summary(lm(meaning_purpose ~ religion_religious_not, data = dat_19))
-summary(lm(meaning_sense ~ religion_religious_not, data = dat_19))
+#summary(lm(meaning_purpose ~ religion_religious, data = dat_19))
+#summary(lm(meaning_sense ~ religion_religious, data = dat_19))
 
 # Other people have too much power or control over\nimportant parts of my life
 ```
 
 ```{r}
-#| label: save-positivity-data
-#| eval: false
-
-# make data for positivity
-dt_positivity_full <- dat_long |>
-  filter(wave == 2018 | wave == 2019)
-
-saveRDS(dt_positivity_full, here::here(push_mods,"dt_positivity_full"))
-```
-
-```{r}
 #| label: prepare-data
-
 # prepare on basis of positivity chack
 dat_long_t  <- dat_long %>%
   # mutate(
@@ -552,7 +533,7 @@ saveRDS(dat_18, here::here(push_mods, "dat_18"))
 # rename to work with workflow
 dat_long_t <- dat_long_t |>
   mutate(
-    religion_religious_not =  as.factor(religion_religious_not),
+    religion_religious =  as.factor(religion_religious),
     # needed for imputation
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
@@ -562,6 +543,8 @@ dat_long_t <- dat_long_t |>
 # save
 saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
 
+str(dat_long_t$religion_religious)
+n_unique(dat_long$id)
 # read if needed
 #dat_long_t <- readRDS(here::here(push_mods, "dat_long_t"))
 ```
@@ -570,53 +553,99 @@ saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
 #|label: data-wrangling-for-imputatons
 
 # Create wide data frame
+# baseline_vars = c(
+#     "male",
+#     "age",
+#     "education_level_coarsen", # factors
+#     "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+#     "employed", # Are you currently employed? (this includes self-employment or casual work) not needed
+#     #"gen_cohort", #age
+#     "nz_dep2018",
+#     "nzsei13",
+#     "total_siblings",# added: needed because we are dealing with family giving/receiving
+#     "born_nz",  # added
+#     "hlth_disability",  # added
+#     "partner",
+#     "parent",  # newly changed - have information in child number
+#     "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
+#     "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
+#     "sample_origin",    # Sample origin names combined
+#     "urban",
+#    # "emp_job_sat",
+#     # "children_num",
+#    # "household_inc_log", # measured with error
+#   #  "hours_children_log", #
+#   #  "hours_work_log", #
+#   #  "hours_housework_log",
+#     "agreeableness",
+#     "conscientiousness",
+#     "extraversion",
+#     "honesty_humility",
+#     "openness",
+#     "neuroticism",
+#     "modesty",
+#     "sample_weights"
+# )
 baseline_vars = c(
     "male",
     "age",
     "education_level_coarsen", # factors
     "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-    "employed", # Are you currently employed? (this includes self-employment or casual work) not needed
+   # "employed", # Are you currently employed? (this includes self-employment or casual work) # we have work hours
     #"gen_cohort", #age
     "nz_dep2018",
     "nzsei13",
-   # "total_siblings",# added: needed because we are dealing with family giving/receiving
+    "total_siblings",# added: needed because we are dealing with family giving/receiving
     "born_nz",  # added 
-   # "hlth_disability",  # added 
+    "hlth_disability",  # added 
+    "household_inc_log", # added: measured with error but OK for imputations
     "partner",
-    "parent",  # newly changed - have information in child number
+   # "parent",  # newly changed - have information in child number
     "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
-    #"pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
-    "sample_origin_names_combined",    # Sample origin names combined
+    "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
+    "sample_origin",    # Sample origin names combined
     "urban",
-   # "emp_job_sat",
-   # "children_num",
-    "household_inc_log", # measured with error
-  #  "hours_children_log", # 
-  #  "hours_work_log", # 
-  #  "hours_housework_log", 
+    "children_num",
+    "household_inc_log", # new from previous study. needed because we are dealing with family giving/receiving
+    "hours_children_log", # new
+    "hours_work_log", # new
+    "hours_housework_log", #new
     "agreeableness", 
     "conscientiousness",
     "extraversion",
     "honesty_humility",
     "openness",
     "neuroticism",
-    "modesty",0
-    "total_siblings",# sum siblings
-    "family_time",
-    "friends_time",
-    "community_time",
-    "family_money",
-    "friends_money",
-    "community_money",
-    "sample_weights"
+    "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
+  #  "religion_religious", # Do you identify with a religion and/or spiritual group?
+    #"religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
+    "sample_weights" # will make binary after imputation
 )
+
+
+
 
 
 # check
 baseline_vars
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("religion_religious_not") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
+exposure_var = c("religion_religious") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
+
+
+# outcome_vars_health = c(
+#     "alcohol_frequency",
+#     "alcohol_intensity",
+#     "hlth_bmi",
+#     "hours_exercise",
+#     "sfhealth_your_health",# "In general, would you say your health is...
+#     "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
+#     "sfhealth_expect_worse_health",
+#     "hlth_sleep_hours",
+#     "smoker"
+#   )
+
+
 
 
 outcome_vars_health = c(
@@ -631,6 +660,7 @@ outcome_vars_health = c(
     "smoker"
   )
 
+
 outcome_vars_embodied = c(
     "hlth_fatigue",
     "rumination",
@@ -643,7 +673,7 @@ outcome_vars_embodied = c(
   )
 
 outcome_vars_practical = c(
-   # "nzsei13", # objective job success
+ #   "nzsei13", # objective job success
     "bodysat", ## Am satisfied with the appearance, size and shape of my body.
     "vengeful_rumin",# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
     "perfectionism",  # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
@@ -658,9 +688,9 @@ outcome_vars_practical = c(
     "self_control_wish_more_r",#I wish I had more self-discipline.(r)
     "emotion_regulation_out_control", # When I feel negative emotions, my emotions feel out of control. w10 - w13
     "emotion_regulation_hide_neg_emotions", # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
-    "emotion_regulation_change_thinking_to_calm",#, # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
+    "emotion_regulation_change_thinking_to_calm"#,#, # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
    # "emp_work_life_balance"# I have a good balance between work and other important things in my life.
-    "respect_self"
+    #"respect_self"
   )
   
 outcome_vars_reflective = c(
@@ -685,9 +715,9 @@ outcome_vars_social = c(
     "support_rnoguidance", #There is no one I can turn to for guidance in times of stress.
     "belong_accept", #Know that people in my life accept and value me.
     "belong_routsider",# Feel like an outsider.
-    "belong_beliefs",# Know that people around me share my attitudes and beliefs.
-    "charity_donate",#How much money have you donated to charity in the last year?
-    "hours_charity"#,#Hours spent in activities/Hours spent … voluntary/charitable work
+    "belong_beliefs"#,# Know that people around me share my attitudes and beliefs.
+   # "charity_donate",#How much money have you donated to charity in the last year?
+   # "hours_charity"#,#Hours spent in activities/Hours spent … voluntary/charitable work
   #  "nwi" # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
   )
 
@@ -735,7 +765,7 @@ str(prep_social)
 exposure_var
 
 # assign name
-exposure_vars = "t1_religion_religious_not"
+exposure_vars = "t1_religion_religious"
 
 #check
 exposure_vars
@@ -746,17 +776,14 @@ saveRDS(exposure_vars, here::here(push_mods,"exposure_vars"))
 # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
 
-prep_health<-data.frame(prep_health)
 prep_health_multiple <- margot_filter(prep_health, exposure_vars = exposure_vars) 
-
-
 prep_embodied_multiple <- margot_filter(prep_embodied, exposure_vars = exposure_vars) 
 prep_practical_multiple <- margot_filter(prep_practical, exposure_vars = exposure_vars) 
 prep_reflective_multiple <- margot_filter(prep_reflective, exposure_vars = exposure_vars) 
 prep_social_multiple <- margot_filter(prep_social, exposure_vars = exposure_vars) 
 
 # get levels for checks 
-levels(prep_health$t1_religion_religious_not)
+levels(prep_health$t1_religion_religious)
 
 # checks
 c <- nrow( prep_social_multiple$`0`)
@@ -771,18 +798,33 @@ saveRDS(prep_reflective, here::here(push_mods, "prep_reflective"))
 ```
 
 ```{r}
+#| label: save-positivity-data
+#| eval: false
+
+# make data for positivity
+dt_positivity_full <- dat_long|>
+  filter(wave == 2018 | wave == 2019)
+
+saveRDS(dt_positivity_full, here::here(push_mods,"dt_positivity_full"))
+```
+
+
+```{r}
 #| label: imputations-health
 #| echo: false
 #| include: false
 #| eval: false
 # check missing
 
+dev.off()
 # visually inspect missingness
 naniar::vis_miss(prep_health, warn_large_data = FALSE)
 
 # check for collinear vars
 mice:::find.collinear(prep_health)
 
+
+colnames(prep_health)
 # impute  
 mice_health <- impute_and_combine(prep_health_multiple,  m = 10 )
 
@@ -792,11 +834,6 @@ push_mods
 # save imputed data
 saveRDS(mice_health,
         here::here(push_mods, "mice_health"))
-
-# read if needed
-#mice_health <- readRDS(
-#        here::here(push_mods, "mice_health"))
-
 
 # spit-shine
 mice_health_c <- mice::complete(mice_health, action = 'long', include = TRUE)
@@ -872,7 +909,7 @@ saveRDS(mice_health_long, here::here(push_mods, "mice_health_long"))
 #| eval: false
 # embodied
 naniar::vis_miss(prep_embodied, warn_large_data = FALSE)
-dev.off()
+#dev.off()
 
 # check for collinear vars
 mice:::find.collinear(prep_embodied)
@@ -1221,7 +1258,6 @@ mice:::find.collinear(prep_social)
 # impute
 mice_social <- impute_and_combine(prep_social_multiple, m = 10)
 
-
 # save imputed data
 saveRDS(mice_social,
         here::here(push_mods, "mice_social"))
@@ -1243,11 +1279,11 @@ mice_social_mids <- mice_social_c %>%
   arrange(.imp, id) |> 
   rename(sample_weights = t0_sample_weights) |> 
   mutate(t0_eth_cat = as.factor(t0_eth_cat),
-         t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
-         t0_charity_donate_log = log(t0_charity_donate + 1),
-         t2_charity_donate_log = log(t2_charity_donate + 1),
-         t0_volunteers = as.factor(ifelse(t0_hours_charity > 1,1,0)),
-         t2_volunteers = as.factor(ifelse(t2_hours_charity > 1,1,0)))|>
+         t0_education_level_coarsen = as.factor(t0_education_level_coarsen)) |> 
+       #  t0_charity_donate_log = log(t0_charity_donate + 1),
+       #  t2_charity_donate_log = log(t2_charity_donate + 1),
+      #   t0_volunteers = as.factor(ifelse(t0_hours_charity > 1,1,0)),
+        # t2_volunteers = as.factor(ifelse(t2_hours_charity > 1,1,0)))|>
   dplyr::group_by(.imp) |>
   rowwise() |> 
   # dplyr::mutate(t0_support = mean(
@@ -1280,7 +1316,9 @@ mice_social_mids <- mice_social_c %>%
   # )) |> 
   dplyr::ungroup() |> 
   dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
-  select(-.imp_z, -.id_z, -t0_charity_donate, t0_charity_donate) %>%
+  select(-.imp_z, -.id_z) |> 
+         # -t0_charity_donate, 
+         # t0_charity_donate) %>%
    select(
     where(is.factor),
     sample_weights,
@@ -1292,8 +1330,8 @@ mice_social_mids <- mice_social_c %>%
   relocate(sample_weights, .before = starts_with("t1_"))  %>%
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-   mutate(t0_volunteers = as.integer(t0_volunteers) - 1,
-         t2_volunteers = as.integer(t2_volunteers) - 1) |>
+ #  mutate(t0_volunteers = as.integer(t0_volunteers) - 1,
+ #        t2_volunteers = as.integer(t2_volunteers) - 1) |>
   mutate_if(is.matrix, as.vector) %>%
   droplevels() |> 
   as.mids()
@@ -1301,6 +1339,7 @@ mice_social_mids <- mice_social_c %>%
 # make long verson
 mice_social_long <- mice::complete(mice_social_mids, "long", inc = TRUE)
 
+colnames(mice_social_long)
 # save
 saveRDS(mice_social_mids, here::here(push_mods, "mice_social_mids"))
 saveRDS(mice_social_long, here::here(push_mods, "mice_social_long"))
@@ -1313,9 +1352,9 @@ saveRDS(mice_social_long, here::here(push_mods, "mice_social_long"))
 
 #check path
 push_mods
-X
+
 # fetch expposure fvar name
-exposure_vars <- readRDS(here::here(push_mods,"exposure_vars"))
+exposure_vars <- readRDS(here::here(push_mods,exposure_vars))
 
 # import data
 mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
@@ -1323,6 +1362,7 @@ mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
 # long data 
 mice_health_long <- readRDS(here::here(push_mods, "mice_health_long"))
 
+table(mice_health_long$t1_religion_religious)
 # check exposure name and set
 exposure_vars
 
@@ -1399,8 +1439,8 @@ here_save(match_cbps_health, "match_cbps_health")
 # checks results
 # ebal method
 bal.tab(match_ebal_health)
-love_plot_match_ebal_health <- love.plot(match_ebal_health, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+love.plot(match_ebal_health, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2) 
 
 # consider results 
 sum_ebal_health <- summary(match_ebal_health)
@@ -1410,8 +1450,8 @@ plot(sum_ebal_health)
 # energy method
 #graph
 bal.tab(match_energy_health)
-love_plot_match_energy_health <- love.plot(match_energy_health, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+love.plot(match_energy_health, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2)) 
 
 # consider results 
 sum_energy_health <- summary(match_energy_health)
@@ -1425,7 +1465,7 @@ bal.tab(match_energy_health)
 summary(match_cbps_health)
 plot(sum_cbps_health)
 
-love_plot_match_cbps_health <- love.plot(match_cbps_health, binary = "std", thresholds = c(m = .1),
+love.plot(match_cbps_health, binary = "std", thresholds = c(m = .1),
           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
 love_plot_match_cbps_health
 
@@ -1461,18 +1501,16 @@ plot(sum_cbps_health)
 dt_health = match_ebal_health
 
 
-
 # set treatment
-treat_0 = "0" # stayed religious
-treat_1 = "1" # affiliate
-treat_1
+treat_0 = "0" # secular
+treat_1 = "1" # religious 
+treat_0
 # bootstrap simulations ( generally use 1000)
-nsims <- 1000
+nsims <- 200
 
 # cores
 cl =  parallel::detectCores () 
 
-#
 estimand = "ATE"
 
 # as specified
@@ -1497,7 +1535,7 @@ mod_health_alcohol_frequency  <- double_robust(
   treat_0 = treat_0,
   estimand = estimand,
   scale = "RD",
-  nsims = 1000,
+  nsims = nsims,
   cores = cores,
   family = "gaussian",
   weights = TRUE,
@@ -1735,10 +1773,9 @@ saveRDS(mod_health_smoker_rr, here::here(push_mods, "mod_health_smoker_rr"))
 #| echo: false
 
 # fetch expposure fvar name
-exposure_vars <- readRDS(here::here(push_mods,exposure_vars))
-"t1_religion_religious"
+exposure_vars <- readRDS(here::here(push_mods,"exposure_vars"))
 
-X <- exposure_vars
+#X <- exposure_vars
 X
 # import data
 mice_embodied_mids <- readRDS(here::here(push_mods, "mice_embodied_mids"))
@@ -1782,7 +1819,7 @@ match_ebal_embodied <- match_mi_general(data = mice_embodied_mids,
                                  baseline_vars = baseline_vars_embodied, 
                                  estimand = estimand,  
                                 # focal = "< >", for ATT
-                                 method = "energy", 
+                                 method = "ebal", 
                                  sample_weights = "sample_weights")
 
 # save
@@ -1818,8 +1855,8 @@ here_save(match_cbps_embodied, "match_cbps_embodied")
 # checks results
 # ebal method
 bal.tab(match_ebal_embodied)
-love_plot_match_ebal_embodied <- love.plot(match_ebal_embodied, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+love.plot(match_ebal_embodied, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2) 
 
 # consider results 
 sum_ebal_embodied <- summary(match_ebal_embodied)
@@ -1829,8 +1866,7 @@ plot(sum_ebal_embodied)
 # energy method
 #graph
 bal.tab(match_energy_embodied)
-love_plot_match_energy_embodied <- love.plot(match_energy_embodied, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+love_plot_match_energy_embodied <- love.plot(match_energy_embodied, binary = "std", thresholds = c(m = .1),wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
 
 # consider results 
 sum_energy_embodied <- summary(match_energy_embodied)
@@ -1881,13 +1917,17 @@ treat_1
 
 # bootstrap simulations ( generally use 1000)
 #check
-nsims 
+nsims
 
 # cores check
 cl
 #cl =  parallel::detectCores () 
-
+#cores = cl
 #"During the last 30 days, how often did.... you feel exhausted?"
+estimand
+cores
+X
+#vcov = "HC2"
 mod_embodied_hlth_fatigue  <- double_robust(
   df = dt_embodied,
   # note change
@@ -2187,6 +2227,8 @@ saveRDS(
 # 
 # # save model
 # saveRDS(mod_embodied_kessler_6_anxiety, here::here(push_mods, "mod_embodied_kessler_6_anxiety"))
+
+
 ## combo-table
 ```
 ```{r}
@@ -2207,7 +2249,7 @@ mice_practical_long <- readRDS(here::here(push_mods, "mice_practical_long"))
 
 # get baseline vars
 baseline_vars_practical = mice_practical_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_religious)|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"), -t0_religion_religious_not)|> colnames() # strange to include these -- as they  are income by other names
 
 # check baseline vars
 baseline_vars_practical
@@ -2380,29 +2422,29 @@ mod_practical_perfectionism <- double_robust(
 mod_practical_perfectionism
 saveRDS(mod_practical_perfectionism, here::here(push_mods, "mod_practical_perfectionism"))
 
-# # nzsei
-# mod_practical_nzsei13  <- double_robust(
-#   df = dt_practical,  # note change
-#   Y = "t2_nzsei13_z",
-#   X = X,
-#   baseline_vars = baseline_vars_practical,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RD",
-#   nsims = nsims,
-#   cores = cores,
-#   family = "gaussian",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE,
-#   vcov = vcov,
-#   new_name = "NZSEI13 (sd)"
-# )
+# nzsei
+mod_practical_nzsei13  <- double_robust(
+  df = dt_practical,  # note change
+  Y = "t2_nzsei13_z",
+  X = X,
+  baseline_vars = baseline_vars_practical,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE,
+  vcov = vcov,
+  new_name = "NZSEI13 (sd)"
+)
 
-# # view and save model
-# mod_practical_nzsei13
-# saveRDS(mod_practical_nzsei13, here::here(push_mods, "mod_practical_nzsei13"))
+# view and save model
+mod_practical_nzsei13
+saveRDS(mod_practical_nzsei13, here::here(push_mods, "mod_practical_nzsei13"))
 
 # body satisifaction 
 mod_practical_bodysat  <- double_robust(
@@ -2853,8 +2895,8 @@ saveRDS(mod_practical_emotion_regulation_change_thinking_to_calm, here::here(pus
 
 # fetch expposure fvar name
 exposure_vars <- readRDS(here::here(push_mods,"exposure_vars"))
-
-
+exposure_vars
+X <- exposure_vars
 mice_reflective_mids <- readRDS(here::here(push_mods, "mice_reflective_mids"))
 
 # longform data if necessary
@@ -2868,7 +2910,7 @@ baseline_vars_reflective = mice_reflective_long |>
 
 
 # propensity scores
-
+estimand = "ATE"
 # use energy balance, and only energy balance if the exposure is continuous.
 match_ebal_reflective <- match_mi_general(data = mice_reflective_mids, 
                                  X = X, 
@@ -2889,8 +2931,7 @@ match_energy_reflective <- match_mi_general(data = mice_reflective_mids,
                                  estimand = estimand,  
                                 # focal = "< >", for ATT
                                  method = "energy", 
-                                 sample_weights = "sample_weights",
-                                verbose = TRUE )
+                                 sample_weights = "sample_weights" )
 
 # save
 # personal function loaded at start: equivalent saveRDS(match_ebal_reflective, here::here(push_mods, "match_ebal_reflective"))
@@ -2911,8 +2952,8 @@ here_save(match_cbps_reflective, "match_cbps_reflective")
 # checks results
 # ebal method
 bal.tab(match_ebal_reflective)
-love_plot_match_ebal_reflective <- love.plot(match_ebal_reflective, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+love.plot(match_ebal_reflective, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2) 
 
 # consider results 
 sum_ebal_reflective <- summary(match_ebal_reflective)
@@ -2937,8 +2978,8 @@ bal.tab(match_energy_reflective)
 summary(match_cbps_reflective)
 plot(sum_cbps_reflective)
 
-love_plot_match_cbps_reflective <- love.plot(match_cbps_reflective, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+love.plot(match_cbps_reflective, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2) 
 love_plot_match_cbps_reflective
 
 # consider results 
@@ -2961,23 +3002,22 @@ plot(sum_cbps_reflective)
 # settings 
 # Set DF 
 
-dt_reflective = mice_reflective_ebal
+dt_reflective = match_ebal_reflective
 
 # bootstrap simulations
-nsims 
+nsims
 # cores
-cl
-cores
+cl# = 10
+cores# = 10
          
 # check
 X 
 
 #check
-treat_0 
+treat_0
 
 #check
 treat_1 
-
 # gratitude
 mod_reflective_gratitude  <- double_robust(
   df = dt_reflective,  # note change
@@ -3200,7 +3240,7 @@ saveRDS(mod_reflective_lifesat_ideal, here::here(push_mods, "mod_reflective_life
 
 # meaning purpose
 mod_reflective_meaning_purpose  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, 
   Y = "t2_meaning_purpose_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3223,7 +3263,7 @@ saveRDS(mod_reflective_meaning_purpose, here::here(push_mods, "mod_reflective_me
 
 # meaning sense
 mod_reflective_meaning_sense  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective,  
   Y = "t2_meaning_sense_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3293,7 +3333,7 @@ X
 
 # baseline vars
 baseline_vars_social = mice_social_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_religious)|> colnames() # no variance in exposure at baseline
+  dplyr::select(starts_with("t0"), -t0_religion_religious_not)|> colnames() # no variance in exposure at baseline
 
 # check
 baseline_vars_social
@@ -3667,62 +3707,61 @@ mod_social_belong_beliefs
 saveRDS(mod_social_belong_beliefs, here::here(push_mods, "mod_social_belong_beliefs"))
 
 #How much money have you donated to charity in the last year?
-# 
-# # to be used in prosocial models
-# mod_social_charity_donate  <- double_robust(
-#   df = dt_social,  # note change
-#   Y = "t2_charity_donate_log_z",
-#   X = X,
-#   baseline_vars = baseline_vars_social,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RD",
-#   nsims = nsims,
-#   cores = cores,
-#   family = "gaussian",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE, 
-#     vcov = vcov,
-#   new_name = "Charity donate (log sd)"
-# )
-# # save model
-# mod_social_charity_donate
-# saveRDS(mod_social_charity_donate, here::here(push_mods, "mod_social_charity_donate"))
-# 
-# #Hours spent in activities/Hours spent … voluntary/charitable work
-# mod_social_volunteers_rr  <- double_robust(
-#   df = dt_social,  # note change
-#   Y = "t2_volunteers",
-#   X = X,
-#   baseline_vars = baseline_vars_social,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RR",
-#   type = "RR",
-#   nsims = nsims,
-#   cores = cores,
-#   family = quasibinomial(),
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE, 
-#   new_name = "Volunteers y/n",
-#   vcov ="HC"
-# )
-# 
-# # view and save model
-# mod_social_volunteers_rr
-# saveRDS(mod_social_volunteers_rr, here::here(push_mods, "mod_social_volunteers_rr"))
+mod_social_charity_donate  <- double_robust(
+  df = dt_social,  # note change
+  Y = "t2_charity_donate_log_z",
+  X = X,
+  baseline_vars = baseline_vars_social,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+    vcov = vcov,
+  new_name = "Charity donate (log sd)"
+)
+# save model
+mod_social_charity_donate
+saveRDS(mod_social_charity_donate, here::here(push_mods, "mod_social_charity_donate"))
+
+#Hours spent in activities/Hours spent … voluntary/charitable work
+mod_social_volunteers_rr  <- double_robust(
+  df = dt_social,  # note change
+  Y = "t2_volunteers",
+  X = X,
+  baseline_vars = baseline_vars_social,
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  type = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = quasibinomial(),
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  new_name = "Volunteers y/n",
+  vcov ="HC"
+)
+
+# view and save model
+mod_social_volunteers_rr
+saveRDS(mod_social_volunteers_rr, here::here(push_mods, "mod_social_volunteers_rr"))
 ```
 ## Introduction
 
-Max Weber famously described the loss of religion as "the disenchantment of the world" [@wilson2014]. However, it is unclear whether, and in which ways, disaffiliation causes disenchantment.[^note_dis]
 
-[^note_dis]: Cross-sectional data can sometimes be useful for prediction, however they are generally ill-equipped for insights into causality. Take, for example, a scenario where individuals with lower levels of life meaning are observed to detach from their religious affiliations more frequently than those reporting higher life meaning. Cross-sectional data fall short in conclusively disentangling such complex relationships. It is conceivable that those experiencing a sense of life's futility may self-select out of religious institutions, resulting in a disproportionate representation of disenchanted individuals among non-religious groups in such surveys. Hence, if interventions were employed to encourage these disenchanted individuals to rejoin religious communities, they could potentially amplify feelings of life's meaninglessness. That is, correlations can mislead us to the opposite conclusions about true causation. Indeed the 'hints' suggested in cross-sectional data are known to strongly bias regression coefficients, whose true causal effects may run contrary to manifest correlations [@westreich2013]. However, a persistent habit of suggesting that cross-sectional data may 'hint' at causality presents a serious challenge to psychological science [@bulbulia2022][@bulbulia2021],
+<!-- Max Weber famously described the loss of religion as "the disenchantment of the world" [@wilson2014]. However, it is unclear whether, and in which ways, disaffiliation causes disenchantment. -->
 
-To gain clearer insights into the causal effects of religious disaffiliation, we apply longitudinal data in this study. Our approach aims to replicate an idealized experiment, thereby providing a more transparent understanding of causality [@hernán2016; @bulbulia2022; @hernan2023].
+<!-- Cross-sectional data can sometimes be useful for prediction, however they are generally ill-equipped for insights into causality. Take, for example, a scenario where individuals with lower levels of life meaning are observed to detach from their religious affiliations more frequently than those reporting higher life meaning. Cross-sectional data fall short in conclusively disentangling such complex relationships. It is conceivable that those experiencing a sense of life's futility may self-select out of religious institutions, resulting in a disproportionate representation of disenchanted individuals among non-religious groups in such surveys. Hence, if interventions were employed to encourage these disenchanted individuals to rejoin religious communities, they could potentially amplify feelings of life's meaninglessness. That is, correlations can mislead us to the opposite conclusions about true causation. Indeed the 'hints' suggested in cross-sectional data are known to strongly bias regression coefficients, whose true causal effects may run contrary to manifest correlations [@westreich2013]. However, a persistent habit of suggesting that cross-sectional data may 'hint' at causality presents a serious challenge to psychological science [@bulbulia2022][@bulbulia2021], -->
+
+<!-- To gain clearer insights into the causal effects of religious disaffiliation, we apply longitudinal data in this study. Our approach aims to replicate an idealized experiment, thereby providing a more transparent understanding of causality [@hernán2016; @bulbulia2022; @hernan2023]. -->
 
 ## Method
 
@@ -3734,14 +3773,12 @@ Data were collected as part of The New Zealand Attitudes and Values Study (NZAVS
 
 The sample consisted of respondents to NZAVS waves Time 10, 11, and 12 (years 2018-2021) (See Appendix A.)
 
-To emulate randomisation with our observational longitudinal data, we selected:
+1.  those participants who stated an identification with religious at the baseline wave (NZAVS wave 10, years 2018-2019) and
+2.  stated an identification with religious in the follow up wave (NZAVS wave 11, years 2019-2020)
 
-1.  those participants who were identified as religious at the baseline wave (NZAVS wave 2018) and
-2.  reported a religious identification one year later.
+There were N NZAVS participants who met these criteria.
 
-There were 12,600 NZAVS participants who met these criteria.
-
-### The Exposure: Religious Disaffiation
+### The Exposure: Religious Affiliation
 
 ```{r}
 #| label: verify-positivity-data
@@ -3749,7 +3786,7 @@ There were 12,600 NZAVS participants who met these criteria.
 #| echo: false
 dt_positivity_full <- readRDS(here::here(push_mods,"dt_positivity_full"))
 
-out <- msm::statetable.msm(religion_religious_not, id, data = dt_positivity_full)
+out <- msm::statetable.msm(religion_religious, id, data = dt_positivity_full)
 
 state_names <- c("religious affiliate", "religious dis-affiliate")
 
@@ -3761,20 +3798,22 @@ cat(t_tab$explanation)
 print(t_tab$table)
 ```
 
-As indicated in @tbl-transition, of the 12600 people who were religious at baseline, 1977 people dis-affiliated participants one year later (NZAVS wave 2019), at the measurement year.[^1]
+As indicated in @tbl-transition, of the 12600 people who were religious at baseline, 1977 people dis-affiliated participants one year later (NZAVS wave 2019), at the measurement year. Of the 22142 who were not affiliated at baseline, 1183 affiliated [^1]
 
 [^1]: Cite our Markov paper showing that much religious change is probably artifactual.
 
 
-|        From         |To: stay affiliated |   disaffiliate |
-|:-------------------:|:-------------------:|:-----------------------:|
-| religious affiliate |        10623        |          1977           |
+
+|          From           | religious affiliate | religious dis-affiliate |
+|:-----------------------:|:-------------------:|:-----------------------:|
+|   religious affiliate   |        20959        |          1183           |
+| religious dis-affiliate |        1977         |          10623          |
 
 : Transition matrix {#tbl-transition}
 
 ### Indicators of well-being.
 
-We assessed "disenchantment" following @vanderweele2020 outcome-wide template. Outcomewide studies argue that, rather than cherry-picking one or several domains of well-being, science may advance more rapidly, and with greater hope for replication, by assess well-being across as many range of indicators the data may afford. To assist with interpretation, @vanderweele2020 groups well-being into larger dimensions of interest. Here, we identify five-domains: health, embodied well-being, practical well-being, reflective well-being, and social well-being (see Appendix A.)
+We assessed well-being following @vanderweele2020 outcome-wide template. Outcomewide studies argue that, rather than cherry-picking one or several domains of well-being, science may advance more rapidly, and with greater hope for replication, by assess well-being across as many range of indicators the data may afford. To assist with interpretation, @vanderweele2020 groups well-being into larger dimensions of interest. Here, we identify five-domains: health, embodied well-being, practical well-being, reflective well-being, and social well-being (see Appendix A.)
 
 ### Assumptions for causal inference
 
@@ -3964,9 +4003,7 @@ For standard errors and confidence intervals, we use simulation-based inference 
 
 
 
-As indicate in @fig-results-health, the expected + one-year effect of religious disaffiliation does not reliably affect health as subjectively reported across NZAVS domains. However, we find that disaffilation is causally associated with increases in both the average intensity and frequency of alcohol consumption.
-
-It has long been known that alcohol consumption can have damaging health and social effects. However, it is unclear whether the changes we detect here translate to other domains.
+As indicate in @fig-results-health, the expected + one-year effect of 
 
 ```{r}
 #| label: fig-results-health
@@ -4031,7 +4068,6 @@ group_plot_ate_health <- margot_plot(group_tab_health,
 #check
 group_plot_ate_health
 
-# save after modelling
 # ggsave(
 #   group_plot_ate_health,
 #   path = here::here(here::here(push_mods, "group_plot_ate_health")),
@@ -4061,21 +4097,6 @@ tab_health |>
 
 @tbl-results-health presents the Population Average Treatment Effect (PATE) represents the expected difference in outcomes between treatment and control groups for the New Zealand population. We observed the following:
 
-For the outcome 'Alcohol intensity (sd)', the PATE causal contrast is 0.079. The confidence interval ranges from 0.033 to 0.128. The E-value for this outcome is 1.357, indicating reliable evidence for causality.
-
-For the outcome 'Hours exercise (log sd)', the PATE causal contrast is 0.049. The confidence interval ranges from -0.012 to 0.112. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Alcohol frequency (sd)', the PATE causal contrast is 0.045. The confidence interval ranges from 0.013 to 0.078. The E-value for this outcome is 1.25, indicating reliable evidence for causality.
-
-For the outcome 'Your health (sd)', the PATE causal contrast is 0.035. The confidence interval ranges from -0.007 to 0.076. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Get sick easier (reversed sd)', the PATE causal contrast is 0.029. The confidence interval ranges from -0.024 to 0.082. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Sleep hours (sd)', the PATE causal contrast is 0.004. The confidence interval ranges from -0.046 to 0.052. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Expect worse health (sd)', the PATE causal contrast is -0.014. The confidence interval ranges from -0.067 to 0.037. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'BMI (sd)', the PATE causal contrast is -0.022. The confidence interval ranges from -0.047 to 0.003. The E-value for this outcome confirms the causal contrast is unreliable.
 
 ```{r}
 #| label: fig-results-health-rr
@@ -4266,22 +4287,6 @@ tab_embodied |>
 
 @tbl-results-embodied presents the Population Average Treatment Effect (PATE) for the embodied domain.
 
-For the outcome 'Kessler restless (sd)', the PATE causal contrast is 0.027. The confidence interval ranges from -0.023 to 0.074. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Kessler hopeless (sd)', the PATE causal contrast is 0.021. The confidence interval ranges from -0.027 to 0.07. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Rumination (sd)', the PATE causal contrast is 0.004. The confidence interval ranges from -0.048 to 0.051. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Kessler depressed (sd)', the PATE causal contrast is -0.002. The confidence interval ranges from -0.052 to 0.047. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Kessler nervous (sd)', the PATE causal contrast is -0.016. The confidence interval ranges from -0.062 to 0.03. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Fatigue (sd)', the PATE causal contrast is -0.026. The confidence interval ranges from -0.072 to 0.02. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Kessler worthless (sd)', the PATE causal contrast is -0.036. The confidence interval ranges from -0.081 to 0.008. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Kessler effort (sd)', the PATE causal contrast is -0.052. The confidence interval ranges from -0.098 to 0.003. The E-value for this outcome confirms the causal contrast is unreliable.
-
 ### Effects on practical well-being
 
 
@@ -4311,7 +4316,7 @@ mod_practical_self_control_wish_more_r  <- readRDS( here::here(push_mods, "mod_p
 mod_practical_emotion_regulation_out_control  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_out_control"))
 mod_practical_emotion_regulation_hide_neg_emotions  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_hide_neg_emotions"))
 mod_practical_emotion_regulation_change_thinking_to_calm  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_change_thinking_to_calm"))
-# mod_practical_nzsei13  <- readRDS( here::here(push_mods, "mod_practical_nzsei13"))
+mod_practical_nzsei13  <- readRDS( here::here(push_mods, "mod_practical_nzsei13"))
 
 
 
@@ -4337,8 +4342,8 @@ tab_practical <-
    # mod_practical_self_control,
     mod_practical_emotion_regulation_out_control,
     mod_practical_emotion_regulation_hide_neg_emotions,
-    mod_practical_emotion_regulation_change_thinking_to_calm #,
-  #  mod_practical_nzsei13
+    mod_practical_emotion_regulation_change_thinking_to_calm,
+    mod_practical_nzsei13
    # mod_practical_emotion_regulation#,
    # mod_practical_emp_work_life_balance
    # mod_practical_perfectionism
@@ -4411,29 +4416,8 @@ tab_practical|>
 
 ```
 
-@tbl-results-practical presents the Population Average Treatment Effect (PATE) for the practical well-being domain.
+@tbl-results-practical 
 
-For the outcome 'Self control wish more (reversed, sd)', the PATE causal contrast is 0.068. The confidence interval ranges from 0.026 to 0.114. The E-value for this outcome is 1.326, indicating reliable evidence for causality.
-
-For the outcome 'Vengeful rumination (sd)', the PATE causal contrast is 0.061. The confidence interval ranges from 0.02 to 0.103. The E-value for this outcome is 1.303, indicating reliable evidence for causality.
-
-For the outcome 'Emotion reg change thinking to calm (sd)', the PATE causal contrast is 0.031. The confidence interval ranges from -0.022 to 0.086. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Emotion reg hide neg emotions (sd)', the PATE causal contrast is 0.019. The confidence interval ranges from -0.032 to 0.072. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Selfesteem satself (sd)', the PATE causal contrast is 0.016. The confidence interval ranges from -0.027 to 0.06. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Selfesteem failure (reversed, sd)', the PATE causal contrast is 0.015. The confidence interval ranges from -0.028 to 0.063. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Body satisfaction (sd)', the PATE causal contrast is 0.015. The confidence interval ranges from -0.033 to 0.064. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Selfesteem postiveself (sd)', the PATE causal contrast is 0.012. The confidence interval ranges from -0.033 to 0.057. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Self control have lots (sd)', the PATE causal contrast is -0.007. The confidence interval ranges from -0.051 to 0.04. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Power others control (sd)', the PATE causal contrast is -0.016. The confidence interval ranges from -0.064 to 0.033. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'NZSEI13 (sd)', the PATE causal contrast is -0.018. The confidence interval ranges from -0.053 to 0.016. The E-value for this outcome confirms the causal contrast is unreliable.
 
 ### Effects on reflective well-being
 
@@ -4523,12 +4507,31 @@ group_plot_ate_reflective
 # )
 ```
 
+
+```{r}
+#| label: tbl-results-reflective
+#| tbl-cap: "Table of results for the reflective well-being domain"
+#| eval: true
+#| include: true
+#| echo: false
+
+tab_reflective|> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_reflective, "causal_difference", "PATE" )
+
+```
+
+@tbl-results-reflective
+
+
+
 ### Effects social well-being
 
 
 ```{r}
-#| label: fig-results-social-well-being
-#| fig-cap: "Causal effects of religious loss on reflective well-being"
+#| label: fig-results-social-wellbeing
+#| fig-cap: "Causal effects of religious loss on social well-being"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4551,10 +4554,10 @@ mod_social_belong_accept  <-
   readRDS(here::here(push_mods, "mod_social_belong_accept"))
 mod_social_belong_routsider  <-
   readRDS(here::here(push_mods, "mod_social_belong_routsider"))
-#mod_social_belong_beliefs  <-
- # readRDS(here::here(push_mods, "mod_social_belong_beliefs"))
-#mod_social_charity_donate <-
- # readRDS(here::here(push_mods, "mod_social_charity_donate"))
+mod_social_belong_beliefs  <-
+  readRDS(here::here(push_mods, "mod_social_belong_beliefs"))
+# mod_social_charity_donate <-
+#   readRDS(here::here(push_mods, "mod_social_charity_donate"))
 
 
 # bind tables
@@ -4568,8 +4571,8 @@ tab_social <- rbind(
   mod_social_support_turnto,
   mod_social_support_rnoguidance,
   mod_social_belong_accept,
-  mod_social_belong_routsider#, # to be used in prosocial papers. 
- # mod_social_belong_beliefs,
+  mod_social_belong_routsider,
+  mod_social_belong_beliefs#,
  # mod_social_charity_donate
 )
 
@@ -4624,65 +4627,87 @@ group_plot_ate_social
 # )
 ```
 
+
 ```{r}
-#| label: fig-models-social-risk-ratio
-#| fig-cap: "Causal effects of religious loss on volunteering."
+#| label: tbl-results-social
+#| tbl-cap: "Table of results for the reflective well-being domain"
 #| eval: true
 #| include: true
 #| echo: false
 
-# read risk model
-mod_social_volunteers_rr  <- readRDS( here::here(push_mods, "mod_social_volunteers_rr"))
+tab_reflective|> 
+  kbl(format="markdown")
 
-# risk ratio table
-tab_social_rr <- rbind(
-  mod_social_volunteers_rr
-)
+#interpret_table(group_tab_social, "causal_difference", "PATE" )
 
-# check
-# tab_social_rr
-
-# make table
-group_tab_social_rr <- group_tab(tab_social_rr, type = "RR")
-
-# view
-#group_tab_social_rr
-#title
-title = "ATE: +1 year causal effect from affiliate to disaffiliate"
-subtitle_social = "Social outcomes"
-
-group_plot_social_rr <- margot_plot(
-  group_tab_social_rr,
-  type = "RR",
-  title = title,
-  subtitle = subtitle_social,
-  xlab = "(sd units)",
-  ylab = "test",
-  estimate_scale = 1,
-  base_size = 11,
-  text_size = 3,
-  point_size = .5,
-  title_size = 12,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = -1.5,
-  x_lim_lo = -1.5,
-  x_lim_hi = 2.5
-)
-
-# ggsave(
-#   group_plot_social_rr,
-#   path = here::here(here::here(push_mods, "group_plot_social_rr")),
-#   width = 6,
-#   height = 6,
-#   units = "in",
-#   filename = "group_plot_social_rr.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
 ```
+
+@tbl-results-social
+
+
+
+<!-- ```{r} -->
+<!-- #| label: fig-models-social-risk-ratio -->
+<!-- #| fig-cap: "Causal effects of religious loss on volunteering." -->
+<!-- #| eval: true -->
+<!-- #| include: true -->
+<!-- #| echo: false -->
+
+<!-- # read risk model -->
+<!-- mod_social_volunteers_rr  <- readRDS( here::here(push_mods, "mod_social_volunteers_rr")) -->
+
+<!-- # risk ratio table -->
+<!-- tab_social_rr <- rbind( -->
+<!--   mod_social_volunteers_rr -->
+<!-- ) -->
+
+<!-- # check -->
+<!-- # tab_social_rr -->
+
+<!-- # make table -->
+<!-- group_tab_social_rr <- group_tab(tab_social_rr, type = "RR") -->
+
+<!-- # view -->
+<!-- #group_tab_social_rr -->
+<!-- #title -->
+<!-- title = "ATE: +1 year causal effect from affiliate to disaffiliate" -->
+<!-- subtitle_social = "Social outcomes" -->
+
+<!-- group_plot_social_rr <- margot_plot( -->
+<!--   group_tab_social_rr, -->
+<!--   type = "RR", -->
+<!--   title = title, -->
+<!--   subtitle = subtitle_social, -->
+<!--   xlab = "(sd units)", -->
+<!--   ylab = "test", -->
+<!--   estimate_scale = 1, -->
+<!--   base_size = 11, -->
+<!--   text_size = 3, -->
+<!--   point_size = .5, -->
+<!--   title_size = 12, -->
+<!--   subtitle_size = 11, -->
+<!--   legend_text_size = 8, -->
+<!--   legend_title_size = 10, -->
+<!--   x_offset = -1.5, -->
+<!--   x_lim_lo = -1.5, -->
+<!--   x_lim_hi = 2.5 -->
+<!-- ) -->
+
+<!-- # ggsave( -->
+<!-- #   group_plot_social_rr, -->
+<!-- #   path = here::here(here::here(push_mods, "group_plot_social_rr")), -->
+<!-- #   width = 6, -->
+<!-- #   height = 6, -->
+<!-- #   units = "in", -->
+<!-- #   filename = "group_plot_social_rr.png", -->
+<!-- #   device = 'png', -->
+<!-- #   limitsize = FALSE, -->
+<!-- #   dpi = 600 -->
+<!-- # ) -->
+<!-- ``` -->
+
+
+
 
 ## Discussion
 
@@ -5128,8 +5153,8 @@ dt_tab_p <- prep_reflective |>
           t0_Born_NZ = as.factor(t0_born_nz),
           t0_Partner = as.factor(t0_partner),
           t0_Parent  = as.factor(t0_parent),
-          t0_Sample_Origin_Year = as.factor(t0_sample_origin_names_combined)  ) |>
-    dplyr::select(-c(t0_male,t0_born_nz, t0_partner, t0_parent, t0_sample_origin_names_combined)) 
+          t0_Sample_Origin_Year = as.factor(t0_sample_origin)  ) |>
+    dplyr::select(-c(t0_male,t0_born_nz, t0_partner, t0_parent, t0_sample_origin)) 
 
 dt_tab <- dt_tab_p|> 
     dplyr::select(sort(names(dt_tab_p)))
@@ -5622,26 +5647,26 @@ For for outcome-wide studies, then, p-value corrections may limit the capacity t
 
 {{< pagebreak >}}
 
-<!-- ## Appendix E. Population Average Treatment Effect {.appendix} -->
+## Appendix E. Population Average Treatment Effect {.appendix}
 
-<!-- As indicated in the main manuscript, the Average Treatment Effects is obtained by contrasting the expected outcome when a population sampled is exposed to an exposure level, $E[Y(A = a)]$, with the expected outcome under a different exposure level, $E[Y(A=a')]$. -->
+As indicated in the main manuscript, the Average Treatment Effects is obtained by contrasting the expected outcome when a population sampled is exposed to an exposure level, $E[Y(A = a)]$, with the expected outcome under a different exposure level, $E[Y(A=a')]$.
 
-<!-- For a binary treatment with levels $A=0$ and $A=1$, the Average Treatment Effect (ATE), on the difference scale, is expressed: -->
+For a binary treatment with levels $A=0$ and $A=1$, the Average Treatment Effect (ATE), on the difference scale, is expressed:
 
-<!-- $$ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]$$ -->
+$$ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]$$
 
-<!-- On the risk ratio scale, the ATE is expressed: -->
+On the risk ratio scale, the ATE is expressed:
 
-<!-- $$ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}$$ -->
+$$ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}$$
 
-<!-- Other effect scales, such as the incidence rate ratio, incidence rate difference, or hazard ratio, might also be of interest. -->
+Other effect scales, such as the incidence rate ratio, incidence rate difference, or hazard ratio, might also be of interest.
 
-<!-- Here we estimate the Population Average Treatment Effect (PATE), which denotes the effect the treatment would have on the New Population if applied universally. This quantity can be expressed: -->
+Here we estimate the Population Average Treatment Effect (PATE), which denotes the effect the treatment would have on the New Population if applied universally. This quantity can be expressed:
 
-<!-- $$PATE_{\text{risk difference}} = f(E[Y(1) - Y(0)|L], W)$$ -->
+$$PATE_{\text{risk difference}} = f(E[Y(1) - Y(0)|L], W)$$
 
-<!-- $$PATE_{\text{risk ratio}} = f\left(\frac{E[Y(1)|L]}{E[Y(0)|L]}, W\right)$$ -->
+$$PATE_{\text{risk ratio}} = f\left(\frac{E[Y(1)|L]}{E[Y(0)|L]}, W\right)$$
 
-<!-- where $f$ is a function that incorporates post-stratification weights $W$ into the estimation of the expected outcomes from which we obtain causal contrasts. Because the NZAVS is national probability sample, i.e. inverse probability of being sampled 1. However, to incorporate gender, age, and ethnic differences we include post-stratification weight into our outcome wide models. -->
+where $f$ is a function that incorporates post-stratification weights $W$ into the estimation of the expected outcomes from which we obtain causal contrasts. Because the NZAVS is national probability sample, i.e. inverse probability of being sampled 1. However, to incorporate gender, age, and ethnic differences we include post-stratification weight into our outcome wide models.
 
 ## References {.appendix}
