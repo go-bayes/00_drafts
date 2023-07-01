@@ -870,8 +870,6 @@ colnames(prep_embodied_multiple)
 
 mice_embodied <- impute_and_combine(prep_embodied_multiple,  m=10)
 
-
-
 # save imputed data
 saveRDS(mice_embodied,
         here::here(push_mods, "mice_embodied"))
@@ -2350,7 +2348,7 @@ dev.off()
 dt_practical = mice_practical_ebal_trim
 
 # bootstrap simulations
-nsims <- 1000
+nsims <- 100
 
 # cores
 cl =  parallel::detectCores () 
@@ -2374,12 +2372,12 @@ cores = parallel::detectCores () # use all course
 
 outcome_vars_practical
                                 
-
+push_mods
 mod_practical_sexual_satisfaction <- gcomp_sim(
   df = dt_practical,  # note change
   Y = "t2_sexual_satisfaction_z",
   X = X,
-  baseline_vars = baseline_vars_practical,
+  baseline_vars = 1, #baseline_vars_practical,
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = "ATE",
@@ -2395,7 +2393,7 @@ mod_practical_sexual_satisfaction <- gcomp_sim(
  )
 
 saveRDS(mod_practical_sexual_satisfaction, here::here(push_mods, "mod_practical_sexual_satisfaction"))
-
+mod_practical_sexual_satisfaction <- here_read("mod_practical_sexual_satisfaction")
 
 mod_practical_perfectionism <- gcomp_sim(
   df = dt_practical,  # note change
