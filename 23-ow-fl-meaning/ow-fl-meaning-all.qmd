@@ -508,17 +508,18 @@ n_unique(dat_long$id) # 34745 # sample size
 # checks
 table(dat_long$wave, dat_long$lifemeaning)
 
-dt_find_quartile <- dat_long |> 
-  filter(wave == 2019) |> 
-  mutate(lifemeaning_quartile_1 = ntile(lifemeaning, 4)) %>%
-  mutate(lifemeaning_quartile_1 = as.factor(lifemeaning_quartile_1))
-dt_find_quartile$lifemeaning_quartile_1
-table(dt_find_quartile$lifemeaning_quartile_1)
+dt_test <- dat_long |> 
+  filter(wave == 2019) 
 
 
-dt_test <- create_ordered_variable(dt_find_quartile, "lifemeaning", 5)
+dt_test <- create_ordered_variable(dt_test, "lifemeaning", 4)
 
-table( dt_test$lifemeaning_3tile )
+table( dt_test$lifemeaning_4tile )
+
+labels <- dt_test$lifemeaning_4tile
+labels
+dt_test <- create_ordered_variable_custom(dt_test, "lifemeaning", c(1, 5, 5, 5.5, 5.5, 7), labels)
+
 
 # examples of bad correlations
 # summary(lm(meaning_purpose ~ religion_religious, data = dat_19))
@@ -531,16 +532,16 @@ table( dt_test$lifemeaning_3tile )
 #| label: prepare-data
 # prepare on basis of positivity chack
 dat_long_t  <- dat_long %>%
-  # mutate(
-  #   hours_work_coarsen = cut(
-  #     hours_work,
-  #     breaks = c( 10, 30, 41, Inf),
-  #     labels = c("[10_30)", "[30_41)", "[41_up]"),
-  #     include.lowest = TRUE,
-  #     right = FALSE,
-  #     ordered = TRUE
-  #   )
-  # )  |> 
+  mutate(
+    hours_work_coarsen = cut(
+      hours_work,
+      breaks = c( 10, 30, 41, Inf),
+      labels = c("[10_30)", "[30_41)", "[41_up]"),
+      include.lowest = TRUE,
+      right = FALSE,
+      ordered = TRUE
+    )
+  )  |>
   droplevels() |> 
   arrange(id, wave) |> 
   data.frame()
