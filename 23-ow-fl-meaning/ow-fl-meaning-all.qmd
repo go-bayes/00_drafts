@@ -90,6 +90,12 @@ push_mods <-
     "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-fl-meaning-full"
   )
 
+# for sourcing functions mid-script (for experimental scripts only)
+path_funs<- 
+  fs::path_expand(
+    "/Users/joseph/GIT/templates/functions/funs.R"
+  )
+
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
@@ -500,6 +506,10 @@ dat_long <- dat |>
   ungroup() |> 
   droplevels() |> 
   select(-c("h_19", "k_19", "h_18", "k_18", "meets_criteria_baseline")) %>%
+    # needed for imputation
+  mutate(eth_cat = as.integer(eth_cat),
+    urban = as.numeric(urban),
+    education_level_coarsen = as.integer(education_level_coarsen)) |> 
   as.data.frame()
 
 # check unique n
@@ -511,53 +521,91 @@ table(dat_long$wave, dat_long$lifemeaning)
 dt_test <- dat_long |> 
   filter(wave == 2019) 
 
+source(path_funs)
 
+table( dt_test$lifemeaning) 
+table(dt_test$meaning_sense)
+
+dt_test <- create_ordered_variable(dt_test, "lifemeaning", 2)
+dt_test <- create_ordered_variable(dt_test, "meaning_purpose", 2)
 dt_test <- create_ordered_variable(dt_test, "lifemeaning", 4)
+dt_test <- create_ordered_variable(dt_test, "meaning_purpose", 4)
+dt_test <- create_ordered_variable(dt_test, "meaning_sense", 2) # won't work otherwise
+dt_test <- create_ordered_variable(dt_test, "meaning_sense", 4) # won't work otherwise
 
-table( dt_test$lifemeaning_4tile )
+# see the trouble -- the scale is too top-heavy
+print(quantile(dt_test$meaning_sense, probs = seq(0, 1, 1/4), na.rm = TRUE))
+table(dt_test$meaning_sense_4tile)
 
-labels <- dt_test$lifemeaning_4tile
-labels
-dt_test <- create_ordered_variable_custom(dt_test, "lifemeaning", c(1, 5, 5, 5.5, 5.5, 7), labels)
+# not suited to quartiles 
+max(dt_test$meaning_sense, na.rm=TRUE)
 
 
-# examples of bad correlations
-# summary(lm(meaning_purpose ~ religion_religious, data = dat_19))
-# summary(lm(meaning_sense ~ religion_religious, data = dat_19))
+table( dt_test$lifemeaning_4tile)
+table( dt_test$meaning_purpose_4tile)
+table( dt_test$meaning_sense_4tile)
 
-# Other people have too much power or control over\nimportant parts of my life
-```
+table( dt_test$lifemeaning_2tile)
+table( dt_test$meaning_purpose_2tile)
+table( dt_test$meaning_sense_2tile)
 
-```{r}
+
+lifemeaning_labels <- levels( dt_test$lifemeaning_4tile )
+lifemeaning_labels
+
+# save labels for use in positivity table
+here_save(lifemeaning_labels, "lifemeaning_labels")
+
+# create ordered varaible based on quartiles at time 11 (exposure wave)
+# note these values may change from year to year because "quartile" is relative. So we pick the exposure year to define our units
+
+dat_long_t <- create_ordered_variable_custom(dat_long, "lifemeaning", c(1, 5, 5.5, 6.5,  7), lifemeaning_labels)
+
+table( dat_long_t$lifemeaning_coarsen )
+
+
+# 12677     +  5614  +    11774    +   4680 
+
+
+# check positivity
+
+# make data for positivity
+dt_positivity_full <- dat_long_t|>
+  filter(wave == 2018 | wave == 2019) |> 
+  select(wave, id, lifemeaning_coarsen) |> 
+  mutate(lifemeaning_coarsen_n = as.numeric( lifemeaning_coarsen ))
+
+table( dt_positivity_full$lifemeaning_coarsen_n ) 
+
+# save for use later
+here_save(dt_positivity_full, "dt_positivity_full")
+
+
+hist( dt_positivity_full$lifemeaning_coarsen_n )
+
+out <- msm::statetable.msm(lifemeaning_coarsen_n, id, data = dt_positivity_full)
+
+# transition table
+t_tab <- transition_table(out, state_names = lifemeaning_labels)
+t_tab
+
+# old method
 #| label: prepare-data
 # prepare on basis of positivity chack
-dat_long_t  <- dat_long %>%
-  mutate(
-    hours_work_coarsen = cut(
-      hours_work,
-      breaks = c( 10, 30, 41, Inf),
-      labels = c("[10_30)", "[30_41)", "[41_up]"),
-      include.lowest = TRUE,
-      right = FALSE,
-      ordered = TRUE
-    )
-  )  |>
-  droplevels() |> 
-  arrange(id, wave) |> 
-  data.frame()
-
-# check n again
-n_unique(dat_long_t$id)
-
-# double check path
-push_mods
-
-# only look at vars at baseline
-dat_18 <- dat_long_t |> 
-  dplyr::filter(wave == 2018)
-
-# save data for table
-saveRDS(dat_18, here::here(push_mods, "dat_18"))
+# dat_long_t  <- dat_long %>%
+#   # mutate(
+#   #   hours_work_coarsen = cut(
+#   #     hours_work,
+#   #     breaks = c( 10, 30, 41, Inf),
+#   #     labels = c("[10_30)", "[30_41)", "[41_up]"),
+#   #     include.lowest = TRUE,
+#   #     right = FALSE,
+#   #     ordered = TRUE
+#   #   )
+#   # )  |>
+#   droplevels() |> 
+#   arrange(id, wave) |> 
+#   data.frame()
 
 
 # better for imputation - make factors numeric. the mice package likes this
@@ -574,7 +622,10 @@ dat_long_t <- dat_long_t |>
 # save
 saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
 
-str(dat_long_t$religion_religious)
+str(dat_long_t$lifemeaning_coarsen)
+
+hist( dat_long_t$lifemeaning_coarsen_n)
+
 n_unique(dat_long$id)
 # read if needed
 #dat_long_t <- readRDS(here::here(push_mods, "dat_long_t"))
@@ -631,6 +682,8 @@ baseline_vars = c(
     "hlth_disability",  # added 
     "household_inc_log", # added: measured with error but OK for imputations
     "partner",
+    "religion_church_binary2",
+    "religion_identification_level",
    # "parent",  # newly changed - have information in child number
     "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
     "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
@@ -661,7 +714,7 @@ baseline_vars = c(
 baseline_vars
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("religion_religious") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
+exposure_var = c("lifemeaning", "lifemeaning_coarsen") # save both continuous and categorical
 
 
 # outcome_vars_health = c(
@@ -731,9 +784,9 @@ outcome_vars_reflective = c(
     "pwi_security",#Your future security.
     "pwi_standardliving",#Your standard of living.
     "lifesat_satlife",# I am satisfied with my life.
-    "lifesat_ideal",# In most ways my life is close to ideal.
-    "meaning_purpose",# My life has a clear sense of purpose.
-    "meaning_sense"# I have a good sense of what makes my life meaningful.
+    "lifesat_ideal"#,# In most ways my life is close to ideal.
+  #  "meaning_purpose",# My life has a clear sense of purpose.
+  #  "meaning_sense"# I have a good sense of what makes my life meaningful.
   )
 
 
@@ -796,13 +849,18 @@ str(prep_social)
 exposure_var
 
 # assign name
-exposure_vars = "t1_religion_religious"
+exposure_vars = "t1_lifemeaning_coarsen"
 
 #check
 exposure_vars
 
 # save for late use
 saveRDS(exposure_vars, here::here(push_mods,"exposure_vars"))
+
+# for continuous modelling
+exposure_vars_continuous = "t1_lifemeaning_z"
+
+saveRDS(exposure_vars_continuous, here::here(push_mods,"exposure_vars_continuous"))
 
 # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
@@ -814,31 +872,20 @@ prep_reflective_multiple <- margot_filter(prep_reflective, exposure_vars = expos
 prep_social_multiple <- margot_filter(prep_social, exposure_vars = exposure_vars) 
 
 # get levels for checks 
-levels(prep_health$t1_religion_religious)
+levels(prep_health$t1_lifemeaning_coarsen)
 
 # checks
-c <- nrow( prep_social_multiple$`0`)
-d <-nrow( prep_social_multiple$`1`)
-
-prep_social
+a <- nrow( prep_social_multiple$`[1, 5)`)
+b <-nrow( prep_social_multiple$`[5, 5.5)`)
+c <- nrow( prep_social_multiple$`[5.5, 6.5)`)
+d <-nrow( prep_social_multiple$`[6.5, 7)`)
+#prep_social
 # check
- c + d == nrow(prep_social)
+a + b + c + d == nrow(prep_social)
  
 # save for baseline table
 saveRDS(prep_reflective, here::here(push_mods, "prep_reflective"))
 ```
-
-```{r}
-#| label: save-positivity-data
-#| eval: false
-
-# make data for positivity
-dt_positivity_full <- dat_long|>
-  filter(wave == 2018 | wave == 2019)
-
-saveRDS(dt_positivity_full, here::here(push_mods,"dt_positivity_full"))
-```
-
 
 ```{r}
 #| label: imputations-health
@@ -854,8 +901,9 @@ naniar::vis_miss(prep_health, warn_large_data = FALSE)
 # check for collinear vars
 mice:::find.collinear(prep_health)
 
-
+# check
 colnames(prep_health)
+
 # impute  
 mice_health <- impute_and_combine(prep_health_multiple,  m = 10 )
 
@@ -1385,7 +1433,10 @@ saveRDS(mice_social_long, here::here(push_mods, "mice_social_long"))
 push_mods
 
 # fetch expposure fvar name
-exposure_vars <- readRDS(here::here(push_mods,exposure_vars))
+X <- readRDS(here::here(push_mods,"exposure_vars"))
+
+# check
+X
 
 # import data
 mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
@@ -1393,13 +1444,9 @@ mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
 # long data 
 mice_health_long <- readRDS(here::here(push_mods, "mice_health_long"))
 
-table(mice_health_long$t1_religion_religious)
+levels(mice_health_long$t1_lifemeaning_coarsen)
 # check exposure name and set
 exposure_vars
-
-# set exposure 
-X <- exposure_vars
-str(X)
 
 # set estimand
 estimand = "ATE"
@@ -1409,7 +1456,7 @@ library(MatchThem)
 
 # get baseline vars
 baseline_vars_health = mice_health_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_religious)|> colnames() # target trial, randomised baseline
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_z)|> colnames() # target trial, randomised baseline
 baseline_vars_health
 
 
@@ -1508,34 +1555,25 @@ plot(sum_cbps_health)
 
 
 # For trimmed weights e.g.
-# trim if needed (weights > 10 might be a problem)
-# match_ebal_trim_health <- WeightIt::trim(match_ebal_health, at = .99)
-#graph
-# bal.tab(match_ebal_trim_health)
-# summary(match_ebal_trim_health)
-# plot(match_ebal_trim_health)
-# 
-# love_plot_match_ebal_trim_health <- love.plot(match_ebal_trim_health, binary = "std", thresholds = c(m = .1),
-#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-# love_plot_match_ebal_trim_health
-# 
-# # consider results 
-# sum_ebal_trim_health <- summary(match_ebal_trim_health)
-# sum_ebal_trim_health
-# plot(sum_ebal_trim_health)
+#trim if needed (weights > 10 might be a problem)
+match_ebal_health_trim <- WeightIt::trim(match_ebal_health, at = .99)
+#bal.tab(match_ebal_trim_health)
+summary_ebal_trim<- summary(match_ebal_health_trim)
+plot(summary_ebal_trim)
 
+love.plot(match_ebal_health_trim, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
 
 
 # models
 # set df
 # do not need to trim data in this study
-dt_health = match_ebal_health
-
+dt_health = match_ebal_health_trim
 
 # set treatment
-treat_0 = "0" # secular
-treat_1 = "1" # religious 
-treat_0
+treat_0 = "[1, 5)" # secular
+treat_1 = "[5.5, 6.5)" # religious 
+
 # bootstrap simulations ( generally use 1000)
 nsims <- 200
 
@@ -1558,7 +1596,7 @@ X
 
 #"How often do you have a drink containing alcohol?"
 mod_health_alcohol_frequency  <- double_robust(
-  df = dt_health,  # note change
+  df = dt_health,  # check
   Y = "t2_alcohol_frequency_z",
   X = X,
   baseline_vars = baseline_vars_health,
@@ -1795,6 +1833,362 @@ mod_health_smoker_rr
 # save model
 saveRDS(mod_health_smoker_rr, here::here(push_mods, "mod_health_smoker_rr"))
 ```
+
+```{r}
+#| label: models-health-continuous
+#| eval: false
+#| include: false
+#| echo: false
+
+#check path
+push_mods
+
+# import data
+mice_health_mids <- readRDS(here::here(push_mods, "mice_health_mids"))
+
+# long data 
+mice_health_long <- readRDS(here::here(push_mods, "mice_health_long"))
+
+table(mice_health_long$t1_lifemeaning_z)
+
+#mean(dat_long$lifemeaning, na.rm = TRUE)
+#sd(dat_long$lifemeaning, na.rm = TRUE)
+
+# check exposure name and set
+
+# set exposure 
+# fetch expposure fvar name
+exposure_vars_continuous  <- readRDS(here::here(push_mods,"exposure_vars_continuous"))
+
+X_con <- exposure_vars_continuous
+str(X_con)
+
+# set estimand
+estimand = "ATE"
+
+# matching
+library(MatchThem)
+
+# get baseline vars
+baseline_vars_health_cont = mice_health_long |> 
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_coarsen)|> colnames() # target trial, randomised baseline
+baseline_vars_health_cont
+
+
+# set-data
+
+
+# propensity score matching for continuous var: ebalance is best
+# alternatively only use gcomp
+match_energy_health_cont <- match_mi_general(data = mice_health_mids, 
+                                 X = X_con, 
+                                 baseline_vars = baseline_vars_health_cont, 
+                                 estimand = estimand,  
+                                # focal = "< >", for ATT
+                                 method = "energy", 
+                                 sample_weights = "sample_weights")
+
+# save
+saveRDS(match_energy_health_cont, here::here(push_mods, "match_energy_health_cont"))
+
+# checks results
+# ebal method
+bal.tab(match_energy_health_cont)
+love.plot(match_energy_health_cont, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2) 
+
+# consider results 
+sum_energy_health_cont <- summary(match_energy_health_cont)
+sum_energy_health_cont
+plot(sum_energy_health_cont)
+
+
+
+# For trimmed weights e.g.
+# trim if needed (weights > 10 might be a problem)
+# match_energy_health_cont_trim  <- WeightIt::trim(match_energy_health_cont, at = .99)
+#graph
+# bal.tab(match_energy_health_cont_trim)
+# sum_cont <- summary(match_energy_health_cont_trim)
+# sum_cont
+# plot(sum_cont)
+# 
+# love.plot(match_energy_health_cont_trim, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+# love_plot_match_ebal_trim_health
+# 
+# models
+# set df
+# do not need to trim data in this study
+dt_health_cont = match_energy_health_cont_trim
+
+
+# set treatment
+treat_0_cont = "-1"
+treat_1_cont = "1"
+
+# bootstrap simulations ( generally use 1000)
+nsims
+
+# cores
+cl =  parallel::detectCores () 
+
+estimand = "ATE"
+
+# as specified
+vcov = "HC2" # robust standard errors. 
+
+# cores
+cores = parallel::detectCores () # use all course
+
+# checks
+cores 
+X_con
+
+# model outcomes
+
+#"How often do you have a drink containing alcohol?"
+mod_health_alcohol_frequency_con  <- double_robust(
+  df = dt_health_con,  # note change
+  Y = "t2_alcohol_frequency_z",
+  X = X_con,
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Alcohol frequency (sd)",
+)
+
+# read and save model
+mod_health_alcohol_frequency_con
+saveRDS(mod_health_alcohol_frequency_con, here::here(push_mods, "mod_health_alcohol_frequency_con"))
+
+# How many drinks containing alcohol do you have on a typical day when drinking?
+mod_health_alcohol_intensity_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X_con,
+  Y = "t2_alcohol_intensity_z",
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Alcohol intensity (sd)"
+)
+# read and save model
+mod_health_alcohol_intensity_con
+saveRDS(mod_health_alcohol_intensity_con, here::here(push_mods, "mod_health_alcohol_intensity_con"))
+
+# " What is your height? (metres)\nWhat is your weight? (kg)\nKg
+mod_health_hlth_bmi_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X_con,
+  Y = "t2_hlth_bmi_z",
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "BMI (sd)"
+)
+
+# read and save model
+mod_health_hlth_bmi_con
+saveRDS(mod_health_hlth_bmi_con, here::here(push_mods, "mod_health_hlth_bmi_con"))
+
+# Hours spent … exercising/physical activity
+mod_health_hours_exercise_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X,
+  Y = "t2_hours_exercise_log_z",
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Hours exercise (log sd)"
+)
+# read and save model
+mod_health_hours_exercise_con
+saveRDS(mod_health_hours_exercise_con, here::here(push_mods, "mod_health_hours_exercise_con"))
+
+# "In general, would you say your health is...
+mod_health_sfhealth_your_health_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X_con,
+  Y = "t2_sfhealth_your_health_z",
+  baseline_vars = baseline_vars_health,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Your health (sd)"
+)
+
+# save model
+mod_health_sfhealth_your_health_con
+saveRDS(mod_health_sfhealth_your_health_con, here::here(push_mods, "mod_health_sfhealth_your_health_con"))
+
+#"I seem to get sick a little easier than other people.
+mod_health_sfhealth_get_sick_easier_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X_con,
+  Y = "t2_sfhealth_get_sick_easier_z",
+  baseline_vars = baseline_vars_health,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Get sick easier (reversed sd)"
+)
+# save model
+mod_health_sfhealth_get_sick_easier_con
+saveRDS(mod_health_sfhealth_get_sick_easier_con, here::here(push_mods, "mod_health_sfhealth_get_sick_easier_con"))
+
+#I expect my health to get worse."
+mod_health_sfhealth_expect_worse_health_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X_con,
+  Y = "t2_sfhealth_expect_worse_health_z",
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Expect worse health (sd)"
+)
+# save model
+mod_health_sfhealth_expect_worse_health_con
+# save model
+saveRDS(mod_health_sfhealth_expect_worse_health_con, here::here(push_mods, "mod_health_sfhealth_expect_worse_health_con"))
+
+# if a single measure
+# mod_health_sfhealth_comp  <- double_robust(
+#   df = dt_health,  # note change
+#   X = X,
+#   Y = "t2_sfhealth_z",
+#   baseline_vars = baseline_vars_health,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#   vcov = vcov,
+#   new_name = "sfhealth_z (composite)"
+# )
+# 
+# mod_health_sfhealth_comp
+
+# # save model
+# saveRDS(mod_health_sfhealth_comp, here::here(push_mods, "mod_health_sfhealth_comp"))
+
+
+#"During the past month, on average, how many hours of actual sleep did you get per night?"
+mod_health_hlth_sleep_hours_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X_con,
+  Y = "t2_hlth_sleep_hours_z",
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  vcov = vcov,
+  splines = TRUE, 
+  new_name = "Sleep hours (sd)")
+
+mod_health_hlth_sleep_hours_con
+# save model
+saveRDS(mod_health_hlth_sleep_hours_con, here::here(push_mods, "mod_health_hlth_sleep_hours_con"))
+
+#"Do you currently smoke?"
+mod_health_smoker_rr_con  <- double_robust(
+  df = dt_health_con,  # note change
+  X = X_con,
+  Y = "t2_smoker",
+  baseline_vars = 1,# baseline_vars_health, # wont converge
+  treat_1 = treat_1_cont,
+  treat_0 = treat_0_cont,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family =  "poisson", 
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  new_name = "Smoker y/n")
+
+
+# use IPTW only
+mod_health_smoker_rr_con
+# save model
+saveRDS(mod_health_smoker_rr_con, here::here(push_mods, "mod_health_smoker_rr_con"))
+```
+
+
+
 
 ```{r}
 #| label: models-embodied
