@@ -1,5 +1,5 @@
 ---
-title: "Causal effects of meaning on multi-dimensional well-being"
+title: "Causal effects of meaning of life on multi-dimensional well-being"
 subtitle: "An outcome-wide study"
 abstract: |
   Meaning and purpose averaged.
@@ -566,13 +566,13 @@ table( dat_long_t$lifemeaning_coarsen )
 
 # 12677     +  5614  +    11774    +   4680 
 
-
+sd( dat_long_t$lifemeaning, na.rm = TRUE) + mean(dat_long_t$lifemeaning, na.rm = TRUE)
 # check positivity
-
+mean(dat_long_t$lifemeaning, na.rm = TRUE)
 # make data for positivity
 dt_positivity_full <- dat_long_t|>
   filter(wave == 2018 | wave == 2019) |> 
-  select(wave, id, lifemeaning_coarsen) |> 
+  select(wave, id, lifemeaning_coarsen, lifemeaning) |> 
   mutate(lifemeaning_coarsen_n = as.numeric( lifemeaning_coarsen ))
 
 table( dt_positivity_full$lifemeaning_coarsen_n ) 
@@ -757,7 +757,7 @@ outcome_vars_embodied = c(
   )
 
 outcome_vars_practical = c(
- #   "nzsei13", # objective job success
+    "nzsei13", # objective job success
     "bodysat", ## Am satisfied with the appearance, size and shape of my body.
     "vengeful_rumin",# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
     "perfectionism",  # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
@@ -1423,6 +1423,7 @@ colnames(mice_social_long)
 saveRDS(mice_social_mids, here::here(push_mods, "mice_social_mids"))
 saveRDS(mice_social_long, here::here(push_mods, "mice_social_long"))
 ```
+
 ```{r}
 #| label: models-health
 #| eval: false
@@ -1474,7 +1475,7 @@ match_ebal_health <- match_mi_general(data = mice_health_mids,
 
 # save
 saveRDS(match_ebal_health, here::here(push_mods, "match_ebal_health"))
-
+match_ebal_health <- here_read("match_ebal_health")
 # use energy balance, and only engergy balance if the exposure is continuous.
 match_energy_health <- match_mi_general(data = mice_health_mids, 
                                  X = X, 
@@ -1502,6 +1503,7 @@ match_energy_health <- match_mi_general(data = mice_health_mids,
 # personal function loaded at start: equivalent saveRDS(match_ebal_health, here::here(push_mods, "match_ebal_health"))
 here_save(match_energy_health, "match_energy_health")
 
+match_energy_health <- here_read("match_energy_health")
 
 # propensity scores by covariate balanced matching 
 match_cbps_health <- match_mi_general(data = mice_health_mids, 
@@ -1561,9 +1563,12 @@ match_ebal_health_trim <- WeightIt::trim(match_ebal_health, at = .99)
 summary_ebal_trim<- summary(match_ebal_health_trim)
 plot(summary_ebal_trim)
 
+
 love.plot(match_ebal_health_trim, binary = "std", thresholds = c(m = .1),
           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
 
+here_save(match_ebal_health_trim, "match_ebal_health_trim")
+match_ebal_health_trim <- here_read( "match_ebal_health_trim")
 
 # models
 # set df
@@ -1593,7 +1598,7 @@ cores
 X
 
 # model outcomes
-
+source(path_funs)
 #"How often do you have a drink containing alcohol?"
 mod_health_alcohol_frequency  <- double_robust(
   df = dt_health,  # check
@@ -1687,6 +1692,10 @@ mod_health_hours_exercise  <- double_robust(
 # read and save model
 mod_health_hours_exercise
 saveRDS(mod_health_hours_exercise, here::here(push_mods, "mod_health_hours_exercise"))
+
+
+mod_health_hours_exercise <- here_read(  "mod_health_hours_exercise")
+mod_health_hours_exercise
 
 # "In general, would you say your health is...
 mod_health_sfhealth_your_health  <- double_robust(
@@ -1870,65 +1879,77 @@ estimand = "ATE"
 library(MatchThem)
 
 # get baseline vars
-baseline_vars_health_cont = mice_health_long |> 
+baseline_vars_health_con = mice_health_long |> 
   dplyr::select(starts_with("t0"), -t0_lifemeaning_coarsen)|> colnames() # target trial, randomised baseline
-baseline_vars_health_cont
+baseline_vars_health_con
 
 
 # set-data
+#not working
 
-
-# propensity score matching for continuous var: ebalance is best
-# alternatively only use gcomp
-match_energy_health_cont <- match_mi_general(data = mice_health_mids, 
-                                 X = X_con, 
-                                 baseline_vars = baseline_vars_health_cont, 
-                                 estimand = estimand,  
+match_ebal_health_con <- match_mi_general(data = mice_health_mids,
+                                 X = X_con,
+                                 baseline_vars = baseline_vars_health_con,
+                                 estimand = estimand,
                                 # focal = "< >", for ATT
-                                 method = "energy", 
+                                 method = "ebal",
                                  sample_weights = "sample_weights")
 
 # save
-saveRDS(match_energy_health_cont, here::here(push_mods, "match_energy_health_cont"))
+saveRDS(match_ebal_health_con, here::here(push_mods, "match_ebal_health_con"))
 
-# checks results
-# ebal method
-bal.tab(match_energy_health_cont)
-love.plot(match_energy_health_cont, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2) 
+match_ebal_health_con <- here_read("match_ebal_health_con")
 
-# consider results 
-sum_energy_health_cont <- summary(match_energy_health_cont)
-sum_energy_health_cont
-plot(sum_energy_health_cont)
+# # propensity score matching for continuous var: ebalance is best
+# # alternatively only use gcomp
+# match_energy_health_cont <- match_mi_general(data = mice_health_mids, 
+#                                  X = X_con, 
+#                                  baseline_vars = baseline_vars_health_cont, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "energy", 
+#                                  sample_weights = "sample_weights")
+# 
+# # save
+# saveRDS(match_energy_health_cont, here::here(push_mods, "match_energy_health_cont"))
+# 
+# # checks results
+# # ebal method
+bal.tab(match_ebal_health_cont)
+love.plot(match_ebal_health_cont, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2)
+
+# consider results
+sum_ebal_health_cont <- summary(match_ebal_health_con)
+sum_ebal_health_cont
+plot(sum_ebal_health_cont)
 
 
 
 # For trimmed weights e.g.
-# trim if needed (weights > 10 might be a problem)
-# match_energy_health_cont_trim  <- WeightIt::trim(match_energy_health_cont, at = .99)
-#graph
-# bal.tab(match_energy_health_cont_trim)
-# sum_cont <- summary(match_energy_health_cont_trim)
-# sum_cont
-# plot(sum_cont)
-# 
-# love.plot(match_energy_health_cont_trim, binary = "std", thresholds = c(m = .1),
-#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
-# love_plot_match_ebal_trim_health
-# 
-# models
-# set df
-# do not need to trim data in this study
-dt_health_cont = match_energy_health_cont_trim
+#trim if needed (weights > 10 might be a problem)
+match_ebal_health_cont_trim  <- WeightIt::trim(match_ebal_health_con, at = .997)
+here_save(match_ebal_health_cont_trim, "match_ebal_health_cont_trim")
+match_ebal_health_cont_trim <- here_read("match_ebal_health_cont_trim")
+bal.tab(match_ebal_health_cont_trim)
+sum_cont <- summary(match_ebal_health_cont_trim)
+sum_cont
+plot(sum_cont)
+
+love.plot(match_energy_health_cont_trim, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+
+
+
+dt_health_con =   match_ebal_health_cont_trim
 
 
 # set treatment
-treat_0_cont = "-1"
-treat_1_cont = "1"
+treat_1 = 1
+treat_0 = 0
 
 # bootstrap simulations ( generally use 1000)
-nsims
+nsims = 200
 
 # cores
 cl =  parallel::detectCores () 
@@ -1946,6 +1967,15 @@ cores
 X_con
 
 # model outcomes
+X_con
+
+source(path_funs)
+
+
+# check treatment
+treat_0_con = 0
+treat_1_con = 1
+
 
 #"How often do you have a drink containing alcohol?"
 mod_health_alcohol_frequency_con  <- double_robust(
@@ -1953,8 +1983,8 @@ mod_health_alcohol_frequency_con  <- double_robust(
   Y = "t2_alcohol_frequency_z",
   X = X_con,
   baseline_vars = baseline_vars_health_con,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -1967,9 +1997,14 @@ mod_health_alcohol_frequency_con  <- double_robust(
   new_name = "Alcohol frequency (sd)",
 )
 
+
+
 # read and save model
 mod_health_alcohol_frequency_con
+
 saveRDS(mod_health_alcohol_frequency_con, here::here(push_mods, "mod_health_alcohol_frequency_con"))
+
+
 
 # How many drinks containing alcohol do you have on a typical day when drinking?
 mod_health_alcohol_intensity_con  <- double_robust(
@@ -1977,8 +2012,8 @@ mod_health_alcohol_intensity_con  <- double_robust(
   X = X_con,
   Y = "t2_alcohol_intensity_z",
   baseline_vars = baseline_vars_health_con,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -2000,8 +2035,8 @@ mod_health_hlth_bmi_con  <- double_robust(
   X = X_con,
   Y = "t2_hlth_bmi_z",
   baseline_vars = baseline_vars_health_con,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -2017,15 +2052,16 @@ mod_health_hlth_bmi_con  <- double_robust(
 # read and save model
 mod_health_hlth_bmi_con
 saveRDS(mod_health_hlth_bmi_con, here::here(push_mods, "mod_health_hlth_bmi_con"))
+X_con
 
 # Hours spent … exercising/physical activity
 mod_health_hours_exercise_con  <- double_robust(
-  df = dt_health_con,  # note change
-  X = X,
+  df = dt_health_con,# dt_health_con,  # note change
+  X = X_con,
   Y = "t2_hours_exercise_log_z",
   baseline_vars = baseline_vars_health_con,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -2033,10 +2069,11 @@ mod_health_hours_exercise_con  <- double_robust(
   family = "gaussian",
   weights = TRUE,
   continuous_X = TRUE,
-  splines = TRUE, 
+  splines = TRUE, # could not estimate with splines ***
   vcov = vcov,
   new_name = "Hours exercise (log sd)"
 )
+
 # read and save model
 mod_health_hours_exercise_con
 saveRDS(mod_health_hours_exercise_con, here::here(push_mods, "mod_health_hours_exercise_con"))
@@ -2046,9 +2083,9 @@ mod_health_sfhealth_your_health_con  <- double_robust(
   df = dt_health_con,  # note change
   X = X_con,
   Y = "t2_sfhealth_your_health_z",
-  baseline_vars = baseline_vars_health,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -2070,9 +2107,9 @@ mod_health_sfhealth_get_sick_easier_con  <- double_robust(
   df = dt_health_con,  # note change
   X = X_con,
   Y = "t2_sfhealth_get_sick_easier_z",
-  baseline_vars = baseline_vars_health,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  baseline_vars = baseline_vars_health_con,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -2094,8 +2131,8 @@ mod_health_sfhealth_expect_worse_health_con  <- double_robust(
   X = X_con,
   Y = "t2_sfhealth_expect_worse_health_z",
   baseline_vars = baseline_vars_health_con,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -2145,8 +2182,8 @@ mod_health_hlth_sleep_hours_con  <- double_robust(
   X = X_con,
   Y = "t2_hlth_sleep_hours_z",
   baseline_vars = baseline_vars_health_con,
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RD",
   nsims = nsims,
@@ -2168,13 +2205,13 @@ mod_health_smoker_rr_con  <- double_robust(
   X = X_con,
   Y = "t2_smoker",
   baseline_vars = 1,# baseline_vars_health, # wont converge
-  treat_1 = treat_1_cont,
-  treat_0 = treat_0_cont,
+  treat_1 = 1,
+  treat_0 = 0,
   estimand = estimand,
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family =  "poisson", 
+  family =  "quasibinomial", 
   weights = TRUE,
   continuous_X = TRUE,
   splines = TRUE, 
@@ -2186,9 +2223,6 @@ mod_health_smoker_rr_con
 # save model
 saveRDS(mod_health_smoker_rr_con, here::here(push_mods, "mod_health_smoker_rr_con"))
 ```
-
-
-
 
 ```{r}
 #| label: models-embodied
@@ -2210,7 +2244,7 @@ mice_embodied_long <- readRDS(here::here(push_mods, "mice_embodied_long"))
 
 # get baseline names
 baseline_vars_embodied = mice_embodied_long |>
-  dplyr::select(starts_with("t0"), -t0_religion_religious) |> colnames()
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_z) |> colnames()
 
 # check
 baseline_vars_embodied
@@ -2316,25 +2350,26 @@ plot(sum_cbps_embodied)
 
 
 
-# For trimmed weights e.g.
-# trim if needed (weights > 10 might be a problem)
-# match_ebal_trim_embodied <- WeightIt::trim(match_ebal_embodied, at = .99)
+#trim if needed (weights > 10 might be a problem)
+match_ebal_embodied_trim <- WeightIt::trim(match_ebal_embodied, at = .99)
+
+here_save(match_ebal_embodied_trim, "match_ebal_embodied_trim")
 #graph
-# bal.tab(match_ebal_trim_embodied)
-# summary(match_ebal_trim_embodied)
-# plot(match_ebal_trim_embodied)
-# 
-# love_plot_match_ebal_trim_embodied <- love.plot(match_ebal_trim_embodied, binary = "std", thresholds = c(m = .1),
-#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-# love_plot_match_ebal_trim_embodied
-# 
-# # consider results 
-# sum_ebal_trim_embodied <- summary(match_ebal_trim_embodied)
-# sum_ebal_trim_embodied
-# plot(sum_ebal_trim_embodied)
+bal.tab(match_ebal_embodied_trim)
+summary(match_ebal_embodied_trim)
+plot(match_ebal_embodied_trim)
+
+love_plot_match_ebal_trim_embodied <- love.plot(match_ebal_embodied_trim, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+love_plot_match_ebal_trim_embodied
+
+# consider results
+sum_ebal_trim_embodied <- summary(match_ebal_trim_embodied)
+sum_ebal_trim_embodied
+plot(sum_ebal_trim_embodied)
 
 # settings 
-dt_embodied = match_ebal_embodied
+dt_embodied = match_ebal_embodied_trim
 
 # check treatment
 treat_0
@@ -2352,7 +2387,7 @@ cl
 estimand
 cores
 X
-#vcov = "HC2"
+vcov = "HC2"
 mod_embodied_hlth_fatigue  <- double_robust(
   df = dt_embodied,
   # note change
@@ -2656,6 +2691,422 @@ saveRDS(
 
 ## combo-table
 ```
+
+
+```{r}
+#| label: models-embodied-con
+#| eval: false
+#| include: false
+#| echo: false
+
+# fetch expposure fvar name
+exposure_vars_continuous <- readRDS(here::here(push_mods,"exposure_vars_continuous"))
+
+X_con <- exposure_vars_continuous
+X_con
+
+# import data
+mice_embodied_mids <- readRDS(here::here(push_mods, "mice_embodied_mids"))
+
+# long data for names
+mice_embodied_long <- readRDS(here::here(push_mods, "mice_embodied_long"))
+
+# get baseline names
+baseline_vars_embodied_con = mice_embodied_long |>
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_coarsen) |> colnames()
+
+# check
+baseline_vars_embodied_con
+
+estimand = "ATE"
+# ebal propensity scores
+
+# note these functions work the same
+# match_ebal_embodied <- match_mi(data = mice_embodied_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_embodied, 
+#                                  estimand = estimand,  
+#                                  method = "ebal", 
+#                                  sample_weights = "sample_weights")
+# 
+# match_ebal_embodied <- match_mi_general(data = mice_embodied_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_embodied, 
+#                                  estimand = estimand,  
+#                                  method = "ebal", 
+#                                  sample_weights = "sample_weights")
+
+# for use in the appendix
+# save once
+#saveRDS(match_ebal_embodied, here::here(push_mods, "match_ebal_embodied"))
+#match_ebal_embodied <- readRDS( here::here(push_mods, "match_ebal_embodied"))
+
+#  only use engergy balance if the exposure is continuous.
+match_ebal_embodied_con <- match_mi_general(data = mice_embodied_mids, 
+                                 X = X_con, 
+                                 baseline_vars = baseline_vars_embodied_con, 
+                                 estimand = estimand,  
+                                # focal = "< >", for ATT
+                                 method = "ebal", 
+                                 sample_weights = "sample_weights")
+
+# save
+here_save(match_ebal_embodied_con, "match_ebal_embodied_con")
+
+
+# checks results
+# ebal method
+bal.tab(match_ebal_embodied_con)
+love.plot(match_ebal_embodied_con, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2) 
+
+# consider results 
+sum_ebal_embodied_con <- summary(match_ebal_embodied_con)
+sum_ebal_embodied_con
+plot(sum_ebal_embodied_con)
+
+# energy method
+#graph
+bal.tab(sum_ebal_embodied_con)
+
+
+
+# For trimmed weights e.g.
+# trim if needed (weights > 10 might be a problem)
+match_ebal_embodied_con_trim <- WeightIt::trim(match_ebal_embodied_con, at = .997)
+
+bal.tab(match_ebal_embodied_con_trim)
+sum_trim <- summary(match_ebal_embodied_con_trim)
+plot(sum_trim)
+
+love.plot(match_ebal_embodied_con_trim, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+
+# settings 
+dt_embodied_con = match_ebal_embodied_con_trim
+
+# check treatment
+treat_0_con
+treat_1_con
+
+# bootstrap simulations ( generally use 1000)
+#check
+nsims
+
+# cores check
+cl
+#cl =  parallel::detectCores () 
+#cores = cl
+#"During the last 30 days, how often did.... you feel exhausted?"
+estimand
+cores
+X_con
+#vcov = "HC2"
+mod_embodied_hlth_fatigue_con  <- double_robust(
+  df = dt_embodied_con,
+  # note change
+  Y = "t2_hlth_fatigue_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Fatigue (sd)"
+)
+
+# save model
+mod_embodied_hlth_fatigue_con
+saveRDS(mod_embodied_hlth_fatigue_con,
+        here::here(push_mods, "mod_embodied_hlth_fatigue_con"))
+
+# "During the last 30 days, how often did.... you have negative thoughts that repeated over and over?"
+mod_embodied_rumination_con  <- double_robust(
+  df = dt_embodied_con,
+  # note change
+  Y = "t2_rumination_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Rumination (sd)"
+)
+
+# save model
+mod_embodied_rumination_con
+saveRDS(mod_embodied_rumination_con,
+        here::here(push_mods, "mod_embodied_rumination_con"))
+
+#"During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?"
+mod_embodied_kessler_depressed_con  <- double_robust(
+  df = dt_embodied_con,
+  # note change
+  Y = "t2_kessler_depressed_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Kessler depressed (sd)"
+)
+# save model
+mod_embodied_kessler_depressed_con
+saveRDS(
+  mod_embodied_kessler_depressed_con,
+  here::here(push_mods, "mod_embodied_kessler_depressed_con")
+)
+
+#"During the last 30 days, how often did.... you feel that everything was an effort?"
+mod_embodied_kessler_effort_con  <- double_robust(
+  df = dt_embodied_con,
+  # note change
+  Y = "t2_kessler_effort_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Kessler effort (sd)"
+)
+
+# save model
+mod_embodied_kessler_effort_con
+
+saveRDS(
+  mod_embodied_kessler_effort_con,
+  here::here(push_mods, "mod_embodied_kessler_effort_con")
+)
+
+
+## kessler_hopeless
+mod_embodied_kessler_hopeless_con  <- double_robust(
+  df = dt_embodied,
+  # note change
+  Y = "t2_kessler_hopeless_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Kessler hopeless (sd)"
+)
+# save model
+mod_embodied_kessler_hopeless_con
+
+saveRDS(
+  mod_embodied_kessler_hopeless_con,
+  here::here(push_mods, "mod_embodied_kessler_hopeless_con")
+)
+
+
+## kessler_nervous
+mod_embodied_kessler_nervous_con  <- double_robust(
+  df = dt_embodied_con,
+  # note change
+  Y = "t2_kessler_nervous_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Kessler nervous (sd)"
+)
+# save model
+mod_embodied_kessler_nervous_con
+
+saveRDS(
+  mod_embodied_kessler_nervous_con,
+  here::here(push_mods, "mod_embodied_kessler_nervous_con")
+)
+
+
+## kessler_restless
+mod_embodied_kessler_restless_con  <- double_robust(
+  df = dt_embodied_con,
+  # note change
+  Y = "t2_kessler_restless_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Kessler restless (sd)"
+)
+# save model
+mod_embodied_kessler_restless_con
+
+saveRDS(
+  mod_embodied_kessler_restless_con,
+  here::here(push_mods, "mod_embodied_kessler_restless_con")
+)
+
+## kessler_worthless
+mod_embodied_kessler_worthless_con  <- double_robust(
+  df = dt_embodied_con,
+  # note change
+  Y = "t2_kessler_worthless_z",
+  X = X_con,
+  baseline_vars = baseline_vars_embodied_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Kessler worthless (sd)"
+)
+# save model
+mod_embodied_kessler_worthless_con
+saveRDS(
+  mod_embodied_kessler_worthless_con,
+  here::here(push_mods, "mod_embodied_kessler_worthless_con")
+)
+
+# 
+# ## t2_kessler_6
+# mod_embodied_kessler_6  <- double_robust(
+#   df = dt_embodied,  # note change
+#   Y = "t2_kessler_6_z",
+#   X = X_con
+#   baseline_vars = baseline_vars_embodied_con,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "kessler_6_z (composite)"
+# )
+# 
+# mod_embodied_kessler_6
+# # save model
+# saveRDS(mod_embodied_kessler_6, here::here(push_mods, "mod_embodied_kessler_6"))
+# 
+#
+# 
+# mod_embodied_kessler_6_depression  <- double_robust(
+#   df = dt_embodied,  # note change
+#   Y = "t2_kessler_6_depression_z",
+#   X = X_con
+#   baseline_vars = baseline_vars_embodied_con,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "kessler_6_depression_z (composite)"
+# )
+# 
+# mod_embodied_kessler_6_depression
+
+# 
+# # save model
+# saveRDS(mod_embodied_kessler_6_depression, here::here(push_mods, "mod_embodied_kessler_6_depression"))
+# 
+# 
+# 
+# mod_embodied_kessler_6_anxiety <- double_robust(
+#   df = dt_embodied,  # note change
+#   Y = "t2_kessler_6_anxiety_z",
+#   X = X_con
+#   baseline_vars = baseline_vars_embodied_con,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "kessler_6_anxiety_z (composite)"
+# )
+# 
+# mod_embodied_kessler_6_anxiety
+
+# 
+# # save model
+# saveRDS(mod_embodied_kessler_6_anxiety, here::here(push_mods, "mod_embodied_kessler_6_anxiety"))
+
+
+## combo-table
+```
+
+
 ```{r}
 #| label: models-practical
 #| eval: false
@@ -2663,7 +3114,7 @@ saveRDS(
 #| echo: false
 
 # fetch expposure fvar name
-exposure_vars <- readRDS(here::here(push_mods,exposure_vars))
+exposure_vars <- readRDS(here::here(push_mods,"exposure_vars"))
 
 
 # read data
@@ -2674,7 +3125,7 @@ mice_practical_long <- readRDS(here::here(push_mods, "mice_practical_long"))
 
 # get baseline vars
 baseline_vars_practical = mice_practical_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_religious_not)|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_z)|> colnames() # strange to include these -- as they  are income by other names
 
 # check baseline vars
 baseline_vars_practical
@@ -2692,92 +3143,92 @@ match_ebal_practical <- match_mi_general(data = mice_practical_mids,
 here_save(match_ebal_practical, "match_ebal_practical")
 
 
-# use energy balance, and only engergy balance if the exposure is continuous.
-match_energy_practical <- match_mi_general(data = mice_practical_mids, 
-                                 X = X, 
-                                 baseline_vars = baseline_vars_practical, 
-                                 estimand = estimand,  
-                                # focal = "< >", for ATT
-                                 method = "energy", 
-                                 sample_weights = "sample_weights",
-                                verbose = TRUE )
-
-# save
-# personal function loaded at start: equivalent saveRDS(match_ebal_practical, here::here(push_mods, "match_ebal_practical"))
-here_save(match_practical_practical, "match_energy_practical")
-
-
-# propensity scores by covariate balanced matching 
-match_cbps_practical <- match_mi_general(data = mice_practical_mids, 
-                                 X = X, 
-                                 baseline_vars = baseline_vars_practical, 
-                                 estimand = estimand,  
-                                # focal = "< >", for ATT
-                                 method = "cbps", 
-                                 sample_weights = "sample_weights")
-
-here_save(match_cbps_practical, "match_cbps_practical")
+# # use energy balance, and only engergy balance if the exposure is continuous.
+# match_energy_practical <- match_mi_general(data = mice_practical_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_practical, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "energy", 
+#                                  sample_weights = "sample_weights",
+#                                 verbose = TRUE )
+# 
+# # save
+# # personal function loaded at start: equivalent saveRDS(match_ebal_practical, here::here(push_mods, "match_ebal_practical"))
+# here_save(match_practical_practical, "match_energy_practical")
+# 
+# 
+# # propensity scores by covariate balanced matching 
+# match_cbps_practical <- match_mi_general(data = mice_practical_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_practical, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "cbps", 
+#                                  sample_weights = "sample_weights")
+# 
+# here_save(match_cbps_practical, "match_cbps_practical")
 
 # checks results
 # ebal method
 bal.tab(match_ebal_practical)
-love_plot_match_ebal_practical <- love.plot(match_ebal_practical, binary = "std", thresholds = c(m = .1),
+love.plot(match_ebal_practical, binary = "std", thresholds = c(m = .1),
           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
 
 # consider results 
 sum_ebal_practical <- summary(match_ebal_practical)
 sum_ebal_practical
 plot(sum_ebal_practical)
-
-# energy method
-#graph
-bal.tab(match_energy_practical)
-love_plot_match_energy_practical <- love.plot(match_energy_practical, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-
-# consider results 
-sum_energy_practical <- summary(match_energy_practical)
-sum_energy_practical
-plot(sum_ebal_practical)
-
-
-# cbps score method
-#graph
-bal.tab(match_energy_practical)
-summary(match_cbps_practical)
-plot(sum_cbps_practical)
-
-love_plot_match_cbps_practical <- love.plot(match_cbps_practical, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-love_plot_match_cbps_practical
-
-# consider results 
-sum_cbps_practical <- summary(match_cbps_practical)
-sum_cbps_practical
-plot(sum_cbps_practical)
-
+# 
+# # energy method
+# #graph
+# bal.tab(match_energy_practical)
+# love_plot_match_energy_practical <- love.plot(match_energy_practical, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# 
+# # consider results 
+# sum_energy_practical <- summary(match_energy_practical)
+# sum_energy_practical
+# plot(sum_ebal_practical)
+# 
+# 
+# # cbps score method
+# #graph
+# bal.tab(match_energy_practical)
+# summary(match_cbps_practical)
+# plot(sum_cbps_practical)
+# 
+# love_plot_match_cbps_practical <- love.plot(match_cbps_practical, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# love_plot_match_cbps_practical
+# 
+# # consider results 
+# sum_cbps_practical <- summary(match_cbps_practical)
+# sum_cbps_practical
+# plot(sum_cbps_practical)
+# 
 
 
 # For trimmed weights e.g.
-# trim if needed (weights > 10 might be a problem)
-# match_ebal_trim_practical <- WeightIt::trim(match_ebal_practical, at = .99)
+#trim if needed (weights > 10 might be a problem)
+match_ebal_practical_trim <- WeightIt::trim(match_ebal_practical, at = .997)
 #graph
-# bal.tab(match_ebal_trim_practical)
-# summary(match_ebal_trim_practical)
-# plot(match_ebal_trim_practical)
-# 
-# love_plot_match_ebal_trim_practical <- love.plot(match_ebal_trim_practical, binary = "std", thresholds = c(m = .1),
-#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-# love_plot_match_ebal_trim_practical
-# 
-# # consider results 
-# sum_ebal_trim_practical <- summary(match_ebal_trim_practical)
-# sum_ebal_trim_practical
-# plot(sum_ebal_trim_practical)
+bal.tab(match_ebal_practical_trim)
+sum_trim <- summary(match_ebal_practical_trim)
+plot(sum_trim)
+
+love.plot(match_ebal_practical_trim, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+
+
+# consider results
+sum_trim <- summary(match_ebal_practical_trim)
+sum_trim
+plot(sum_trim)
 
 
 # Set DF 
-dt_practical = match_ebal_practical
+dt_practical = match_ebal_practical_trim
 
 # bootstrap simulations #check
 nsims
@@ -3284,9 +3735,6 @@ saveRDS(mod_practical_emotion_regulation_change_thinking_to_calm, here::here(pus
 #mod_practical_emp_work_life_balance
 # # save model
 # saveRDS(mod_practical_emp_work_life_balance, here::here(push_mods, "mod_practical_emp_work_life_balance"))
-
-
-
 # 
 # mod_practical_perfectionism <- double_robust(
 #   df = dt_practical,  # note change
@@ -3297,20 +3745,680 @@ saveRDS(mod_practical_emotion_regulation_change_thinking_to_calm, here::here(pus
 #   treat_0 = treat_0,
 #   estimand = estimand,
 #   scale = "RD",
-# 
 #   nsims = nsims,
 #   cores = cores,
 #   family = "gaussian",
 #   weights = TRUE,
 #   continuous_X = FALSE,
-#   splines = FALSE, 
-#   new_name = "perfectionism_z"
+#   splines = FALSE,
+#   new_name = "Perfectionism (sd)"
+# )
+# # save model
+# mod_practical_perfectionism
+# here_save(mod_practical_perfectionism, "mod_practical_perfectionism")
+```
+
+
+```{r}
+#| label: models-practical-con
+#| eval: false
+#| include: false
+#| echo: false
+
+# fetch expposure fvar name
+exposure_vars_continuous <- readRDS(here::here(push_mods,"exposure_vars_continuous"))
+
+
+X_con <- exposure_vars_continuous
+
+# read data
+mice_practical_mids <- readRDS(here::here(push_mods, "mice_practical_mids"))
+
+# for names
+mice_practical_long <- readRDS(here::here(push_mods, "mice_practical_long"))
+
+# get baseline vars
+baseline_vars_practical_con = mice_practical_long |> 
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_coarsen)|> colnames() # strange to include these -- as they  are income by other names
+
+# check baseline vars
+baseline_vars_practical_con
+
+# use energy balance, and only energy balance if the exposure is continuous.
+match_ebal_practical_con <- match_mi_general(data = mice_practical_mids, 
+                                 X = X, 
+                                 baseline_vars = baseline_vars_practical_con, 
+                                 estimand = estimand,  
+                                # focal = "< >", for ATT
+                                 method = "ebal", 
+                                 sample_weights = "sample_weights")
+
+# save
+here_save(match_ebal_practical_con, "match_ebal_practical_con")
+
+# 
+# # use energy balance, and only engergy balance if the exposure is continuous.
+# match_energy_practical <- match_mi_general(data = mice_practical_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_practical, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "energy", 
+#                                  sample_weights = "sample_weights",
+#                                 verbose = TRUE )
+# 
+# # save
+# # personal function loaded at start: equivalent saveRDS(match_ebal_practical, here::here(push_mods, "match_ebal_practical"))
+# here_save(match_practical_practical, "match_energy_practical")
+# 
+# 
+# # propensity scores by covariate balanced matching 
+# match_cbps_practical <- match_mi_general(data = mice_practical_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_practical, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "cbps", 
+#                                  sample_weights = "sample_weights")
+# 
+# here_save(match_cbps_practical, "match_cbps_practical")
+
+# checks results
+# ebal method
+bal.tab(match_ebal_practical_con)
+love.plot(match_ebal_practical_con, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+
+# consider results 
+sum_ebal_practical_con <- summary(match_ebal_practical_con)
+sum_ebal_practical_con
+plot(sum_ebal_practical_con)
+# 
+# # energy method
+# #graph
+# bal.tab(match_energy_practical)
+# love_plot_match_energy_practical <- love.plot(match_energy_practical, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# 
+# # consider results 
+# sum_energy_practical <- summary(match_energy_practical)
+# sum_energy_practical
+# plot(sum_ebal_practical)
+# 
+# 
+# # cbps score method
+# #graph
+# bal.tab(match_energy_practical)
+# summary(match_cbps_practical)
+# plot(sum_cbps_practical)
+# 
+# love_plot_match_cbps_practical <- love.plot(match_cbps_practical, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# love_plot_match_cbps_practical
+# 
+# # consider results 
+# sum_cbps_practical <- summary(match_cbps_practical)
+# sum_cbps_practical
+# plot(sum_cbps_practical)
+# 
+# 
+
+# For trimmed weights e.g.
+#trim if needed (weights > 10 might be a problem)
+match_ebal_practical_con_trim <- WeightIt::trim(match_ebal_practical_con, at = .997)
+here_save(match_ebal_practical_con_trim, "match_ebal_practical_con_trim")
+#graph
+bal.tab(match_ebal_practical_con_trim)
+sum <- summary(match_ebal_practical_con_trim)
+plot(sum)
+
+love.plot(match_ebal_practical_con_trim, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+
+
+# consider results
+sum_trim <- summary(match_ebal_practical_con_trim)
+sum_trim
+plot(sum_trim)
+
+
+# Set DF 
+dt_practical_con = match_ebal_practical_con_trim
+
+# bootstrap simulations #check
+nsims
+
+# cores check
+cl
+cores
+#cl =  parallel::detectCores () 
+
+# check X
+X_con
+# check 
+treat_0_con = 0
+# check 
+treat_1_con = 1
+
+# check
+vcov
+
+
+# models                                
+
+# sex sat
+mod_practical_sexual_satisfaction_con <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_sexual_satisfaction_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Sexual satisfaction (sd)"
+ )
+
+# view and save model
+mod_practical_sexual_satisfaction_con
+saveRDS(mod_practical_sexual_satisfaction_con, here::here(push_mods, "mod_practical_sexual_satisfaction_con"))
+
+# perfectionism
+mod_practical_perfectionism_con <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_perfectionism_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Perfectionism (sd)"
+ )
+# view and save model
+mod_practical_perfectionism_con
+saveRDS(mod_practical_perfectionism_con, here::here(push_mods, "mod_practical_perfectionism_con"))
+
+# nzsei
+# mod_practical_nzsei13_con  <- double_robust(
+#   df = dt_practical_con,  # note change
+#   Y = "t2_nzsei13_z",
+#   X = X_con,
+#   baseline_vars = baseline_vars_practical_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = TRUE,
+#   splines = TRUE,
+#   vcov = vcov,
+#   new_name = "NZSEI13 (sd)"
 # )
 # 
+# # view and save model
+# mod_practical_nzsei13_con
+# saveRDS(mod_practical_nzsei13_con, here::here(push_mods, "mod_practical_nzsei13_con"))
+
+# body satisifaction 
+mod_practical_bodysat_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_bodysat_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Body satisfaction (sd)"
+)
+
+# view and save
+mod_practical_bodysat_con
+saveRDS(mod_practical_bodysat_con, here::here(push_mods, "mod_practical_bodysat_con"))
+
+# ven rumin
+mod_practical_vengeful_rumin_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_vengeful_rumin_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Vengeful rumination (sd)"
+)
+# view and save
+mod_practical_vengeful_rumin_con
+saveRDS(mod_practical_vengeful_rumin_con, here::here(push_mods, "mod_practical_vengeful_rumin_con"))
+
+
+
+mod_practical_power_self_nocontrol_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_power_self_nocontrol_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov=vcov,
+  new_name = "Power self nocontrol (sd)"
+)
+# view and save model
+mod_practical_power_self_nocontrol_con
+saveRDS(mod_practical_power_self_nocontrol_con, here::here(push_mods, "mod_practical_power_self_nocontrol_con"))
+
+
+# power other ovr me
+mod_practical_power_others_control_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_power_others_control_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov=vcov,
+  new_name = "Power others control (sd)"
+)
+# view and save model
+mod_practical_power_others_control_con
+saveRDS(mod_practical_power_others_control_con, here::here(push_mods, "mod_practical_power_others_control_con"))
+
+# 
+# # power dependence combo
+# mod_practical_powerdependence  <- double_robust(
+#   df = dt_practical_con,  # note change
+#   Y = "t2_power_dependence_z",
+#   X = X_con,
+#   baseline_vars = baseline_vars_practical_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = TRUE,
+#   splines = TRUE, 
+#   vcov=vcov,
+#   new_name = "power_others_control_z"
+# )
+# # view and save model
+# mod_practical_powerdependence
+# saveRDS(mod_practical_powerdependence, here::here(push_mods, "mod_practical_powerdependence"))
+
+
+# On the whole am satisfied with myself.
+mod_practical_selfesteem_satself_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_selfesteem_satself_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Selfesteem satself (sd)"
+)
+
+# view and save
+mod_practical_selfesteem_satself_con
+saveRDS(mod_practical_selfesteem_satself_con, here::here(push_mods, "mod_practical_selfesteem_satself_con"))
+
+
+# self-esteem - positive self
+mod_practical_selfesteem_postiveself_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_selfesteem_postiveself_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+   vcov=vcov,
+  new_name = "Selfesteem postiveself (sd)"
+)
+
+# save model
+mod_practical_selfesteem_postiveself_con
+saveRDS(mod_practical_selfesteem_postiveself_con, here::here(push_mods, "mod_practical_selfesteem_postiveself_con"))
+
+
+mod_practical_selfesteem_rfailure_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_selfesteem_rfailure_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+   vcov=vcov,
+  new_name = "Selfesteem failure (reversed, sd)"
+)
+
+# view and save
+mod_practical_selfesteem_rfailure_con
+saveRDS(mod_practical_selfesteem_rfailure_con, here::here(push_mods, "mod_practical_selfesteem_rfailure_con"))
+
+# combo
+# mod_practical_selfesteem  <- double_robust(
+#   df = dt_practical_con,  # note change
+#   Y = "t2_selfesteem_z",
+#   X = X_con,
+#   baseline_vars = baseline_vars_practical_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = TRUE,
+#   splines = TRUE, 
+#   new_name = "selfesteem_z"
+# )
+# 
+# mod_practical_selfesteem
+
+# save model
+# saveRDS(mod_practical_selfesteem, here::here(push_mods, "mod_practical_selfesteem"))
+
+# self control have lots
+mod_practical_self_control_have_lots_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_self_control_have_lots_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Self control have lots (sd)"
+)
+
+# view and save
+mod_practical_self_control_have_lots_con
+saveRDS(mod_practical_self_control_have_lots_con, here::here(push_mods, "mod_practical_self_control_have_lots_con"))
+
+# self control wish more
+mod_practical_self_control_wish_more_r_con  <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_self_control_wish_more_r_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Self control wish more  (reversed, sd)"
+)
+
+mod_practical_self_control_wish_more_r_con
+
+# view and save
+saveRDS(mod_practical_self_control_wish_more_r_con, here::here(push_mods, "mod_practical_self_control_wish_more_r_con"))
+
+# combo
+# mod_practical_self_control <- double_robust(
+#   df = dt_practical_con,  # note change
+#   Y = "t2_self_control_z",
+#   X = X_con,
+#   baseline_vars = baseline_vars_practical_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = TRUE,
+#   splines = TRUE, 
+#   new_name = "self_control_z"
+# )
+# 
+# mod_practical_self_control
+
+# save model
+#saveRDS(mod_practical_self_control, here::here(push_mods, "mod_practical_self_control"))
+
+
+# emo reg out control
+mod_practical_emotion_regulation_out_control_con <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_emotion_regulation_out_control_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov,
+  new_name = "Emotion reg out control (sd)"
+)
+
+# save model
+mod_practical_emotion_regulation_out_control_con
+saveRDS(mod_practical_emotion_regulation_out_control_con, here::here(push_mods, "mod_practical_emotion_regulation_out_control_con"))
+
+mod_practical_emotion_regulation_hide_neg_emotions_con <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_emotion_regulation_hide_neg_emotions_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Emotion reg hide neg emotions (sd)"
+)
+
+# view and save model
+mod_practical_emotion_regulation_hide_neg_emotions_con
+saveRDS(mod_practical_emotion_regulation_hide_neg_emotions_con, here::here(push_mods, "mod_practical_emotion_regulation_hide_neg_emotions_con"))
+
+
+# emo reg change thinking
+mod_practical_emotion_regulation_change_thinking_to_calm_con <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_emotion_regulation_change_thinking_to_calm_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  vcov = vcov, 
+  new_name = "Emotion reg change thinking to calm (sd)"
+)
+# view and save model
+mod_practical_emotion_regulation_change_thinking_to_calm_con
+saveRDS(mod_practical_emotion_regulation_change_thinking_to_calm_con, here::here(push_mods, "mod_practical_emotion_regulation_change_thinking_to_calm_con"))
+
+# 
+# mod_practical_emotion_regulation <- double_robust(
+#   df = dt_practical_con,  # note change
+#   Y = "t2_emotion_regulation_z",
+#   X = X_con,
+#   baseline_vars = baseline_vars_practical_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = TRUE,
+#   splines = TRUE, 
+#   new_name = "emotion_regulation_z"
+# )
+# 
+# mod_practical_emotion_regulation
+# save model
+# saveRDS(mod_practical_emotion_regulation, here::here(push_mods, "mod_practical_emotion_regulation"))
+
+
+# 
+# mod_practical_emp_work_life_balance <- double_robust(
+#   df = dt_practical_con,  # note change
+#   Y = "t2_emp_work_life_balance_z",
+#   X = X_con,
+#   baseline_vars = baseline_vars_practical_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = TRUE,
+#   splines = TRUE, 
+#   new_name = "emp_work_life_balance (no baseline)"
+# )
+# 
+#mod_practical_emp_work_life_balance
 # # save model
 # saveRDS(mod_practical_emp_work_life_balance, here::here(push_mods, "mod_practical_emp_work_life_balance"))
-#
+
+
+
+# 
+mod_practical_perfectionism_con <- double_robust(
+  df = dt_practical_con,  # note change
+  Y = "t2_perfectionism_z",
+  X = X_con,
+  baseline_vars = baseline_vars_practical_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+  new_name = "perfectionism_z"
+)
+
+# # save model
+mod_practical_perfectionism_con
+saveRDS(mod_practical_perfectionism_con, here::here(push_mods, "mod_practical_perfectionism_con"))
+
 ```
+
+
 
 ```{r}
 #| label: models-reflective
@@ -3331,7 +4439,7 @@ mice_reflective_long <- readRDS(here::here(push_mods, "mice_reflective_long"))
 X
 
 baseline_vars_reflective = mice_reflective_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_religious)|> colnames() # no variance at baseline
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_z)|> colnames() # no variance at baseline
 
 
 # propensity scores
@@ -3349,85 +4457,88 @@ match_ebal_reflective <- match_mi_general(data = mice_reflective_mids,
 here_save(match_ebal_reflective, "match_ebal_reflective")
 
 
-# use energy balance, and only engergy balance if the exposure is continuous.
-match_energy_reflective <- match_mi_general(data = mice_reflective_mids, 
-                                 X = X, 
-                                 baseline_vars = baseline_vars_reflective, 
-                                 estimand = estimand,  
-                                # focal = "< >", for ATT
-                                 method = "energy", 
-                                 sample_weights = "sample_weights" )
-
-# save
-# personal function loaded at start: equivalent saveRDS(match_ebal_reflective, here::here(push_mods, "match_ebal_reflective"))
-here_save(match_reflective_reflective, "match_energy_reflective")
-
-
-# propensity scores by covariate balanced matching 
-match_cbps_reflective <- match_mi_general(data = mice_reflective_mids, 
-                                 X = X, 
-                                 baseline_vars = baseline_vars_reflective, 
-                                 estimand = estimand,  
-                                # focal = "< >", for ATT
-                                 method = "cbps", 
-                                 sample_weights = "sample_weights")
-
-here_save(match_cbps_reflective, "match_cbps_reflective")
-
 # checks results
 # ebal method
 bal.tab(match_ebal_reflective)
 love.plot(match_ebal_reflective, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2) 
+          wrap = 50, position = "bottom", size =2)
 
-# consider results 
+# consider results
 sum_ebal_reflective <- summary(match_ebal_reflective)
 sum_ebal_reflective
 plot(sum_ebal_reflective)
 
 # energy method
-#graph
-bal.tab(match_energy_reflective)
-love_plot_match_energy_reflective <- love.plot(match_energy_reflective, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# #graph
+# bal.tab(match_energy_reflective)
+# love.plot(match_energy_reflective, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+# 
 
-# consider results 
-sum_energy_reflective <- summary(match_energy_reflective)
-sum_energy_reflective
-plot(sum_ebal_reflective)
+# 
+# # use energy balance, and only engergy balance if the exposure is continuous.
+# match_energy_reflective <- match_mi_general(data = mice_reflective_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_reflective, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "energy", 
+#                                  sample_weights = "sample_weights" )
+# 
+# # save
+# # personal function loaded at start: equivalent saveRDS(match_ebal_reflective, here::here(push_mods, "match_ebal_reflective"))
+# here_save(match_reflective_reflective, "match_energy_reflective")
+# 
+# 
+# # propensity scores by covariate balanced matching 
+# match_cbps_reflective <- match_mi_general(data = mice_reflective_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_reflective, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "cbps", 
+#                                  sample_weights = "sample_weights")
+# 
+# here_save(match_cbps_reflective, "match_cbps_reflective")
+# 
 
-
-# cbps score method
-#graph
-bal.tab(match_energy_reflective)
-summary(match_cbps_reflective)
-plot(sum_cbps_reflective)
-
-love.plot(match_cbps_reflective, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2) 
-love_plot_match_cbps_reflective
-
-# consider results 
-sum_cbps_reflective <- summary(match_cbps_reflective)
-sum_cbps_reflective
-plot(sum_cbps_reflective)
+# # consider results 
+# sum_energy_reflective <- summary(match_energy_reflective)
+# sum_energy_reflective
+# plot(sum_ebal_reflective)
+# 
+# 
+# # cbps score method
+# #graph
+# bal.tab(match_energy_reflective)
+# summary(match_cbps_reflective)
+# plot(sum_cbps_reflective)
+# 
+# love.plot(match_cbps_reflective, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2) 
+# love_plot_match_cbps_reflective
+# 
+# # consider results 
+# sum_cbps_reflective <- summary(match_cbps_reflective)
+# sum_cbps_reflective
+# plot(sum_cbps_reflective)
 
 # if trim is needed
-# mice_reflective_ebal_trim <- WeightIt::trim(mice_reflective_ebal, at = .99)
-# sum_ebal_trim <- summary(mice_reflective_ebal_trim)
-# sum_ebal_trim
-# 
-# plot(sum_ebal_trim)
-# bal.tab(mice_reflective_ebal_trim,stats = c("m", "ks"), abs = TRUE)
-# 
-# love.plot(mice_reflective_ebal_trim, binary = "std", thresholds = c(m = .1))
-# 
-# dev.off()
+match_ebal_reflective_trim <- WeightIt::trim(match_ebal_reflective, at = .997)
+sum_ebal_trim <- summary(match_ebal_reflective_trim)
+sum_ebal_trim
+
+plot(sum_ebal_trim)
+bal.tab(match_ebal_reflective_trim,stats = c("m", "ks"), abs = TRUE)
+
+love.plot(match_ebal_reflective_trim, binary = "std", thresholds = c(m = .1))
+here_save(match_ebal_reflective_trim, "match_ebal_reflective_trim")
+dev.off()
 
 # settings 
 # Set DF 
 
-dt_reflective = match_ebal_reflective
+dt_reflective = match_ebal_reflective_trim
 
 # bootstrap simulations
 nsims
@@ -3445,7 +4556,7 @@ treat_0
 treat_1 
 # gratitude
 mod_reflective_gratitude  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, # note change
   Y = "t2_gratitude_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3468,7 +4579,7 @@ saveRDS(mod_reflective_gratitude, here::here(push_mods, "mod_reflective_gratitud
 
 
 mod_reflective_pwi_health  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, # note change
   Y = "t2_pwi_health_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3492,7 +4603,7 @@ saveRDS(mod_reflective_pwi_health, here::here(push_mods, "mod_reflective_pwi_hea
 
 
 mod_reflective_pwi_relationships  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, # note change
   Y = "t2_pwi_relationships_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3516,7 +4627,7 @@ saveRDS(mod_reflective_pwi_relationships, here::here(push_mods, "mod_reflective_
 
 # security
 mod_reflective_pwi_security  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, # note change
   Y = "t2_pwi_security_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3540,7 +4651,7 @@ saveRDS(mod_reflective_pwi_security, here::here(push_mods, "mod_reflective_pwi_s
 
 # standard living
 mod_reflective_pwi_standardliving  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, # note change
   Y = "t2_pwi_standardliving_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3565,7 +4676,7 @@ saveRDS(mod_reflective_pwi_standardliving, here::here(push_mods, "mod_reflective
 
 # 
 # mod_reflective_pwi  <- double_robust(
-#   df = dt_reflective,  # note change
+#   df = dt_reflective, # note change
 #   Y = "t2_pwi_z",
 #   X = X,
 #   baseline_vars = baseline_vars_reflective,
@@ -3590,7 +4701,7 @@ saveRDS(mod_reflective_pwi_standardliving, here::here(push_mods, "mod_reflective
 # 
 # lifesat
 mod_reflective_lifesat_satlife  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, # note change
   Y = "t2_lifesat_satlife_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3613,7 +4724,7 @@ saveRDS(mod_reflective_lifesat_satlife, here::here(push_mods, "mod_reflective_li
 
 # model lifesat ideal
 mod_reflective_lifesat_ideal  <- double_robust(
-  df = dt_reflective,  # note change
+  df = dt_reflective, # note change
   Y = "t2_lifesat_ideal_z",
   X = X,
   baseline_vars = baseline_vars_reflective,
@@ -3637,7 +4748,7 @@ saveRDS(mod_reflective_lifesat_ideal, here::here(push_mods, "mod_reflective_life
 # 
 # ## lifesat
 # mod_reflective_lifesat  <- double_robust(
-#   df = dt_reflective,  # note change
+#   df = dt_reflective, # note change
 #   Y = "t2_pwi_z",
 #   X = X,
 #   baseline_vars = baseline_vars_reflective,
@@ -3664,53 +4775,55 @@ saveRDS(mod_reflective_lifesat_ideal, here::here(push_mods, "mod_reflective_life
 # meaning
 
 # meaning purpose
-mod_reflective_meaning_purpose  <- double_robust(
-  df = dt_reflective, 
-  Y = "t2_meaning_purpose_z",
-  X = X,
-  baseline_vars = baseline_vars_reflective,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE,
-    vcov = vcov,
-  new_name = "Meaning purpose (sd)"
-)
-# save model
-mod_reflective_meaning_purpose
-saveRDS(mod_reflective_meaning_purpose, here::here(push_mods, "mod_reflective_meaning_purpose"))
 
-# meaning sense
-mod_reflective_meaning_sense  <- double_robust(
-  df = dt_reflective,  
-  Y = "t2_meaning_sense_z",
-  X = X,
-  baseline_vars = baseline_vars_reflective,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE,
-    vcov = vcov,
-  new_name = "Meaning sense (sd)"
-)
-# save model
-mod_reflective_meaning_sense
-saveRDS(mod_reflective_meaning_sense, here::here(push_mods, "mod_reflective_meaning_sense"))
+# 
+# mod_reflective_meaning_purpose  <- double_robust(
+#   df = dt_reflective,
+#   Y = "t2_meaning_purpose_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#     vcov = vcov,
+#   new_name = "Meaning purpose (sd)"
+# )
+# # save model
+# mod_reflective_meaning_purpose
+# saveRDS(mod_reflective_meaning_purpose, here::here(push_mods, "mod_reflective_meaning_purpose"))
+# 
+# # meaning sense
+# mod_reflective_meaning_sense  <- double_robust(
+#   df = dt_reflective, 
+#   Y = "t2_meaning_sense_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#     vcov = vcov,
+#   new_name = "Meaning sense (sd)"
+# )
+# # save model
+# mod_reflective_meaning_sense
+# saveRDS(mod_reflective_meaning_sense, here::here(push_mods, "mod_reflective_meaning_sense"))
 # 
 # mod_reflective_meaning  <- double_robust(
-#   df = dt_reflective,  # note change
+#   df = dt_reflective, # note change
 #   Y = "t2_meaning_z",
 #   X = X,
 #   baseline_vars = baseline_vars_reflective,
@@ -3741,6 +4854,445 @@ saveRDS(mod_reflective_meaning_sense, here::here(push_mods, "mod_reflective_mean
  # <- readRDS( here::here(push_mods, ""))
 ```
 
+
+```{r}
+#| label: models-reflective-con
+#| eval: false
+#| include: false
+#| echo: false
+
+# fetch expposure fvar name
+exposure_vars_continuous <- readRDS(here::here(push_mods,"exposure_vars_continuous"))
+exposure_vars_continuous
+X_con <- exposure_vars_continuous
+
+# pull imputed data
+mice_reflective_mids <- readRDS(here::here(push_mods, "mice_reflective_mids"))
+
+# longform data if necessary
+mice_reflective_long <- readRDS(here::here(push_mods, "mice_reflective_long"))
+
+# check exposure
+X_con
+
+baseline_vars_reflective_con = mice_reflective_long |> 
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_coarsen)|> colnames() # no variance at baseline
+
+
+# propensity scores
+estimand = "ATE"
+# use energy balance, and only energy balance if the exposure is continuous.
+match_ebal_reflective_con <- match_mi_general(data = mice_reflective_mids, 
+                                 X = X_con, 
+                                 baseline_vars = baseline_vars_reflective_con, 
+                                 estimand = estimand,  
+                                # focal = "< >", for ATT
+                                 method = "ebal", 
+                                 sample_weights = "sample_weights")
+
+# save
+here_save(match_ebal_reflective_con, "match_ebal_reflective_con")
+
+
+# checks results
+# ebal method
+bal.tab(match_ebal_reflective_con)
+love.plot(match_ebal_reflective_con, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2)
+
+# consider results
+sum_ebal_reflective_c <- summary(match_ebal_reflective_con)
+sum_ebal_reflective_c
+plot(sum_ebal_reflective_c)
+
+# energy method
+#graph
+bal.tab(match_ebal_reflective_con)
+love.plot(match_ebal_reflective_con, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+
+
+# 
+# # use energy balance, and only engergy balance if the exposure is continuous.
+# match_energy_reflective <- match_mi_general(data = mice_reflective_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_reflective, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "energy", 
+#                                  sample_weights = "sample_weights" )
+# 
+# # save
+# # personal function loaded at start: equivalent saveRDS(match_ebal_reflective, here::here(push_mods, "match_ebal_reflective"))
+# here_save(match_reflective_reflective, "match_energy_reflective")
+# 
+# 
+# # propensity scores by covariate balanced matching 
+# match_cbps_reflective <- match_mi_general(data = mice_reflective_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_reflective, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "cbps", 
+#                                  sample_weights = "sample_weights")
+# 
+# here_save(match_cbps_reflective, "match_cbps_reflective")
+# 
+
+# # consider results 
+# sum_energy_reflective <- summary(match_energy_reflective)
+# sum_energy_reflective
+# plot(sum_ebal_reflective)
+# 
+# 
+# # cbps score method
+# #graph
+# bal.tab(match_energy_reflective)
+# summary(match_cbps_reflective)
+# plot(sum_cbps_reflective)
+# 
+# love.plot(match_cbps_reflective, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2) 
+# love_plot_match_cbps_reflective
+# 
+# # consider results 
+# sum_cbps_reflective <- summary(match_cbps_reflective)
+# sum_cbps_reflective
+# plot(sum_cbps_reflective)
+
+# if trim is needed
+match_ebal_reflective_con_trim <- WeightIt::trim(match_ebal_reflective_con, at = .997)
+here_save(match_ebal_reflective_con_trim, "match_ebal_reflective_con_trim")
+sum_ebal_trim <- summary(match_ebal_reflective_con_trim)
+sum_ebal_trim
+
+plot(sum_ebal_trim)
+bal.tab(match_ebal_reflective_con_trim,stats = c("m", "ks"), abs = TRUE)
+
+love.plot(match_ebal_reflective_con_trim, binary = "std", thresholds = c(m = .1))
+here_save(match_ebal_reflective_con_trim, "match_ebal_reflective_con_trim")
+dev.off()
+
+# settings 
+# Set DF 
+
+dt_reflective_con = match_ebal_reflective_con_trim
+
+# bootstrap simulations
+nsims
+# cores
+cl# = 10
+cores# = 10
+         
+# check
+X_con 
+
+#check
+treat_0_con
+
+#check
+treat_1_con
+# gratitude
+mod_reflective_gratitude_con  <- double_robust(
+  df = dt_reflective_con, # note change
+  Y = "t2_gratitude_z",
+  X = X_con,
+  baseline_vars = baseline_vars_reflective_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+  vcov = vcov,
+  new_name = "Gratitude (sd)"
+)
+# save model
+mod_reflective_gratitude_con
+saveRDS(mod_reflective_gratitude_con, here::here(push_mods, "mod_reflective_gratitude_con"))
+
+
+mod_reflective_pwi_health_con  <- double_robust(
+  df = dt_reflective_con, # note change
+  Y = "t2_pwi_health_z",
+  X = X_con,
+  baseline_vars = baseline_vars_reflective_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+    vcov = vcov,
+  new_name = "Pwi health (sd)"
+)
+
+# save model
+mod_reflective_pwi_health_con
+saveRDS(mod_reflective_pwi_health_con, here::here(push_mods, "mod_reflective_pwi_health_con"))
+
+
+mod_reflective_pwi_relationships_con  <- double_robust(
+  df = dt_reflective_con, # note change
+  Y = "t2_pwi_relationships_z",
+  X = X_con,
+  baseline_vars = baseline_vars_reflective_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+    vcov = vcov,
+  new_name = "Pwi relationships (sd)"
+)
+# save model
+mod_reflective_pwi_relationships_con
+saveRDS(mod_reflective_pwi_relationships_con, here::here(push_mods, "mod_reflective_pwi_relationships_con"))
+
+
+# security
+mod_reflective_pwi_security_con  <- double_robust(
+  df = dt_reflective_con, # note change
+  Y = "t2_pwi_security_z",
+  X = X_con,
+  baseline_vars = baseline_vars_reflective_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Pwi security (sd)"
+)
+# save model
+mod_reflective_pwi_security_con
+saveRDS(mod_reflective_pwi_security_con, here::here(push_mods, "mod_reflective_pwi_security_con"))
+
+
+# standard living
+mod_reflective_pwi_standardliving_con  <- double_robust(
+  df = dt_reflective_con, # note change
+  Y = "t2_pwi_standardliving_z",
+  X = X_con,
+  baseline_vars = baseline_vars_reflective_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Pwi standardliving (sd)"
+)
+
+# save model
+mod_reflective_pwi_standardliving_con
+saveRDS(mod_reflective_pwi_standardliving_con, here::here(push_mods, "mod_reflective_pwi_standardliving_con"))
+
+
+# 
+# mod_reflective_pwi  <- double_robust(
+#   df = dt_reflective_con, # note change
+#   Y = "t2_pwi_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "pwi_z"
+# )
+# 
+# mod_reflective_pwi
+# 
+# # save model
+# saveRDS(mod_reflective_pwi, here::here(push_mods, "mod_reflective_pwi"))
+# 
+# lifesat
+mod_reflective_lifesat_satlife_con  <- double_robust(
+  df = dt_reflective_con, # note change
+  Y = "t2_lifesat_satlife_z",
+  X = X_con,
+  baseline_vars = baseline_vars_reflective_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+    vcov = vcov,
+  new_name = "Lifesat satlife (sd)"
+)
+# save model
+mod_reflective_lifesat_satlife_con
+saveRDS(mod_reflective_lifesat_satlife_con, here::here(push_mods, "mod_reflective_lifesat_satlife_con"))
+
+# model lifesat ideal
+mod_reflective_lifesat_ideal_con  <- double_robust(
+  df = dt_reflective_con, # note change
+  Y = "t2_lifesat_ideal_z",
+  X = X_con,
+  baseline_vars = baseline_vars_reflective_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Lifesat ideal (sd)"
+)
+# save model
+mod_reflective_lifesat_ideal_con
+saveRDS(mod_reflective_lifesat_ideal_con, here::here(push_mods, "mod_reflective_lifesat_ideal_con"))
+# 
+# 
+# ## lifesat
+# mod_reflective_lifesat  <- double_robust(
+#   df = dt_reflective_con, # note change
+#   Y = "t2_pwi_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "lifesat_z"
+# )
+# 
+# mod_reflective_lifesat
+
+# save model
+# saveRDS(mod_reflective_lifesat, here::here(push_mods, "mod_reflective_lifesat"))
+
+
+# meaning
+
+# meaning purpose
+# 
+# 
+# mod_reflective_meaning_purpose  <- double_robust(
+#   df = dt_reflective_con,
+#   Y = "t2_meaning_purpose_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#     vcov = vcov,
+#   new_name = "Meaning purpose (sd)"
+# )
+# # save model
+# mod_reflective_meaning_purpose
+# saveRDS(mod_reflective_meaning_purpose, here::here(push_mods, "mod_reflective_meaning_purpose"))
+# 
+# # meaning sense
+# mod_reflective_meaning_sense  <- double_robust(
+#   df = dt_reflective_con, 
+#   Y = "t2_meaning_sense_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#     vcov = vcov,
+#   new_name = "Meaning sense (sd)"
+# )
+# # save model
+# mod_reflective_meaning_sense
+# saveRDS(mod_reflective_meaning_sense, here::here(push_mods, "mod_reflective_meaning_sense"))
+# 
+# mod_reflective_meaning  <- double_robust(
+#   df = dt_reflective_con, # note change
+#   Y = "t2_meaning_z",
+#   X = X,
+#   baseline_vars = baseline_vars_reflective_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "meaning_z"
+# )
+
+#mod_reflective_meaning
+
+# save model
+#saveRDS(mod_reflective_meaning, here::here(push_mods, "mod_reflective_meaning"))
+
+
+## if needed:
+#  <- readRDS( here::here(push_mods, ""))
+
+## rr
+ # <- readRDS( here::here(push_mods, ""))
+```
+
+
 ```{r}
 #| label: models-social
 #| eval: false
@@ -3754,11 +5306,15 @@ mice_social_mids <- readRDS(here::here(push_mods, "mice_social_mids"))
 mice_social_long <- readRDS(here::here(push_mods, "mice_social_long"))
 
 # check exposure 
+X <- here_read("exposure_vars")
 X
+
+
+estimand = "ATE"
 
 # baseline vars
 baseline_vars_social = mice_social_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_religious_not)|> colnames() # no variance in exposure at baseline
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_z)|> colnames() # no variance in exposure at baseline
 
 # check
 baseline_vars_social
@@ -3781,95 +5337,103 @@ match_ebal_social <- match_mi_general(data = mice_social_mids,
 
 # save
 here_save(match_ebal_social, "match_ebal_social")
+match_ebal_social <- here_read( "match_ebal_social")
 
-
-# use energy balance, and only engergy balance if the exposure is continuous.
-match_energy_social <- match_mi_general(data = mice_social_mids, 
-                                 X = X, 
-                                 baseline_vars = baseline_vars_social, 
-                                 estimand = estimand,  
-                                # focal = "< >", for ATT
-                                 method = "energy", 
-                                 sample_weights = "sample_weights",
-                                verbose = TRUE )
-
-# save
-# personal function loaded at start: equivalent saveRDS(match_ebal_social, here::here(push_mods, "match_ebal_social"))
-here_save(match_social_social, "match_energy_social")
-
-
-# propensity scores by covariate balanced matching 
-match_cbps_social <- match_mi_general(data = mice_social_mids, 
-                                 X = X, 
-                                 baseline_vars = baseline_vars_social, 
-                                 estimand = estimand,  
-                                # focal = "< >", for ATT
-                                 method = "cbps", 
-                                 sample_weights = "sample_weights")
-
-here_save(match_cbps_social, "match_cbps_social")
+# 
+# # use energy balance, and only engergy balance if the exposure is continuous.
+# match_energy_social <- match_mi_general(data = mice_social_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_social, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "energy", 
+#                                  sample_weights = "sample_weights",
+#                                 verbose = TRUE )
+# 
+# # save
+# # personal function loaded at start: equivalent saveRDS(match_ebal_social, here::here(push_mods, "match_ebal_social"))
+# here_save(match_social_social, "match_energy_social")
+# 
+# 
+# # propensity scores by covariate balanced matching 
+# match_cbps_social <- match_mi_general(data = mice_social_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_social, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "cbps", 
+#                                  sample_weights = "sample_weights")
+# 
+# here_save(match_cbps_social, "match_cbps_social")
 
 # checks results
 # ebal method
 bal.tab(match_ebal_social)
-love_plot_match_ebal_social <- love.plot(match_ebal_social, binary = "std", thresholds = c(m = .1),
+love.plot(match_ebal_social, binary = "std", thresholds = c(m = .1),
           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
 
 # consider results 
 sum_ebal_social <- summary(match_ebal_social)
 sum_ebal_social
 plot(sum_ebal_social)
-
-# energy method
-#graph
-bal.tab(match_energy_social)
-love_plot_match_energy_social <- love.plot(match_energy_social, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-
-# consider results 
-sum_energy_social <- summary(match_energy_social)
-sum_energy_social
-plot(sum_ebal_social)
-
-
-# cbps score method
-#graph
-bal.tab(match_energy_social)
-summary(match_cbps_social)
-plot(sum_cbps_social)
-
-love_plot_match_cbps_social <- love.plot(match_cbps_social, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-love_plot_match_cbps_social
-
-# consider results 
-sum_cbps_social <- summary(match_cbps_social)
-sum_cbps_social
-plot(sum_cbps_social)
-
-# if trim is needed
-# mice_social_ebal_trim <- WeightIt::trim(mice_social_ebal, at = .99)
-# sum_ebal_trim <- summary(mice_social_ebal_trim)
-# sum_ebal_trim
 # 
-# plot(sum_ebal_trim)
-# bal.tab(mice_social_ebal_trim,stats = c("m", "ks"), abs = TRUE)
+# # energy method
+# #graph
+# bal.tab(match_energy_social)
+# love_plot_match_energy_social <- love.plot(match_energy_social, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
 # 
-# love.plot(mice_social_ebal_trim, binary = "std", thresholds = c(m = .1))
+# # consider results 
+# sum_energy_social <- summary(match_energy_social)
+# sum_energy_social
+# plot(sum_ebal_social)
 # 
-# dev.off()
+# 
+# # cbps score method
+# #graph
+# bal.tab(match_energy_social)
+# summary(match_cbps_social)
+# plot(sum_cbps_social)
+# 
+# love_plot_match_cbps_social <- love.plot(match_cbps_social, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# love_plot_match_cbps_social
+# 
+# # consider results 
+# sum_cbps_social <- summary(match_cbps_social)
+# sum_cbps_social
+# plot(sum_cbps_social)
+
+#if trim is needed
+match_ebal_social_trim <- WeightIt::trim(match_ebal_social, at = .997)
+here_save(match_ebal_social_trim, "match_ebal_social_trim")
+
+sum_ebal_trim <- summary(match_ebal_social_trim)
+sum_ebal_trim
+
+plot(sum_ebal_trim)
+bal.tab(match_ebal_social_trim,stats = c("m", "ks"), abs = TRUE)
+
+love.plot(match_ebal_social_trim, binary = "std", thresholds = c(m = .1))
+
+dev.off()
 
 # settings 
-dt_social = match_trim_ebal_social
+dt_social = match_ebal_social_trim
 
 # cores
-cl 
-cores
+cl = 10
+cores = 10
+nsims
 
+levels( mice_social_long$t1_lifemeaning_coarsen )
 #check
-treat_0 
-#check
-treat_1 
+#  treat_0 = "[1, 5)"
+# # #check
+#  treat_1 = "[5.5, 6.5)" 
+
+treat_0
+treat_1
 
 # # save model
 # mod_social_belong  <- double_robust(
@@ -3877,8 +5441,8 @@ treat_1
 #   Y = "t2_belong_z",
 #   X = X,
 #   baseline_vars = baseline_vars_social,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
 #   estimand = estimand,
 #   scale = "RD",
 # 
@@ -3900,8 +5464,8 @@ treat_1
 #   Y = "t2_support_z",
 #   X = X,
 #   baseline_vars = baseline_vars_social,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
 #   estimand = estimand,
 #   scale = "RD",
 # 
@@ -3919,6 +5483,8 @@ treat_1
 # # save model
 # saveRDS(mod_social_support, here::here(push_mods, "mod_social_support"))
 # 
+X
+vcov 
 
 #"I believe I am capable, as an individual of improving my status in society."
 mod_social_permeability_individual  <- double_robust(
@@ -3943,7 +5509,9 @@ mod_social_permeability_individual  <- double_robust(
 mod_social_permeability_individual
 saveRDS(mod_social_permeability_individual, here::here(push_mods, "mod_social_permeability_individual"))
 
-
+mod_social_permeability_individual <- here_read(
+ "mod_social_permeability_individual" 
+)
 
 #"The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change."
 mod_social_impermeability_group  <- double_robust(
@@ -4131,12 +5699,266 @@ mod_social_belong_beliefs  <- double_robust(
 mod_social_belong_beliefs
 saveRDS(mod_social_belong_beliefs, here::here(push_mods, "mod_social_belong_beliefs"))
 
-#How much money have you donated to charity in the last year?
-mod_social_charity_donate  <- double_robust(
-  df = dt_social,  # note change
-  Y = "t2_charity_donate_log_z",
-  X = X,
-  baseline_vars = baseline_vars_social,
+
+# #How much money have you donated to charity in the last year?
+# mod_social_charity_donate  <- double_robust(
+#   df = dt_social,  # note change
+#   Y = "t2_charity_donate_log_z",
+#   X = X,
+#   baseline_vars = baseline_vars_social,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#     vcov = vcov,
+#   new_name = "Charity donate (log sd)"
+# )
+# # save model
+# mod_social_charity_donate
+# saveRDS(mod_social_charity_donate, here::here(push_mods, "mod_social_charity_donate"))
+# 
+# #Hours spent in activities/Hours spent … voluntary/charitable work
+# mod_social_volunteers_rr  <- double_robust(
+#   df = dt_social,  # note change
+#   Y = "t2_volunteers",
+#   X = X,
+#   baseline_vars = baseline_vars_social,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   type = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = quasibinomial(),
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "Volunteers y/n",
+#   vcov ="HC"
+# )
+# 
+# # view and save model
+# mod_social_volunteers_rr
+# saveRDS(mod_social_volunteers_rr, here::here(push_mods, "mod_social_volunteers_rr"))
+```
+
+```{r}
+#| label: models-social-con
+#| eval: false
+#| include: false
+#| echo: false
+
+# import
+mice_social_mids <- readRDS(here::here(push_mods, "mice_social_mids"))
+
+# longform data if necessary
+mice_social_long <- readRDS(here::here(push_mods, "mice_social_long"))
+
+# check exposure 
+X_con
+
+# baseline vars
+baseline_vars_social_con = mice_social_long |> 
+  dplyr::select(starts_with("t0"), -t0_lifemeaning_coarsen)|> colnames() # no variance in exposure at baseline
+
+# check
+baseline_vars_social_con
+
+# outcome vars
+outcome_vars_social = mice_social_long |> dplyr::select(starts_with("t2")) |> colnames()
+
+
+
+# propensity scores
+
+# use energy balance, and only energy balance if the exposure is continuous.
+match_ebal_social_con <- match_mi_general(data = mice_social_mids, 
+                                 X = X_con, 
+                                 baseline_vars = baseline_vars_social_con, 
+                                 estimand = estimand,  
+                                # focal = "< >", for ATT
+                                 method = "ebal", 
+                                 sample_weights = "sample_weights")
+
+# save
+here_save(match_ebal_social_con, "match_ebal_social_con")
+
+# 
+# # use energy balance, and only engergy balance if the exposure is continuous.
+# match_energy_social <- match_mi_general(data = mice_social_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_social, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "energy", 
+#                                  sample_weights = "sample_weights",
+#                                 verbose = TRUE )
+# 
+# # save
+# # personal function loaded at start: equivalent saveRDS(match_ebal_social, here::here(push_mods, "match_ebal_social"))
+# here_save(match_social_social, "match_energy_social")
+# 
+# 
+# # propensity scores by covariate balanced matching 
+# match_cbps_social <- match_mi_general(data = mice_social_mids, 
+#                                  X = X, 
+#                                  baseline_vars = baseline_vars_social, 
+#                                  estimand = estimand,  
+#                                 # focal = "< >", for ATT
+#                                  method = "cbps", 
+#                                  sample_weights = "sample_weights")
+# 
+# here_save(match_cbps_social, "match_cbps_social")
+
+# checks results
+# ebal method
+bal.tab(match_ebal_social_con)
+love.plot(match_ebal_social_con, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+
+# consider results 
+sum_ebal_social_con <- summary(match_ebal_social_con)
+sum_ebal_social_con
+plot(sum_ebal_social_con)
+# 
+# # energy method
+# #graph
+# bal.tab(match_energy_social)
+# love_plot_match_energy_social <- love.plot(match_energy_social, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# 
+# # consider results 
+# sum_energy_social <- summary(match_energy_social)
+# sum_energy_social
+# plot(sum_ebal_social)
+# 
+# 
+# # cbps score method
+# #graph
+# bal.tab(match_energy_social)
+# summary(match_cbps_social)
+# plot(sum_cbps_social)
+# 
+# love_plot_match_cbps_social <- love.plot(match_cbps_social, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+# love_plot_match_cbps_social
+# 
+# # consider results 
+# sum_cbps_social <- summary(match_cbps_social)
+# sum_cbps_social
+# plot(sum_cbps_social)
+
+#if trim is needed
+match_ebal_social_con_trim <- WeightIt::trim(match_ebal_social_con, at = .997)
+sum_ebal_trim_con <- summary(match_ebal_social_con_trim)
+sum_ebal_trim_con
+
+plot(sum_ebal_trim_con)
+bal.tab(match_ebal_social_con_trim,stats = c("m", "ks"), abs = TRUE)
+
+love.plot(match_ebal_social_con_trim, binary = "std", thresholds = c(m = .1))
+here_save(match_ebal_social_con_trim, "match_ebal_social_con_trim")
+dev.off()
+
+# settings 
+dt_social_con = match_ebal_social_con_trim
+
+# cores
+cl 
+cores
+
+#check
+treat_0_con 
+#check
+treat_1_con
+
+# # save model
+# mod_social_belong  <- double_robust(
+#   df = dt_social,  # note change
+#   Y = "t2_belong_z",
+#   X = X,
+#   baseline_vars = baseline_vars_social,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "belong_z"
+# )
+# 
+# # save model
+# saveRDS(mod_social_belong, here::here(push_mods, "mod_social_belong"))
+# 
+# 
+# mod_social_support  <- double_robust(
+#   df = dt_social,  # note change
+#   Y = "t2_support_z",
+#   X = X,
+#   baseline_vars = baseline_vars_social,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0_con,
+#   estimand = estimand,
+#   scale = "RD",
+# 
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "support_z"
+# )
+# 
+# mod_social_support
+
+# # save model
+# saveRDS(mod_social_support, here::here(push_mods, "mod_social_support"))
+# 
+
+#"I believe I am capable, as an individual of improving my status in society."
+mod_social_permeability_individual_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_permeability_individual_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0_con,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+    vcov = vcov,
+  new_name = "Permeability individual (sd)"
+)
+# save model
+mod_social_permeability_individual_con 
+saveRDS(mod_social_permeability_individual_con , here::here(push_mods, "mod_social_permeability_individual_con "))
+
+
+
+#"The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change."
+mod_social_impermeability_group_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_impermeability_group_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
@@ -4145,48 +5967,242 @@ mod_social_charity_donate  <- double_robust(
   cores = cores,
   family = "gaussian",
   weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
+  continuous_X = TRUE,
+  splines = TRUE,
     vcov = vcov,
-  new_name = "Charity donate (log sd)"
+  new_name = "Impermeability group (sd)"
 )
 # save model
-mod_social_charity_donate
-saveRDS(mod_social_charity_donate, here::here(push_mods, "mod_social_charity_donate"))
+mod_social_impermeability_group_con 
+saveRDS(mod_social_impermeability_group_con, here::here(push_mods, "mod_social_impermeability_group_con "))
 
-#Hours spent in activities/Hours spent … voluntary/charitable work
-mod_social_volunteers_rr  <- double_robust(
-  df = dt_social,  # note change
-  Y = "t2_volunteers",
-  X = X,
-  baseline_vars = baseline_vars_social,
-  treat_1 = treat_1,
+# I feel a sense of community with others in my local neighbourhood.
+mod_social_neighbourhood_community_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_neighbourhood_community_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
   treat_0 = treat_0,
   estimand = estimand,
-  scale = "RR",
-  type = "RR",
+  scale = "RD",
   nsims = nsims,
   cores = cores,
-  family = quasibinomial(),
+  family = "gaussian",
   weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  new_name = "Volunteers y/n",
-  vcov ="HC"
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Neighbourhood community (sd)"
+)
+# save model
+mod_social_neighbourhood_community_con 
+saveRDS(mod_social_neighbourhood_community_con, here::here(push_mods, "mod_social_neighbourhood_community_con "))
+
+
+#'There are people I can depend on to help me if I really need it.
+mod_social_support_help_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_support_help_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Support help (sd)"
+)
+# save model
+mod_social_support_help_con 
+saveRDS(mod_social_support_help_con , here::here(push_mods, "mod_social_support_help_con"))
+
+#There are people I can depend on to help me if I really need it.
+mod_social_support_turnto_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_support_turnto_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Support turnto (sd)"
+)
+# save model
+mod_social_support_turnto_con 
+saveRDS(mod_social_support_turnto_con , here::here(push_mods, "mod_social_support_turnto_con "))
+
+#There is no one I can turn to for guidance in times of stress.
+mod_social_support_rnoguidance_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_support_rnoguidance_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+    vcov = vcov,
+  new_name = "Support noguidance (reversed, sd)"
+)
+# save model
+mod_social_support_rnoguidance_con 
+saveRDS(mod_social_support_rnoguidance_con , here::here(push_mods, "mod_social_support_rnoguidance_con"))
+
+#Know that people in my life accept and value me.
+mod_social_belong_accept_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_belong_accept_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE, 
+    vcov = vcov,
+  new_name = "Belong accept (sd)"
 )
 
-# view and save model
-mod_social_volunteers_rr
-saveRDS(mod_social_volunteers_rr, here::here(push_mods, "mod_social_volunteers_rr"))
+# save model
+mod_social_belong_accept_con 
+saveRDS(mod_social_belong_accept_con , here::here(push_mods, "mod_social_belong_accept_con"))
+
+# Feel like an outsider.
+mod_social_belong_routsider_con  <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_belong_routsider_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Belong outsider (reversed, sd)"
+)
+# save model
+mod_social_belong_routsider_con 
+saveRDS(mod_social_belong_routsider_con , here::here(push_mods, "mod_social_belong_routsider_con "))
+
+# Know that people around me share my attitudes and beliefs.
+mod_social_belong_beliefs_con   <- double_robust(
+  df = dt_social_con, # note change
+  Y = "t2_belong_beliefs_z",
+  X = X_con,
+  baseline_vars = baseline_vars_social_con,
+  treat_1 = treat_1_con,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = TRUE,
+  splines = TRUE,
+    vcov = vcov,
+  new_name = "Belong beliefs (sd)"
+)
+# save model
+mod_social_belong_beliefs_con 
+saveRDS(mod_social_belong_beliefs_con, here::here(push_mods, "mod_social_belong_beliefs_con"))
+# 
+# #How much money have you donated to charity in the last year?
+# mod_social_charity_donate  <- double_robust(
+#   df = dt_social_con, # note change
+#   Y = "t2_charity_donate_log_z",
+#   X = X_con,
+#   baseline_vars = baseline_vars_social_con,,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#     vcov = vcov,
+#   new_name = "Charity donate (log sd)"
+# )
+# # save model
+# mod_social_charity_donate
+# saveRDS(mod_social_charity_donate, here::here(push_mods, "mod_social_charity_donate"))
+# 
+# #Hours spent in activities/Hours spent … voluntary/charitable work
+# mod_social_volunteers_rr  <- double_robust(
+#   df = dt_social_con, # note change
+#   Y = "t2_volunteers",
+#   X = X_con,
+#   baseline_vars = baseline_vars_social_con,
+#   treat_1 = treat_1_con,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   type = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = quasibinomial(),
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   new_name = "Volunteers y/n",
+#   vcov ="HC"
+# )
+# 
+# # view and save model
+# mod_social_volunteers_rr
+# saveRDS(mod_social_volunteers_rr, here::here(push_mods, "mod_social_volunteers_rr"))
 ```
+
+
 ## Introduction
 
+Meaning of life: what is it, and why might it be important? 
 
-<!-- Max Weber famously described the loss of religion as "the disenchantment of the world" [@wilson2014]. However, it is unclear whether, and in which ways, disaffiliation causes disenchantment. -->
+Here, we investigate the causal effects of hypothetically intervening to change levels of meaning of life on multi-dimensional well-being. 
 
-<!-- Cross-sectional data can sometimes be useful for prediction, however they are generally ill-equipped for insights into causality. Take, for example, a scenario where individuals with lower levels of life meaning are observed to detach from their religious affiliations more frequently than those reporting higher life meaning. Cross-sectional data fall short in conclusively disentangling such complex relationships. It is conceivable that those experiencing a sense of life's futility may self-select out of religious institutions, resulting in a disproportionate representation of disenchanted individuals among non-religious groups in such surveys. Hence, if interventions were employed to encourage these disenchanted individuals to rejoin religious communities, they could potentially amplify feelings of life's meaninglessness. That is, correlations can mislead us to the opposite conclusions about true causation. Indeed the 'hints' suggested in cross-sectional data are known to strongly bias regression coefficients, whose true causal effects may run contrary to manifest correlations [@westreich2013]. However, a persistent habit of suggesting that cross-sectional data may 'hint' at causality presents a serious challenge to psychological science [@bulbulia2022][@bulbulia2021], -->
+We operationalize meaning of life using two items from @steger_meaning_2006:
 
-<!-- To gain clearer insights into the causal effects of religious disaffiliation, we apply longitudinal data in this study. Our approach aims to replicate an idealized experiment, thereby providing a more transparent understanding of causality [@hernán2016; @bulbulia2022; @hernan2023]. -->
+```         
+1.  My life has a clear sense of purpose;
+2.  I have a good sense of what makes my life meaningful.
+```
+
+We investigate causal effects across multiple dimensions of well-being, following an "outcomewide approach" [@vanderweele2020].
 
 ## Method
 
@@ -4194,47 +6210,76 @@ saveRDS(mod_social_volunteers_rr, here::here(push_mods, "mod_social_volunteers_r
 
 Data were collected as part of The New Zealand Attitudes and Values Study (NZAVS) is an annual longitudinal national probability panel study of social attitudes, personality, ideology and health outcomes. The NZAVS began in 2009. It includes questionnaire responses from more than 70,000 New Zealand residents. The study includes researchers from many New Zealand universities, including the University of Auckland, Victoria University of Wellington, the University of Canterbury, the University of Otago, and Waikato University. Because the survey asks the same people to respond each year, it can track subtle change in attitudes and values over time, and is an important resource for researchers both in New Zealand and around the world. The NZAVS is university-based, not- for-profit and independent of political or corporate funding.https://doi.org/10.17605/OSF.IO/75SNB
 
-### Eligibility Criteria
+### Eligibility criteria
 
-The sample consisted of respondents to NZAVS waves Time 10, 11, and 12 (years 2018-2021) (See Appendix A.)
+The sample consisted of respondents to NZAVS waves 10, 11, and 12 (years 2018-2021) (See Appendix A.)
 
-1.  those participants who stated an identification with religious at the baseline wave (NZAVS wave 10, years 2018-2019) and
-2.  stated an identification with religious in the follow up wave (NZAVS wave 11, years 2019-2020)
+1.  Included: those participants who at the baseline wave (NZAVS wave 10, years 2018-2019). 
+3.  Included: missing data for all variables except the exposure. This includes loss-to-follow up in wave 12 (the outcome year). Missing values were multiply imputed conditional on all covariates (see explanation for details.)
+2.  Excluded: those with missing data on the exposure in wave 10 (baseline) and wave 11 (exposure)  
+There were 34,745 NZAVS participants who met these criteria.
 
-There were N NZAVS participants who met these criteria.
-
-### The Exposure: Religious Affiliation
+### The exposure: meaning in life
 
 ```{r}
 #| label: verify-positivity-data
 #| eval: true
 #| echo: false
+
+here::here(push_mods)
 dt_positivity_full <- readRDS(here::here(push_mods,"dt_positivity_full"))
 
-out <- msm::statetable.msm(religion_religious, id, data = dt_positivity_full)
+dt_positivity_full<- dt_positivity_full |> 
+  mutate(lifemeaning_round = round(lifemeaning,0))
+lifemeaning_labels <- here_read( "lifemeaning_labels")
 
-state_names <- c("religious affiliate", "religious dis-affiliate")
+out_con <- msm::statetable.msm(lifemeaning_round, id, data = dt_positivity_full)
+t_tab_con <- transition_table(out_con)
+print( t_tab_con )
+
+
+out <- msm::statetable.msm(lifemeaning_coarsen_n, id, data = dt_positivity_full)
+
 
 # transition table
-t_tab <- transition_table(out, state_names)
+t_tab <- transition_table(out, lifemeaning_labels)
 
+n_unique(dt_positivity_full$id)
 # print 
 cat(t_tab$explanation)
 print(t_tab$table)
 ```
 
-As indicated in @tbl-transition, of the 12600 people who were religious at baseline, 1977 people dis-affiliated participants one year later (NZAVS wave 2019), at the measurement year. Of the 22142 who were not affiliated at baseline, 1183 affiliated [^1]
-
-[^1]: Cite our Markov paper showing that much religious change is probably artifactual.
+@tbl-transition is a transition matrix describes the shifts from one state of meaning of life to another state between the baseline wave and the following wave. The numbers in the cells represent the number of individuals who transitioned from one state (rows) to another (columns). For example, the cell in the first row and second column shows the number of individuals who transitioned from the first state (indicated by the left-most cell in the row) to the second state. The top left cell shows the number of individuals who remained in the first state. For the continuous exposure analysis, we fit regressions with splines to avoid linearity assumptions.We find evidence for both change in the exposure between the baseline wave and the exposure wave (wave 11) among the 34745 participants, thus satisifying the positivity assumpition (see below). In our continuous models we ask: what would happen if we were to move everyone in the population from an average scores on meaning of life to +1 standard deviation higher score on meaning of life. 
 
 
+|  From   | State 1 | State 2 | State 3 | State 4 | State 5 | State 6 | State 7 |
+|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|
+| State 1 |   25    |   44    |   16    |   19    |    3    |   10    |    2    |
+| State 2 |   52    |   289   |   129   |   259   |   57    |   70    |   12    |
+| State 3 |    9    |   155   |   114   |   342   |   66    |   87    |   13    |
+| State 4 |   26    |   305   |   361   |  2818   |  1136   |  1302   |   78    |
+| State 5 |    5    |   54    |   74    |  1254   |  1228   |  1903   |   84    |
+| State 6 |    9    |   67    |   85    |  1428   |  2021   |  12105  |  1914   |
+| State 7 |    2    |    9    |   10    |   99    |   107   |  1911   |  2577   |
 
-|          From           | religious affiliate | religious dis-affiliate |
-|:-----------------------:|:-------------------:|:-----------------------:|
-|   religious affiliate   |        20959        |          1183           |
-| religious dis-affiliate |        1977         |          10623          |
+: Transition matrix for continuous stability and change in meaning of life (rounded to nearest whole number) {#tbl-transition}
 
-: Transition matrix {#tbl-transition}
+
+
+|    From    | [1, 5) | [5, 5.5) | [5.5, 6.5) | [6.5, 7) |
+|:----------:|:------:|:--------:|:----------:|:--------:|
+|   [1, 5)   |  8840  |   1861   |    1511    |   189    |
+|  [5, 5.5)  |  1934  |   1553   |    1906    |   200    |
+| [5.5, 6.5) |  1676  |   1998   |    6648    |   1714   |
+|  [6.5, 7)  |  227   |   202    |    1709    |   2577   |
+
+: Transition matrix for change stability and change in meaning of life by quartiles  {#tbl-transition-factor}
+
+
+We also investigate change by grouping the exposure in to quartiles. Doing so has the advantage of clarifying the causal effect of interst.  Here, we contrast the well-being outcomes from a hypothetical change between the lowest quartile (1-5 on the response scale) to the third quartile (5.5-6.5). @tbl-transition-factor presents change when individuals are grouped into categories. The causal question here shifts to one that may be more useful in clinical settings. What would happen if we could move people from the lowest quartile of meaning of life to the second highest quartile? 
+
+
 
 ### Indicators of well-being.
 
@@ -4242,83 +6287,27 @@ We assessed well-being following @vanderweele2020 outcome-wide template. Outcome
 
 ### Assumptions for causal inference
 
-To assess a causal effect we must contrast how the world would turn out if we were to intervene. Generally, we cannot observe individual causal effects because for any individual case, we only observe the intervention or its absence. We cannot both intervene and not-intervene at once. This is called the fundamental problem of causal inference [@rubin1976; @holland1986; @bulbulia2022]. Although we cannot generally observe unit-level causal effects, it may be possible to estimate average causal effects. We do this by contrasting the average effect in the exposed group with the average effect in the unexposed unexposed group. For example, average of the contrast (or equivalently the contrast of the the averages)[^2] on the difference scale may be expressed:
+In this study, we aim to find out if changing one thing (an intervention) would cause a different outcome. However, in reality, we can only observe what happens when we intervene, not what would have happened if we didn't, or vice versa. So we face a fundamental problem in showing cause and effect directly. To get around this, we estimate what we call the "average treatment effect" (ATE), which compares the average outcomes of those who received the intervention and those who did not.
 
-[^2]: Note that mathematically, the difference in the average expectation is equivalent to the average of the differences in expectation.
+For us to say something is a cause, we rely on three important assumptions:
 
-```{=tex}
-\begin{alignat*}{2}
-ATE & = E[Y(1)) - E(Y(0)]\\
-& = E=[Y(1) - Y(0)]
-\end{alignat*}
-```
-Estimating the average treatment effects (ATE) of binary exposures or contrasts between different exposure levels involves understanding causal inference as counterfactual data science. The ATE is expressed as:
+1. **Causal consistency**: This means we expect the outcome we see to match what would have happened if the intervention was given. We also presume there is no interference between individual cases, meaning each person's outcome only depends on whether they received the intervention or not. This assumption might not hold if our intervention is not well-defined or its meaning is unclear.
 
-```{=tex}
-   \begin{align*}
-    ATE = E[Y(a) - Y(a*)]
-    \end{align*}
-```
-Our causal inference is grounded on three critical assumptions:
+2. **Exchangability**: This involves us assuming that whether or not someone received the intervention does not affect their potential outcomes, once we consider certain observed factors. This is akin to how psychologists would randomly assign people to experimental conditions. When using real-world data, we mimic this random assignment by considering factors that could link the intervention and the outcome without any causal relation.
 
-#### Identification assumption 1: Causal consistency
-
-Causal consistency assumes the observed outcome aligns with the potential outcome for a given exposure level:
-
-$$Y^{observed} = AY(a=1) + (1-A)Y(a=0)$$
-
-Observed outcomes can represent counterfactual outcomes under certain exposures, such that:
-
-$$
-Y^{observed}_i = 
-\begin{cases} 
-Y_i(~a^*) & \text{if } A_i = a* \\
-Y_i(~a~) & \text{if } A_i = a
-\end{cases}
-$$
-
-Causal consistency also assumes no interference between unit treatments, allowing potential outcomes to be set to the observed outcomes. For this assumption to hold, we require "treatment variation irrelevance." If there are (1) well-defined outcomes for each treatment version, and (2) no confounding effects, the multiple versions of treatments can be used to estimate the causal effect:
-
-$$K \coprod Y(k) | L$$ or equivalently $$Y(k) \coprod K | L$$
-
-Here, the treatment $A$ is essentially a function of $K$ treatments, $A = f(k_1...k_v)$ versions
-
-Limitations exist, however, when interventions are ill-defined, or the causal effect's interpretation is ambiguous. Put simply, given there are unknown ways of becoming religiously disaffiliated the interpretation of "disaffiliation" may be strained. It is strained in the sense that we would not know how to intervene to *make* a religiously affiliated person disaffiliate. We will return to this question in the discussion.
-
-#### Identification assumption 2: Exchangability
-
-Exchangability assumes treatment assignment is independent of potential outcomes, given observed covariates. This is the "no-confounding" assumption that many psychologists have learned in association with experimental design. In the setting of observational data, we emulate randomisation by conditioning on indicators that may lead to an association of the exposure $A$ and the outcome $Y$ in the absence of causation.
-
-$$Y(a)\coprod  A|L$$ or $$A \coprod  Y(a)|L$$
-
-Where exchangability holds, we calculate the Average Treatment Effect (ATE)
-
-$$
-ATE = E[Y(a*)|L = l] - E[Y(a)|L = l] 
-$$
-
-Put differently, conditioning on confounders ensures *balance* in their distribution across exposures.
-
-#### Identification assumption 3: Positivity
-
-Positivity is satisfied if there is a positive probability of receiving or not receiving exposure at all covariate levels. Expressed as:
-
-```{=tex}
-\begin{equation}
-0 < \Pr(A=a|L)<1, ~ \forall a \in A, ~ \forall a \in L
-\end{equation}
-```
-There are two types of positivity violation.
-
--   **Random non-positivity**: Occurs when the causal effect of a missing observation is presumed to exist. This violation is the only one verifiable by data. Here, we check and report it.
-
--   **Deterministic non-positivity**: Occurs when the causal effect is inconceivable. For example, the causal effect of hysterectomy in biological males violates deterministic non-positivity.
+3. **Positivity**: This refers to our expectation that there is always a chance for someone to receive or not receive the intervention, regardless of other factors. There are two ways this can be violated:
+   
+   - **Random non-positivity** happens when we think there's a causal effect for an observation that's missing, which we can check using the data.
+   
+   - **Deterministic non-positivity** occurs when a causal effect is unthinkable. For example, it's illogical to consider the causal effect of a procedure like a hysterectomy for biological males.
+   
+These assumptions help us build a fair and meaningful comparison between those who received the intervention and those who did not. The goal is to learn about the intervention's overall effect, even though we cannot directly observe what would have happened without it.
 
 ### Causal identification Strategy
 
-Effects must follow causes. To avoid the problems of reverse causation, we measured outcomes during the year following the exposure (NZAVS wave 2020). The causal graph presented in @fig-outcomewide-dag describes our method for confouding control. We follow @vanderweele2020 in adopting a modified disjunctive cause criterion whisch states:
+Effects must follow causes. To avoid the problems of reverse causation, we measured outcomes during the year following the exposure (NZAVS wave 2020). The causal graph presented in @fig-outcomewide-dag describes our method for confouding control. We follow @vanderweele2020 in adopting a modified disjunctive cause criterion which states:
 
-1.  **Identify all relevant factors**: first, find every covariates that can influence either the exposure (disaffiliation) or the outcomes (across the five domains), or both. These factors are any variable that can have an impact on the exposure or outcome, are that might be the effect of such a factor.
+1.  **Identify all relevant factors**: first, find every covariates that can influence either the exposure or the outcomes (across the five domains), or both. These factors are any variable that can have an impact on the exposure or outcome, are that might be the effect of such a factor.
 
 2.  **Remove instrumental variables**: next, take out any factors that are known to be 'instrumental variables'. These are factors that cause the exposure but do not affect the outcome. Including instrumental variables reduces efficiency.
 
@@ -4374,45 +6363,21 @@ To avoid bias, we must also handle missing data arising from non-response or pan
 
 ### Causal estimation
 
-To obtain causal contrasts we use doubly robust methods. These combine inverse probability of treatment weights (propensity scores) with regression stratification. There are two models at work in a doubly robust estimator.
+We use Doubly Robust Estimation to estimate the impact of increased "meaning of life" on people. This method combines two different statistical techniques and is resilient to errors: if one of them goes wrong, the other can still provide accurate results.
 
-We use a Doubly Robust Estimation method, which effectively combines the strengths of the IPTW and G-computation methods (see: [here](https://go-bayes.github.io/psych-434-2023/content/09-content.html#comprehensive-checklist-for-detailed-reporting-of-a-causal-inferenctial-study-e.g.-assessment-3-option-2). The technique utilises both the propensity score and the outcome model, making it "doubly robust." This implies that if either of these models is correctly specified, the estimation will not be biased.
+The first part of our process is calculating a "propensity score" for each individual. Think of it as the odds of someone experiencing a change in their "meaning of life" based on certain characteristics they have. To get this score, we use a statistical model that estimates these role of the characteristics.
 
-**Step 1** The first step is to estimate the propensity score. The propensity score, denoted as $e(L)$, is the conditional probability of the exposure $A = 1$ given the covariates $L$. The appropriate model to estimate this can be chosen based on the nature of the data and the exposure.
+Then, we assign a weight to each person in our study based on their propensity score. Those who have higher odds of experiencing a change get a higher weight and vice versa. This helps balance out our sample so that those with more or less propensity don't dominate our results.
 
-$$e = P(A = 1 | L) = f_A(L; \theta_A)$$
+Next, we use these weights to create another statistical model, but this time focusing on the outcome -- about 35  measures of well-being in five domains. This second model considers the exposure to the change, as well as the person's characteristics, and it takes into account the weight we assigned to each person earlier.
 
-In this equation, $f_A(L; \theta_A)$ is a function that estimates the probability of the exposure $A = 1$ given covariates $L$. Here, we use the `ebalance` method from the `clarify` package, which we have found to ensure good balance on the confounders (see fig below). We then calculate the weights for each individual, denoted as $v$, using the estimated propensity score:
+Then, we use this outcome model to predict what would happen if everyone in our sample had the same level of change in their "meaning of life", no matter what their actual level of change was. Predicting counterfactual outcomes is the core-engine of causal estimation. 
 
-$$
-v = 
-\begin{cases} 
-\frac{1}{e} & \text{if } A = 1 \\
-\frac{1}{1-e} & \text{if } A = 0 
-\end{cases}
-$$
+Finally, we estimate the overall effect of changing the "meaning of life" level by calculating the difference in these predicted outcomes between two specific levels of change. For our study, we looked at two scenarios: one where the "meaning of life" increases by one standard deviation from the average and another where it moves from the lower quartile to the third quartile on a seven-point scale.
 
-Here, $v$ depends on $A$, and is calculated as the inverse of the propensity score for exposed individuals and as the inverse of $1-e$ for unexposed individuals.
+We  used simulation methods to calculate our standard errors and confidence intervals, which is the margin of error in which we can confidently say our actual result lies [@greifer2023].
 
-**Step 2** The next step involves fitting a weighted outcome model. Using the weights computed from the estimated propensity scores, a model for the outcome $Y$, conditional on the exposure $A$, is fitted.
 
-$$ \hat{E}(Y|A, L; V) = f_Y(A, L ; \theta_Y, V) $$
-
-In this model, $f_Y$ is a function (in our case a weighted regression model) with parameters $θ_Y$. The weights $V$ are incorporated into the estimation process, affecting the contribution of each observation to the estimation of $θ_Y$, but they are not an additional variable in the model. Additionally, following @agnostic, we take the interaction of the exposure and baseline covariates when estimating our regression model. For binary outcomes we model the rate ratio using Poisson regression. Although binomial regression is acceptable when the outcome is rare (less than 10%), non-collapsability leads means that we cannot interpret results as marginal causal effects. For consistency we use the Poisson model with robust standard errors.
-
-**Step 3** The third step is to simulate the potential outcome for each individual under the hypothetical scenario where everyone is exposed to the intervention $A=a$, irrespective of their actual exposure level:
-
-$$\hat{E}(a) = \hat{E}[Y_i|A=a; L,\hat{\theta}_Y, v_i]$$
-
-This expectation is calculated for each individual $i$, with individual-specific weights $v_i$.
-
-**Step 4** Finally, we estimate the average causal effect. We compute the estimated expected value of the potential outcomes under each intervention level:
-
-$$\hat{\delta} = \hat{E}[Y(a)] - \hat{E}[Y(a')]$$
-
-The difference $\delta$ represents the average causal effect of changing the exposure from level $a'$ to level $a$.
-
-For standard errors and confidence intervals, we use simulation-based inference methods [@greifer2023].
 
 ### Baseline confounders, exposure, and outcome measures
 
@@ -4422,13 +6387,636 @@ For standard errors and confidence intervals, we use simulation-based inference 
 
 **SEE**: [@vanderweele2022]
 
-## Results
+
+## Results: the continuous model 
+
+This set of results reports the hypothetical effect of intervening on meaning of life by setting the population to average meaning of life and incleasing meaning-of life by +1 standard deviations. Outcomes are measured one-year after this hypothetical intervention. 
+
+## Results for the contiuous model (intervention of +1 SD from average meaning of life)
 
 ### Effects on health
 
+As indicate in @fig-results-health_con, the expected + one-year effect of
+
+```{r}
+#| label: fig-results-health_con
+#| fig-cap: "Causal effects of religious loss on reported physical health (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+# import models 
+mod_health_hlth_bmi_con <- readRDS( here::here(push_mods, "mod_health_hlth_bmi_con"))
+mod_health_alcohol_frequency_con <- readRDS( here::here(push_mods, "mod_health_alcohol_frequency_con"))
+mod_health_alcohol_intensity_con <- readRDS( here::here(push_mods, "mod_health_alcohol_intensity_con")) 
+mod_health_hours_exercise_con <- readRDS( here::here(push_mods, "mod_health_hours_exercise_con"))
+mod_health_sfhealth_your_health_con <- readRDS( here::here(push_mods, "mod_health_sfhealth_your_health_con"))
+mod_health_sfhealth_get_sick_easier_con <- readRDS( here::here(push_mods, "mod_health_sfhealth_get_sick_easier_con"))
+mod_health_sfhealth_expect_worse_health_con <- readRDS( here::here(push_mods, "mod_health_sfhealth_expect_worse_health_con"))
+mod_health_hlth_sleep_hours_con  <- readRDS( here::here(push_mods, "mod_health_hlth_sleep_hours_con"))
 
 
-As indicate in @fig-results-health, the expected + one-year effect of 
+tab_health_con <-
+  rbind(
+mod_health_hlth_bmi_con,
+mod_health_alcohol_frequency_con,
+mod_health_alcohol_intensity_con,
+mod_health_hours_exercise_con,
+mod_health_sfhealth_your_health_con,
+mod_health_sfhealth_get_sick_easier_con,
+mod_health_sfhealth_expect_worse_health_con,
+#mod_health_sfhealth_comp,
+mod_health_hlth_sleep_hours_con
+  )
+# inspect
+# tab_health
+
+group_tab_health_con <- group_tab(tab_health_con, type = "RD")
+#saveRDS(group_tab_health, here::here(push_mods, "group_tab_health")) # save on first anlaysis, no need after
+
+# print if needed 
+#group_tab_health
+
+# set title
+title = "ATE: +1 year causal effect from lowest to third quartile: meaning of life"
+subtitle_health = "Health outcomes"
+#
+group_plot_ate_health_con <- margot_plot(group_tab_health_con,    
+                           type = "RD",
+                           title = title, 
+                           subtitle = subtitle_health, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -1.5,
+                           x_lim_lo = -1.5,
+                           x_lim_hi =  .3)  
+
+#check
+group_plot_ate_health_con
+# 
+# ggsave(
+#   group_plot_ate_health_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_health_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_health_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+#  )
+```
+
+```{r}
+#| label: tbl-results-health_con
+#| tbl-cap: "Table of results for the health domain  (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+tab_health_con |> 
+  kbl(format="markdown")
+
+# interpret_table(group_tab_health, "causal_difference", "PATE")
+
+```
+
+@tbl-results-health_con presents the Population Average Treatment Effect (PATE) which is the expected difference in outcomes between treatment and control groups for the New Zealand population. We observed the following:
+
+<!-- ```{r} -->
+<!-- #| label: fig-results-health-rr_con -->
+<!-- #| fig-cap: "Causal effects of religious loss on smoking (risk ratio) (continuous exposure)" -->
+<!-- #| eval: true -->
+<!-- #| include: true -->
+<!-- #| echo: false -->
+<!-- # risk ratio plot -->
+<!-- # import -->
+<!-- mod_health_smoker_rr_con <- readRDS( here::here(push_mods, "mod_health_smoker_rr_con")) -->
+<!-- tab_health_rr_con <- rbind( -->
+<!--   mod_health_smoker_rr_con -->
+<!-- ) -->
+<!-- #check -->
+<!-- #tab_health_rr -->
+<!-- # make table -->
+<!-- group_tab_health_rr_con <- group_tab(tab_health_rr_con, type = "RR") -->
+<!-- # print table view -->
+<!-- #group_tab_health_rr -->
+<!-- group_plot_health_rr_con <- margot_plot( -->
+<!--   group_tab_health_rr_con, -->
+<!--   type = "RR", -->
+<!--   title = title, -->
+<!--   subtitle = subtitle_health, -->
+<!--   xlab = "(sd units)", -->
+<!--   ylab = "test", -->
+<!--   estimate_scale = 1, -->
+<!--   base_size = 11, -->
+<!--   text_size = 3, -->
+<!--   point_size = .5, -->
+<!--   title_size = 12, -->
+<!--   subtitle_size = 11, -->
+<!--   legend_text_size = 8, -->
+<!--   legend_title_size = 10, -->
+<!--   x_offset = -1, -->
+<!--   x_lim_lo = -1, -->
+<!--   x_lim_hi = 2.5 -->
+<!-- ) -->
+<!-- group_plot_health_rr_con -->
+<!-- # save after modelling -->
+<!-- # ggsave( -->
+<!-- #   group_plot_health_rr, -->
+<!-- #   path = here::here(here::here(push_mods, "group_plot_health_rr")), -->
+<!-- #   width = 6, -->
+<!-- #   height = 6, -->
+<!-- #   units = "in", -->
+<!-- #   filename = "group_plot_health_rr.png", -->
+<!-- #   device = 'png', -->
+<!-- #   limitsize = FALSE, -->
+<!-- #   dpi = 600 -->
+<!-- # ) -->
+<!-- # dev.off() -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- #| label: tbl-results-health-rr -->
+<!-- #| tbl-cap: "Table of results for smoking  (continuous exposure)" -->
+<!-- #| eval: true -->
+<!-- #| include: true -->
+<!-- #| echo: false -->
+<!-- tab_health_rr |>  -->
+<!--   kbl(format="markdown") -->
+<!-- #interpret_table(group_tab_health_rr, "causal_risk_ratio", "PATE") -->
+<!-- ``` -->
+
+### Effects on embodied well-being continuous model (intervention of +1 SD from average meaning of life)
+
+```{r}
+#| label: fig-results-embodied_con
+#| fig-cap: "Causal effects of religious loss on embodied well-being  (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+mod_embodied_hlth_fatigue_con <-
+  readRDS(here::here(push_mods, "mod_embodied_hlth_fatigue_con"))
+mod_embodied_rumination_con <-
+  readRDS(here::here(push_mods, "mod_embodied_rumination_con"))
+mod_embodied_kessler_depressed_con <-
+  readRDS(here::here(push_mods, "mod_embodied_kessler_depressed_con"))
+mod_embodied_kessler_effort_con <-
+  readRDS(here::here(push_mods, "mod_embodied_kessler_effort_con"))
+mod_embodied_kessler_hopeless_con <-
+  readRDS(here::here(push_mods, "mod_embodied_kessler_hopeless_con"))
+mod_embodied_kessler_nervous_con <-
+  readRDS(here::here(push_mods, "mod_embodied_kessler_nervous_con"))
+mod_embodied_kessler_restless_con <-
+  readRDS(here::here(push_mods, "mod_embodied_kessler_restless_con"))
+mod_embodied_kessler_worthless_con <-
+  readRDS(here::here(push_mods, "mod_embodied_kessler_worthless_con"))
+
+
+
+tab_embodied_con <-
+  rbind(
+mod_embodied_hlth_fatigue_con,
+mod_embodied_rumination_con,
+mod_embodied_kessler_depressed_con,
+mod_embodied_kessler_effort_con,
+mod_embodied_kessler_hopeless_con,
+mod_embodied_kessler_nervous_con,
+mod_embodied_kessler_restless_con,
+mod_embodied_kessler_worthless_con#
+#mod_embodied_kessler_6,
+#mod_embodied_kessler_6_depression,
+#mod_embodied_kessler_6_anxiety
+  )
+
+#tab_embodied
+group_tab_embodied_con <- group_tab(tab_embodied_con, type = "RD")
+# group_tab_embodied
+
+# save first attempt, not needed for making quarto docs
+# saveRDS(group_tab_embodied, here::here(push_mods, "group_tab_embodied"))
+#group_tab_embodied <- group_tab(tab_embodied, type = "RD")
+
+#check
+#title
+title = title
+# make subtitle
+subtitle_embodied = "Embodied outcomes"
+
+# make graph
+group_plot_ate_embodied_con <- margot_plot(group_tab_embodied_con,    
+                           type = "RD",
+                           title = title, 
+                           subtitle = subtitle_embodied, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -1.5,
+                           x_lim_lo = -1.5,
+                           x_lim_hi =  .3)  
+# view graph
+group_plot_ate_embodied_con
+
+# save after first modelling attempt 
+# ggsave(
+#   group_plot_ate_embodied_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_embodied_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_embodied_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+# dev.off()
+```
+
+```{r}
+#| label: tbl-results-embodied_con
+#| tbl-cap: "Table of results for the embodied well-being domain (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+tab_embodied_con |> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_embodied, "causal_difference", "PATE" )
+
+```
+
+@tbl-results-embodied_con presents the Population Average Treatment Effect (PATE) for the embodied domain.
+
+### Effects on practical well-being contiuous model (intervention of +1 SD from average meaning of life)
+
+```{r}
+#| label: fig-results-practical-well-being_con
+#| fig-cap: "Causal effects of religious loss on practical well-being  (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+
+## combo-table
+
+## if needed:
+mod_practical_sexual_satisfaction_con  <- readRDS( here::here(push_mods, "mod_practical_sexual_satisfaction_con"))
+mod_practical_perfectionism_con  <- readRDS( here::here(push_mods, "mod_practical_perfectionism_con"))
+mod_practical_bodysat_con  <- readRDS( here::here(push_mods, "mod_practical_bodysat_con"))
+mod_practical_vengeful_rumin_con  <- readRDS( here::here(push_mods, "mod_practical_vengeful_rumin_con"))
+mod_practical_power_self_nocontrol_con  <- readRDS( here::here(push_mods, "mod_practical_power_self_nocontrol_con"))
+mod_practical_power_others_control_con <- readRDS( here::here(push_mods, "mod_practical_power_others_control_con"))
+mod_practical_selfesteem_satself_con  <- readRDS( here::here(push_mods, "mod_practical_selfesteem_satself_con"))
+mod_practical_selfesteem_postiveself_con  <- readRDS( here::here(push_mods, "mod_practical_selfesteem_postiveself_con"))
+mod_practical_selfesteem_rfailure_con  <- readRDS( here::here(push_mods, "mod_practical_selfesteem_rfailure_con"))
+mod_practical_self_control_have_lots_con  <- readRDS( here::here(push_mods, "mod_practical_self_control_have_lots_con"))
+mod_practical_self_control_wish_more_r_con  <- readRDS( here::here(push_mods, "mod_practical_self_control_wish_more_r_con"))
+mod_practical_emotion_regulation_out_control_con  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_out_control_con"))
+mod_practical_emotion_regulation_hide_neg_emotions_con  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_hide_neg_emotions_con"))
+mod_practical_emotion_regulation_change_thinking_to_calm_con  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_change_thinking_to_calm_con"))
+#mod_practical_nzsei13_con  <- readRDS( here::here(push_mods, "mod_practical_nzsei13"))
+
+
+
+## rr
+# <- readRDS( here::here(push_mods, ""))
+
+tab_practical_con <-
+  rbind(
+  #  mod_practical_nzsei13,
+    mod_practical_sexual_satisfaction_con,
+    mod_practical_perfectionism_con,
+    mod_practical_bodysat_con,
+    mod_practical_vengeful_rumin_con,
+    mod_practical_power_self_nocontrol_con,
+    mod_practical_power_others_control_con,
+   # mod_practical_powerdependence,
+    mod_practical_selfesteem_satself_con,
+    mod_practical_selfesteem_postiveself_con,
+    mod_practical_selfesteem_rfailure_con,
+  #  mod_practical_selfesteem,
+    mod_practical_self_control_have_lots_con,
+    mod_practical_self_control_wish_more_r_con,
+   # mod_practical_self_control,
+    mod_practical_emotion_regulation_out_control_con,
+    mod_practical_emotion_regulation_hide_neg_emotions_con,
+    mod_practical_emotion_regulation_change_thinking_to_calm_con#,
+   # mod_practical_nzsei13_con
+   # mod_practical_emotion_regulation#,
+   # mod_practical_emp_work_life_balance
+   # mod_practical_perfectionism
+  )
+
+# tab_practical
+
+# make tab
+group_tab_practical_con <- group_tab(tab_practical_con, type = "RD")
+
+# view tab
+# group_tab_practical
+
+# save table once
+#saveRDS(group_tab_practical, here::here(push_mods, "group_tab_practical"))
+
+# check
+# title 
+#title
+title = title
+subtitle_practical = "Practical outcomes"
+
+group_plot_ate_practical_con <- margot_plot(group_tab_practical_con,    
+                           type = "RD",
+                           title = title, 
+                           subtitle = subtitle_practical, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 10,
+                           subtitle_size = 09,
+                           legend_text_size = 6,
+                           legend_title_size = 6,
+                           x_offset = -1.75,
+                           x_lim_lo = -1.75,
+                           x_lim_hi =  .3)  
+
+#check
+group_plot_ate_practical_con
+
+# save once
+ggsave(
+  group_plot_ate_practical_con,
+  path = here::here(here::here(push_mods, "group_plot_ate_practical_con")),
+  width = 6,
+  height = 6,
+  units = "in",
+  filename = "group_plot_ate_practical_con.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+```
+
+```{r}
+#| label: tbl-results-practical_con
+#| tbl-cap: "Table of results for the practical well-being domain  (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+tab_practical_con|> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_practical, "causal_difference", "PATE" )
+
+```
+
+@tbl-results-practical_con
+
+### Effects on reflective well-being continuous model (intervention of +1 SD from average meaning of life)
+
+```{r}
+#| label: fig-results-reflective-well-being_con
+#| fig-cap: "Causal effects of religious loss on reflective well-being  (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+mod_reflective_gratitude_con <- readRDS( here::here(push_mods, "mod_reflective_gratitude_con"))
+mod_reflective_pwi_health_con <- readRDS( here::here(push_mods, "mod_reflective_pwi_health_con"))
+mod_reflective_pwi_relationships_con <- readRDS( here::here(push_mods, "mod_reflective_pwi_relationships_con"))
+mod_reflective_pwi_security_con <- readRDS( here::here(push_mods, "mod_reflective_pwi_security_con"))
+mod_reflective_pwi_standardliving_con <- readRDS( here::here(push_mods, "mod_reflective_pwi_standardliving_con"))
+mod_reflective_lifesat_satlife_con <- readRDS( here::here(push_mods, "mod_reflective_lifesat_satlife_con"))
+mod_reflective_lifesat_ideal_con <- readRDS( here::here(push_mods, "mod_reflective_lifesat_ideal_con"))
+# mod_reflective_meaning_purpose_con <- readRDS( here::here(push_mods, "mod_reflective_meaning_purpose_con"))
+# mod_reflective_meaning_sense_con <- readRDS( here::here(push_mods, "mod_reflective_meaning_sense_con"))
+
+## combo-table
+tab_reflective_con <- rbind(
+  mod_reflective_gratitude_con,
+  mod_reflective_pwi_health_con,
+  mod_reflective_pwi_relationships_con,
+  mod_reflective_pwi_security_con,
+  mod_reflective_pwi_standardliving_con,
+  #mod_reflective_pwi,
+  mod_reflective_lifesat_satlife_con,
+  mod_reflective_lifesat_ideal_con#,
+#  mod_reflective_lifesat,
+ # mod_reflective_meaning_purpose,
+ # mod_reflective_meaning_sense#,
+ # mod_reflective_meaning
+)
+
+# table
+#tab_reflective
+
+# group tab
+group_tab_reflective_con <- group_tab(tab_reflective_con, type = "RD")
+#group_tab_reflective
+
+# save
+saveRDS(group_tab_reflective_con, here::here(push_mods, "group_tab_reflective_con"))
+
+#check
+#title
+
+# make subtitle
+subtitle_reflective = "Reflective outcomes"
+
+# make graph
+group_plot_ate_reflective_con <- margot_plot(group_tab_reflective_con,    
+                           type = "RD",
+                           title = title, 
+                           subtitle = subtitle_reflective, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -1.5,
+                           x_lim_lo = -1.5,
+                           x_lim_hi =  .3)  
+# view graph
+group_plot_ate_reflective_con
+
+# ggsave(
+#   group_plot_ate_reflective_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_reflective_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_reflective_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+```
+
+```{r}
+#| label: tbl-results-reflective_con
+#| tbl-cap: "Table of results for the reflective well-being domain  (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+tab_reflective_con|> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_reflective_con, "causal_difference", "PATE" )
+
+```
+
+@tbl-results-reflective_con
+
+### Effects social well-being continous model (intervention of +1 SD from average meaning of life)
+
+```{r}
+#| label: fig-results-social-wellbeing_con
+#| fig-cap: "Causal effects of religious loss on social well-being (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+# read back models
+## if needed:
+mod_social_permeability_individual_con  <-
+  readRDS(here::here(push_mods, "mod_social_permeability_individual_con"))
+mod_social_impermeability_group_con  <-
+  readRDS(here::here(push_mods, "mod_social_impermeability_group_con"))
+mod_social_neighbourhood_community_con  <-
+  readRDS(here::here(push_mods, "mod_social_neighbourhood_community_con"))
+mod_social_support_help_con <-
+  readRDS(here::here(push_mods, "mod_social_support_help_con"))
+mod_social_support_turnto_con <-
+  readRDS(here::here(push_mods, "mod_social_support_turnto_con"))
+mod_social_support_rnoguidance_con  <-
+  readRDS(here::here(push_mods, "mod_social_support_rnoguidance_con"))
+mod_social_belong_accept_con  <-
+  readRDS(here::here(push_mods, "mod_social_belong_accept_con"))
+mod_social_belong_routsider_con  <-
+  readRDS(here::here(push_mods, "mod_social_belong_routsider_con"))
+mod_social_belong_beliefs_con  <-
+  readRDS(here::here(push_mods, "mod_social_belong_beliefs_con"))
+# mod_social_charity_donate <-
+#   readRDS(here::here(push_mods, "mod_social_charity_donate"))
+
+
+# bind tables
+tab_social_con <- rbind(
+ # mod_social_belong,
+ # mod_social_support,
+  mod_social_permeability_individual_con,
+  mod_social_impermeability_group_con,
+  mod_social_neighbourhood_community_con,
+  mod_social_support_help_con,
+  mod_social_support_turnto_con,
+  mod_social_support_rnoguidance_con,
+  mod_social_belong_accept_con,
+  mod_social_belong_routsider_con,
+  mod_social_belong_beliefs_con#,
+ # mod_social_charity_donate
+)
+
+# make group table
+group_tab_social_con <- group_tab(tab_social_con, type = "RD")
+
+# view
+#group_tab_social
+
+# save
+#saveRDS(group_tab_social, here::here(push_mods, "group_tab_social"))
+
+# check title 
+#title
+title = title
+
+#check sub
+subtitle_social = "Social outcomes"
+group_plot_ate_social_con <- margot_plot(group_tab_social_con,    
+                           type = "RD",
+                           title = title, 
+                           subtitle = subtitle_social, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -2.5,
+                           x_lim_lo = -2.5,
+                           x_lim_hi =  .3)  
+
+#check
+group_plot_ate_social_con
+
+
+# save once
+# ggsave(
+#   group_plot_ate_social_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_social_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_social_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+```
+
+```{r}
+#| label: tbl-results-social-con
+#| tbl-cap: "Table of results for the reflective well-being domain (continuous exposure)"
+#| eval: true
+#| include: true
+#| echo: false
+
+tab_reflective_con|> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_social_con, "causal_difference", "PATE" )
+
+```
+
+@tbl-results-social_con
+
+
+
+## Results for the quartile models
+
+This set of results reports the hypothetical effect of intervening on meaning of life by setting the population to the lower quartile of meaning of life, and increasing meaning-of life to the third-quartile. Outcomes are measured one-year after this hypothetical intervention. These results may be useful in clinical applications.
+
+### Effects on health (first to third quartile intevention on meaning of life)
+
+As indicate in @fig-results-health, the expected + one-year effect of
 
 ```{r}
 #| label: fig-results-health
@@ -4469,7 +7057,7 @@ group_tab_health <- group_tab(tab_health, type = "RD")
 #group_tab_health
 
 # set title
-title = "ATE: +1 year causal effect from affiliate to disaffiliate"
+title = "ATE: +1 year causal effect from lowest to third quartile: meaning of life"
 subtitle_health = "Health outcomes"
 #
 group_plot_ate_health <- margot_plot(group_tab_health,    
@@ -4492,7 +7080,7 @@ group_plot_ate_health <- margot_plot(group_tab_health,
 
 #check
 group_plot_ate_health
-
+# 
 # ggsave(
 #   group_plot_ate_health,
 #   path = here::here(here::here(push_mods, "group_plot_ate_health")),
@@ -4503,7 +7091,7 @@ group_plot_ate_health
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
-# )
+#  )
 ```
 
 ```{r}
@@ -4520,8 +7108,7 @@ tab_health |>
 
 ```
 
-@tbl-results-health presents the Population Average Treatment Effect (PATE) represents the expected difference in outcomes between treatment and control groups for the New Zealand population. We observed the following:
-
+@tbl-results-health presents the Population Average Treatment Effect (PATE) which is the expected difference in outcomes between treatment and control groups for the New Zealand population. We observed the following:
 
 ```{r}
 #| label: fig-results-health-rr
@@ -4529,8 +7116,6 @@ tab_health |>
 #| eval: true
 #| include: true
 #| echo: false
-
-
 
 # risk ratio plot
 # import
@@ -4601,10 +7186,9 @@ tab_health_rr |>
 
 ```
 
-For the outcome 'Smoker y/n', the PATE causal contrast is 1.012. The confidence interval ranges from 0.787 to 1.284. The E-value for this outcome confirms the causal contrast unreliable.
+For the outcome 'Smoker y/n', the PATE causal contrast is XXX.  The confidence interval ranges from XXX to XXX The E-value for this outcome confirms the causal contrast unreliable.
 
-### Effects on embodied well-being
-
+### Effects on embodied well-being (first to third quartile intevention on meaning of life)
 ```{r}
 #| label: fig-results-embodied
 #| fig-cap: "Causal effects of religious loss on embodied well-being"
@@ -4656,7 +7240,7 @@ group_tab_embodied <- group_tab(tab_embodied, type = "RD")
 
 #check
 #title
-title = "ATE: +1 year causal effect from affiliate to disaffiliate"
+title = title
 # make subtitle
 subtitle_embodied = "Embodied outcomes"
 
@@ -4712,9 +7296,7 @@ tab_embodied |>
 
 @tbl-results-embodied presents the Population Average Treatment Effect (PATE) for the embodied domain.
 
-### Effects on practical well-being
-
-
+### Effects on practical well-being (first to third quartile intevention on meaning of life)
 
 ```{r}
 #| label: fig-results-practical-well-being
@@ -4741,7 +7323,7 @@ mod_practical_self_control_wish_more_r  <- readRDS( here::here(push_mods, "mod_p
 mod_practical_emotion_regulation_out_control  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_out_control"))
 mod_practical_emotion_regulation_hide_neg_emotions  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_hide_neg_emotions"))
 mod_practical_emotion_regulation_change_thinking_to_calm  <- readRDS( here::here(push_mods, "mod_practical_emotion_regulation_change_thinking_to_calm"))
-mod_practical_nzsei13  <- readRDS( here::here(push_mods, "mod_practical_nzsei13"))
+#mod_practical_nzsei13  <- readRDS( here::here(push_mods, "mod_practical_nzsei13"))
 
 
 
@@ -4767,8 +7349,8 @@ tab_practical <-
    # mod_practical_self_control,
     mod_practical_emotion_regulation_out_control,
     mod_practical_emotion_regulation_hide_neg_emotions,
-    mod_practical_emotion_regulation_change_thinking_to_calm,
-    mod_practical_nzsei13
+    mod_practical_emotion_regulation_change_thinking_to_calm#,
+   #  mod_practical_nzsei13
    # mod_practical_emotion_regulation#,
    # mod_practical_emp_work_life_balance
    # mod_practical_perfectionism
@@ -4788,7 +7370,7 @@ group_tab_practical <- group_tab(tab_practical, type = "RD")
 # check
 # title 
 #title
-title = "ATE: +1 year causal effect from affiliate to disaffiliate"
+title = title
 subtitle_practical = "Practical outcomes"
 
 group_plot_ate_practical <- margot_plot(group_tab_practical,    
@@ -4813,17 +7395,17 @@ group_plot_ate_practical <- margot_plot(group_tab_practical,
 group_plot_ate_practical
 
 # save once
-# ggsave(
-#   group_plot_ate_practical,
-#   path = here::here(here::here(push_mods, "group_plot_ate_practical")),
-#   width = 6,
-#   height = 6,
-#   units = "in",
-#   filename = "group_plot_ate_practical.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
+ggsave(
+  group_plot_ate_practical,
+  path = here::here(here::here(push_mods, "group_plot_ate_practical")),
+  width = 6,
+  height = 6,
+  units = "in",
+  filename = "group_plot_ate_practical.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 
 ```
 
@@ -4841,10 +7423,9 @@ tab_practical|>
 
 ```
 
-@tbl-results-practical 
+@tbl-results-practical
 
-
-### Effects on reflective well-being
+### Effects on reflective well-being (first to third quartile intevention on meaning of life)
 
 ```{r}
 #| label: fig-results-reflective-well-being
@@ -4862,8 +7443,8 @@ mod_reflective_pwi_security <- readRDS( here::here(push_mods, "mod_reflective_pw
 mod_reflective_pwi_standardliving <- readRDS( here::here(push_mods, "mod_reflective_pwi_standardliving"))
 mod_reflective_lifesat_satlife <- readRDS( here::here(push_mods, "mod_reflective_lifesat_satlife"))
 mod_reflective_lifesat_ideal <- readRDS( here::here(push_mods, "mod_reflective_lifesat_ideal"))
-mod_reflective_meaning_purpose <- readRDS( here::here(push_mods, "mod_reflective_meaning_purpose"))
-mod_reflective_meaning_sense <- readRDS( here::here(push_mods, "mod_reflective_meaning_sense"))
+# mod_reflective_meaning_purpose <- readRDS( here::here(push_mods, "mod_reflective_meaning_purpose"))
+# mod_reflective_meaning_sense <- readRDS( here::here(push_mods, "mod_reflective_meaning_sense"))
 
 ## combo-table
 tab_reflective <- rbind(
@@ -4874,10 +7455,10 @@ tab_reflective <- rbind(
   mod_reflective_pwi_standardliving,
   #mod_reflective_pwi,
   mod_reflective_lifesat_satlife,
-  mod_reflective_lifesat_ideal,
+  mod_reflective_lifesat_ideal#,
 #  mod_reflective_lifesat,
-  mod_reflective_meaning_purpose,
-  mod_reflective_meaning_sense#,
+ # mod_reflective_meaning_purpose,
+ # mod_reflective_meaning_sense#,
  # mod_reflective_meaning
 )
 
@@ -4918,7 +7499,6 @@ group_plot_ate_reflective <- margot_plot(group_tab_reflective,
 # view graph
 group_plot_ate_reflective
 
-# save
 # ggsave(
 #   group_plot_ate_reflective,
 #   path = here::here(here::here(push_mods, "group_plot_ate_reflective")),
@@ -4931,7 +7511,6 @@ group_plot_ate_reflective
 #   dpi = 600
 # )
 ```
-
 
 ```{r}
 #| label: tbl-results-reflective
@@ -4949,10 +7528,7 @@ tab_reflective|>
 
 @tbl-results-reflective
 
-
-
-### Effects social well-being
-
+### Effects social well-being (first to third quartile intevention on meaning of life)
 
 ```{r}
 #| label: fig-results-social-wellbeing
@@ -5012,7 +7588,7 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 
 # check title 
 #title
-title = "ATE: +1 year causal effect from affiliate to disaffiliate"
+title = title
 
 #check sub
 subtitle_social = "Social outcomes"
@@ -5052,7 +7628,6 @@ group_plot_ate_social
 # )
 ```
 
-
 ```{r}
 #| label: tbl-results-social
 #| tbl-cap: "Table of results for the reflective well-being domain"
@@ -5069,116 +7644,40 @@ tab_reflective|>
 
 @tbl-results-social
 
-
-
-<!-- ```{r} -->
-<!-- #| label: fig-models-social-risk-ratio -->
-<!-- #| fig-cap: "Causal effects of religious loss on volunteering." -->
-<!-- #| eval: true -->
-<!-- #| include: true -->
-<!-- #| echo: false -->
-
-<!-- # read risk model -->
-<!-- mod_social_volunteers_rr  <- readRDS( here::here(push_mods, "mod_social_volunteers_rr")) -->
-
-<!-- # risk ratio table -->
-<!-- tab_social_rr <- rbind( -->
-<!--   mod_social_volunteers_rr -->
-<!-- ) -->
-
-<!-- # check -->
-<!-- # tab_social_rr -->
-
-<!-- # make table -->
-<!-- group_tab_social_rr <- group_tab(tab_social_rr, type = "RR") -->
-
-<!-- # view -->
-<!-- #group_tab_social_rr -->
-<!-- #title -->
-<!-- title = "ATE: +1 year causal effect from affiliate to disaffiliate" -->
-<!-- subtitle_social = "Social outcomes" -->
-
-<!-- group_plot_social_rr <- margot_plot( -->
-<!--   group_tab_social_rr, -->
-<!--   type = "RR", -->
-<!--   title = title, -->
-<!--   subtitle = subtitle_social, -->
-<!--   xlab = "(sd units)", -->
-<!--   ylab = "test", -->
-<!--   estimate_scale = 1, -->
-<!--   base_size = 11, -->
-<!--   text_size = 3, -->
-<!--   point_size = .5, -->
-<!--   title_size = 12, -->
-<!--   subtitle_size = 11, -->
-<!--   legend_text_size = 8, -->
-<!--   legend_title_size = 10, -->
-<!--   x_offset = -1.5, -->
-<!--   x_lim_lo = -1.5, -->
-<!--   x_lim_hi = 2.5 -->
-<!-- ) -->
-
-<!-- # ggsave( -->
-<!-- #   group_plot_social_rr, -->
-<!-- #   path = here::here(here::here(push_mods, "group_plot_social_rr")), -->
-<!-- #   width = 6, -->
-<!-- #   height = 6, -->
-<!-- #   units = "in", -->
-<!-- #   filename = "group_plot_social_rr.png", -->
-<!-- #   device = 'png', -->
-<!-- #   limitsize = FALSE, -->
-<!-- #   dpi = 600 -->
-<!-- # ) -->
-<!-- ``` -->
-
-
-
-
 ## Discussion
 
-Here, we combined rigorous methods from causal epidemiology with national scale time-series data to estimate the causal effects of religious disaffiliation on multidimensional well-being. We used doubly robust methods that combine propensity score weights with regression stratification. By controlling for measures of all outcomes at baseline we reduce the probability of unmeasured confounding. Because this cannot be ensured, we report E-values, a sensitivity analysis that clarifies the "worst case" scenario for an unmeasured confounder to explain away the results.
+Here, we combined rigorous methods from causal epidemiology with national scale time-series data to estimate the causal effects of meaning of life on multidimensional well-being. We used doubly robust methods that combine propensity score weights with regression stratification. By controlling for measures of all outcomes at baseline we reduce the probability of unmeasured confounding. Because this cannot be ensured, we report E-values, a sensitivity analysis that clarifies the "worst case" scenario for an unmeasured confounder to explain away the results.
 
-**Health domain**: The expected +1 year effect of religious disaffiliation is to increase both the average intensity and frequency of alcohol consumption. We do not find reliable results on other health domains.
+**Health domain**: The expected +1 year effect...
 
-**Embodied well-being domains**: We do not find reliable evidence for a +1 year effect of religious disaffiliation on embodied will being (i.e. distress, fatigue)
+Note it is interesting that meaning of life should be causally associated with increasing belief that I will get sick.  This suggests (realism?)
 
-**Practical well-being**: The expected +1 year effect of religious disaffiliation is to diminish wishes for more self control. That is good. However the one-year effect of disaffiliation is to increase vengeful rumination. That is not good.
+**Embodied well-being domains**:The expected +1 year effect...
 
-**Reflective well-being**: The expected +1 year effect of religious disaffiliation is increase life satisfaction. That is good. However the one-year effect of disaffiliation is to decrease a sense of purpose in life. That is not good.
+**Practical well-being**: The expected +1 year effect...
 
-**Social well-being-being**: Disaffiliation is expected to cause reduction in charitable giving and volunteering (consistent \[cite a different study\]). However we do not find that disaffiliation as such reduces other aspects of social well-being.
+**Reflective well-being**: The expected +1 year effect ...
+
+**Social well-being-being**: The expected +1 year effect ...
+
 
 ### Generalisability and Transportability
 
--   We can generalise to the religious population of New Zealand. Whether results transport elsewhere is unclear.
 
 ### Assumptions and Limitations
 
-1.  Consistency...
-2.  Positivity...
-3.  Exhangeability...
-
-Also
-
-1.  Measurement of religious change -- Markov models show less
-2.  Measurement error
-3.  Loss to follow up attrition (requires modelling assumptions.)
 
 ### Theoretical Relevance
 
 This study is important both for its methods and findings.
 
-1.  The bar for causality in this study very high.
-2.  It would generally be unexpected that in a country such as New Zealand, which is a highly secular, a change in one's religious affiliation would induce measurable effects on people within only one-year.
+1.  The bar for causality in this study very high...
 
 ### Future Research
 
-1.  We did not compare religious disaffiliates to people who are secular. Loss of religion suggests a loss of charity. However, secular people might be less charitable still. Future research...
-2.  Previous research shows differences in these comparison groups [@vantongeren2020; @sibley2012a].
 
 ### Real-world Implications
 
-In practical terms, the real-world implications of the findings, are ...
 
 ### Ethics Approval Details
 
@@ -5226,13 +7725,13 @@ We asked participants' gender in an open-ended question: "what is your gender?" 
 
 Participants were asked "Please estimate your total household income (before tax) for the year XXXX". To stablise this indicator, we first took the natural log of the response + 1, and then centred and standardised the log-transformed indicator.
 
-#### Job Security (waves: 1-3,4-7,9-15)
+<!-- #### Job Security (waves: 1-3,4-7,9-15) -->
 
-Participants indicated their feeling of job security by answering "How secure do you feel in your current job?" on a scale from 1 (not secure) to 7 (very secure).
+<!-- Participants indicated their feeling of job security by answering "How secure do you feel in your current job?" on a scale from 1 (not secure) to 7 (very secure). -->
 
-#### Parent (waves: 5-15)
+<!-- #### Parent (waves: 5-15) -->
 
-Participants were asked "If you are a parent, what is the birth date of your eldest child?" or "If you are a parent, in which year was your eldest child born?" (waves: 10-15). Parents were coded as 1, while the others were coded as 0.
+<!-- Participants were asked "If you are a parent, what is the birth date of your eldest child?" or "If you are a parent, in which year was your eldest child born?" (waves: 10-15). Parents were coded as 1, while the others were coded as 0. -->
 
 #### Number of Children (waves: 1-3, 4-15)
 
@@ -5331,9 +7830,21 @@ iv. I think that I am entitled to more respect than the average person is.
 
 ### Exposure variable
 
-#### Religious Identification (waves: 1-15)
+#### Meaning of Life (waves: 10-15)
 
-If participants answered *yes* to "Do you identify with a religion and/or spiritual group? we asked"How important is your religion to how you see yourself?" (1 = Not important, 7 = Very important). Those participants who were not religious were imputed a score of "1".
+We assessed participants' levels of life meaning using two items from @steger_meaning_2006:
+
+```         
+1.  My life has a clear sense of purpose;
+2.  I have a good sense of what makes my life meaningful.
+```
+
+Participants indicated their agreement with these items (1 = Strongly Disagree to 7 = Strongly Agree).
+
+
+<!-- #### Religious Identification (waves: 1-15) -->
+
+<!-- If participants answered *yes* to "Do you identify with a religion and/or spiritual group? we asked"How important is your religion to how you see yourself?" (1 = Not important, 7 = Very important). Those participants who were not religious were imputed a score of "1". -->
 
 ### Health well-being outcomes
 
@@ -5468,17 +7979,6 @@ We assessed participants' vengeful rumination using three items, respectively ad
 
 ### Reflective well-being
 
-#### Meaning of Life (waves: 10-15)
-
-We assessed participants' levels of life meaning using two items from @steger_meaning_2006:
-
-```         
-1.  My life has a clear sense of purpose;
-2.  I have a good sense of what makes my life meaningful.
-```
-
-Participants indicated their agreement with these items (1 = Strongly Disagree to 7 = Strongly Agree).
-
 #### Satisfaction with Life (waves: 1-3,4-15)
 
 We measured life satisfaction with two items adapted from the Satisfaction with Life Scale [@diener1985]:
@@ -5557,9 +8057,9 @@ Participants indicated the extent to which they agree with those items (1 = Stro
 
 The second item was negatively-worded, so we reversely recorded the responses to this item.
 
-#### Volunteers (waves: 1, 4-15)
+<!-- #### Volunteers (waves: 1, 4-15) -->
 
-Participants were asked,"Please estimate how many hours you spent doing each of the following things last week" and responded to an item ("voluntary/charitable work"), from [@sibley2011].
+<!-- Participants were asked,"Please estimate how many hours you spent doing each of the following things last week" and responded to an item ("voluntary/charitable work"), from [@sibley2011]. -->
 
 {{< pagebreak >}}
 
@@ -5569,7 +8069,7 @@ APPENDIX B. Sample {.appendix}
 #| label: table-baseline
 #| echo: false
 #| include: true
-#| eval: true
+#| eval: false
 
 prep_reflective <- readRDS(here::here(push_mods, "prep_reflective"))
 rm(dt_tab_p)
@@ -5628,7 +8128,7 @@ The baseline covariates used in this study are detailed in Appendix A. These inc
 
 3.  **Method for determining the set of covariates**
 
-Covariates were selected based on their likelihood of association with the exposure and the outcome, or with an unmeasured confounder. Despite the comprehensive list of confounders, and the inclusion of the interaction of the exposure an all confounders in the outcome model, we did not consider expanding it given the effective sample size of about 1500 people in the disaffiliation sample.
+Covariates were selected based on their likelihood of association with the exposure and the outcome, or with an unmeasured confounder. 
 
 4.  **Inclusion of polynomial or interaction terms**
 
@@ -5664,15 +8164,14 @@ These are reported in the main results.
 
 11. **Inclusion of covariates in outcome model**
 
-All those used in the exposure (propensity score model), interacted with the exposure (religious disaffiliation). Additionally, we weighted the regression using the final output of the `WeightIt` and `MatchThem`\`package [@greifer2023a; @greifer2023b; @pishgar2021], which multiplies propensity scores x census weights.
+All those used in the exposure (propensity score model), interacted with the exposure. Additionally, we weighted the regression using the final output of the `WeightIt` and `MatchThem`\`package [@greifer2023a; @greifer2023b; @pishgar2021], which multiplies propensity scores x census weights.
 
-@fig-results-health-propensity-scores shows strong evidence for imbalance at baseline in the confounders for the health domain. We restore balance using entropy weighting.
 
 ```{r}
 #| label: fig-results-health-propensity-scores
 #| fig-cap: "Love plot for propensity score analysis: health outcomes."
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5694,13 +8193,13 @@ love_plot_match_ebal_health + theme(
 
 ```
 
-@fig-results-health-propensity-dis shows propensity score weights in the unexposed group (remained religiously affiliated) and the exposed group (disasffiated)
+
 
 ```{r}
 #| label: fig-results-health-propensity-dis
 #| fig-cap: "Distribution of propensity scores by condition: health domain"
 #| out-width: 80%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5719,32 +8218,14 @@ plot( summary( match_ebal_health ) )
 
 **Summary of propensity score weights: health well-being domain**
 
-| **Group** | **Weight Range (Min - Max)** | **Top 5 Extreme Weights**         | **Coefficient of Variation** | **Unweighted Sample Size** | **Weighted Sample Size** |
-|------------|------------|------------|------------|------------|------------|
-| 0         | 0.722 - 1.552                | 1.445, 1.489, 1.521, 1.522, 1.552 | 0.084                        | 10623                      | 10547.770                |
-| 1         | 0.123 - 4.651                | 3.412, 3.441, 3.512, 3.703, 4.651 | 0.524                        | 1977                       | 1551.890                 |
-
-: Summary of propensity scores: health well-being domain. {#tbl-summary-propensity-health}
-
-As illustrated in @tbl-summary-propensity-health, the propensity score weights generated through the `WeightIt` package in R [@greifer2023] for the health well-being domain demonstrate a similar trend to those in the practical well-being domain. For both groups (Group 0 and Group 1), the five most extreme weights are reported.
-
-The Coefficient of Variation (CoV) for each group remains under the threshold of 2, indicating satisfactory weight variation. The CoV for Group 0 (0.084) is lower than that of Group 1 (0.524), signifying less variation in weights for Group 0.
-
-The effective sample sizes, which are critical indicators of the remaining information in the weighted sample, are reported for each group. These sizes being close to the original sample size by condition, as in the practical well-being domain, imply that the propensity score analysis for the health well-being domain maintains a considerable amount of the original data.
-
-We investigated balance using the `Cobalt` package. The balance summary of the health domain, all the Mean Difference Adjusted values fall below our user-specified threshold of 0.05, indicating a well-balanced matching for this sample across all variables.
-
-For the continuous variable for political orientation, the variance ratios are notably higher than most others. The minimum, mean, and maximum adjusted variance ratios are 0.9089, 0.9189, and 0.9336 respectively. This suggests that the variance between the treatment and control groups for political orientation is somewhat more substantial than for most other variables. However in absolute terms the variance ratio is modest.
-
 ### Propensity score analysis for embodied well-being
 
-@fig-love-embodied shows strong evidence for imbalance at baseline in the confounders for the embodied well-being domain. We again restore balance using entropy weighting.
 
 ```{r}
 #| label: fig-love-embodied
 #| fig-cap: "Love plot for propensity score analysis: embodied domain"
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5764,13 +8245,12 @@ love_plot_match_ebal_embodied + theme(
 #cobalt::bal.tab(match_ebal_embodied, stats = c("m", "v"), binary = "std", thresholds = c(m = .05))
 ```
 
-@fig-propensity-dis-embodied shows propensity score weights in the unexposed group (remained religiously affiliated) and the exposed group (disasffiated) in the embodied condition.
 
 ```{r}
 #| label: fig-propensity-dis-embodied
 #| fig-cap: "Distribution of propensity scores by condition: embodied domain"
 #| out-width: 80%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5790,36 +8270,15 @@ plot(summary_match_ebal_embodied)
 
 **Summary of propensity score weights: embodied well-being domain**
 
-| **Group** | **Weight Range (Min - Max)** | **Top 5 Extreme Weights**         | **Coefficient of Variation** | **Unweighted Sample Size** | **Weighted Sample Size** |
-|------------|------------|------------|------------|------------|------------|
-| 0         | 0.767 - 1.338                | 1.266, 1.267, 1.294, 1.334, 1.338 | 0.072                        | 10623                      | 10568.710                |
-| 1         | 0.218 - 3.734                | 3.309, 3.413, 3.543, 3.559, 3.734 | 0.446                        | 1977                       | 1648.660                 |
-
-: Summary of propensity scores: embodied well-being domain. {#tbl-summary-propensity-embodied}
-
-Table @tbl-summary-propensity-embodied presents the propensity score weights for the embodied well-being domain, as generated by the `WeightIt` package in R [@greifer2023]. The weight range for each group (Group 0 and Group 1) is provided, along with the five most extreme weights in each group.
-
-The Coefficient of Variation (CoV) for each group is well below the threshold of 2, suggesting adequate weight variation. The CoV is lower for Group 0 (0.072), indicating less variation in weights compared to Group 1 (0.446).
-
-The effective sample sizes, which represent the amount of information remaining in the weighted sample, are reported for both groups. These sizes are close to the original sample size per condition, implying that a substantial amount of the original data is retained in the propensity score analysis for the embodied well-being domain.
-
-From the cobalt balance summary for the embodied wellbeing domain, we observe that all Mean Difference Adjusted values fall within the set threshold of 0.05, indicating an effective match across all variables.
-
-We find a higher variance ratios for a few continuous variables. Particularly, `t0_household_inc_log_z` (household income, log transformed) has a minimum adjusted variance ratio of 1.2653, a mean of 1.3351, and a maximum of 1.4413. This suggests a substantial difference in the distribution of this variable between the control and treatment groups. Other notable variables include `t0_kessler_nervous_z` (Kessler scale measure for nervousness) with variance ratios from 1.0664 to 1.0787, and `t0_conscientiousness_z` (Conscientiousness scale) with variance ratios ranging from 1.0506 to 1.0647.
-
-These higher variance ratios suggest that the matching procedure may not have balanced these specific variables as efficiently as others.
-
-The average effective sample sizes across all imputations for the unadjusted group is 10623, and for the adjusted group it's 10568.65. For the group with id 1, the values are 1977 for the unadjusted and 1646.84 for the adjusted group.
-
 ### Propensity score analysis for practical well-being
 
-@fig-love-practical shows strong evidence for imbalance at baseline in the confounders for the practical well-being domain. We again restore balance using entropy weighting.
+
 
 ```{r}
 #| label: fig-love-practical
 #| fig-cap: "Love plot for propensity score analysis: practical domain"
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5847,7 +8306,7 @@ love_plot_match_ebal_practical + theme(
 #| label: fig-propensity-dis-practical
 #| fig-cap: "Distribution of propensity scores by condition: practical domain"
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5867,40 +8326,11 @@ plot(summary_match_ebal_practical)
 
 **Summary of propensity score weights: Practical well-being domain**
 
-| **Group** | **Weight Range (Min - Max)** | **Top 5 Extreme Weights**         | **Coefficient of Variation** | **Unweighted Sample Size** | **Weighted Sample Size** |
-|------------|------------|------------|------------|------------|------------|
-| 0         | 0.722 - 1.552                | 1.445, 1.489, 1.521, 1.522, 1.552 | 0.084                        | 10623                      | 10547.770                |
-| 1         | 0.123 - 4.651                | 3.412, 3.441, 3.512, 3.703, 4.651 | 0.524                        | 1977                       | 1551.890                 |
-
-: Summary of propensity scores: practical domain. {#tbl-summary-propensity-practical}
-
-@tbl-summary-propensity-practical summarises the propensity score weights generated through the `WeightIt` package in R [@greifer2023]. The weight range for each group (Group 0 and Group 1) show the five most extreme weights in each group.
-
-The Coefficient of Variation (CoV) for each group is lower for Group 0 (0.084), indicating less variation in weights as compared to Group 1 (0.524). Both of these CoVs are below the threshold of 2.
-
-The effective sample sizes are important indicators of the amount of information remaining in the weighted sample, that these sizes are again close to the original sample size by condition.
-
-From the cobalt balance summary for the practical well-being domain, we observe that all Mean Difference Adjusted values fall within the set threshold of 0.05, indicating an effective match across all variables.
-
-There is a higher variance ratio for the `t0_household_inc_log_z` (household income, log transformed) variable, with minimum, mean, and maximum adjusted variance ratios of 1.2710, 1.3091, and 1.3832, respectively. This indicates stronger differences in the distribution of this variable between the control and treatment groups. Another notable variable is `t0_conscientiousness_z` (Conscientiousness scale) with variance ratios ranging from 1.0443 to 1.0517.
-
-These higher variance ratios suggest that the matching procedure may not have balanced these specific variables as effectively as others.
-
-We also observe variables such as `t0_emotion_regulation_change_thinking_to_calm_z` that have a higher variance ratio, ranging from 1.0512 to 1.0715, indicating potential imbalances between the treatment and control groups for these variables.
-
-The average effective sample sizes across all imputations for the unadjusted group is 10623, while for the adjusted group it's 10562.18. For the group with id 1, the values are 1977 for the unadjusted and 1602.26 for the adjusted group.
-
-It should be noted that despite some variables showing higher variance ratios, the propensity score matching method has overall produced a reasonable match across most variables, ensuring comparability between the treatment and control groups.
-
-### Propensity score analysis for reflective well-being
-
-@fig-love-reflective shows strong evidence for imbalance at baseline in the confounders for the reflective well-being domain. We again restore balance using entropy weighting.
-
 ```{r}
 #| label: fig-love-reflective
 #| fig-cap: "Love plot for propensity score analysis: reflective domain"
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5921,13 +8351,11 @@ love_plot_match_ebal_reflective + theme(
 #cobalt::bal.tab(match_reflective_ebal, stats = c("m", "v"), binary = "std", thresholds = c(m = .05))
 ```
 
-@fig-propensity-dis-reflective shows propensity score weights in the unexposed group (remained religiously affiliated) and the exposed group (disasffiliated) in the reflective domain.
-
 ```{r}
 #| label: fig-propensity-dis-reflective
 #| fig-cap: "Distribution of propensity scores by condition: reflective domain"
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -5947,38 +8375,15 @@ plot(summary_match_ebal_reflective)
 
 **Summary of propensity score weights: reflective well-being domain**
 
-| **Group** | **Weight Range (Min - Max)** | **Top 5 Extreme Weights**         | **Coefficient of Variation** | **Unweighted Sample Size** | **Weighted Sample Size** |
-|------------|------------|------------|------------|------------|------------|
-| 0         | 0.736 - 1.333                | 1.316, 1.318, 1.319, 1.327, 1.333 | 0.079                        | 10623                      | 10557.770                |
-| 1         | 0.133 - 4.251                | 3.416, 3.717, 3.952, 4.084, 4.251 | 0.507                        | 1977                       | 1572.640                 |
-
-: Summary of propensity scores: reflective well-being domain. {#tbl-summary-propensity-reflective}
-
-The propensity score weights for the reflective well-being domain, as generated using the `WeightIt` package in R [@greifer2023], are summarized in @tbl-summary-propensity-reflective. For each group (Group 0 and Group 1), the weight range and the five most extreme weights are reported.
-
-The Coefficient of Variation (CoV) for each group is below the threshold of 2, indicating satisfactory weight variation. The CoV for Group 0 (0.079) is lower than that of Group 1 (0.507), suggesting less variation in weights for Group 0.
-
-The effective sample sizes, which are indicative of the amount of information retained in the weighted sample, are reported for both groups. The closeness of these sizes to the original sample size per condition suggests that the propensity score analysis for the reflective well-being domain maintains a substantial amount of the original data.
-
-From the cobalt balance summary for the practical well-being domain, we observe that all Mean Difference Adjusted values for the given variables fall within the set threshold of 0.05, indicating an effective match across all variables.
-
-There is a higher variance ratio for the `t0_household_inc_log_z` (household income, log transformed) variable, with minimum, mean, and maximum adjusted variance ratios of 1.3100, 1.3365, and 1.3771, respectively. This indicates stronger differences in the distribution of this variable between the control and treatment groups. Another notable variable is `t0_conscientiousness_z` (Conscientiousness scale) with variance ratios ranging from 1.0661 to 1.0754.
-
-These higher variance ratios suggest that the matching procedure may not have balanced these specific variables as effectively as others.
-
-The average effective sample sizes across all imputations for the unadjusted group is 10623, while for the adjusted group it's 10556.45. For the group with id 1, the values are 1977 for the unadjusted and 1561.71 for the adjusted group.
-
-It should be noted that despite some variables showing higher variance ratios, the propensity score matching method has overall produced a reasonable match across most variables, ensuring comparability between the treatment and control groups.
 
 ### Propensity score analysis for social well-being
 
-@fig-love-social shows strong evidence for imbalance at baseline in the confounders for the social well-being domain. We again restore balance using entropy weighting.
 
 ```{r}
 #| label: fig-love-social
 #| fig-cap: "Love plot for propensity score analysis: social domain"
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -6001,13 +8406,12 @@ love_plot_match_ebal_social + theme(
 
 ```
 
-@fig-propensity-dis-social shows propensity score weights in the unexposed group (remained religiously affiliated) and the exposed group (disasffiliated) in the practical domain.
 
 ```{r}
 #| label: fig-propensity-dis-social
 #| fig-cap: "Distribution of propensity scores by condition: practical domain"
 #| out-width: 100%
-#| eval: true
+#| eval: false
 #| include: true
 #| echo: false
 
@@ -6026,31 +8430,6 @@ plot(summary_match_ebal_social)
 ```
 
 **Summary of propensity score weights: social well-being domain**
-
-| **Group** | **Weight Range (Min - Max)** | **Top 5 Extreme Weights**         | **Coefficient of Variation** | **Unweighted Sample Size** | **Weighted Sample Size** |
-|------------|------------|------------|------------|------------|------------|
-| 0         | 0.635 - 1.384                | 1.338, 1.344, 1.346, 1.367, 1.384 | 0.092                        | 10623                      | 10533.970                |
-| 1         | 0.109 - 7.830                | 5.951, 6.593, 7.317, 7.567, 7.830 | 0.696                        | 1977                       | 1332.110                 |
-
-: Summary of propensity scores: social well-being domain. {#tbl-summary-propensity-social}
-
-Table @tbl-summary-propensity-social summarizes the propensity score weights for the social well-being domain, generated using the `WeightIt` package in R [@greifer2023]. For each group (Group 0 and Group 1), it provides the weight range and the five most extreme weights.
-
-The Coefficient of Variation (CoV) for each group is beneath the threshold of 2, denoting an acceptable weight variation. The CoV for Group 0 (0.092) is lower than that for Group 1 (0.696), indicating less variation in weights within Group 0.
-
-The effective sample sizes are indicators of the quantity of information retained in the weighted sample. These sizes are close to the original sample size for each group, suggesting that the propensity score analysis for the social well-being domain maintains a substantial portion of the original data.
-
-From the cobalt balance summary for the social well-being domain, we observe that all Mean Difference Adjusted values fall within the set threshold of 0.05, indicating an effective match across all variables.
-
-The variable `t0_household_inc_log_z` (household income, log transformed) presents a higher variance ratio, with minimum, mean, and maximum adjusted variance ratios of 1.7122, 1.8119, and 2.1191 respectively, indicating stronger differences in the distribution of this variable between the control and treatment groups. Another notable variable is `t0_conscientiousness_z` (Conscientiousness scale) with variance ratios ranging from 1.0457 to 1.0604.
-
-Moreover, there are other continuous variables with a higher variance ratio like `t0_permeability_individual_z` with a variance ratio ranging from 1.0997 to 1.1324, and `t0_hours_charity_z` with variance ratios ranging from 1.0735 to 1.2059.
-
-These higher variance ratios suggest that the matching procedure may not have balanced these specific variables as effectively as others.
-
-The average effective sample sizes across all imputations for the unadjusted group is 10623, while for the adjusted group it's 10533.21. For the group with id 1, the values are 1977 for the unadjusted and 1327.73 for the adjusted group.
-
-It should be noted that despite some variables showing higher variance ratios, the propensity score matching method has overall produced a reasonable match across most variables, ensuring comparability between the treatment and control groups.
 
 {{< pagebreak >}}
 
