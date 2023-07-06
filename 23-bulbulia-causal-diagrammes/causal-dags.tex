@@ -190,7 +190,7 @@
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, enhanced, frame hidden, sharp corners, breakable, interior hidden]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, breakable, sharp corners, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, interior hidden, frame hidden]}{\end{tcolorbox}}\fi
 
 \listoffigures
 \listoftables
@@ -1593,26 +1593,53 @@ regimes'':
   providing it at the second one.
 \end{enumerate}
 
-There are six causal contrasts that we might compute.\footnote{We
-  compute the number of possible combinations of contrasts by
+There are six causal contrasts that we might compute for the four fixed
+regimes, presented in \textbf{?@tbl-regimes}.\footnote{We compute the
+  number of possible combinations of contrasts by
   \(C(n, r) = \frac{n!}{(n-r)! \cdot r!}\)}
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  \textbf{Always treat} vs.~\textbf{Never treat}
-\item
-  \textbf{Always treat} vs.~\textbf{Treat once first}
-\item
-  \textbf{Always treat} vs.~\textbf{Treat once second}
-\item
-  \textbf{Never treat} vs.~\textbf{Treat once first}
-\item
-  \textbf{Never treat} vs.~\textbf{Treat once second}
-\item
-  \textbf{Treat once first} vs.~\textbf{Treat once second}
-\end{enumerate}
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1395}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3023}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.5581}}@{}}
+\caption{Table describes four fixed treatment regimes and six causal
+contrasts in time series data where the exposure may
+vary.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Counterfactual Outcome
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Counterfactual Outcome
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Regime & Always treat & Y(1,1) \\
+Regime & Never treat & Y(0,0) \\
+Regime & Treat once first & Y(1,0) \\
+Regime & Treat once second & Y(0,1) \\
+Contrast & Always treat vs.~Never treat & E{[}Y(1,1) - Y(0,0){]} \\
+Contrast & Always treat vs.~Treat once first & E{[}Y(1,1) - Y(1,0){]} \\
+Contrast & Always treat vs.~Treat once second & E{[}Y(1,1) -
+Y(0,1){]} \\
+Contrast & Never treat vs.~Treat once first & E{[}Y(0,0) - Y(1,0){]} \\
+Contrast & Never treat vs.~Treat once second & E{[}Y(0,0) - Y(0,1){]} \\
+Contrast & Treat once first vs.~Treat once second & E{[}Y(1,0) -
+Y(0,1){]} \\
+\end{longtable}
 
 We might also consider treatment to be a function of the previous
 outcome. For example, we might \textbf{Treat once first} and then
@@ -1631,27 +1658,26 @@ problem of time-varying confounding. Unlike traditional causal mediation
 analysis, the sequence of treatement regimes that we might consider is
 indefinitely long.
 
-Temporally organised causal diagrammes help us to discover the problems
-with traditional multi-level regression analysis and structural equation
-modelling. Suppose we are interested in the question of whether beliefs
-in big Gods affect social complexity.
+Temporally organised causal diagrammes again help us to discover the
+problems with traditional multi-level regression analysis and structural
+equation modelling. Suppose we are interested in the question of whether
+beliefs in big Gods affect social complexity.
 
-First consider fixed regimes Suppose we have well-defined concept of
+First consider fixed regimes. Suppose we have well-defined concept of
 social complexity and excellent measurements over time. Suppose we want
 to compare the effects of beliefs on big Gods on Social complexity using
 historical data measured over two centuries. Our question is whether the
 introduction and persistence of such beliefs differs from having no such
 beliefs. The treatment strategies are: ``always believe in big Gods''
 versus ``never believe in big Gods'' on the level of social complexity.
-The a causal diagram illustrates two time points in our study the study.
-
-Here, \(A_{tx}\) represents the cultural belief in ``big Gods'' at time
-\(x\), and \(Y_{tx}\) is the outcome, social complexity, at time \(x\).
-Economic trade, denoted as \(L_{tx}\), is a time-varying confounder
-because it varies over time and confounds the effect of \(A\) on \(Y\)
-at several time points \(x\). To complete our causal diagramme we
-include an unmeasured confounder \(U\), such as oral traditions, which
-might influence both the belief in big Gods and social complexity.
+Consider Figure~\ref{fig-dag-9}. Here, \(A_{tx}\) represents the
+cultural belief in ``Big Gods'' at time \(x\), and \(Y_{tx}\) is the
+outcome, social complexity, at time \(x\). Economic trade, denoted as
+\(L_{tx}\), is a time-varying confounder because it varies over time and
+confounds the effect of \(A\) on \(Y\) at several time points \(x\). To
+complete our causal diagramme we include an unmeasured confounder \(U\),
+such as oral traditions, which might influence both the belief in big
+Gods and social complexity.
 
 We know that the level of economic trade at time \(0\), \(L_{t0}\),
 influences the belief in ``big Gods'' at time \(1\), \(A_{t1}\). We
@@ -1661,9 +1687,10 @@ economic trade, \(L_{t(2)}\). This means that we need to add an arrow
 from \(A_{t1}\) to \(L_{t(2)}\). This causal graph represents a feedback
 process between the time-varying exposure \(A\) and the time-varying
 confounder \(L\). This is the simplest graph with exposure-confounder
-feedback. In real world setting there could be arrows. However, our DAG
-however need show the minimum number of arrows to exhibit the problem of
-exposure-confounder feedback.
+feedback. In real world setting there would be more arrows. However, our
+DAG need only show the minimum number of arrows to exhibit the problem
+of exposure-confounder feedback. (We should not clutter our causal
+graphs: only provide the essential details.)
 
 What happens if we condition on the time-varying confounder \(L_{t3}\)?
 Two things occur. First, we block all the backdoor paths between the
@@ -1683,11 +1710,11 @@ time-varying exposures belong to a class of methods called
 of these methods in the health sciences {[}CITE TMLE papers.{]} However,
 such methods are not to my knowledge widely employed by cultural
 evolutionary researchers. As mentioned in Part 1., we cannot attempt
-causal inference without satisifying the three fundamental assumptions.
-Also as mentioned, such assumptions would appear too strict for topics
-in cultural evolution pertianing to the historical past. In any event,
-it is critical to understand that the specialist tools such as G-methods
-are required to address many causal questions because
+causal inference without satisifying the three fundamental assumptions
+of causal inference. Also as mentioned, such assumptions would appear
+too strict for topics in cultural evolution pertaining to the historical
+past. For now, it is critical to understand that specialist tools such
+as G-methods are required to address many causal questions because
 treatment-confounder feedbacks means that we cannot identify many causal
 effects from manifest data.
 
@@ -1783,20 +1810,44 @@ greater donations of money and time.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
+\tightlist
 \item
   \textbf{Define the exposure(s)}
+\end{enumerate}
+
+For example: ``Self-reported monthly church attendance''
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
 \item
   \textbf{Define the outcomes(s)}
+\end{enumerate}
+
+For example: ``Charitable giving as measured by self-reports'';
+``Volunteering as measured by self-reports.''
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
 \item
   \textbf{Identify all measurable common causes of the exposure and the
-  outcome} first, find every covariates that can influence either the
-  exposure or the outcomes (across the five domains), or both. These
-  factors are any variable that can have an impact on the exposure or
-  outcome, are that might be the effect of such a factor. Note that we
-  remove instrumental variables**: next, take out any factors that are
-  known to be `instrumental variables'. These are factors that cause the
-  exposure but do not affect the outcome. Including instrumental
-  variables reduces efficiency.
+  outcome}
+\end{enumerate}
+
+First, find every covariates that can influence either the exposure or
+the outcomes (across the five domains), or both. These factors are any
+variable that can have an impact on the exposure or outcome, are that
+might be the effect of such a factor. Take out any factors that are
+known to be `instrumental variables'. These are factors that cause the
+exposure but do not affect the outcome. Including instrumental variables
+reduces efficiency.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{3}
 \item
   \textbf{Collect data for proxy variables of unmeasured common causes}:
   if there are any unmeasured factors that influence both the exposure
@@ -1804,34 +1855,42 @@ greater donations of money and time.
   should try to include a proxy for these. A proxy is an effect of the
   variable (Cite DAGS above\ldots)
 \item
-  \textbf{Collect data for the exposure(s) at baseline}: Controlling for
-  prior exposure assesses the effects of ``incident exposure'' rather
-  than ``prevalent exposure'' - and is a critical step in causal
-  inference(\protect\hyperlink{ref-danaei2012}{Danaei, Tavakkoli, and
-  Hernán 2012}; \protect\hyperlink{ref-hernan2023}{Hernan and Robins
-  2023}). By including prior exposure in the analysis, we can more
-  effectively emulate a controlled trial. This approach not only helps
-  interpret the effect of exposure changes but also strengthens
-  confounding control. It aids in avoiding reverse causation and
-  managing other forms of unmeasured confounding. This setup ensures
-  that any unmeasured confounder would have to influence both the
-  outcome and initial exposure, irrespective of previous exposure
-  levels, to explain an observed exposure-outcome association.
-\item
-  \textbf{Collect data for the outcome(s) at baseline}: It is also vital
-  to control for the outcome measured at baseline -- the `baseline
-  outcome'. This tactic aims to rule out reverse causation by ensuring
-  that the cause-effect relationship follows the right temporal order.
-  Even though it does not eliminate the possibility of reverse
-  causation, controlling for the baseline outcome helps mitigate its
-  effects. Hence, along with a rich set of covariates, the baseline
-  outcome should be included in the covariate set to make the
-  confounding control assumption as plausible as possible. The baseline
-  measurement is often strongest confounder affecting both the exposure
-  and subsequent outcome. (For a detailed account of confounding control
-  in three-wave panel designs see Tyler J. VanderWeele, Mathur, and Chen
-  (\protect\hyperlink{ref-vanderweele2020}{2020}))
+  \textbf{Collect data for the exposure(s) at baseline}
 \end{enumerate}
+
+Controlling for prior exposure assesses the effects of ``incident
+exposure'' rather than ``prevalent exposure'' - and is a critical step
+in causal inference(\protect\hyperlink{ref-danaei2012}{Danaei,
+Tavakkoli, and Hernán 2012}; \protect\hyperlink{ref-hernan2023}{Hernan
+and Robins 2023}). By including prior exposure in the analysis, we can
+more effectively emulate a controlled trial. This approach not only
+helps interpret the effect of exposure changes but also strengthens
+confounding control. It aids in avoiding reverse causation and managing
+other forms of unmeasured confounding. This setup ensures that any
+unmeasured confounder would have to influence both the outcome and
+initial exposure, irrespective of previous exposure levels, to explain
+an observed exposure-outcome association.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  \textbf{Collect data for the outcome(s) at baseline}:
+\end{enumerate}
+
+It is also vital to control for the outcome measured at baseline -- the
+`baseline outcome'. This tactic aims to rule out reverse causation by
+ensuring that the cause-effect relationship follows the right temporal
+order. Even though it does not eliminate the possibility of reverse
+causation, controlling for the baseline outcome helps mitigate its
+effects. Hence, along with a rich set of covariates, the baseline
+outcome should be included in the covariate set to make the confounding
+control assumption as plausible as possible. The baseline measurement is
+often strongest confounder affecting both the exposure and subsequent
+outcome. (For a detailed account of confounding control in three-wave
+panel designs see Tyler J. VanderWeele, Mathur, and Chen
+(\protect\hyperlink{ref-vanderweele2020}{2020}))
 
 \begin{figure}
 
