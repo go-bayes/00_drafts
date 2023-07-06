@@ -190,7 +190,7 @@
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, frame hidden, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, interior hidden, enhanced, breakable]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, enhanced, frame hidden, sharp corners, breakable, interior hidden]}{\end{tcolorbox}}\fi
 
 \listoffigures
 \listoftables
@@ -1378,21 +1378,22 @@ of interest when the effect of one exposure on an outcome depends on the
 level of another exposure. For example, the effect of a drug (exposure
 A) on recovery time from a disease (outcome Y) might depend on whether
 or not the patient is also receiving physical therapy (exposure B).
-Causal evidence for causal interaction on the difference scale would be
-present if:
+Evidence for causal interaction on the difference scale would be present
+if:
 
-\[\bigg(\underbrace{E[Y(1,1)]}_{\text{joint exposure}} - \underbrace{E[Y(0,0)]}_{\text{neither exposed}}\bigg) - \bigg(\underbrace{E[Y(1,0)]}_{\text{only A exposed}} - \underbrace{E[Y(0,0)]}_{\text{neither exposed}}- \underbrace{E[Y(0,1)]}_{\text{only B exposed}} - \underbrace{E[Y(0,0)]}_{\text{neither exposed}} \bigg) > 0 \]
+\[\bigg(\underbrace{E[Y(1,1)]}_{\text{joint exposure}} - \underbrace{E[Y(0,0)]}_{\text{neither exposed}}\bigg) - \bigg(\underbrace{E[Y(1,0)]}_{\text{only A exposed}} - \underbrace{E[Y(0,0)]}_{\text{neither exposed}}- \underbrace{E[Y(0,1)]}_{\text{only B exposed}} - \underbrace{E[Y(0,0)]}_{\text{neither exposed}} \bigg) \neq 0 \]
 
 Which simplifies to:
 
-\[ \underbrace{E[Y(1,1)]}_{\text{joint exposure}} - \underbrace{E[Y(1,0)]}_{\text{only A exposed}} - \underbrace{E[Y(0,1)]}_{\text{only B exposed}} + \underbrace{E[Y(0,0)]}_{\text{neither exposed}} > 0 \]
+\[ \underbrace{E[Y(1,1)]}_{\text{joint exposure}} - \underbrace{E[Y(1,0)]}_{\text{only A exposed}} - \underbrace{E[Y(0,1)]}_{\text{only B exposed}} + \underbrace{E[Y(0,0)]}_{\text{neither exposed}} \neq 0 \]
 
-If the quantity on the left hand side is less than zero there is
-evidence a sub-attitive effect, and if this quantity is
-indistinguishable from zero there is no evidence for
-interaction.\footnote{Note that causal effect of interactions often
-  differ on the ratio scale. This can have important policy
-  implications. See {[}Cite vanderweele and knol{]}.}
+If the quantity on the left hand side is greater than zero there is
+evidence for positive interaction; if it is less than zero there is
+evidence a sub-attitive effect; if this quantity is indistinguishable
+from zero there is no evidence for interaction.\footnote{Note that
+  causal effect of interactions often differ on the ratio scale. This
+  can have important policy implications. See {[}Cite vanderweele and
+  knol{]}.}
 
 When drawing a causal diagram, we represent the two exposures as
 separate nodes and draw edges from them to the outcome, as showin in
@@ -1414,7 +1415,8 @@ Y(a,b) and there is evidence for additive or subadditive interaction if
 E{[}Y(1,1) - Y(0,1) - Y(1,0) + Y(0,0){]} ≠ 0. If we cannot conceptualise
 B as a variable upon which there can be intervention, then the
 interaction is better conceived as effect modification (see next
-figure).}
+figure). Important: DAGs are not parametric so to express interaction do
+not draw a path into another path}
 
 \end{figure}
 
@@ -1442,7 +1444,9 @@ measured confounders, within strata of co-variate G:
 \[Y(a) \coprod A | L, G\]
 
 Note that here there is only one counterfactual outcome. This outcome is
-modified by within strata of subgroup G and confuonders L.
+modified by within strata of subgroup G and confuonders L. Note, we do
+not imagine that G is modified. Again, \textbf{DAGs are not parametric
+so to express interaction do \emph{not} draw a path into another path}
 
 \begin{figure}
 
@@ -1459,71 +1463,103 @@ effect-modification.}
 \subsection{Advice for causal
 mediation}\label{advice-for-causal-mediation}}
 
-The assumptions for causal mediation are strict.
+The assumptions for causal mediation are strict. Chronologically
+conscienscious DAGs can help us to spot both the promise, and perils, of
+attempting causal mediation.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
   \textbf{No unmeasured exposure-outcome confounders given \(L\)}
 
-  This assumption is denoted by \(Y(a,m) \coprod A | L\). It implies
-  that when we control for the covariates \(L\), there are no unmeasured
-  confounders that influence both the exposure \(A\) and the outcome
-  \(Y\). For example, if we are studying the effect of a drug (exposure)
-  on recovery time from a disease (outcome), and age and gender are our
-  covariates \(L\), this assumption would mean that there are no other
-  factors, not accounted for in \(L\), that influence both the decision
-  to take the drug and the recovery time.
+  This assumption is denoted by \(Y(a,m) \coprod A | L1\). It implies
+  that when we control for the covariate set \(L1\), there are no
+  additional unmeasured confounders that influence both the cultural
+  beliefs in Big Gods \(A\) and the social complexity \(Y\). For
+  instance, if we are studying the effect of cultural beliefs in Big
+  Gods (exposure) on social complexity (outcome), and geographic
+  location and historical context are our covariates \(L\), this
+  assumption would mean including measures of these confounders is
+  sufficient to account for the subsequent association betwen A and Y.
+  The relevant confounding path is coloured brown in
+  Figure~\ref{fig-dag-mediation-assumptions}.
 \item
   \textbf{No unmeasured mediator-outcome confounders given \(L\)}
 
-  This assumption is denoted by \(Y(a,m) \coprod M | L\). It implies
-  that when we control for the covariates \(L\), there are no unmeasured
-  confounders that influence both the mediator \(M\) and the outcome
-  \(Y\). For instance, if we are studying the effect of exercise
-  (exposure) on weight loss (outcome) mediated by calorie intake
-  (mediator), and age and gender are our covariates \(L\), this
-  assumption would mean that there are no other factors, not accounted
-  for in \(L\), that influence both the calorie intake and the weight
-  loss.
+  This assumption is denoted by \(Y(a,m) \coprod M | L2\). It implies
+  that when we control for the covariates \(L2\), there are no
+  unmeasured confounders that influence both political authority \(M\)
+  and social complexity \(Y\). For instance, suppose that trade networks
+  affect both political authority and social complexity. If this is so,
+  then we must condition on trade networks to block the otherwise open
+  path linking our mediator and outcome. And we must assume no other
+  confounders of the mediator outcome path. This confounding path is
+  coloured blue in Figure~\ref{fig-dag-mediation-assumptions}.
 \item
   \textbf{No unmeasured exposure-mediator confounders given \(L\)}
 
-  This assumption is denoted by \(M(a) \coprod A | L\). It implies that
+  This assumption is denoted by \(M(a) \coprod A | L3\). It implies that
   when we control for the covariates \(L\), there are no unmeasured
-  confounders that influence both the exposure \(A\) and the mediator
-  \(M\). Using the previous example, this assumption would mean that
-  there are no other factors, not accounted for in \(L\), that influence
-  both the decision to exercise and the calorie intake.
+  confounders that influence both the cultural beliefs in Big Gods \(A\)
+  and political authority \(M\). Say technology to build large ritual
+  theaters, may influence both beliefs in Big Gods and the level of
+  political authority. Suppose further that we have indicators of this
+  technology measured prior to the emergence of Big Gods. Call these
+  indicators \(L3\). To estimate unbiased natural mediated effects, we
+  must assume that conditioning on \(L3\) is sufficient to block the
+  backdoor path betwen the exposure and the mediator. This confounding
+  path is coloured green in Figure~\ref{fig-dag-mediation-assumptions}.
 \item
   \textbf{No mediator-outcome confounder affected by the exposure (no
   red arrow)}
 \end{enumerate}
 
 This assumption is denoted by \(Y(a,m) \coprod M^{a*} | L\). It implies
-that there are no variables that confound the relationship between the
-mediator and the outcome that are affected by the exposure. For example,
-if we are studying the effect of education (exposure) on income
-(outcome) mediated by job type (mediator), this assumption would mean
-that there are no factors that influence both job type and income that
-are affected by the level of education.
-
-These assumptions are fundamental for the identification of causal
-mediation effects. If these assumptions are violated, the estimates of
-the mediation effect can be biased. Importantly, these assumptions
-cannot be fully tested with observed data. They require substantive
-knowledge about the underlying causal process. Note that when assumption
-4 is violated, natural direct and indirect effects are not identified in
-the data. {[}Cite Tyler here{]}
+that there are no variables that confound the relationship between
+political authority and social complexity that are affected by the
+cultural beliefs in Big Gods. For example, if we are studying the effect
+of cultural beliefs in Big Gods (exposure) on social complexity
+(outcome) mediated by political authority (mediator), this assumption
+would mean that there are no factors, like trade networks (\(L2\)), that
+influence both political authority and social complexity that are
+affected by the cultural belief in Big Gods. This confounding path is
+coloured red in Figure~\ref{fig-dag-mediation-assumptions}. Note this is
+a very stringent assumption to make. If the exposure affects a
+confounder of the mediator and outcome then we face the following
+dilemma. If we do not condition on the this confounder the backdoor path
+between the mediator and the outcome will remain open. So we condition.
+However, in doing so, we partially block the path between the exposure
+and the mediator. This leads to bias. Hence, the natural direct and
+indirect effects cannot be identified from the manifest data. This
+remains so even if we were to possess perfect measures of the relevant
+confounders. Again, the conditions for counterfactual data science are
+more stringent than those for manifest data science. However, we can fix
+the mediator to certain levels and investigate controlled direct and
+indirect effects. Such questions may be relevant to science and policy.
+As an example, If trade were disrupted by war, what would be the causal
+effects of Big Gods on Social Complexity? Such questions require the
+application of G-methods, which the following section considers in
+greater detail. For now, we have seen how chronologically ordered causal
+graphs clarify the demands on mediation analysis for addressing causal
+questions.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediation-assuptions-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediation-assumptions-1.pdf}
 
 }
 
-\caption{\label{fig-dag-mediation-assuptions}Assumptions for mediation
-analysis}
+\caption{\label{fig-dag-mediation-assumptions}Assumptions for mediation
+analysis. The brown edges denote the path for common causes of the
+exposure and coutcome. To block this path we must condition on L1. The
+green edges denote the path for common causes of the exposure and
+mediator. To block this path we must condition on L3. The blue edges
+denote the path for common causes of the mediator and outcome. To block
+this path we must condition on L2. The red path denotes the effect of
+the exposure on the confounder of the mediator and outcome. If any such
+path exists then we cannot obtain natural direct and indirect effects.
+Conditioning on L2 is necessary to prevent mediator outcome confounding
+but doing so blocks the effect of the exposure on the mediator.}
 
 \end{figure}
 
@@ -1638,7 +1674,22 @@ are now open. For example, the path \(A_{t1}, L_{t2}, U, Y_{t(4)}\),
 which was previous closed is opened because the time varying confounder
 is the common effect of \(A_{t1}\) and \(U\). Conditioning opens the
 path \(A_{t1}, L_{t2}, U, Y_{3}\). Therefore we must avoid conditioning
-on the time varying confounder. Damned either way.
+on the time varying confounder. Damned either way. As with mediation,
+however, it may be possible to simulate counterfactual contrasts by
+fixing exposures to specific levels, and asking: ``What would happen if
+\ldots?'' Models for assessing the causal effects of time-fixed and
+time-varying exposures belong to a class of methods called
+``G-methods.'' There has been tremendous development in the applications
+of these methods in the health sciences {[}CITE TMLE papers.{]} However,
+such methods are not to my knowledge widely employed by cultural
+evolutionary researchers. As mentioned in Part 1., we cannot attempt
+causal inference without satisifying the three fundamental assumptions.
+Also as mentioned, such assumptions would appear too strict for topics
+in cultural evolution pertianing to the historical past. In any event,
+it is critical to understand that the specialist tools such as G-methods
+are required to address many causal questions because
+treatment-confounder feedbacks means that we cannot identify many causal
+effects from manifest data.
 
 \begin{figure}
 
@@ -1649,11 +1700,13 @@ on the time varying confounder. Damned either way.
 \caption{\label{fig-dag-9}Exposure confounder feedback is a problem for
 time-series models. If we do not condition on L\_t2, a backdoor path is
 open from A\_t3 to Y\_t4. However, if conditioning on L\_t2 introduces
-collider bias, opening a path, coloured red, between A\_t2 and Y\_t4.
+collider bias, opening a path, coloured in red, between A\_t2 and Y\_t4.
 Here, we may not use conventional methods to estimate the effects of
 multiple exposures. Instead, at best, we may only simulate controlled
 effects using G-methods. Multi-level models will eliminate bias.
-Currently, outside of epidemiology, G-methods are rarely used.}
+Currently, outside of epidemiology, G-methods are rarely used. Causal
+graphs are useful for clarifying the damned either way confounding
+control strategies that lead traditional methods to fail.}
 
 \end{figure}
 
@@ -1670,10 +1723,12 @@ confounder).
 \caption{\label{fig-dag-time-vary-common-cause-A1-l1}Exposure confounder
 feedback is a problem for time-series models. Here, the problem arises
 from an unmeasured variable (U2) that affects both the exposure A at
-time 1 and the counfounder L at time 2. The red line shows the back door
+time 1 and the counfounder L at time 2. The red paths show the back door
 path that is opened when we condition on the L at time 2. Again, this
 problem cannot be addressed with regression-based methods. In this
-setting we may only use simulation based G-methods.}
+setting, to address causal questions, we may only use simulation based
+G-methods. Causal graphs are useful in spotting problems for identifying
+causal effects in manifest data (even when perfectly measured).}
 
 \end{figure}
 
@@ -1691,54 +1746,40 @@ bad news is that nearly traditional regresion based methods cannot
 address this problem. Causality is not identified from longtidinal data
 with feedback. The good news is that we may obtain controlled effect
 estimates using G-methods. However the scope and application of these
-methods is beyond the scope of this tutorial. Relatedly, to assess the
-identification of controlled effect estimates benefits from graphical
-methods such as ``single world intervention graphs'' or ``SWIGS.'' SWIGS
-represent counterfactual outcomes on the graph. However, in their
-general form, SWIGS are templates and not causal graphs. Their
-application, too, is beyond the scope of this tutorial see (CITE
-RICHARDSON ETC.)
+methods is beyond the scope of this tutorial.\footnote{Relatedly, to
+  assess the identification of controlled effect estimates benefits from
+  graphical methods such as ``single world intervention graphs'' or
+  ``SWIGS.'' SWIGS represent counterfactual outcomes on the graph.
+  However, in their general form, SWIGS are templates and not causal
+  graphs. Their application, too, is beyond the scope of this tutorial
+  see (CITE RICHARDSON ETC.)}
 
 \hypertarget{part-3.-applications}{%
 \section{Part 3. Applications}\label{part-3.-applications}}
 
-I will lay my cards on the table. I am not sanguine about the prospects
-for causal estimation from historical data of the kind that cultural
-evolutionary researchers presently collect and model. This is not to say
-that we should avoid collecting and modelling historical data. Nor is to
-to claim that we cannot obtain causal understanding from doing so. It is
-rather to claim that such data are not clearly amenable to causal effect
-estimation. This is because to estimate causal effects we most contrast
-the world as it has been, with the world as it might have been. For many
-of the largest questions, the data are too improvished. Where the data
-are not improrished, confounder-treatment feedback restricts causal
-effect estimation to controlled effects. We have seen that even with a
-simple mediation model, in which the exposure affects the confounders of
-the mediator/outcome path, natural direct and indirect effects are not
-identified.
+To estimate causal effects we must contrast the world as it has been,
+with the world as it might have been. For many big questions
+confounder-treatment feedback lead to identification problems. Causal
+diagrammes clarify the pressure points. I next turn to three-wave
+designs for estimating the total causal effects. Such designs have
+applications for a broad class of cultural evolutionary questions, and
+may be especially useful for evolutionary anthropologists who wish to
+collect time-series data in the present to address causality.
 
-Such pessimism does not extend to evolutionary anthropologists motivated
-to collect time-series data in the present, and over successive years,
-through panel designs that follow the same individuals over-time. In
-this section, I describe the propects of a three-wave panel design for
-estimating causality. Temporally ordered causal diagrammes will help us
-to discover the promise of such designs for adderessing causal
-questions.
+In this section, I use causal diagrammes to clarify how a three-wave
+panel design may be useful. Again, temporally ordered causal diagrammes
+will help us to discover how to collect and model longitudinal data to
+address causal questions.
 
 \hypertarget{on-the-benefits-of-three-wave-designs.}{%
 \subsection{On the benefits of three wave
 designs.}\label{on-the-benefits-of-three-wave-designs.}}
 
-Evolutionary anthropologist may better address causal question by
-collecting data in the present for future use. The minimum number of
-``waves'' for data collection in casual inference is three. The
-intervals at which data are collected need to be considered carefully.
-For now, we consider a design in which data collection occures over
-three years (one wave = one year). Typically researchers will want to
-address multiple questions. Again, much thinking will need to go into
-data collection. For now, suppose we are interested in the effect of
-religious beliefs and behaviours on cooperative outcomes. How might we
-estimate causal effects.
+Supposes we are interested in the causal effects of religious service
+attendance on cooperative outcomes such as charitable giving and
+volunteering. When comparing groups that attend service with those that
+do not we notice that religious service attendance is associated with
+greater donations of money and time.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1751,18 +1792,17 @@ estimate causal effects.
   outcome} first, find every covariates that can influence either the
   exposure or the outcomes (across the five domains), or both. These
   factors are any variable that can have an impact on the exposure or
-  outcome, are that might be the effect of such a factor.
-\end{enumerate}
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\setcounter{enumi}{3}
+  outcome, are that might be the effect of such a factor. Note that we
+  remove instrumental variables**: next, take out any factors that are
+  known to be `instrumental variables'. These are factors that cause the
+  exposure but do not affect the outcome. Including instrumental
+  variables reduces efficiency.
 \item
   \textbf{Collect data for proxy variables of unmeasured common causes}:
   if there are any unmeasured factors that influence both the exposure
   and outcome, but we don not have direct measurements for them, we
   should try to include a proxy for these. A proxy is an effect of the
-  variable.
+  variable (Cite DAGS above\ldots)
 \item
   \textbf{Collect data for the exposure(s) at baseline}: Controlling for
   prior exposure assesses the effects of ``incident exposure'' rather
