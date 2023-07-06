@@ -1,6 +1,6 @@
 ---
-title: "Causal effects of belief in God on cooperation"
-subtitle: "An outcomewide approa"
+title: "Church and Religous Affiliation: Chicken/Egg"
+subtitle: "An outcomewide approach"
 abstract: |
   Counterfactual Prediction
 author: 
@@ -9,13 +9,6 @@ author:
     orcid_id: 0000-0002-5861-2056
     email: joseph.bulbulia@vuw.ac.nz
     corresponding: yes
-  - name: Don E Davis
-    affiliation: Georgia State University
-    orcid_id: 0000-0003-3169-6576 
-  - name: Ken Rice
-    affiliation: Georgia State University 
-  - name: Geoffrey Troughton
-    affiliation: Victoria University of Wellington
   - name: Chris G. Sibley
     affiliation: School of Psychology, University of Auckland
     orcid_id: 0000-0002-4064-8800
@@ -73,19 +66,22 @@ pull_path <-
 # for saving models. # set path fo your computer
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-coop-god"
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-church-cause-rel"
   )
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
-
+dat$religion_identification_level
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 ```
 
-]
+
+
+
+
 ```{r}
 #| label: clean data
 #| echo: false
@@ -223,7 +219,7 @@ dat_long <- dat |>
     # "began_relationship",
     # "religion_religious",
     # Do you identify with a religion and/or spiritual group?
-   # "religion_identification_level",
+    "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
     "religion_church_binary2",
@@ -293,7 +289,7 @@ dat_long <- dat |>
     # Received help and support - money
     # family
     # friends
-    # others in my community
+    # others in my community. 
   )|> 
   dplyr::rename(sample_weights = w_gend_age_euro) |>
   dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
@@ -303,12 +299,12 @@ dat_long <- dat |>
                   (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                 !is.na(religion_believe_god), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
+                                 !is.na(religion_religious), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(
     wave == 2019 &
       year_measured == 1 &
-      !is.na(religion_believe_god),#  Inclusion criteria
+      !is.na(religion_religious),#  Inclusion criteria
     1,
     0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
@@ -326,9 +322,43 @@ dat_long <- dat |>
   select(-c("h_19", "k_19", "h_18", "k_18")) |>
   data.frame()
 
+
+dt_18_religious_18 <- dt_18_19 %>% 
+  filter(wave == 2018 & religion_religious == 1) 
+
+n_unique(dt_18_religious_18$id)
+
+table1::table1(data= dat_long, ~as.factor( religion_religious) |wave)
+
+# get unique identifiers of these individuals (replace `id` with your actual id variable)
+religious_ids_2018 <- dt_18_religious_18$id
+
+#  select data of these individuals from the entire dataset
+dt_18_19_religious <- dt_18_19 %>%
+  filter(id %in% religious_ids_2018) %>%  
+  mutate(
+    religion_church_coarsen = cut(
+      religion_church2,
+      breaks = c(-Inf, 0, 1, 3.99, Inf),
+      labels = c("0", "(0_1]", "(1_4)", "[4,200]"),
+      include.lowest = TRUE,
+      right = TRUE
+    )
+  ) %>% 
+  mutate(
+    religion_church_coarsen_n = as.numeric(religion_church_coarsen)-1
+  )
+
+
+table( dt_18_19_religious$religion_church_coarsen)
+
+table( dt_18_19_religious$religion_church2)
+
+
+
 # double check
 push_mods
-here_save(dat_long, "dat_long")
+#here_save(dat_long, "dat_long")
 ```
 
 ```{r}
@@ -346,10 +376,10 @@ dat_long_t  <- dat_long %>%
   #   )
   # ) %>%
   mutate(
-    religion_believe_god_n = as.integer(religion_believe_god),
+    religion_religious_n = as.integer(religion_religious),
   ) |>
   mutate(
-    religion_believe_god = as.factor(religion_believe_god), # make factor for impuatation
+    religion_religious = as.factor(religion_religious), # make factor for impuatation
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
@@ -359,7 +389,7 @@ dat_long_t  <- dat_long %>%
   data.frame()
 
 # check n again
-n_unique(dat_long_t$id) # 32450
+n_unique(dat_long_t$id) # 34743
 # double check path
 push_mods
 saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
@@ -400,8 +430,11 @@ baseline_vars = c(
     "neuroticism",
     "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
    # "religion_religious", # Do you identify with a religion and/or spiritual group?
-   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-    "religion_religious",
+    "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
+   # "religion_religious", # perfectly colinear
+    "religion_believe_spirit",
+    #Do you believe in some form of spirit or lifeforce?
+    "religion_believe_god",
     "sample_weights"
 )
 
@@ -409,106 +442,44 @@ baseline_vars = c(
 baseline_vars
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("religion_believe_god") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
+exposure_var = c("tba") #
 
 
 # set outcomes for prosocial domain
-outcome_vars_donate = c(
-   "modesty",
-   "honesty_humility",
-   "vengeful_rumin",
-   "gratitude",
-   "hours_charity",
-   "charity_donate"
+outcome_vars_religion = c(
+    "religion_identification_level",
+    #How important is your religion to how you see yourself?"
+    "religion_prayer",
+    # How many times did you pray in the last week?
+    "religion_scripture",
+    # How many times did you read religious scripture in the last week?
+    "religion_church2",
+    # How many times did you attend a church or place of worship in the last month?
+    "religion_believe_spirit",
+    #Do you believe in some form of spirit or lifeforce?
+    "religion_believe_god",
+    #Do you believe in a God
+    "religion_spiritual_identification"
+    #w8,w10,w12-13 "I identify as a spiritual person."
   )
-
-
-# set outcome for the acceptance domain 
-outcome_vars_warmth = c(
-    "warm_asians",
-    "warm_chinese",
-   # "warm_disabled" , not at time 10
-    # begins w9
-    "warm_immigrants",
-    "warm_indians",
-    "warm_elderly",
-    # warm_lgbtq starts w12
-    "warm_maori",
-    "warm_mental_illness",
-    "warm_muslims",
-    "warm_nz_euro",
-    "warm_overweight",
-    "warm_pacific",
-    "warm_refugees",
-    "religion_perceive_religious_discrim"
-  )
-
-
-# set outcomes for the report received domain
-outcome_vars_support = c(
-    "family_time",
-    "friends_time",
-    "community_time",
-    "family_money",
-    "friends_money",
-    "community_money",
-    "support_help",
-    # 'There are people I can depend on to help me if I really need it.
-    "support_turnto",
-    # There is no one I can turn to for guidance in times of stress.
-    "support_rnoguidance"
-    #There is no one I can turn to for guidance in times of stress.
-)
 
 
 # ignore tidyverse warning about "all_of()" if you get one (jb to fix)
-prep_donate <- margot_wide(dat_long_t, 
+prep_religion <- margot_wide(dat_long_t, 
   baseline_vars = baseline_vars, 
   exposure_var = exposure_var,
-  outcome_vars = outcome_vars_donate)
+  outcome_vars = outcome_vars_religion)
 
 #check must be a dataframe
-str(prep_donate)
-nrow(prep_donate)
-
-prep_warmth <- margot_wide(dat_long_t, 
-  baseline_vars = baseline_vars, 
-  exposure_var = exposure_var,
-  outcome_vars = outcome_vars_warmth)
-
-#check must be a dataframe
-str(prep_warmth)
-nrow(prep_warmth)
-
-
-prep_support <- margot_wide(dat_long_t, 
-  baseline_vars = baseline_vars, 
-  exposure_var = exposure_var,
-  outcome_vars = outcome_vars_support)
-
-#check must be a dataframe
-str(prep_support)
-nrow(prep_support)
-
+str(prep_religion)
+nrow(prep_religion)
 
 ## data for mice
-exposure_vars = c("t1_religion_believe_god")
+exposure_vars = c("TBA")
 
 here_save(exposure_vars , "exposure_vars" )
 
-prep_multiple_donate <- margot_filter(prep_donate, exposure_vars = exposure_vars) 
-prep_multiple_warmth <- margot_filter(prep_warmth, exposure_vars = exposure_vars) 
-prep_multiple_support <- margot_filter(prep_support, exposure_vars = exposure_vars) 
-
-#test 
-# a <- nrow( prep_multiple_support$zero)
-# b <- nrow( prep_multiple_support$one)
-# c <- nrow( prep_multiple_support$less_four)
-# d <-nrow( prep_multiple_support$four_up)
-# 
-# 
-# # check
-# a + b + c + d == nrow(prep_support)
+prep_multiple_religion <- margot_filter(prep_religion, exposure_vars = exposure_vars) 
 ```
 
 
@@ -800,8 +771,9 @@ skim(mice_donate_long)
 #name exposure
 
 # Set exposure 
-X <- "t1_religion_believe_god" #"t1_religion_church_coarsen" #levels( mice_donate_long$t1_religion_church_coarsen )
+X <- here_read("exposure_vars")
 
+# check
 X
 baseline_vars_donate = mice_donate_long |> 
   dplyr::select(starts_with("t0"))|> colnames() # strange to include these -- as they  are income by other names
@@ -837,7 +809,7 @@ plot(sum_ebal)
 bal.tab(match_donate_ebal)
 
 # # if trim is needed
-match_donate_ebal_trim <- WeightIt::trim(match_donate_ebal, at = .99)
+match_donate_ebal_trim <- WeightIt::trim(match_donate_ebal, at = .9975)
 here_save(match_donate_ebal_trim,"match_donate_ebal_trim")
 sum_ebal_trim <- summary(match_donate_ebal_trim)
 sum_ebal_trim
@@ -873,26 +845,26 @@ X
 ### Models 
 
 #### Volunteering Hours
-mod_donate_volunteers_gauss_rd  <- double_robust(
-  df = dt_donate,  # note change
-  Y = "t2_hours_charity_log_z",
-  X = X,
-  baseline_vars = baseline_vars_donate,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name =  "Volunteers (sd)"
-)
-mod_donate_volunteers_gauss_rd
-saveRDS(mod_donate_volunteers_gauss_rd, here::here(push_mods, "mod_donate_volunteers_gauss_rd"))
+# mod_donate_volunteers_gauss_rd  <- double_robust(
+#   df = dt_donate,  # note change
+#   Y = "t2_hours_charity_log_z",
+#   X = X,
+#   baseline_vars = baseline_vars_donate,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name =  "Volunteers (sd)"
+# )
+# mod_donate_volunteers_gauss_rd
+# saveRDS(mod_donate_volunteers_gauss_rd, here::here(push_mods, "mod_donate_volunteers_gauss_rd"))
 
 # volunteer
 mod_donate_volunteer_binary_rr  <- double_robust(
@@ -1032,7 +1004,6 @@ saveRDS(mod_donate_gratitude, here::here(push_mods, "mod_donate_gratitude"))
 # read imputations
 mice_warmth_mids <- readRDS(here::here(push_mods, "mice_warmth_mids"))
 mice_warmth_long <- readRDS(here::here(push_mods, "mice_warmth_long"))
-
 # check
 skim(mice_warmth_long)
 
@@ -1068,7 +1039,7 @@ plot(sum_ebal)
 bal.tab(mice_warmth_ebal)
 
 # if trim (if needed)
-mice_warmth_ebal_trim <- WeightIt::trim(mice_warmth_ebal, at = .99)
+mice_warmth_ebal_trim <- WeightIt::trim(mice_warmth_ebal, at = .9975)
 sum_ebal_trim <- summary(mice_warmth_ebal_trim)
 sum_ebal_trim
 
@@ -1473,7 +1444,7 @@ plot(sum_ebal)
 bal.tab(match_support_ebal)
 
 # trim if needed
-match_support_ebal_trim <- WeightIt::trim(match_support_ebal, at = .99)
+match_support_ebal_trim <- WeightIt::trim(match_support_ebal, at = .9975)
 sum_trim_ebal <- summary(match_support_ebal_trim)
 
 # view
@@ -1493,7 +1464,7 @@ cl =  parallel::detectCores ()
 cores =  parallel::detectCores () 
 
 #levels(dat_long_t$religion_church_coarsen)
-nsims
+nsims 
 
 #check
 treat_0
@@ -1776,7 +1747,7 @@ tab_virtue <- rbind(
 group_tab_virtue <- group_tab(tab_virtue, type = "RD")
 
 
-title = "ATE: +1 year causal effect from gain of God belief"
+title = "ATE: +1 year causal effect from gain of religious affiliation"
 subtitle_warmth_rd = "Virtues"
 
 group_plot_virtue <- margot_plot(group_tab_virtue,    
@@ -1799,17 +1770,17 @@ group_plot_virtue <- margot_plot(group_tab_virtue,
 
 group_plot_virtue
 
-# ggsave(
-#   group_plot_virtue,
-#   path = here::here(here::here(push_mods, "group_plot_virtue")),
-#   width = 8,
-#   height = 4.5,
-#   units = "in",
-#   filename = "group_plot_virtue-GOD.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
+ggsave(
+  group_plot_virtue,
+  path = here::here(here::here(push_mods, "group_plot_virtue_REL")),
+  width = 8,
+  height = 4.5,
+  units = "in",
+  filename = "group_plot_virtue-REL.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 ```
 
 
@@ -1877,11 +1848,11 @@ gr_plot_virtue_rr
 # 
 # ggsave(
 #   gr_plot_virtue_rr,
-#   path = here::here(here::here(push_mods, "gr_plot_virtue_rr")),
+#   path = here::here(here::here(push_mods, "gr_plot_virtue_rr_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "gr_plot_virtue_rr.png",
+#   filename = "gr_plot_virtue_rr_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -1950,32 +1921,32 @@ group_tab_warmth <- group_tab(tab_warmth, type = "RD")
 
 subtitle_warmth_rd = "Warmth/Prejudice"
 
-# group_plot_ate_warmth_rd <- margot_plot(group_tab_warmth,    
-#                            type = "RD",
-#                            title = title, 
-#                            subtitle = subtitle_warmth_rd, 
-#                            xlab = "(sd units)", 
-#                            ylab = "test",
-#                            estimate_scale = 1,
-#                            base_size = 10,
-#                            text_size = 2.5,
-#                            point_size = .5,
-#                            title_size = 10,
-#                            subtitle_size = 09,
-#                            legend_text_size = 6,
-#                            legend_title_size = 6,
-#                            x_offset = -1.75,
-#                            x_lim_lo = -1.75,
-#                            x_lim_hi =  1)  
+group_plot_ate_warmth_rd <- margot_plot(group_tab_warmth,
+                           type = "RD",
+                           title = title,
+                           subtitle = subtitle_warmth_rd,
+                           xlab = "(sd units)",
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 10,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 10,
+                           subtitle_size = 09,
+                           legend_text_size = 6,
+                           legend_title_size = 6,
+                           x_offset = -1.75,
+                           x_lim_lo = -1.75,
+                           x_lim_hi =  1)
 
 group_plot_ate_warmth_rd
 # ggsave(
 #   group_plot_ate_warmth_rd,
-#   path = here::here(here::here(push_mods, "group_plot_ate_warmth_rd")),
+#   path = here::here(here::here(push_mods, "group_plot_ate_warmth_rd_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_warmth_rd.png",
+#   filename = "group_plot_ate_warmth_rd_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2132,18 +2103,18 @@ group_plot_ate_support_rr <- margot_plot(
 )
 group_plot_ate_support_rr
 
-# 
-# ggsave(
-#   group_plot_ate_support_rr,
-#   path = here::here(here::here(push_mods, "group_plot_ate_support_rr")),
-#   width = 8,
-#   height = 4,
-#   units = "in",
-#   filename = "group_plot_ate_support_rr.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
+
+ggsave(
+  group_plot_ate_support_rr,
+  path = here::here(here::here(push_mods, "group_plot_ate_support_rr_REL")),
+  width = 8,
+  height = 4.5,
+  units = "in",
+  filename = "group_plot_ate_support_rr_REL.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 
  
 ```
@@ -2160,3 +2131,4 @@ group_tab_support_rr |>
 
 #interpret_table(group_tab_support_rr, "causal_risk_ratio", "PATE")
 ```
+
