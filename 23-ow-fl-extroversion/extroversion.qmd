@@ -1,8 +1,19 @@
 ---
-title: "Effect of extraversion on Multi-dimensionsal well-being"
+title: "Causal Effect of extraversion on multi-dimensionsal well-being"
 subtitle: ""
+author: 
+  - name: Zoe Greer
+    affiliation: Victoria University of Wellington
+  - name: Chris G. Sibley
+    affiliation: School of Psychology, University of Auckland
+    orcid_id: 0000-0002-4064-8800
+  - name: Joseph A. Bulbulia
+    affiliation: Victoria University of Wellington, New Zealand
+    orcid_id: 0000-0002-5861-2056
+    email: joseph.bulbulia@vuw.ac.nz
+    corresponding: yes
 abstract: |
-  We combine national longitudinal time-series data with the potential outcomes framework to estimate the causal effects of extraversion on multidimensional well-being. We find evidence for a one-year causal effect of extraversion on psychological and social well-being, but not on health. 
+  We combine national panel data with a potential outcomes framework to estimate the causal effects of extraversion on multidimensional well-being. We find evidence for a one-year causal effect of extraversion on many domains for psychological and especially social well-being, although with no evidence for causal effects on health. 
 execute:
   warning: false
   eval: false
@@ -3477,7 +3488,7 @@ dev.off()
 # settings 
 
 # Set DF 
-dt_social = mice_social_ebal_trim
+dt_social = mice_social_ebal
 
 # bootstrap simulations
 nsims
@@ -4195,7 +4206,7 @@ The transition matrix in @tbl-transition-factor describes the shifts from one st
 
 Note that it is possible to estimate different causal effects. For example, we might have asked: "What would the causal effect be in the population if everyone were to move between the lowest quartile and the third quartile?"
 
-**Note to co-authors: we can pick a different Estimand. Alternatively We could use a continuous estimand, or both. This is just an example.**
+**Note to co-authors: we can pick a different estimand. Alternatively, we could use a continuous estimand, or report both.**
 
 
 ### Inverse Probability of Treatment Weighting
@@ -4211,7 +4222,9 @@ We used the `Clarify` [@greifer2023; @king2000] in R [@rainey2023] to estimate s
 We note that the confidence intervals for doubly robust models such as ours tend to be wider (we prefer variance over bias).
 
 
-@fig-propensity-score-example shows example of baseline imbalance (Here, the reflective domain).  All domains reveal strong imbalence in the baseline covariates that predict the exposure. Unsurpisingly, the strongest of these covariates pertain to the exposure itself. This raises the important point that to access the incidence effect, we must control for baseline exposure.  Here we control both by propensity score weighting (the exposure model) and regression adjustment (the outcome model). We trimmed the weights of the exposure model by .9975 to avoid very extreme weights while keeping the mean difference in the adjusted values below .05, as recommended by [@greifer2023]. (*Appendix to follow*)
+@fig-propensity-score-example shows example of baseline imbalance (Here, the reflective domain).  All domains reveal strong imbalance in the baseline covariates that predict the exposure. Not surprisingly, the strongest of these covariates pertain to the exposure itself. This raises the important point that to access the incidence effect, we must control for baseline exposure.  Here we control both by propensity score weighting (the exposure model) and regression adjustment (the outcome model).[^note_weights] 
+
+[^note_weights]: We compared trimmed propensity score weights with the untrimmed scores and found no difference to inference [@greifer2023]. We therefore report the raw (untrimmed) weights (*Appendix to follow*)
 
 ```{r}
 #| label: fig-propensity-score-example
@@ -4348,28 +4361,23 @@ tab_health |>
 
 ```
 
-Figure @fig-results-health and @tbl-results-health present the Population Average Treatment Effect (PATE). This is the expected difference in outcomes between treatment and control groups for the New Zealand population for the +1 year outcomes after a change in extraversion. We do not find evidence of causal effects across the health outcomes.
+Figure @fig-results-health and @tbl-results-health present the Population Average Treatment Effect (PATE). This is the expected difference in outcomes between treatment and control groups for the New Zealand population for the +1 year outcomes after a change in extraversion. We do not find evidence of causal effects across the health outcomes.Population Average Treatment Effect (PATE) represents the expected difference in outcomes between treatment and control groups for the New Zealand population.
 
-The population Average Treatment Effect (PATE) represents the expected difference in outcomes between treatment and control groups for the New Zealand population.
+For the outcome 'SF Health expect worse health (sd)', the PATE causal contrast is 0.043. The confidence interval ranges from -0.027 to 0.111. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'SF Health expect worse health (sd)', the PATE causal contrast is 0.031. The confidence interval ranges from -0.039 to 0.097. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'SF Health your health (sd)', the PATE causal contrast is 0.042. The confidence interval ranges from -0.02 to 0.099. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Alcohol intensity (sd)', the PATE causal contrast is 0.03. The confidence interval ranges from -0.018 to 0.08. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Alcohol intensity (sd)', the PATE causal contrast is 0.035. The confidence interval ranges from -0.024 to 0.093. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'SF health your health (sd)', the PATE causal contrast is 0.027. The confidence interval ranges from -0.031 to 0.088. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Hlth sleep Hours (sd)', the PATE causal contrast is -0.035. The confidence interval ranges from -0.106 to 0.029. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'alcohol frequency (sd)', the PATE causal contrast is 0.018. The confidence interval ranges from -0.028 to 0.069. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Hlth bmi (sd)', the PATE causal contrast is -0.023. The confidence interval ranges from -0.059 to 0.014. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'SF Health get sick easier (sd, reversed)', the PATE causal contrast is 0.015. The confidence interval ranges from -0.05 to 0.08. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'alcohol frequency (sd)', the PATE causal contrast is 0.023. The confidence interval ranges from -0.027 to 0.069. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Hours exercise (log sd)', the PATE causal contrast is -0.002. The confidence interval ranges from -0.078 to 0.068. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'SF Health get sick easier (sd, reversed)', the PATE causal contrast is 0.02. The confidence interval ranges from -0.05 to 0.095. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Hlth bmi (sd)', the PATE causal contrast is -0.024. The confidence interval ranges from -0.06 to 0.012. The E-value for this outcome confirms the causal contrast is unreliable.
-
-For the outcome 'Hlth sleep Hours (sd)', the PATE causal contrast is -0.029. The confidence interval ranges from -0.088 to 0.033. The E-value for this outcome confirms the causal contrast is unreliable.
-
-We did not find an effect on smoking (risk ratio) ,the PATE causal risk ratio 0.967 (0.700, 1.333), and the confidence interval crosses 1 (1.223/1).
-
+For the outcome 'Hours exercise (log sd)', the PATE causal contrast is -0.005. The confidence interval ranges from -0.081 to 0.072. The E-value for this outcome confirms the causal contrast is unreliable.
 
 
 ### Effects on embodied well-being
@@ -4480,23 +4488,24 @@ tab_embodied |>
 
 ```
 
-@fig-results-embodied and @tbl-results-embodied presents the Population Average Treatment Effect (PATE) for the embodied domain. We find evidence for the causal effects of change in extraversion (from the lowest quartile to the third quartile) on five of the six Kessler-6 dimensions, with the strong effects on feelings of worthlessless.
+@fig-results-embodied and @tbl-results-embodied presents the Population Average Treatment Effect (PATE) for the embodied domain. We find evidence for the causal effects of change in extraversion (from the second quartile to the fourth quartile) on five of the six Kessler-6 dimensions, with the strong effects on feelings of worthlessless.
 
-For the outcome 'kessler_worthless (sd)', the PATE causal contrast is -0.145. The confidence interval ranges from -0.2 to -0.088. The E-value for this outcome is 1.543, indicating reliable evidence for causality.
 
-For the outcome 'Kessler nervous (sd)', the PATE causal contrast is -0.112. The confidence interval ranges from -0.181 to -0.05. The E-value for this outcome is 1.453, indicating reliable evidence for causality.
+For the outcome 'Kessler worthless (sd)', the PATE causal contrast is -0.153. The confidence interval ranges from -0.201 to -0.104. The E-value for this outcome is 1.563, indicating reliable evidence for causality.
 
-For the outcome 'Rumination (sd)', the PATE causal contrast is -0.081. The confidence interval ranges from -0.149 to -0.013. The E-value for this outcome is 1.363, indicating reliable evidence for causality.
+For the outcome 'Kessler nervous (sd)', the PATE causal contrast is -0.106. The confidence interval ranges from -0.179 to -0.035. The E-value for this outcome is 1.435, indicating reliable evidence for causality.
 
-For the outcome 'Kessler hopeless (sd)', the PATE causal contrast is -0.072. The confidence interval ranges from -0.129 to -0.014. The E-value for this outcome is 1.337, indicating reliable evidence for causality.
+For the outcome 'Rumination (sd)', the PATE causal contrast is -0.082. The confidence interval ranges from -0.148 to -0.016. The E-value for this outcome is 1.366, indicating reliable evidence for causality.
 
-For the outcome 'kessler restless (sd)', the PATE causal contrast is -0.068. The confidence interval ranges from -0.13 to -0.006. The E-value for this outcome is 1.324, indicating reliable evidence for causality.
+For the outcome 'Kessler hopeless (sd)', the PATE causal contrast is -0.08. The confidence interval ranges from -0.136 to -0.025. The E-value for this outcome is 1.361, indicating reliable evidence for causality.
 
-For the outcome 'Kessler effort (sd)', the PATE causal contrast is -0.051. The confidence interval ranges from -0.123 to 0.018. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'kessler restless (sd)', the PATE causal contrast is -0.066. The confidence interval ranges from -0.134 to 0.001. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Kessler depressed (sd)', the PATE causal contrast is -0.026. The confidence interval ranges from -0.087 to 0.038. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Kessler effort (sd)', the PATE causal contrast is -0.044. The confidence interval ranges from -0.112 to 0.025. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Hlth fatigue (sd)', the PATE causal contrast is -0.018. The confidence interval ranges from -0.084 to 0.046. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Kessler depressed (sd)', the PATE causal contrast is -0.042. The confidence interval ranges from -0.102 to 0.019. The E-value for this outcome confirms the causal contrast is unreliable.
+
+For the outcome 'Hlth fatigue (sd)', the PATE causal contrast is -0.015. The confidence interval ranges from -0.073 to 0.047. The E-value for this outcome confirms the causal contrast is unreliable.
 
 ### Effects on practical well-being
 
@@ -4631,33 +4640,23 @@ tab_practical|>
 
 @fig-results-practical and @tbl-results-practical present the results for practical well-being.
 
-For the outcome 'Selfesteem postive self (sd)', the PATE causal contrast is 0.131. The confidence interval ranges from 0.072 to 0.188. The E-value for this outcome is 1.504, indicating reliable evidence for causality.
+Population Average Treatment Effect (PATE) represents the expected difference in outcomes between treatment and control groups for the New Zealand population.
 
-For the outcome 'Selfesteem failure (sd, reversed)', the PATE causal contrast is 0.123. The confidence interval ranges from 0.068 to 0.178. The E-value for this outcome is 1.482, indicating reliable evidence for causality.
+For the outcome 'Kessler worthless (sd)', the PATE causal contrast is -0.153. The confidence interval ranges from -0.201 to -0.104. The E-value for this outcome is 1.563, indicating reliable evidence for causality.
 
-For the outcome 'Selfesteem satself (sd)', the PATE causal contrast is 0.106. The confidence interval ranges from 0.042 to 0.168. The E-value for this outcome is 1.435, indicating reliable evidence for causality.
+For the outcome 'Kessler nervous (sd)', the PATE causal contrast is -0.106. The confidence interval ranges from -0.179 to -0.035. The E-value for this outcome is 1.435, indicating reliable evidence for causality.
 
-For the outcome 'Bodysat (sd)', the PATE causal contrast is 0.088. The confidence interval ranges from 0.026 to 0.152. The E-value for this outcome is 1.384, indicating reliable evidence for causality.
+For the outcome 'Rumination (sd)', the PATE causal contrast is -0.082. The confidence interval ranges from -0.148 to -0.016. The E-value for this outcome is 1.366, indicating reliable evidence for causality.
 
-For the outcome 'Sexual satisfaction (sd)', the PATE causal contrast is 0.028. The confidence interval ranges from -0.036 to 0.095. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Kessler hopeless (sd)', the PATE causal contrast is -0.08. The confidence interval ranges from -0.136 to -0.025. The E-value for this outcome is 1.361, indicating reliable evidence for causality.
 
-For the outcome 'Self control wish more (sd, reversed)', the PATE causal contrast is 0.016. The confidence interval ranges from -0.045 to 0.073. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'kessler restless (sd)', the PATE causal contrast is -0.066. The confidence interval ranges from -0.134 to 0.001. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Emotion reg chang thinking to calm (sd)', the PATE causal contrast is 0.009. The confidence interval ranges from -0.06 to 0.076. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Kessler effort (sd)', the PATE causal contrast is -0.044. The confidence interval ranges from -0.112 to 0.025. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Self control have lots (sd)', the PATE causal contrast is -0.029. The confidence interval ranges from -0.094 to 0.036. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Kessler depressed (sd)', the PATE causal contrast is -0.042. The confidence interval ranges from -0.102 to 0.019. The E-value for this outcome confirms the causal contrast is unreliable.
 
-For the outcome 'Vengeful rumin (sd)', the PATE causal contrast is -0.08. The confidence interval ranges from -0.136 to -0.024. The E-value for this outcome is 1.361, indicating reliable evidence for causality.
-
-For the outcome 'Emotion reg hide neg emotions (sd)', the PATE causal contrast is -0.128. The confidence interval ranges from -0.195 to -0.06. The E-value for this outcome is 1.497, indicating reliable evidence for causality.
-
-For the outcome 'Power other control (sd)', the PATE causal contrast is -0.138. The confidence interval ranges from -0.195 to -0.08. The E-value for this outcome is 1.523, indicating reliable evidence for causality.
-
-For the outcome 'Emotion reg out control (sd)', the PATE causal contrast is -0.149. The confidence interval ranges from -0.214 to -0.089. The E-value for this outcome is 1.554, indicating reliable evidence for causality.
-
-For the outcome 'Power self nocontrol (sd)', the PATE causal contrast is -0.159. The confidence interval ranges from -0.225 to -0.094. The E-value for this outcome is 1.579, indicating reliable evidence for causality.
-
-For the outcome 'Perfectionism (sd)', the PATE causal contrast is -0.166. The confidence interval ranges from -0.222 to -0.111. The E-value for this outcome is 1.6, indicating reliable evidence for causality.
+For the outcome 'Hlth fatigue (sd)', the PATE causal contrast is -0.015. The confidence interval ranges from -0.073 to 0.047. The E-value for this outcome confirms the causal contrast is unreliable.
 
 ### Effects on reflective well-being
 
@@ -4762,6 +4761,24 @@ tab_reflective|>
 ```
 
 As indicated in @fig-results-reflective-well-being and @tbl-results-reflective we do not find evidence for reliable effects of extraversion on personal security r personal health. However, we find evidence for effects across all other dimensions of reflective well-being.
+
+For the outcome 'Gratitude (sd)', the PATE causal contrast is 0.187. The confidence interval ranges from 0.138 to 0.238. The E-value for this outcome is 1.654, indicating reliable evidence for causality.
+
+For the outcome 'Meaning sense (sd)', the PATE causal contrast is 0.128. The confidence interval ranges from 0.054 to 0.193. The E-value for this outcome is 1.497, indicating reliable evidence for causality.
+
+For the outcome 'Meaning purpose (sd)', the PATE causal contrast is 0.126. The confidence interval ranges from 0.066 to 0.185. The E-value for this outcome is 1.492, indicating reliable evidence for causality.
+
+For the outcome 'PWI Relationships (sd)', the PATE causal contrast is 0.113. The confidence interval ranges from 0.064 to 0.164. The E-value for this outcome is 1.454, indicating reliable evidence for causality.
+
+For the outcome 'PWI standard living (sd)', the PATE causal contrast is 0.099. The confidence interval ranges from 0.036 to 0.161. The E-value for this outcome is 1.416, indicating reliable evidence for causality.
+
+For the outcome 'Lifesat satlife (sd)', the PATE causal contrast is 0.091. The confidence interval ranges from 0.037 to 0.145. The E-value for this outcome is 1.393, indicating reliable evidence for causality.
+
+For the outcome 'Lifesat ideal (sd)', the PATE causal contrast is 0.059. The confidence interval ranges from 0 to 0.116. The E-value for this outcome is 1.298, indicating reliable evidence for causality.
+
+For the outcome 'PWI security (sd)', the PATE causal contrast is 0.039. The confidence interval ranges from -0.029 to 0.104. The E-value for this outcome confirms the causal contrast is unreliable.
+
+For the outcome 'PWI health (sd)', the PATE causal contrast is -0.001. The confidence interval ranges from -0.057 to 0.053. The E-value for this outcome confirms the causal contrast is unreliable.
 
 ### Effects social well-being
 
@@ -4877,31 +4894,41 @@ tab_social|>
 
 ```
 
-As indicated in @fig-results-social-wellbeing and @tbl-results-social, we find evidence for a causal effect of change in extraversion across certain social outcomes.
+As indicated in @fig-results-social-wellbeing and @tbl-results-social, we find evidence for a causal effect of change in extraversion across all social outcomes, with the strongest evidence for buffering against feelings of being an outsider. 
 
-For the outcome 'Belong accept (sd)', the PATE causal contrast is 0.172. The confidence interval ranges from 0.11 to 0.235. The E-value for this outcome is 1.615, indicating reliable evidence for causality.
+For the outcome 'Belong_outsider (sd, reversed)', the PATE causal contrast is 0.279. The confidence interval ranges from 0.213 to 0.344. The E-value for this outcome is 1.9, indicating reliable evidence for causality.
 
-For the outcome 'Neighbourhood community (sd)', the PATE causal contrast is 0.146. The confidence interval ranges from 0.083 to 0.211. The E-value for this outcome is 1.544, indicating reliable evidence for causality.
+For the outcome 'Belong accept (sd)', the PATE causal contrast is 0.163. The confidence interval ranges from 0.102 to 0.222. The E-value for this outcome is 1.59, indicating reliable evidence for causality.
 
-For the outcome 'Support noguidance (sd, reversed)', the PATE causal contrast is 0.143. The confidence interval ranges from 0.083 to 0.205. The E-value for this outcome is 1.536, indicating reliable evidence for causality.
+For the outcome 'Support noguidance (sd, reversed)', the PATE causal contrast is 0.149. The confidence interval ranges from 0.087 to 0.212. The E-value for this outcome is 1.554, indicating reliable evidence for causality.
 
-For the outcome 'Belong beliefs (sd)', the PATE causal contrast is 0.114. The confidence interval ranges from 0.043 to 0.181. The E-value for this outcome is 1.458, indicating reliable evidence for causality.
+For the outcome 'Neighbourhood community (sd)', the PATE causal contrast is 0.144. The confidence interval ranges from 0.081 to 0.205. The E-value for this outcome is 1.54, indicating reliable evidence for causality.
 
-For the outcome 'Permeability individual (sd)', the PATE causal contrast is 0.114. The confidence interval ranges from 0.042 to 0.179. The E-value for this outcome is 1.456, indicating reliable evidence for causality.
+For the outcome 'Belong beliefs (sd)', the PATE causal contrast is 0.118. The confidence interval ranges from 0.054 to 0.188. The E-value for this outcome is 1.468, indicating reliable evidence for causality.
 
-For the outcome 'Support turnto (sd)', the PATE causal contrast is 0.099. The confidence interval ranges from 0.032 to 0.162. The E-value for this outcome is 1.414, indicating reliable evidence for causality.
+For the outcome 'Permeability individual (sd)', the PATE causal contrast is 0.104. The confidence interval ranges from 0.034 to 0.172. The E-value for this outcome is 1.43, indicating reliable evidence for causality.
 
-For the outcome 'Support help (sd)', the PATE causal contrast is 0.098. The confidence interval ranges from 0.034 to 0.165. The E-value for this outcome is 1.413, indicating reliable evidence for causality.
+For the outcome 'Support help (sd)', the PATE causal contrast is 0.09. The confidence interval ranges from 0.024 to 0.154. The E-value for this outcome is 1.391, indicating reliable evidence for causality.
 
-For the outcome 'Charity donate (log, sd)', the PATE causal contrast is 0.066. The confidence interval ranges from -0.003 to 0.133. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Support turnto (sd)', the PATE causal contrast is 0.083. The confidence interval ranges from 0.015 to 0.15. The E-value for this outcome is 1.369, indicating reliable evidence for causality.
 
-For the outcome 'Impermeability group (sd)', the PATE causal contrast is -0.01. The confidence interval ranges from -0.072 to 0.055. The E-value for this outcome confirms the causal contrast is unreliable.
+For the outcome 'Impermeability group (sd)' -- our negative control -- the PATE causal contrast is -0.026. The confidence interval ranges from -0.096 to 0.047. The E-value for this outcome confirms the causal contrast is unreliable.
 
 ## Discussion
 
+### Importance
 
-Lo, we find evidence for a causal effect of extraversion on well-being...
+- By emulating an experiment, we may use panel data to infer causal effects.
+- We find evidence for a causal effect of extraversion on psychological well-being, but not health.
+- This suggests that extraversion may be benefitting to psychological well-being.
 
+
+### Limitations
+- Measurement is a limitation. Perhaps there are different types of extraversion. 
+
+## Future work
+- Pathways by which extraversion affects people remain unclear. The fact that people are more satisified with their personal incomes suggests possible pathways through employment. 
+- Measurement of social and behavioural pathways important. 
 
 {{< pagebreak >}}
 
@@ -5275,9 +5302,9 @@ Participants indicated the extent to which they agree with those items (1 = Stro
 
 The second item was negatively-worded, so we reversely recorded the responses to this item.
 
-#### Volunteers (waves: 1, 4-15)
+<!-- #### Volunteers (waves: 1, 4-15) -->
 
-Participants were asked,"Please estimate how many hours you spent doing each of the following things last week" and responded to an item ("voluntary/charitable work"), from [@sibley2011].
+<!-- Participants were asked,"Please estimate how many hours you spent doing each of the following things last week" and responded to an item ("voluntary/charitable work"), from [@sibley2011]. -->
 
 {{< pagebreak >}}
 
