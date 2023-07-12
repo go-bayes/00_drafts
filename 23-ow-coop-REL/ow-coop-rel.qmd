@@ -519,6 +519,11 @@ prep_multiple_support <- margot_filter(prep_support, exposure_vars = exposure_va
 # 
 # # check
 # a + b + c + d == nrow(prep_support)
+
+# save positivity data
+dt_positivity_full<- dat_long_t |>
+  filter(wave == 2018 | wave == 2019)
+here_save(dt_positivity_full, "dt_positivity_full")
 ```
 
 
@@ -1737,21 +1742,20 @@ saveRDS(mod_support_support_rnoguidance, here::here(push_mods, "mod_support_supp
 #| label: verify-positivity-data
 #| eval: true
 #| echo: false
-# dt_positivity_full<- dat_long_t |>
-#   filter(wave == 2018 | wave == 2019)
-# here_save(dt_positivity_full, "dt_positivity_full")
+
 
 # for subset study
 
 dt_positivity_full <- readRDS(here::here(push_mods,"dt_positivity_full"))
 
-out <- msm::statetable.msm(religion_believe_god, id, data = dt_positivity_full)
+out <- msm::statetable.msm(religion_religious, id, data = dt_positivity_full)
 #state_names <-c("zero", "one", "less_four", "four_up")
-state_names <-c("believe-no", "believe-yes")
+state_names <-c("religious-no", "religious-yes")
 
 # transition table
 t_tab <- transition_table(out, state_names)
 
+t_tab$table 
 # print 
 cat(t_tab$explanation)
 print(t_tab$table)
@@ -2107,10 +2111,10 @@ mod_support_community_money_binary_rr <- readRDS( here::here(push_mods, "mod_sup
 tab_support_rr <- rbind(
   mod_support_family_time_binary_rr,
   mod_support_friends_time_binary_rr,
-  mod_support_community_time_binary_rr,
-  mod_support_family_money_binary_rr,
-  mod_support_friends_money_binary_rr,
-  mod_support_community_money_binary_rr
+  mod_support_community_time_binary_rr#,
+ # mod_support_family_money_binary_rr,
+ # mod_support_friends_money_binary_rr,
+ # mod_support_community_money_binary_rr
 )
 
 

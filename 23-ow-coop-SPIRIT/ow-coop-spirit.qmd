@@ -223,7 +223,7 @@ dat_long <- dat |>
     # "began_relationship",
     # "religion_religious",
     # Do you identify with a religion and/or spiritual group?
-   # "religion_identification_level",
+    "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
     "religion_church_binary2",
@@ -457,9 +457,9 @@ outcome_vars_support = c(
     "family_time",
     "friends_time",
     "community_time",
-    "family_money",
-    "friends_money",
-    "community_money",
+  #  "family_money",
+#    "friends_money",
+ #   "community_money",
     "support_help",
     # 'There are people I can depend on to help me if I really need it.
     "support_turnto",
@@ -712,25 +712,26 @@ mice_support_mids <- mice_support_c %>%
         t2_friends_time_log =   log(t2_friends_time+1),# to improve model convergence
         t0_community_time_log =   log(t0_community_time+1),# to improve model convergence
         t2_community_time_log =   log(t2_community_time+1),# to improve model convergence
-        t0_family_money_log =   log(t0_family_money+1),# to improve model convergence
-        t2_family_money_log =   log(t2_family_money+1),# to improve model convergence
-        t0_friends_money_log =   log(t0_friends_money+1),# to improve model convergence
-        t2_friends_money_log =   log(t2_friends_money+1),# to improve model convergence
-        t0_community_money_log =   log(t0_community_money+1),# to improve model convergence
-        t2_community_money_log =   log(t2_community_money+1),# to improve model convergence
+     #   t0_family_money_log =   log(t0_family_money+1),# to improve model convergence
+     #   t2_family_money_log =   log(t2_family_money+1),# to improve model convergence
+     #   t0_friends_money_log =   log(t0_friends_money+1),# to improve model convergence
+    #    t2_friends_money_log =   log(t2_friends_money+1),# to improve model convergence
+    #    t0_community_money_log =   log(t0_community_money+1),# to improve model convergence
+    #    t2_community_money_log =   log(t2_community_money+1),# to improve model convergence
         t2_family_time_binary = as.integer(ifelse(t2_family_time > 0, 1, 0)),
         t2_friends_time_binary = as.integer(ifelse(t2_friends_time > 0, 1, 0)),
         t2_community_time_binary = as.integer(ifelse(t2_community_time > 0, 1, 0)),
-        t2_family_money_binary = as.integer(ifelse(t2_family_money > 0, 1, 0)),
-        t2_friends_money_binary = as.integer(ifelse(t2_friends_money > 0, 1, 0)),
-        t2_community_money_binary = as.integer(ifelse(t2_community_money > 0, 1, 0)),
+     #   t2_family_money_binary = as.integer(ifelse(t2_family_money > 0, 1, 0)),
+     #   t2_friends_money_binary = as.integer(ifelse(t2_friends_money > 0, 1, 0)),
+     #   t2_community_money_binary = as.integer(ifelse(t2_community_money > 0, 1, 0)),
         t2_family_time_ord = as.integer(round(t2_family_time,0)), 
-        t2_family_money_ord = as.integer(round(t2_family_money,0)), 
+      #  t2_family_money_ord = as.integer(round(t2_family_money,0)), 
         t2_friends_time_ord = as.integer(round(t2_friends_time,0)), 
-        t2_friends_money_ord = as.integer(round(t2_friends_money,0)), 
-        t2_community_time_ord = as.integer(round(t2_community_time,0)), 
-        t2_community_money_ord = as.integer(round(t2_community_money,0)))|>
-  dplyr::select(-t0_family_time, -t0_friends_time, -t0_community_time, -t0_family_money, -t0_friends_money,-t0_community_money) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
+     #   t2_friends_money_ord = as.integer(round(t2_friends_money,0)), 
+        t2_community_time_ord = as.integer(round(t2_community_time,0)))|>
+    #    t2_community_money_ord = as.integer(round(t2_community_money,0)))|>
+  dplyr::select(-t0_family_time, -t0_friends_time, -t0_community_time#, #-t0_family_money, -t0_friends_money,-t0_community_money
+                ) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
   dplyr::group_by(.imp) |>
   rowwise() |>
   dplyr::ungroup() |>
@@ -740,15 +741,15 @@ mice_support_mids <- mice_support_c %>%
         !t2_family_time_binary &
         !t2_friends_time_binary &
         !t2_community_time_binary &
-        !t2_family_money_binary &
-        !t2_friends_money_binary &
-        !t2_community_money_binary &
+   #     !t2_family_money_binary &
+    #    !t2_friends_money_binary &
+    #    !t2_community_money_binary &
         !t2_family_time_ord & 
-        !t2_family_money_ord & 
+     #   !t2_family_money_ord & 
         !t2_friends_time_ord & 
-        !t2_friends_money_ord & 
-        !t2_community_time_ord & 
-        !t2_community_money_ord, 
+      #  !t2_friends_money_ord & 
+        !t2_community_time_ord, #& 
+       # !t2_community_money_ord, 
       ~ scale(.x),
       .names = "{col}_z"
     )
@@ -760,15 +761,15 @@ mice_support_mids <- mice_support_c %>%
       t2_family_time_binary,
       t2_friends_time_binary, 
       t2_community_time_binary, 
-      t2_family_money_binary,
-      t2_friends_money_binary, 
-      t2_community_money_binary,
+  #    t2_family_money_binary,
+  #    t2_friends_money_binary, 
+  #    t2_community_money_binary,
        t2_family_time_ord, 
-        t2_family_money_ord, 
+    #    t2_family_money_ord, 
         t2_friends_time_ord, 
-        t2_friends_money_ord, 
+      #  t2_friends_money_ord, 
         t2_community_time_ord, 
-        t2_community_money_ord,
+   #     t2_community_money_ord,
     ends_with("_z"),
     .imp,
     .id
@@ -915,7 +916,7 @@ mod_donate_volunteer_binary_rr  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1075,7 +1076,7 @@ sum_ebal
 # graphs
 plot(sum_ebal)
 bal.tab(mice_warmth_ebal)
-love.plot(mice_warmth_ebal, binary = "std", thresholds = c(m = .1))
+love.plot(mice_warmth_ebal, binary = "std", thresholds = c(m = .1), var.order = "unadjusted")
 
 
 
@@ -1433,6 +1434,7 @@ mice_support_long <- readRDS(here::here(push_mods, "mice_support_long"))
 skim(mice_support_long)
 
 # check exposure 
+X <- here_read("exposure_vars")
 X
 # create baseline variables
 baseline_vars_support = mice_support_long |> 
@@ -1476,7 +1478,10 @@ match_support_ebal <- match_mi_general(data = mice_support_mids,
                                  method = "ebal", 
                                  sample_weights = "sample_weights")
 saveRDS(match_support_ebal, here::here(push_mods, "match_support_ebal"))
-love.plot(match_support_ebal, binary = "std", thresholds = c(m = .1))
+love.plot(match_support_ebal, 
+          binary = "std", 
+          var.order = "unadjusted",
+          thresholds = c(m = .1))
 
 # summary
 sum_ebal <- summary(match_support_ebal)
@@ -1508,35 +1513,31 @@ dt_support = match_support_ebal #mice_support_ebal
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
-#levels(dat_long_t$religion_church_coarsen)
-nsims
+levels(dat_long_t$religion_believe_spirit)
+nsims = 1000
 
 #check
-treat_0
+treat_0 = "0"
 #check
-treat_1
+treat_1 = "1"
 
 X# <-here_read("exposure_vars")
 # view X 
 X
-
-str(dat_long_t$religion_church_binary2)
-
 ## models
-
 ## family time rr
 mod_support_family_time_binary_rr  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_family_time_binary",
   X = X,
-  baseline_vars = 1, #baseline_vars_support, 
+  baseline_vars = 1, 
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family =  binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1552,14 +1553,14 @@ mod_support_friends_time_binary_rr  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_friends_time_binary",
   X = X,
-  baseline_vars = 1, #baseline_vars_support, 
+  baseline_vars = 1,# baseline_vars_support, 
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family =  binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1582,7 +1583,7 @@ mod_support_community_time_binary_rr  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family =  binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1592,86 +1593,86 @@ mod_support_community_time_binary_rr  <- double_robust(
 
 mod_support_community_time_binary_rr
 saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support_community_time_binary_rr"))
-
-
-# family money rr
-mod_support_family_money_binary_rr  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_family_money_binary",
-  X = X,
-  baseline_vars = 1,#baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Family money (y/n)"
-)
-
-mod_support_family_money_binary_rr
-saveRDS(mod_support_family_money_binary_rr, here::here(push_mods, "mod_support_family_money_binary_rr"))
-
-
-# friends money rr
-mod_support_friends_money_binary_rr  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_friends_money_binary",
-  X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Friends money (y/n)"
-)
-
-mod_support_friends_money_binary_rr
-saveRDS(mod_support_friends_money_binary_rr, here::here(push_mods, "mod_support_friends_money_binary_rr"))
-
-#mod_support_friends_money_binary_rr <- here_read("mod_support_friends_money_binary_rr")
-
-# comunity money rr
-mod_support_community_money_binary_rr  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_community_money_binary",
-  X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Community money (y/n)"
-)
-
-mod_support_community_money_binary_rr
-saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
+# 
+# 
+# # family money rr
+# mod_support_family_money_binary_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_family_money_binary",
+#   X = X,
+#   baseline_vars = 1,#baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Family money (y/n)"
+# )
+# 
+# mod_support_family_money_binary_rr
+# saveRDS(mod_support_family_money_binary_rr, here::here(push_mods, "mod_support_family_money_binary_rr"))
+# 
+# 
+# # friends money rr
+# mod_support_friends_money_binary_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_friends_money_binary",
+#   X = X,
+#   baseline_vars = 1, #baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Friends money (y/n)"
+# )
+# 
+# mod_support_friends_money_binary_rr
+# saveRDS(mod_support_friends_money_binary_rr, here::here(push_mods, "mod_support_friends_money_binary_rr"))
+# 
+# #mod_support_friends_money_binary_rr <- here_read("mod_support_friends_money_binary_rr")
+# 
+# # comunity money rr
+# mod_support_community_money_binary_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_community_money_binary",
+#   X = X,
+#   baseline_vars = 1, #baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Community money (y/n)"
+# )
+# 
+# mod_support_community_money_binary_rr
+# saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
 
 #'There are people I can depend on to help me if I really need it.
 mod_support_support_help  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_support_help_z",
   X = X,
-  baseline_vars = 1,#baseline_vars_support,  ## always check
+  baseline_vars = baseline_vars_support,  ## always check
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
@@ -1694,7 +1695,7 @@ mod_support_support_turnto  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_support_turnto_z",
   X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
+  baseline_vars = baseline_vars_support,  ## always check
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
@@ -1717,7 +1718,7 @@ mod_support_support_rnoguidance  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_support_rnoguidance_z",
   X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
+  baseline_vars = baseline_vars_support,  ## always check
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
@@ -2055,7 +2056,7 @@ group_plot_support_rd
 
 
 ggsave(
-  group_plot_ate_warmth_rd,
+  group_plot_support_rd,
   path = here::here(here::here(push_mods, "group_plot_support_rd")),
   width = 8,
   height = 4.5,
@@ -2107,10 +2108,7 @@ mod_support_community_money_binary_rr <- readRDS( here::here(push_mods, "mod_sup
 tab_support_rr <- rbind(
   mod_support_family_time_binary_rr,
   mod_support_friends_time_binary_rr,
-  mod_support_community_time_binary_rr,
-  mod_support_family_money_binary_rr,
-  mod_support_friends_money_binary_rr,
-  mod_support_community_money_binary_rr
+  mod_support_community_time_binary_rr
 )
 
 group_tab_support_rr <- group_tab(tab_support_rr, type = "RR")
@@ -2141,17 +2139,17 @@ group_plot_ate_support_rr <- margot_plot(
 group_plot_ate_support_rr
 
 # 
-# ggsave(
-# #   group_plot_ate_support_rr,
-# #   path = here::here(here::here(push_mods, "group_plot_ate_support_received_SPIRIT")),
-# #   width = 8,
-# #   height = 4.5,
-# #   units = "in",
-# #   filename = "group_plot_ate_support_received_SPIRIT.png",
-# #   device = 'png',
-# #   limitsize = FALSE,
-# #   dpi = 600
-# # )
+ggsave(
+  group_plot_ate_support_rr,
+  path = here::here(here::here(push_mods, "group_plot_ate_support_received_SPIRIT")),
+  width = 8,
+  height = 4.5,
+  units = "in",
+  filename = "group_plot_ate_support_received_SPIRIT.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 
  
 ```
