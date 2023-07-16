@@ -5,8 +5,56 @@ date-format: short
 execute:
   warning: false
   eval: true
+  include: true
   echo: false
 ---
+
+
+
+```{tikz}
+#| label: fig-dag-dep-u-effect-selection
+#| fig-cap: "Correlated undirected measurement error can dilute the estimates of true effects. Red path denotes biasing from sampling from cultures with unmeasured correlated error structures"
+#| out-width: 80%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=red] (S) at (0, 2) {S}
+\node [rectangle, draw=red] (UAY) at (1, 2) {U$_{AY}$};
+\node [rectangle, draw=white] (UA) at (3, 1) {U$_A$};
+\node [rectangle, draw=white] (UY) at (3, 3) {U$_Y$};
+
+\node [rectangle, draw=black] (A1) at (5, 1) {A$^{t1}$};
+\node [rectangle, draw=black] (Y2) at (7, 1) {Y$^{t2}$};
+\node [rectangle, draw=white] (Aeta1) at (5, 0) {A$^{t1}_\eta$};
+\node [rectangle, draw=white] (Yeta2) at (7, 0) {Y$^{t2}_\eta$};
+
+
+\draw [-latex, draw=black] (S) to (UAY);
+\draw [-latex, draw=red] (UAY) to (UA);
+\draw [-latex, draw=red] (UAY) to (UY);
+\draw [-latex, draw=black] (UA) to (A1);
+\draw [-latex, draw=red, bend left=30] (UY) to (Y2);
+\draw [-latex, draw=black] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+\draw [cor, draw=red, bend left] (Aeta1) to (UA);
+
+\end{tikzpicture}
+
+```
+
+
+
 
 ```{r}
 #| label: load-libraries
@@ -58,94 +106,91 @@ here::here()
 
 ## Introduction
 
-$$A \coprod Y(a)$$
-$$A \cancel{\coprod} Y(a)| L$$
-
-Graph
-
 ```{tikz}
-#| label: fig-dag-time-vary-common-cause-A1-l1
-#| fig-cap: "Exposure confounder feedback is a problem for time-series models. Here, the problem arises from an unmeasured variable (U2) that affects both the exposure A at time 1 and the counfounder L at time 2. The red line shows the back door path that is opened when we condition on the L at time 2. Again, this problem cannot be addressed with regression-based methods. In this setting we may only use simulation based G-methods."
+#| label: fig-dag-dep-udir-effect-confounders-3wave22
+#| fig-cap: "Measurement error opens an additional pathway to confounding if either there are correlated errors, or a directed effect of the exposure on the errors of measured outcome."
 #| out-width: 100%
 #| echo: false
+#| eval: true
 
 \usetikzlibrary{positioning}
+
 \usetikzlibrary{shapes.geometric}
+
 \usetikzlibrary{arrows}
+
 \usetikzlibrary{decorations}
+
 \tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+
 \tikzset{>=latex}
 
-\begin{tikzpicture}[{every node/.append style}=draw]
-\node [rectangle, draw=white] (U1) at (0, 0) {U1};
-\node [rectangle, draw=white] (U2) at (0, -2) {U2};
-\node [rectangle, draw=black] (L0) at (2, 0) {L$_{t0}$};
-\node [rectangle, draw=white] (A1) at (4, 0) {A$_{t1}$};
-\node [rectangle, draw=white] (Y2) at (6, 0) {Y$_{t2}$};
-\node [rectangle, draw=black] (L2) at (8, 0) {L$_{t2}$};
-\node [rectangle, draw=white] (A3) at (10, 0) {A$_{t3}$};
-\node [rectangle, draw=white] (Y4) at (12, 0) {Y$_{t4a}$};
+\tikzset{blackArrowRedTip/.style={
 
-\draw [-latex, draw=black] (U1) to (L0);
-\draw [-latex, draw=black] (L0) to (A1);
-\draw [-latex, draw=black] (L2) to (A3);
+  decoration={markings, mark=at position 1 with {\arrow[red, thick]{latex}}},
 
-\draw [-latex, draw=red] (A1) to (Y2);
-\draw [-latex, draw=black] (A3) to (Y4);
+  postaction={decorate},
 
+  shorten >=0.4pt}}
 
-\draw [-latex, bend right, draw=red] (U1) to (Y2);
-\draw [-latex, bend right, draw=black] (U1) to (L2);
-\draw [-latex, bend right, draw=red] (U1) to (Y4);
+% Define a simple decoration
 
-%draw [-latex, bend right, draw=red, dashed] (A1) to (Y4);
-\draw [-latex, draw=red] (U2) to (L2);
-\draw [-latex, draw=red] (U2) to (A1);
-
-\end{tikzpicture}
-```
-
-
-
-
-```{tikz}
-#| label: fig-dag-9
-#| fig-cap: "Exposure confounder feedback is a problem for time-series models. If we do not condition on L_t2, a backdoor path is open from A_t3 to Y_t4. However, if conditioning on L_t2 introduces collider bias, opening a path, coloured red,  between A_t2 and Y_t4. Here, we may not use conventional methods to estimate the effects of multiple exposures.  Instead, at best, we may only simulate controlled effects using G-methods. Multi-level models will eliminate bias. Currently, outside of epidemiology, G-methods are rarely used."
-#| out-width: 100%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
 
 \begin{tikzpicture}[{every node/.append style}=draw]
-\node [rectangle, draw=white] (U) at (0, 0) {U};
-\node [rectangle, draw=black] (L0) at (2, 0) {L$_{t0}$};
-\node [rectangle, draw=white] (A1) at (4, 0) {A$_{t1}$};
-\node [rectangle, draw=white] (Y2) at (6, 0) {Y$_{t2}$};
-\node [rectangle, draw=black] (L2) at (8, 0) {L$_{t2}$};
-\node [rectangle, draw=white] (A3) at (10, 0) {A$_{t3}$};
-\node [rectangle, draw=white] (Y4) at (12, 0) {Y$_{t4a}$};
 
-\draw [-latex, draw=black] (U) to (L0);
-\draw [-latex, draw=black] (L0) to (A1);
-\draw [-latex, draw=black] (L2) to (A3);
+\node [rectangle, draw=white] (ULAY) at (0, 5) {$U_{L}$};
 
-\draw [-latex, bend left, draw=red] (A1) to (L2);
+\node [rectangle, draw=white] (UA) at (5, 4) {$U_{A}$};
 
-\draw [-latex, bend right, draw=black] (U) to (Y2);
-\draw [-latex, bend right, draw=red] (U) to (L2);
-\draw [-latex, bend right, draw=red] (U) to (Y4);
+\node [rectangle, draw=white] (UY) at (10, 5) {$U_{Y}$};
 
+\node [rectangle, draw=black] (L0) at (0, 2) {L$_{f(X_1\dots X_n)}^{t0}$};
 
+\node [rectangle, draw=black] (A1) at (5, 2) {A$_{f(X_1\dots X_n)}^{t1}$};
 
-\draw [-latex, draw=black] (A1) to (Y2);
-\draw [-latex,  draw=black] (A3) to (Y4);
+\node [rectangle, draw=black] (Y2) at (10, 2) {Y$_{f(X_1\dots X_n)}^{t2}$};
+
+\node [rectangle, draw=white] (Leta0) at (0, 0) {$\eta_L^{t0}$};
+
+\node [rectangle, draw=white] (Aeta1) at (5, 0) {$\eta_A^{t1}$};
+
+\node [rectangle, draw=white] (Yeta2) at (10, 0) {$\eta_Y^{t2}$};
+
+\draw [-latex, draw=red] (ULAY) to (UA);
+
+\draw [-latex, draw=red] (ULAY) to (UY);
+
+\draw [-latex, draw=black] (UA) to (A1);
+
+\draw [-latex, draw=red] (UY) to (Y2);
+
+\draw [-latex, draw=black] (ULAY) to (L0);
+
+\draw [-latex, draw=black] (Leta0) to (L0);
+
+\draw [-latex, draw=black] (Leta0) to (Aeta1);
+
+\draw [-latex, draw=black, bend right=30] (Leta0) to (Yeta2);
+
+\draw [-latex, draw = black] (Aeta1) to (A1);
+
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+
+\draw [-latex, draw=red] (Aeta1) to (UY);
+
+\draw [-latex, draw=red] (Leta0) to (UA);
+
+%\draw [-latex, draw=black] (Leta0) to (UA);
+
+\draw [cor, draw=red, dashed,bend right=80] (ULAY) to (Leta0);
+
+\draw [cor, draw=red, dashed, bend right = 80] (UA) to (Aeta1);
+
+\draw [cor, draw=red, dashed, bend left = 80] (UY) to (Yeta2);
 
 \end{tikzpicture}
+
 ```
+
 

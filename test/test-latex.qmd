@@ -34,7 +34,6 @@ library("tinytex")
 library(extrafont)
 loadfonts(device = "all")
 
-
 # libraries for jb (when internet is not accessible)
 # read libraries
 source("/Users/joseph/GIT/templates/functions/libs2.R")
@@ -58,9 +57,55 @@ push_mods <-
 ## Test
 
 
-$$Y(a)\cancel{\coprod} A|L$$
+```{tikz}
+#| label: fig-dag-dep-u-effect-selection
+#| fig-cap: "TEST"
+#| out-width: 100%
+#| echo: false
+#| 
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
 
-## Dag
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=black] (S) at (0, 2) {S};
+\node [rectangle, draw=white] (UAY) at (2, 2) {U$_{AY}$};
+\node [rectangle, draw=white] (UA) at (4, 1) {U$_A$};
+\node [rectangle, draw=white] (UY) at (4, 3) {U$_Y$};
+
+\node [rectangle, draw=black] (A1) at (6, 1) {A$^{t1}$};
+\node [rectangle, draw=black] (Y2) at (8, 1) {Y$^{t2}$};
+\node [rectangle, draw=white] (Aeta1) at (6, 0) {A$^{t1}_\eta$};
+\node [rectangle, draw=white] (Yeta2) at (8, 0) {Y$^{t2}_\eta$};
+
+
+\draw [-latex, draw=red] (UAY) to (UA);
+\draw [-latex, draw=red] (UAY) to (UY);
+\draw [-latex, draw=black] (UA) to (A1);
+\draw [-latex, draw=red, bend left=30] (UY) to (Y2);
+\draw [-latex, draw=black] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+\draw [cor, draw=red, bend left] (Aeta1) to (UA);
+\draw [-latex, draw=black] (S) to (UAY);
+
+\end{tikzpicture}
+
+```
+
+
+
+
+<!-- $$Y(a)\cancel{\coprod} A|L$$ -->
+
+<!-- ## Dag -->
 
 ```{tikz}
 #| label: fig-dag-common-cause
@@ -90,132 +135,174 @@ $$Y(a)\cancel{\coprod} A|L$$
 
 
 
-```{r }
-#| echo: false
-#| code-fold: true
-#| warnings: false
-#| message: false
-#| label: tbl-consistency
-#| tbl-cap: Causal Consistency
+<!-- ```{r } -->
+<!-- #| echo: false -->
+<!-- #| code-fold: true -->
+<!-- #| warnings: false -->
+<!-- #| message: false -->
+<!-- #| label: tbl-consistency -->
+<!-- #| tbl-cap: Causal Consistency -->
 
-library(tidyverse)
-library(knitr)
-library(kableExtra)
+<!-- library(tidyverse) -->
+<!-- library(knitr) -->
+<!-- library(kableExtra) -->
 
-# create data frame
-my_data <- tibble(
-  Group = c(
-    "Y(1)",
-    "Y(0)"
-  ),
-  "Exposure (A=1)" = c("Observable", "Counterfactual"),
-  "No Exposure (A=0)" = c("Counterfactual", "Observable"),
-  
-)
+<!-- # create data frame -->
+<!-- my_data <- tibble( -->
+<!--   Group = c( -->
+<!--     "Y(1)", -->
+<!--     "Y(0)" -->
+<!--   ), -->
+<!--   "Exposure (A=1)" = c("Observable", "Counterfactual"), -->
+<!--   "No Exposure (A=0)" = c("Counterfactual", "Observable"), -->
 
-# create table 
-my_data %>%
-  kbl(format = "markdown")
+<!-- ) -->
 
-```
+<!-- # create table  -->
+<!-- my_data %>% -->
+<!--   kbl(format = "markdown") -->
 
-
-Note @fig-dag-common-cause2  Here I offer a comprehensive tutorial that showcases the practical utility of temporally organised causal diagrams.[^1] Temporally organised causal diagrams are ordinary directed acyclic graphs (DAGs) in which the spatial structure of the graph is designed to reflected the temporal order of assumed causality. We may think of such graphs as temporally conscientious causal DAGS.[^2]
-
-[^2]: Note that the contrast may be between different levels of a multinomial categorical or continuous indicator, in which case we would define the levels to contrast as $A = a$ and $A = a*$
-\begin{align}
-ATE = E(Y(a) - Y(a*))
-\end{align} 
-
-
-[^1]: It is tempting to call temporally organised causal diagrammes "temporal action graphs" - or "TAGs." However, we do not need more jargon.
-
-
-## Dags
-
-
-```{tikz}
-#| label: fig-dag-common-cause2
-#| fig-cap: "Counfounding by common cause."
-#| out-width: 80%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-% Define a simple decoration
-\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
-
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-\node [ellipse, draw=white] (L) at (0, 0) {L$_{t0}$};
-\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
-\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
-\draw [-latex, draw=red, dashed] (A) to (Y);
-\draw [-latex, bend left, draw =black] (L) to (Y);
-\draw [-latex, black] (L) to (A);
-\end{tikzpicture}
-```
-
-
-```{tikz}
-#| label: fig-dag-descendent-solution-2
-#| fig-cap: "Solution: note that conditioning on a confounder that occurs after the exposure and outcome addresses the problem of unmeasured confounding. The dotted paths denote that the effect of U on A and Y is partially adjusted by conditioning on L, even though L occurs after the outcome. The dotted blue path suggest suppressing of the biased relationship between A and Y under the null. A genetic factor that affects the exposure and the outcome early in life, and that also expresses a measured indicator late in life, might constitute an example for which post-outcome confounding control might be possible."
-#| out-width: 80%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-
-\node [rectangle, draw=white] (U) at (0, 0) {U};
-\node [rectangle, draw=black] (L) at (6, -1) {L$_{t3}$};
-\node [rectangle, draw=white](A) at (2, 0) {A$_{t1}$};
-\node [ellipse, draw=white] (Y) at (4, 0) {Y$_{t2}$};
-
-\draw [-latex, bend right = 10, draw=black] (U) to (L);
-\draw [-latex, draw=blue, dotted] (A) to (Y);
-\draw [-latex, bend right=20, draw =black, dotted] (U) to (Y);
-\draw [-latex, draw =black, dotted] (U) to (A);
-
-\end{tikzpicture}
-
-```
+<!-- ``` -->
 
 
 
-```{tikz}
-#| label: fig-dag-interaction
-#| fig-cap: "Causal interaction: if two exposures are causally independent of each other, we may wish to estimate their individual and joint effects on Y, where the counterfactual outcome is Y(a,b) and there is evidence for additive or subadditive interaction if E[Y(1,1) - Y(0,1) - Y(1,0) + Y(0,0)] ≠ 0"
-#| out-width: 80%
-#| echo: false
 
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
+<!-- ```{tikz} -->
+<!-- #| label: fig-dag-dep-u-effect-al -->
+<!-- #| fig-cap: "Uncorrelated  undirected measurement error can dilute the estimates of true effects" -->
+<!-- #| out-width: 80% -->
+<!-- #| echo: false -->
+<!-- \usetikzlibrary{positioning} -->
+<!-- \usetikzlibrary{shapes.geometric} -->
+<!-- \usetikzlibrary{arrows} -->
+<!-- \usetikzlibrary{decorations.markings} -->
 
-\begin{tikzpicture}[{every node/.append style}=draw]
+<!-- \tikzstyle{Arrow} = [->, thin, preaction = {decorate}] -->
+<!-- \tikzset{>=latex} -->
 
-\node [rectangle, draw=white] (A) at (0, .5) {A$_{t0}$};
-\node [rectangle, draw=white] (B) at (0, -.5) {B$_{t0}$};
-\node [rectangle, draw=white](Y) at (5, 0) {Y$_{t1}$};
+<!-- % Define a simple decoration -->
+<!-- \tikzstyle{cor} = [-, dotted, preaction = {decorate}] -->
+
+<!-- \begin{tikzpicture}[every node/.append style={draw}] -->
+
+<!-- \node [rectangle, draw=white] (UAY) at (0, 2) {U$_{AY}$}; -->
+<!-- \node [rectangle, draw=white] (UA) at (2, 1) {U$_A$}; -->
+<!-- \node [rectangle, draw=white] (UY) at (2, 3) {U$_Y$}; -->
+
+<!-- \node [rectangle, draw=black] (A1) at (4, 1) {A$^{t1}$}; -->
+<!-- \node [rectangle, draw=black] (Y2) at (6, 1) {Y$^{t2}$}; -->
+<!-- \node [rectangle, draw=white] (Aeta1) at (4, 0) {A$^{t1}_\eta$}; -->
+<!-- \node [rectangle, draw=white] (Yeta2) at (6, 0) {Y$^{t2}_\eta$}; -->
 
 
-\draw [-latex, draw=black] (A) to (Y);
-\draw [-latex, draw=black] (B) to (Y);
+<!-- \draw [-latex, draw=red] (UAY) to (UA); -->
+<!-- \draw [-latex, draw=red] (UAY) to (UY); -->
+<!-- \draw [-latex, draw=black] (UA) to (A1); -->
+<!-- \draw [-latex, draw=red, bend left=30] (UY) to (Y2); -->
+<!-- \draw [-latex, draw=black] (Aeta1) to (A1); -->
+<!-- \draw [-latex, draw=black] (Yeta2) to (Y2); -->
+<!-- \draw [cor, draw=red, bend left] (Aeta1) to (UA); -->
+
+<!-- \end{tikzpicture} -->
+
+<!-- ``` -->
+
+<!-- Note @fig-dag-common-cause2  Here I offer a comprehensive tutorial that showcases the practical utility of temporally organised causal diagrams.[^1] Temporally organised causal diagrams are ordinary directed acyclic graphs (DAGs) in which the spatial structure of the graph is designed to reflected the temporal order of assumed causality. We may think of such graphs as temporally conscientious causal DAGS.[^2] -->
+
+<!-- [^2]: Note that the contrast may be between different levels of a multinomial categorical or continuous indicator, in which case we would define the levels to contrast as $A = a$ and $A = a*$ -->
+<!-- \begin{align} -->
+<!-- ATE = E(Y(a) - Y(a*)) -->
+<!-- \end{align}  -->
 
 
-\end{tikzpicture}
+<!-- [^1]: It is tempting to call temporally organised causal diagrammes "temporal action graphs" - or "TAGs." However, we do not need more jargon. -->
 
-```
+
+<!-- ## Dags -->
+
+
+<!-- ```{tikz} -->
+<!-- #| label: fig-dag-common-cause2 -->
+<!-- #| fig-cap: "Counfounding by common cause." -->
+<!-- #| out-width: 80% -->
+<!-- #| echo: false -->
+
+<!-- \usetikzlibrary{positioning} -->
+<!-- \usetikzlibrary{shapes.geometric} -->
+<!-- \usetikzlibrary{arrows} -->
+<!-- \usetikzlibrary{decorations} -->
+<!-- \tikzstyle{Arrow} = [->, thin, preaction = {decorate}] -->
+<!-- \tikzset{>=latex} -->
+<!-- % Define a simple decoration -->
+<!-- \tikzstyle{cor} = [-, dotted, preaction = {decorate}] -->
+
+
+<!-- \begin{tikzpicture}[{every node/.append style}=draw] -->
+<!-- \node [ellipse, draw=white] (L) at (0, 0) {L$_{t0}$}; -->
+<!-- \node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$}; -->
+<!-- \node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$}; -->
+<!-- \draw [-latex, draw=red, dashed] (A) to (Y); -->
+<!-- \draw [-latex, bend left, draw =black] (L) to (Y); -->
+<!-- \draw [-latex, black] (L) to (A); -->
+<!-- \end{tikzpicture} -->
+<!-- ``` -->
+
+
+<!-- ```{tikz} -->
+<!-- #| label: fig-dag-descendent-solution-2 -->
+<!-- #| fig-cap: "Solution: note that conditioning on a confounder that occurs after the exposure and outcome addresses the problem of unmeasured confounding. The dotted paths denote that the effect of U on A and Y is partially adjusted by conditioning on L, even though L occurs after the outcome. The dotted blue path suggest suppressing of the biased relationship between A and Y under the null. A genetic factor that affects the exposure and the outcome early in life, and that also expresses a measured indicator late in life, might constitute an example for which post-outcome confounding control might be possible." -->
+<!-- #| out-width: 80% -->
+<!-- #| echo: false -->
+
+<!-- \usetikzlibrary{positioning} -->
+<!-- \usetikzlibrary{shapes.geometric} -->
+<!-- \usetikzlibrary{arrows} -->
+<!-- \usetikzlibrary{decorations} -->
+<!-- \tikzstyle{Arrow} = [->, thin, preaction = {decorate}] -->
+<!-- \tikzset{>=latex} -->
+
+<!-- \begin{tikzpicture}[{every node/.append style}=draw] -->
+
+<!-- \node [rectangle, draw=white] (U) at (0, 0) {U}; -->
+<!-- \node [rectangle, draw=black] (L) at (6, -1) {L$_{t3}$}; -->
+<!-- \node [rectangle, draw=white](A) at (2, 0) {A$_{t1}$}; -->
+<!-- \node [ellipse, draw=white] (Y) at (4, 0) {Y$_{t2}$}; -->
+
+<!-- \draw [-latex, bend right = 10, draw=black] (U) to (L); -->
+<!-- \draw [-latex, draw=blue, dotted] (A) to (Y); -->
+<!-- \draw [-latex, bend right=20, draw =black, dotted] (U) to (Y); -->
+<!-- \draw [-latex, draw =black, dotted] (U) to (A); -->
+
+<!-- \end{tikzpicture} -->
+
+<!-- ``` -->
+
+
+
+<!-- ```{tikz} -->
+<!-- #| label: fig-dag-interaction -->
+<!-- #| fig-cap: "Causal interaction: if two exposures are causally independent of each other, we may wish to estimate their individual and joint effects on Y, where the counterfactual outcome is Y(a,b) and there is evidence for additive or subadditive interaction if E[Y(1,1) - Y(0,1) - Y(1,0) + Y(0,0)] ≠ 0" -->
+<!-- #| out-width: 80% -->
+<!-- #| echo: false -->
+
+<!-- \usetikzlibrary{positioning} -->
+<!-- \usetikzlibrary{shapes.geometric} -->
+<!-- \usetikzlibrary{arrows} -->
+<!-- \usetikzlibrary{decorations} -->
+<!-- \tikzstyle{Arrow} = [->, thin, preaction = {decorate}] -->
+<!-- \tikzset{>=latex} -->
+
+<!-- \begin{tikzpicture}[{every node/.append style}=draw] -->
+
+<!-- \node [rectangle, draw=white] (A) at (0, .5) {A$_{t0}$}; -->
+<!-- \node [rectangle, draw=white] (B) at (0, -.5) {B$_{t0}$}; -->
+<!-- \node [rectangle, draw=white](Y) at (5, 0) {Y$_{t1}$}; -->
+
+
+<!-- \draw [-latex, draw=black] (A) to (Y); -->
+<!-- \draw [-latex, draw=black] (B) to (Y); -->
+
+
+<!-- \end{tikzpicture} -->
+
+<!-- ``` -->
