@@ -176,7 +176,7 @@
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[boxrule=0pt, sharp corners, enhanced, borderline west={3pt}{0pt}{shadecolor}, frame hidden, breakable, interior hidden]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[frame hidden, borderline west={3pt}{0pt}{shadecolor}, interior hidden, boxrule=0pt, breakable, enhanced, sharp corners]}{\end{tcolorbox}}\fi
 
 \listoffigures
 \listoftables
@@ -221,7 +221,7 @@ causal graphs as I will call them) that reduces the scope for
 unwarrented use. I call these \emph{chronologically causal graph}, and
 offer a tutorial for cultural evolutionary researchers on their use.
 
-There are many excellent resources for causal graphs
+There are many excellent introductions to causal diagrammes
 (\protect\hyperlink{ref-rohrer2018}{Rohrer 2018};
 \protect\hyperlink{ref-hernan2023}{Hernan and Robins 2023a};
 \protect\hyperlink{ref-cinelli2022}{Cinelli, Forney, and Pearl 2022};
@@ -229,28 +229,29 @@ There are many excellent resources for causal graphs
 \protect\hyperlink{ref-mcelreath2020}{McElreath 2020};
 \protect\hyperlink{ref-greenland1999}{Greenland, Pearl, and Robins
 1999}; \protect\hyperlink{ref-suzuki2020}{Suzuki, Shinozaki, and
-Yamamoto 2020}).\footnote{One of the best resources is Miguel Hernan's
-  free course, here:
+Yamamoto 2020}; \protect\hyperlink{ref-pearl2009}{Pearl
+2009}).\footnote{One of the best resources is Miguel Hernan's free
+  course, here:
   \url{https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions}.}.
-One may reasonably ask whether another tutorial adds clutter. The
+One may reasonably ask whether another introduction adds clutter. The
 approach I present here adds value in five ways.
 
 In \textbf{Part 1.} , I explain how to effectively leverage causal
-graphs within the framework of counterfactual or `potential' outcomes,
-an approach crucial for conceptualizing causality. In my perspective,
-the most significant impediment to causal inference is the common
-misconception that it is purely an aspect of manifest data science.
-Instead, it should be considered counterfactual data science, an
-approach that formulates and answers quantitative queries about
-alternative realities---how the world could have been different from its
-current state. Without the ability to ask and resolve these
-counterfactual questions, it is impossible to quantitatively evaluate
-causal claims. It is imperative that the construction of a causal graph
-should not be attempted without a thorough understanding of the
-counterfactual underpinnings of quantitative causal inference.
+graphs within the framework of counterfactual or ``potential'' outcomes,
+an approach crucial for conceptualizing causality. In my view, a
+significant impediment to causal inference is the common misconception
+that it is purely an aspect of manifest data science. Instead, it should
+be considered an aspect of what migth be called counterfactual data
+science, an approach that formulates and answers quantitative
+comparative questions about how the world could have been different from
+its current state. Without the ability to ask and resolve such
+counterfactual questions, we cannot quantitatively evaluate causal
+claims. I devote attention to clarifying the counterfactual
+underpinnings of quantitative causal inference because one should not
+use causal graphs without understanding that basis.
 
 In \textbf{Part 2}, I review the four elemental forms of confounding.
-Here I show how chronological causal diagrammes elucidate strategies for
+Here I show how chronological causal graphs elucidate strategies for
 confounding control. A brief introduction examines
 
 Although this discussion replicates material from other tutorials, by
@@ -695,15 +696,15 @@ plausible.\footnote{There are deeper questions about whether we can
   conceptualise cultures as random realisations of a draw from possible
   cultures, which we will not consider here.}
 
-Setting to the side deeper conceptual questions about randomising
-cultures to treatment assignments, it should be apparent there are
-considerable difficulties in meeting the assumptions required for
-addressing the causal consistency and positivity assumptions.
+Setting to the side fundamental conceptual questions about the coherence
+of randomising cultures to treatment assignments, it should be apparent
+there are considerable difficulties in meeting the assumptions required
+for addressing the causal consistency and positivity assumptions.
 
 Suppose we manage to satisfy ourself of these assumptions. Suppose there
 are no further conceptual questions about the measurement of variables
 that may induce an association between the exposure and the outcomes. We
-are then ready to employ causal diagrammes to assess the exchangebility
+are then ready to employ causal graphs to assess the exchangebility
 assumption of no unmeasured confounding.
 
 \hypertarget{summary-part-1}{%
@@ -979,53 +980,56 @@ by both the treatment \(A\) and an outcome \(Y\).
 
 Suppose \(A\) and \(Y\) are initially independent, such that
 \(A \coprod Y(a)\). Conditioning on the common effect \(L\) opens a
-backdoor path between \(A\) and \(Y\), possibly inducing an association.
-This occurs because \(L\) gives information about the relationship of
-\(A\) and \(Y\). Here's an example:
+backdoor path between \(A\) and \(Y\), potentially inducing an
+association. This occurs because \(L\) can provide information about
+both \(A\) and \(Y\). Here is an example:
 
-Let \(A\) denote ``beliefs in Big Gods''. Let \(Y\) denote ``social
-complexity''. Let \(L\) denote ``economic trade''. Suppose, ``beliefs in
-Big Gods'' and ``social complexity'' are not causally linked. However,
-they both affect ``economic trade'', and if we condition on ``economic
-trade'' in a cross-sectional study, we might find a statistical
-association between ``beliefs in Big Gods'' and ``social complexity''
-even in the absence of causation.
+Let \(A\) denote the level of belief in Big Gods (with higher values
+indicating stronger belief), \(Y\) denote the level of social
+complexity, and \(L\) denote the level of economic trade. Now, suppose
+that belief in Big Gods and social complexity are not causally linked.
+However, both of these factors influence the level of economic trade,
+and if we condition on economic trade in a cross-sectional study, we
+might find a statistical association between belief in Big Gods and
+social complexity even though there's no causal link.
 
-We denote the observed associations as follows:
+If we denote the observed associations as follows:
 
 \begin{itemize}
 \tightlist
 \item
-  \(P(A = 1)\): Probability of beliefs in Big Gods
+  \(P(A)\): Distribution of beliefs in Big Gods
 \item
-  \(P(Y = 1)\): Probability of social complexity
+  \(P(Y)\): Distribution of social complexity
 \item
-  \(P(L = 1)\): Probability of economic trade
+  \(P(L)\): Distribution of economic trade
 \end{itemize}
 
-Without conditioning on \(L\), we have:
+Without conditioning on \(L\), and if \(A\) and \(Y\) are independent,
+we have:
 
-\[P(A = 1, Y = 1) = P(A = 1)P(Y = 1)\]
+\[P(A, Y) = P(A)P(Y)\]
 
-However, if we condition on \(L\) (the common effect of both \(A\) and
-\(Y\)), we find:
+However, if we condition on \(L\) (which is a common effect of both
+\(A\) and \(Y\)), we have:
 
-\[P(A = 1, Y = 1 | L = 1) \neq P(A = 1 | L = 1)P(Y = 1 | L = 1)\]
+\[P(A, Y | L) \neq P(A | L)P(Y | L)\]
 
-The common effect \(L\), once conditioned on, creates a non-causal
-association between \(A\) and \(Y\). This can mislead us into believing
-there is a direct link between beliefs in Big Gods and social
-complexity, even in the absence of such a link. Without time-series data
-measured on the units of analysis, if we only observe \(A\), \(Y\), and
-\(L\) and compute correlations, we might erroneously conclude that there
-is a causal relationship between \(A\) and \(Y\). This is the collider
-stratification bias.\footnote{When \(A\) and \(Y\) are independent, the
-  joint probability of \(A\) and \(Y\) is equal to the product of their
-  individual probabilities: \(P(A = 1, Y = 1) = P(A = 1)P(Y = 1)\). When
-  we condition on \(L\), however, the joint probability of \(A\) and
-  \(Y\) given \(L\) is not necessarily equal to the product of the
-  individual probabilities of \(A\) and \(Y\) given \(L\), hence the
-  inequality as described.}
+The common effect \(L\), once conditioned on, creates an association
+between \(A\) and \(Y\) that is not causal. This can mislead us into
+believing there is a direct link between beliefs in Big Gods and social
+complexity, even in the absence of such a link. If we only observe
+\(A\), \(Y\), and \(L\) and compute correlations, without time-series
+data measured on the units of analysis, we might erroneously conclude
+that there is a causal relationship between \(A\) and \(Y\). This is an
+example of collider-stratification bias, which occurs when we condition
+on a common effect (a `collider') of two variables.\footnote{When \(A\)
+  and \(Y\) are independent, the joint probability of \(A\) and \(Y\) is
+  equal to the product of their individual probabilities:
+  \(P(A, Y) = P(A)P(Y)\). However, when we condition on \(L\), the joint
+  probability of \(A\) and \(Y\) given \(L\) is not necessarily equal to
+  the product of the individual probabilities of \(A\) and \(Y\) given
+  \(L\), hence the inequality \(P(A, Y | L) \neq P(A | L)P(Y | L)\).}
 
 Conditioning on a common effect is an example of ``collider'' bias.
 
@@ -1161,18 +1165,23 @@ will typically attenuate the direct effect of \(A\) on \(Y\) as it
 ``blocks'' the indirect path through \(L\), as presented in
 Figure~\ref{fig-dag-mediator}.
 
-On the other hand, if \(L\) is a collider between \(A\) and an
-unmeasured confounder \(U\), then including \(L\) may increase the
-strength of association between \(A\) and \(Y\). This happens because
-conditioning on a collider can induce an artificial association between
-the variables influencing the collider, as presented in
-Figure~\ref{fig-dag-descendent}.
+In the example just considered we do not induce bias under the null. If
+\(A\) were not associated with \(Y\) then conditioning on \(M\) would
+not open a backdoor path between \(A\) and \(L\). However, it is not
+generally the case that conditioning on a mediator will not induce bias
+under the null. As described below in Figure~\ref{fig-dag-descendent},
+if \(L\) is the common effect of the exposure \(A\) and an unmeasured
+variable \(U\) that is associated with the outcome \(Y\), then including
+\(L\) may increase the strength of association between \(A\) and \(Y\),
+even if \(A\) is not associated with \(Y\) and even if \(U\) is not a
+cause of \(A\).
 
-In either case, unless one is interested in mediation analysis,
-conditioning on a post-treatment variable is nearly always a bad idea.
-Such conditioning will distort our understanding of the total causal
-effect of \(A\) on \(Y\). If we cannot ensure that \(L\) is measured
-before \(A\), and if \(A\) may affect \(L\) we run the risk of mediator
+Therefore, unless one is interested in mediation analysis, conditioning
+on a post-treatment variable is nearly always a bad idea (see
+Figure~\ref{fig-dag-descendent-solution-2} for a counter example). Again
+attention to chronology in the graph has practical implications for data
+collection. If we cannot ensure that \(L\) is measured before \(A\) and
+if \(A\) may affect \(L\), including \(L\) in our model risks mediator
 bias.
 
 \begin{figure}
@@ -1196,17 +1205,16 @@ on total effects, we should avoid conditioning on a mediator. This can
 be achieved by ensuring that the mediator \(L\) takes place before the
 treatment \(A\) and the outcome \(Y\). This underlines the importance of
 explicitly stating the temporal ordering of our variables. By including
-time indexing of all variables in our causal diagramme, and by clearly
+time indexing of all variables in our causal graph and by clearly
 labelling mediators (e.g.~with \(M_t\)), we reduce the potential for
-mediator bias from over-conditioning.\footnote{Like most rules, this
-  rule has exceptions. If \(L\) is associated with \(Y\) and cannot be
-  caused by \(A\), conditioning on \(L\) will often enhance the
-  precision of the estimate for the causal effect of \(A\) on \(Y\).
-  This holds true even if \(L\) occurs after \(A\). However, the onus is
-  on us to explain that the post-treatment factor cannot be a
-  consequence of the exposure. Moreover including \(L\) is not, in this
-  instance, requited for confounding control. We consider post-treatment
-  conditioning next.}
+mediator bias from over-conditioning.\footnote{Note that if \(L\) is
+  associated with \(Y\) and cannot be caused by \(A\), conditioning on
+  \(L\) will often enhance the precision of the estimate for the causal
+  effect of \(A\) on \(Y\). This holds true even if \(L\) occurs after
+  \(A\). However, the onus is on us to explain that the post-treatment
+  factor cannot be a consequence of the exposure. Moreover including
+  \(L\) is not, in this instance, required for confounding control. We
+  consider post-treatment conditioning next.}
 
 \begin{figure}
 
@@ -1283,11 +1291,17 @@ Second, note that we may use descendent to reduce bias. For example, if
 an unmeasured confounder \(U\) affects \(A\), \(Y\), and \(L^\prime\),
 then adjusting for \(L^\prime\) may help to reduce confounding caused by
 \(U\). This scenario is presented in
-Figure~\ref{fig-dag-descendent-solution-2}. Note that in this graph,
-\(L^\prime\) may occur \emph{after} the exposure, and indeed after the
-outcome. This shows that it would be wrong to infer that merely because
-causes precede effects, we should only condition on confounders that
-precede the exposure.
+Figure~\ref{fig-dag-descendent-solution-2}, and clarifies why the the
+modified disjunctive cause criterion for confounding control advises
+that we ``include as a covariate any proxy for an unmeasured variable
+that is a common cause of both the exposure and the outcome''
+(\protect\hyperlink{ref-vanderweele2019a}{Tyler J. VanderWeele 2019}).
+
+Note furthermore that in this graph, \(L^\prime\) may occur \emph{after}
+the exposure, and indeed occurs \emph{after} the outcome. This shows
+that it would be wrong to infer that merely because causes precede
+effects, we should only condition on confounders that precede the
+exposure.
 
 \begin{figure}
 
@@ -1312,10 +1326,25 @@ post-outcome confounding control.}
 \hypertarget{causal-interaction}{%
 \subsection{Causal Interaction}\label{causal-interaction}}
 
-In applied research, the assessment of evidence for interaction often
-holds significant importance. However, to properly approach this
-concept, it is crucial to distinguish between causal interaction and
-effect modification.
+Those studying causal diagramms often wonder how to depict interactions
+within these structures. This is a sensible question, especially because
+interactions can be scientifically important. However, it is crucial to
+remember the primary function of causal diagramms: to ensure
+d-separation (conditional independence) between exposure and outcome
+variables. Causal diagrams are not designed to capture all facets of a
+phenomenon under investigation. Furthermore, causal diagrams are
+qualitative tools and do not inherently represent non-parametric
+characteristics of reality, such as additive and multiplicative
+interaction.
+
+Some misunderstandings can arise regarding the role and function of
+causal diagrams. These often stem from deeper confusions about the
+concept of interaction itself. Given this, it is worth taking a moment
+to clarify the notion of interaction within a counterfactual causal
+framework. Again, in much scientific research, evaluating evidence for
+interaction is oftent important. However, to accurately handle this
+concept, a crucial distinction must be made between causal interaction
+and effect modification.
 
 \hypertarget{causal-interaction-as-two-independent-exposures}{%
 \subsubsection{\texorpdfstring{\textbf{Causal interaction as two
@@ -1386,20 +1415,22 @@ not draw a path into another path, or attempt other such shenanigans.}
 effect
 modification}}{Causal interaction considered as effect modification}}\label{causal-interaction-considered-as-effect-modification}}
 
-In exploring effect modification, our focus is the variation in the
-impact of a single exposure on an outcome across diverse levels of
-another variable. We are interested how the impact of an exposure (say
-belief in big Gods), might differ on an outcome (say, ``social
-complexity''), might vary across different levels (say early urban
-civilizations in China versus early urban civilizations in the South
-America). In this example, geography is an ``effect modifier.'' That is,
-to assess effect modification, we focus on how the effect of our
-exposure changes across different levels of our effect modifier,
-geography, where the effect modifier is not assumed to be something that
-we intervene upon.
+When discussing evidence for effect modification, we're essentially
+looking at how the effect of a given exposure on an outcome varies
+according to different levels of another variable. For instance,
+consider a study where we're interested in how the influence of belief
+in Big Gods on social complexity might vary between early urban
+civilizations in China and South America. In this scenario, `geography'
+(China versus South America) serves as the `effect modifier.' That is,
+to investigate effect modification, we focus on how the influence of our
+exposure (belief in Big Gods) on the outcome (social complexity) differs
+across various levels of our effect modifier (geography). It is
+important to note that we are not considering the effect modifier as a
+variable on which we intervene, but merely one that might change the
+effect of our exposure on the outcome of interest.
 
 To fill this out, suppose we are comparing two levels of exposure, which
-we'll call \$A = a \$ and \(A= a^*\). Supose further that \(G\) has two
+we'll call \(A = a\) and \(A= a^*\). Suppose further that \(G\) has two
 levels, which we will call \(g\) and \(g'\). Then:
 
 \begin{itemize}
@@ -1431,13 +1462,13 @@ effect in the two groups, indicating effect modification.
 When representing effect modification, it is again important to remember
 that causal graphs are not parametric. Thus to represent effect
 modification, do \emph{not} draw a path intersecting another path or
-attempt another shenanigan. Rather, simply draw two edges into to
+attempt another visualisation. Rather, simply draw two edges into to
 exposure Figure~\ref{fig-dag-effect-modfication}. Keep at the front of
 your mind that your purpose in drawing a causal graph is to assess
-confoundings and identify strategies for confounding control. Here
-again, representing the temporal order of events in the spatial layout
-of your graph will make the identification problem clearer because
-causes precede effects.
+confoundings and to addressing the identification problem. Here again,
+representing the temporal order of events in the spatial layout of your
+graph will make the identification problem clearer because causes must
+precede effects.
 
 \begin{figure}
 
@@ -1454,12 +1485,12 @@ effect-modification.}
 \subsubsection{Guidelines for causal
 mediation}\label{guidelines-for-causal-mediation}}
 
-The conditions necessary for causal mediation are stringent. Carefully
-arranged causal graphs, as shown in
+The conditions necessary for causal mediation are stringent.
+Chronologically arranged causal diagrammes, as shown in
 Figure~\ref{fig-dag-mediation-assumptions}, can aid us in identifying
-both the potential benefits and pitfalls of causal mediation. We will
-keep to the question of whether cultural beliefs in Big Gods affect
-social complexity, and ask whether this affect is mediated by political
+both the promise and perils of causal mediation. We will again keep to
+the question of whether cultural beliefs in Big Gods affect social
+complexity, and ask whether this affect is mediated by political
 authority.
 
 \begin{enumerate}
@@ -1559,7 +1590,7 @@ distributions to obtain probablistic identification (an excellent
 resource is (\protect\hyperlink{ref-shi2021}{Shi et al. 2021}) ).
 Answering such questions typically necessitates the use of G-methods,
 which the subsequent section will elaborate on. For now, we have seen
-how chronologically ordered causal graphs elucidate the conditions
+how chronologically ordered causal diagrammes elucidate the conditions
 necessary for mediation analysis in addressing causal
 questions.\footnote{An outstanding resource both for understanding
   causal interaction and causal mediation is
@@ -1591,7 +1622,9 @@ but doing so blocks the effect of the exposure on the mediator.}
 feedback)}\label{advice-for-modelling-repeated-exposures-in-longitudinal-data-confounder-treatment-feedback}}
 
 Causal mediation is a special case in which we have multiple sequential
-exposures.
+exposures. Here again chronologically organised causal diagrammes can
+help us to understand the problems and opportunities for causal
+inference using time-series data.
 
 For example, consider temporally fixed multiple exposures. The
 counterfactual outcomes may be denoted \(Y(a_{t1} ,a_{t2})\). There are
@@ -2006,7 +2039,7 @@ this case, however, we would not likely estimate a causal effect that
 would transport to the non-religious population.
 
 The general strategy for confounding control by three-wave panel designs
-may be summarised in Figure~\ref{fig-dag-6}.
+may be summarised in Figure~\ref{fig-dag-6}/
 
 \begin{figure}
 
@@ -2034,9 +2067,16 @@ design}\label{part-4.-selection-bias-in-the-three-wave-panel-design}}
 \subsection{Unmeasured confounder affects selection and the
 outcome}\label{unmeasured-confounder-affects-selection-and-the-outcome}}
 
-We can put causal diagrammes to further use by using them to clarify the
+We can put causal graphs to further use by using them to clarify the
 biases arising from panel attrition. The topic of selection bias is
-larger than we will consider in connection with panel attrition (see: .
+larger than we will consider in connection with panel attrition (see:
+(\protect\hyperlink{ref-hernuxe1n2023}{Miguel A. Hernán and Monge 2023};
+\protect\hyperlink{ref-hernuxe1n2004a}{Miguel A. Hernán, Hernández-Díaz,
+and Robins 2004}; \protect\hyperlink{ref-hernuxe1n2017}{M. A. Hernán
+2017}; \protect\hyperlink{ref-lu2022}{Lu et al. 2022};
+\protect\hyperlink{ref-deffner2022}{Deffner, Rohrer, and McElreath
+2022}; \protect\hyperlink{ref-bareinboim2022}{Bareinboim, Tian, and
+Pearl 2022}).)
 
 Figure Figure~\ref{fig-dag-8} illustrates a common issue encountered in
 panel designs from selection bias. In the three-wave panel design,
@@ -3114,6 +3154,12 @@ psychometric theory in light of causal inference.
 
 \hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
+\leavevmode\vadjust pre{\hypertarget{ref-bareinboim2022}{}}%
+Bareinboim, Elias, Jin Tian, and Judea Pearl. 2022. {``Recovering from
+Selection Bias in Causal and Statistical Inference.''} In, 1st ed.,
+36:433450. New York, NY, USA: Association for Computing Machinery.
+\url{https://doi.org/10.1145/3501714.3501740}.
+
 \leavevmode\vadjust pre{\hypertarget{ref-barrett2021}{}}%
 Barrett, Malcolm. 2021. \emph{Ggdag: Analyze and Create Elegant Directed
 Acyclic Graphs}. \url{https://CRAN.R-project.org/package=ggdag}.
@@ -3166,6 +3212,12 @@ effectiveness research from a meta-analysis of statins.''}
 De Coulanges, Fustel. 1903. \emph{La Cité Antique: Étude Sur Le Culte,
 Le Droit, Les Institutions de La Grèce Et de Rome}. Hachette.
 
+\leavevmode\vadjust pre{\hypertarget{ref-deffner2022}{}}%
+Deffner, Dominik, Julia M. Rohrer, and Richard McElreath. 2022. {``A
+Causal Framework for Cross-Cultural Generalizability.''} \emph{Advances
+in Methods and Practices in Psychological Science} 5 (3):
+25152459221106366. \url{https://doi.org/10.1177/25152459221106366}.
+
 \leavevmode\vadjust pre{\hypertarget{ref-duxedaz2021}{}}%
 Díaz, Iván, Nicholas Williams, Katherine L. Hoffman, and Edward J.
 Schenck. 2021. {``Non-Parametric Causal Effects Based on Longitudinal
@@ -3199,6 +3251,22 @@ Hernán, M. A. 2004. {``A Definition of Causal Effect for Epidemiological
 Research.''} \emph{Journal of Epidemiology \& Community Health} 58 (4):
 265--71. \url{https://doi.org/10.1136/jech.2002.006361}.
 
+\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2017}{}}%
+---------. 2017. {``Invited Commentary: Selection Bias Without Colliders
+\textbar{} American Journal of Epidemiology \textbar{} Oxford
+Academic.''} \emph{American Journal of Epidemiology} 185 (11): 10481050.
+\url{https://doi.org/10.1093/aje/kwx077}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2004a}{}}%
+Hernán, Miguel A., Sonia Hernández-Díaz, and James M. Robins. 2004. {``A
+Structural Approach to Selection Bias.''} \emph{Epidemiology} 15 (5):
+615--25. \url{https://www.jstor.org/stable/20485961}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2023}{}}%
+Hernán, Miguel A., and Susana Monge. 2023. {``Selection Bias Due to
+Conditioning on a Collider.''} \emph{BMJ} 381 (June): p1135.
+\url{https://doi.org/10.1136/bmj.p1135}.
+
 \leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2006}{}}%
 Hernán, Miguel A., and James M. Robins. 2006. {``Estimating Causal
 Effects from Epidemiological Data.''} \emph{Journal of Epidemiology \&
@@ -3215,6 +3283,12 @@ Emulation: A Framework for Causal Inference from Observational Data.''}
 Holland, Paul W. 1986. {``Statistics and Causal Inference.''}
 \emph{Journal of the American Statistical Association} 81 (396): 945960.
 
+\leavevmode\vadjust pre{\hypertarget{ref-lu2022}{}}%
+Lu, Haidong, Stephen R. Cole, Chanelle J. Howe, and Daniel Westreich.
+2022. {``Toward a Clearer Definition of Selection Bias When Estimating
+Causal Effects.''} \emph{Epidemiology (Cambridge, Mass.)} 33 (5):
+699--706. \url{https://doi.org/10.1097/EDE.0000000000001516}.
+
 \leavevmode\vadjust pre{\hypertarget{ref-mcelreath2020}{}}%
 McElreath, Richard. 2020. \emph{Statistical Rethinking: A Bayesian
 Course with Examples in r and Stan}. CRC press.
@@ -3223,6 +3297,10 @@ Course with Examples in r and Stan}. CRC press.
 Naimi, Ashley I, Stephen R Cole, and Edward H Kennedy. 2017. {``An
 Introduction to g Methods.''} \emph{International Journal of
 Epidemiology} 46 (2): 756--62. \url{https://doi.org/10.1093/ije/dyw323}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-pearl2009}{}}%
+Pearl, Judea. 2009. {``Causal Inference in Statistics: An Overview.''}
+\url{https://doi.org/10.1214/09-SS057}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-richardson2013}{}}%
 Richardson, Thomas S, and James M Robins. 2013. {``Single World
