@@ -61,6 +61,36 @@ dagify(Y ~ L,
 
 
 
+# some daffner dags
+
+
+# variation  of two using measurement errors
+
+
+
+coords <- tibble::tribble(~ name, ~ x,  ~ y,
+                          "S", 1,   3,
+                          "A", 3,   2,
+                          "Y", 4,   0,
+                          "X", 1,   0)
+
+d <- dagify(Y ~ A + S,
+       coords = coords,
+       exposure = "X",
+       outcome = "Y",
+        controlling_for = c("S"),
+)
+
+d%>%
+  ggdag_dseparated("Y", "X",
+                   controlling_for = c("S"),
+                   collider_lines = TRUE
+  ) + theme_dag_grey()
+
+
+
+
+d |> ggdag_adjust(collider_lines = TRUE) + theme_dag_blank()
 
 
 # variation  of two using measurement errors
@@ -76,7 +106,9 @@ coords <- tibble::tribble(~ name, ~ x,  ~ y,
 dagify(Y ~ L,
        Ystar ~ Y + A + L,
        A ~ L,
-       coords = coords
+       coords = coords,
+       exposure = "A",
+       outcome = "Y",
 ) %>%
   ggdag_dseparated("Y", "A",
                    controlling_for = c("Ystar","L", "A"),
