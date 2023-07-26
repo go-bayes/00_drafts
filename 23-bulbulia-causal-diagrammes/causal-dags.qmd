@@ -184,12 +184,14 @@ Causal inference is a framework of assumptions and techniques used for deriving 
 
 We need both observed and unobserved potential outcomes to evaluate the average treatment effects (ATE). Our problem is that at least half the observations we need are missing.
 
-The causal consistency assumption is the cornerstone for solving this special missing data problem. 
+The causal consistency assumption plays a pivotal role in resolving this distinct missing data issue. It serves as the key that unlocks a quantitative understanding of the counterfactual outcomes.
 
-Let $Y_i^{observed}_i|A_i$ denote an individual's observed outcome in response to treatment. Where the causal consistency assumption is satisfied, we may derive counterfactual outcomes from the following rule
+Let $Y_i^{observed}|A_i$
+
+denote an individual's observed outcome in response to treatment. Where the causal consistency assumption is satisfied, we may derive counterfactual outcomes from the following rule
 
 $$
-Y^{observed}_i|A = 
+Y_i^{observed}|A = 
 \begin{cases} 
 Y_i(~a^*) & \text{if } A_i = a* \\
 Y_i(~a~) & \text{if } A_i = a
@@ -284,7 +286,7 @@ Perhaps a more credible measure of effect in the region of our interests is the 
 
 $$ATT = E[(Y(a*)- Y(a))|A = a*,L]$$
 
-Here, the ATT defines the expected difference in economic success for cultures that became Protestant compared with the expected economic success if those cultures had not become Protestant, conditional on measured confounders $L$, among the exposed ($A = a^*$). To estimate this contrast, our models would need to match Protestant cultures with comparable Catholic cultures effectively. By estimating the ATT, we would avoid the assumption of non-deterministic positivity for the untreated. However, whether matching is conceptually plausible remains for historians and philosophers. Assigning a religion to a culture a religion is not as easy as administering a pill [@ watts2018].
+Here, the ATT defines the expected difference in economic success for cultures that became Protestant compared with the expected economic success if those cultures had not become Protestant, conditional on measured confounders $L$, among the exposed ($A = a^*$). To estimate this contrast, our models would need to match Protestant cultures with comparable Catholic cultures effectively. By estimating the ATT, we would avoid the assumption of non-deterministic positivity for the untreated. However, whether matching is conceptually plausible remains for historians and philosophers. Assigning a religion to a culture a religion is not as easy as administering a pill \[\@ watts2018\].
 
 Setting aside these conceptual issues, meeting the assumptions required for causal inference in cultural evolution, even for recent events such as the Protestant Reformation, poses challenges. Understanding the broader framework of counterfactual data science in which causal diagrams find their application is vital. Next, we will consider how causal diagrams typically assist in satisfying the exchangeability assumption and how utilising chronologically ordered causal diagrams may enhance research efficacy.
 
@@ -334,11 +336,16 @@ The rules of d-separation help us to understand which variables to adjust for wh
 
 7.  **Control of Confounding by the Modified Disjunctive Cause Criterion**: VanderWeele's Modified Disjunctive Cause Criterion (MDCC) provides practical guidance for controlling for confounding. According to this criterion, a distinct variable that can reduce or remove the distortion caused by confounding variables is deemed a confounder when adjusted for [@vanderweele2019]. The directive:
 
+```{=html}
+<!-- -->
+```
+a.  Control for any variable that causes the exposure, the outcome, or both.
+b.  Control for any proxy for an unmeasured variable that is a shared cause of both exposure and outcome.
+c.  Define an instrumental variable as a variable associated with the exposure but does not influence the outcome independently, except through the exposure. Exclude any instrumental variable that is not a proxy for an unmeasured confounder from the confounder set. Note that a "confounder set" is a somewhat broader concept than an "adjustment set" because the set employs a strategy that eliminates confounding where confounding can be eliminated and reduces confounding in situations where it cannot be eliminated.
 
-  a.  Control for any variable that causes the exposure, the outcome, or both.
-  b.  Control for any proxy for an unmeasured variable that is a shared cause of both exposure and outcome.
-  c.  Define an instrumental variable as a variable associated with the exposure but does not influence the outcome independently, except through the exposure. Exclude any instrumental variable that is not a proxy for an unmeasured confounder from the confounder set. Note that a "confounder set" is a somewhat broader concept than an "adjustment set" because the set employs a strategy that eliminates confounding where confounding can be eliminated and reduces confounding in situations where it cannot be eliminated.
-
+```{=html}
+<!-- -->
+```
 8.  **Compatibility**: if two variables are d-separated given a third, we say the two variables are independent conditional on the third. Understanding compatibility is fundamental in assessing the independence of variables within a causal framework. The concept allows us to determine if two other variables are conditionally independent given a specific set of observed variables. Assessing compatibility allows us to address potential confounding in observational studies [@pearl2009a].
 
 9.  **(Weak) Faithfulness**: if two variables are d-connected given a third, the two variables are expected to be associated conditional on the third. Faithfulness entails that any dependence relationship implied by the joint distribution of all variables is also represented in the causal graph. This bridges the gap between statistical association and causal relation. It allows us to infer causal associations from correlations in the data [@pearl1995a].
@@ -572,7 +579,7 @@ Again, the modified disjunctive cause criterion will satisfy the backdoor criter
 
 a.  Control for any variable that causes the exposure, the outcome, or both.
 b.  Control for any proxy for an unmeasured variable that is a shared cause of both exposure and outcome.
-c.  Define an instrumental variable as a variable associated with the exposure but does not influence the outcome independently, except through the exposure. Exclude any instrumental variable that is not a proxy for an unmeasured confounder from the confounder set (see: @vanderweele2020 page 441, [@vanderweele2019a])
+c.  Define an instrumental variable as a variable associated with the exposure but does not influence the outcome independently, except through the exposure. Exclude any instrumental variable that is not a proxy for an unmeasured confounder from the confounder set (see: @vanderweele2020 page 441, [@vanderweele2019])
 
 Of course, the difficulty is in determining which variables belong to the desired set! Specialist knowledge can facilitate this task but cannot generally be ascertained from the data.
 
@@ -706,7 +713,7 @@ Again, the advice is clear: we should measure the ($L^\prime$) before the exposu
 
 ```
 
-Next consider how we may use a post-treatment descendent to reduce bias. Suppose an unmeasured confounder $U$ affects $A$, $Y$, and $L^\prime$ as presented in, then adjusting for $L^\prime$ may help to reduce confounding caused by $U$. This scenario is presented in @fig-dag-descendent-solution-2. If we deploy the modified disjunctive cause criterion for confounding control, we would "include as a covariate any proxy for an unmeasured variable that is a common cause of both the exposure and the outcome" [@vanderweele2019a]. We discover that although $L^\prime$ may occur *after* the exposure, and indeed occur *after* the outcome, we may condition on it to reduce confounding because it is a proxy for an unmeasured common cause of the exposure and the confounder. This example shows that employing a rule that requires us to condition only on pre-exposure (and indeed pre-outcome) variables would be hasty.
+Next consider how we may use a post-treatment descendent to reduce bias. Suppose an unmeasured confounder $U$ affects $A$, $Y$, and $L^\prime$ as presented in, then adjusting for $L^\prime$ may help to reduce confounding caused by $U$. This scenario is presented in @fig-dag-descendent-solution-2. If we deploy the modified disjunctive cause criterion for confounding control, we would "include as a covariate any proxy for an unmeasured variable that is a common cause of both the exposure and the outcome" [@vanderweele2019]. We discover that although $L^\prime$ may occur *after* the exposure, and indeed occur *after* the outcome, we may condition on it to reduce confounding because it is a proxy for an unmeasured common cause of the exposure and the confounder. This example shows that employing a rule that requires us to condition only on pre-exposure (and indeed pre-outcome) variables would be hasty.
 
 ```{tikz}
 #| label: fig-dag-descendent-solution-2
@@ -736,9 +743,10 @@ Next consider how we may use a post-treatment descendent to reduce bias. Suppose
 \end{tikzpicture}
 
 ```
-### Case 1: Causal interaction: do not attempt to draw non-linear relationships such as interactions
 
-Interactions may be of great scientific importance. How shall we depict interactions on a graph? It is crucial to remember the primary function of causal diagrams is to investigate confounding. Causal diagrams are not designed to capture all facets of a phenomenon under investigation. We should not attempt any unique visual trick to show additive and multiplicative interaction. Including the relevant notes and paths necessary to evaluate sources of bias is sufficient. 
+### Case 1: Causal Interaction: do not attempt to draw non-linear relationships such as interactions
+
+Interactions may be of great scientific importance. How shall we depict interactions on a graph? It is crucial to remember the primary function of causal diagrams is to investigate confounding. Causal diagrams are not designed to capture all facets of a phenomenon under investigation. We should not attempt any unique visual trick to show additive and multiplicative interaction. Including the relevant notes and paths necessary to evaluate sources of bias is sufficient.
 
 Some misunderstandings can arise regarding the role and function of causal diagrams. These often stem from a more profound confusion about the concept of interaction itself. Given this, it is worth clarifying the notion of interaction within a counterfactual causal framework. Again, evaluating evidence for interaction is often essential to much scientific research. However, we must distinguish between concepts of causal interaction and concepts of causal effect modification.
 
@@ -847,7 +855,7 @@ Again, remember that causal diagrams are non-parametric. Do not draw an intersec
 \end{tikzpicture}
 ```
 
-### Case 2: Causal mediation: causal graphs show the inadequacy of standard approaches
+### Case 2: Causal Mediation: causal graphs show the inadequacy of standard approaches
 
 The conditions necessary for causal mediation are stringent. I present these conditions in the chronologically ordered causal graph shown in @fig-dag-mediation-assumptions. We will again consider whether cultural beliefs in Big Gods affect social complexity. Let us also ask whether this affect is mediated by political authority. The assumptions required for asking causal mediation questions are as follows
 
@@ -869,7 +877,7 @@ This requirement is expressed as $Y(a,m) \coprod M(a^*) | L$. We must ensure tha
 
 Notice again that the requirements for counterfactual data science are more strict than for descriptive or predictive data science.
 
-Nonetheless, we can set the mediator to certain levels and explore controlled direct and indirect effects, which may be relevant to science and policy. For instance, if we were to fix political authority at a specific level, we could ask, what would be Big Gods' direct and indirect causal effects on social complexity? Other approaches involve sampling from the observed distributions to obtain probabilistic identification (see: [@shi2021] ). Answering such questions requires G-methods [@hernán2023a]). 
+Nonetheless, we can set the mediator to certain levels and explore controlled direct and indirect effects, which may be relevant to science and policy. For instance, if we were to fix political authority at a specific level, we could ask, what would be Big Gods' direct and indirect causal effects on social complexity? Other approaches involve sampling from the observed distributions to obtain probabilistic identification (see: [@shi2021] ). Answering such questions requires G-methods [@hernán2023a]).
 
 We have now considered how chronologically ordered causal diagrams elucidate the conditions necessary for causal mediation analysis.[^13]
 
@@ -914,7 +922,7 @@ We have now considered how chronologically ordered causal diagrams elucidate the
 
 ```
 
-### Case 3: Confounder-treatment feedback: causal graphs show the inadequacy of standard approaches
+### Case 3: Confounder-Treatment Feedback: Longitudinal "growth" is not causation
 
 In our discussion of causal mediation, we consider how the effects of two sequential exposures may combine to affect an outcome. We can broaden this interest to consider the causal effects of multiple sequential exposures. In such scenarios, causal diagrams arranged chronologically can aid in clarifying the challenges and opportunities.
 
@@ -928,7 +936,6 @@ For example, consider temporally fixed multiple exposures. The counterfactual ou
 
 4.  **Treat once second (Y(0,1))**
 
-
 | Type     | Description                            | Counterfactual Outcome |
 |----------|----------------------------------------|------------------------|
 | Regime   | Always treat                           | Y(1,1)                 |
@@ -941,7 +948,6 @@ For example, consider temporally fixed multiple exposures. The counterfactual ou
 | Contrast | Never treat vs. Treat once first       | E\[Y(0,0) - Y(1,0)\]   |
 | Contrast | Never treat vs. Treat once second      | E\[Y(0,0) - Y(0,1)\]   |
 | Contrast | Treat once first vs. Treat once second | E\[Y(1,0) - Y(0,1)\]   |
-
 
 : Table describes four fixed treatment regimes and six causal contrasts in time series data where the exposure may vary. {#tbl-regimes}
 
@@ -1058,7 +1064,7 @@ To consistently estimate causal effects, we must contrast the world as it has be
 
 I next turn to three-wave designs for estimating the total causal effects. Such designs find inspiration from chronologically ordered causal diagrams. They may be beneficial for evolutionary anthropologists who wish to collect time-series data in the present and future to address causal questions.
 
-## Part 3. Applications of Causal Diagrams for Data Collectio in a Three-Wave Panel Design
+## Part 3. Applications of Causal Diagrams to the Understanding of Data Collection in a Three-Wave Panel Design
 
 In this section, we discuss how temporally ordered causal diagrams can help illustrate the benefits of a three-wave panel design in addressing causal queries using data.
 
@@ -1076,13 +1082,13 @@ Assume in the non-religious population, the switch from no religious service att
 
 ### Step 2. Define the outcome(s): measure them at wave 0 and wave 2
 
-After defining the exposure, we need to specify a well-defined outcome or multiple outcomes. For instance, we might be interested in how gaining or losing religious service affects the frequency of volunteering (e.g., weekly, monthly, yearly). Vague concepts such as "the causal effects of religious change" do not bring understanding. We must specify what the phenomenon we wish to study, and the timing of its occurrence (e.g. the + 1-year effect on weekly volunteering from a movement of 0 to weekly or more religious service attendance." 
+After defining the exposure, we need to specify a well-defined outcome or multiple outcomes. For instance, we might be interested in how gaining or losing religious service affects the frequency of volunteering (e.g., weekly, monthly, yearly). Vague concepts such as "the causal effects of religious change" do not bring understanding. We must specify what the phenomenon we wish to study, and the timing of its occurrence (e.g. the + 1-year effect on weekly volunteering from a movement of 0 to weekly or more religious service attendance."
 
 It is crucial to control for the outcome measured at the baseline -- the 'baseline outcome' -- to verify the correct temporal order of the cause-effect relationship, i.e., to prevent reverse causation.
 
 Moreover, when we also control for the exposure at the baseline, then for an unmeasured confounder to explain away the association between the exposure at one wave from the baseline and the outcome at two waves from the baseline, it would need to do so independently of the baseline effect. This scenario is depicted in @fig-dag-6. This causal diagram makes an essential practical point: although confounding might not be entirely eliminated (the dashed arrows symbolise the potential for uncontrolled sources of bias), data collection and analysis can reduce bias. Given we can rarely be sure we have controlled for unmeasured confounding, researchers should perform sensitivity analyses (see: [@shi2021c]).
 
-Note that I use the term "wave" without denoting a definite period. Causes must precede effects, but the amount of time will vary depending on the phenomena of interest. In a causal diagram, temporal order need not be drawn to scale.
+Note that I use the term "wave" without defining a specific period. Causes must precede effects, but the amount of time needed to assess causality will vary depending on the phenomena of interest. In a causal diagram, **intervals need not be drawn to scale.**
 
 ```{tikz}
 #| label: fig-dag-6
@@ -1141,7 +1147,7 @@ $$ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)$$
 
 This function similarly maps the average treatment effect from the source population to a target population. The function over $T$ might be more complex, as it must handle potential heterogeneity of effects and unobserved sources of bias. To assess transportability, we generally require information about the source and target populations and a specialist understanding. In Section 4, we will return to the concepts of generalisability and transportability as they pertain to sample selection.
 
-### Step 6. Retention is critical
+### Step 6. Retention is a top priority
 
 Sample retention is a mission-critical imperative for reasons we clarify in Part 4. Panel attrition opens novel pathways for bias. Researchers must develop protocols for tracking individuals as they change addresses, emails, phone numbers, and names. Moreover, developing and implementing strategies for motivating retention across the entire population of interest (not merely those willing to volunteer for science) is critical for causal human science. These strategies must be developed with specialist knowledge of the population under study and the participation and insights of the people being studied.
 
@@ -1155,7 +1161,7 @@ A further understanding gained from @fig-dag-6 is related to the potential risks
 
 @fig-dag-6 emphasises these factors' crucial role in guiding the collection of repeated measures data. Nonetheless, @vanderweele2020's causal diagram does not account for potential bias from panel attrition. In Part 4, we will expand this graph to discuss these challenges.
 
-### Part 4. Applications of Causal Diagrams to Selection Bias
+### Part 4. Applications of Causal Diagrams to the Understanding of Selection Bias
 
 ### Introduction to selection bias
 
@@ -1241,7 +1247,7 @@ Armed with these distinctions, consider @fig-selection-under-the-null, which pre
 \end{tikzpicture}
 ```
 
-There has been considerable technical research investigating the conditions under which causal estimates for a target population may be identified when the source population differs from the target population (see: [@lu2022]). There has also been considerable technical research investigating the conditions in which results might transport to populations that systematically differ from the source population (see: [@bareinboim2022; @deffner2022]).To address type 2 selection bias in a three-wave pane, we must accurately measure and adjust for a sufficient set of covariates that affect selection $\framebox{S}$ [@lu2022]. Moreover, when drawing causal diagrams, it is vital to present confounding as it is assumed to exist in the target population, not the source population (see @suzuki2020, especially their examples in the supplement.)
+There has been considerable technical research investigating the conditions under which causal estimates for a target population may be identified when the source population differs from the target population (see: [@lu2022]). There has also been considerable technical research investigating the conditions in which results might transport to populations that systematically differ from the source population (see: [@bareinboim2022; @pearl2022; @deffner2022]).To address type 2 selection bias in a three-wave pane, we must accurately measure and adjust for a sufficient set of covariates that affect selection $\framebox{S}$ [@lu2022]. Moreover, when drawing causal diagrams, it is vital to present confounding as it is assumed to exist in the target population, not the source population (see @suzuki2020, especially their examples in the supplement.)
 
 ### Selection bias in which both the exposure and outcome affect censoring
 
@@ -1408,7 +1414,7 @@ What to do?
 
 4.  **Sensitivity analysis**: as with nearly all causal inference, we should quantitatively evaluate how sensitive results are to different assumptions and methods for handling censoring events [@shi2021a].
 
-### Summary Part 4: recommendations
+### Summary of Part 4
 
 In this segment, I used causal diagrams to clarify potential confounding from selection bias. Here is my take-home advice:
 
@@ -1420,22 +1426,21 @@ In this segment, I used causal diagrams to clarify potential confounding from se
 
 4.  **Maximise retention**: retention, retention, retention. Rention is the mission-critical objective.
 
-5.  **Use multiple imputation or inverse probability of treatment with censoring weights to adjust for attrition**  Achieving a 100% retention rate is typically unattainable. To reduce disparities between the source population at baseline and the population from which the censored participants were drawn.
+5.  **Use multiple imputation or inverse probability of treatment with censoring weights to adjust for attrition** Achieving a 100% retention rate is typically unattainable. To reduce disparities between the source population at baseline and the population from which the censored participants were drawn.
 
 6.  **Perform sensitivity analyses** to assess the robustness of results to methods for handling attrition.
 
+## Part 5. Applications of Causal Diagrams to the Understanding of Measurement Bias
 
-## Part 5. Applications of Causal Diagrams to Measurement Bias
-
-Here we causal diagrams to clarify bias from measurement error, revealing implications for research design. Following @hernán2009, we first define structural concepts of measurement error and draw causal diagrams to understand how they may bias causal effect estimates (see also [@vanderweele2012]).
+Here we use causal diagrams to clarify bias from measurement error, revealing implications for research design. Following @hernán2009, we first define structural concepts of measurement error and draw causal diagrams to understand how they may bias causal effect estimates (see also [@vanderweele2012]).
 
 #### 1. **Uncorrelated non-differential (undirected) measurement error**
 
-As shown in @fig-dag-uu-null, uncorrelated non-differential measurement error occurs when the errors in measurement of the exposure and outcome are not related.
+As shown in @fig-dag-uu-null, an uncorrelated non-differential measurement error occurs when the errors in the measurement of the exposure and outcome are not related.
 
-To clarify,consider again the task of estimating the causal effect of beliefs in Big Gods on social complexity. Suppose ancient societies randomly omitted or recorded details about both beliefs in Big Gods and indicators of social complexity in their records. Or equivalently, suppose that such records were not preserved equally across cultures for reasons unrelated to these parameters. In this case, errors in the documentation of both variables would be random. The errors would not be related to the intensity of the beliefs in Big Gods or the level of social complexity. This example provides an instance of uncorrelated and non-differential error, and is presented in @fig-dag-uu-null.
+To clarify, consider again the task of estimating the causal effect of beliefs in Big Gods on social complexity. Suppose ancient societies randomly omitted or recorded details about both beliefs in Big Gods and indicators of social complexity in their records. Alternatively, suppose that such records were not preserved equally across cultures for reasons unrelated to these parameters. In this case, errors in the documentation of both variables would be random. The errors would not be related to the intensity of the beliefs in Big Gods or the level of social complexity. This example of uncorrelated and non-differential error is presented in @fig-dag-uu-null.
 
-Uncorrelated non-differential measurement error does not create bias under the null. As evident from @fig-dag-uu-null, d-separation is preserved. Our equivalently, we say there are no open backdoor paths on the graph. However, when there is a true effect of the exposure on the outcome, non-differential measurement error generally leads to an attenuation effect estimes. For this reason, uncorrelated non-differential measurement error can be problematic for inference even though it does not induce structural bias under the null.
+Uncorrelated non-differential measurement error does not create bias under the null. As evident from @fig-dag-uu-null, d-separation is preserved. Equivalently, there are no open backdoor paths on the graph. However, when there is an actual effect of the exposure on the outcome, non-differential measurement error generally leads to attenuated effect estimates. For this reason, uncorrelated non-differential measurement error can be problematic for inference even though it does not induce structural bias under the null.
 
 ```{tikz}
 #| label: fig-dag-uu-null
@@ -1476,13 +1481,13 @@ Uncorrelated non-differential measurement error does not create bias under the n
 
 #### 2. **Uncorrelated differential (directed) measurement error**
 
-As shown in @fig-dag-indep-d-effect, uncorrelated differential (or directed) measurement error occurs when the errors in measurement are related to the level of exposure or outcome, but not to each other. For instance, societies with stronger 'beliefs in Big Gods' might cause a society to provide more or less detailed records of 'social complexity'. However, in the absence of any intervention on beliefs in Gods, there is no association between the measurement errors. Here, the errors are differential as they depend on the intensity of religious beliefs, but uncorrelated as the errors in documenting 'beliefs in Big Gods' and 'social complexity' are otherwise independent of each other. Uncorrelated differential (or directed) measurement error is presented in @fig-dag-indep-d-effect and leads to bias under the null, indicated by the red path. Or equivalently, uncorrelated differential (or directed) measurement error opens a back-door path between the exposure and the outcome.
+As shown in @fig-dag-indep-d-effect, uncorrelated differential (or directed) measurement error occurs when the measurement errors are related to the level of exposure or outcome but not to each other. For instance, societies with stronger 'beliefs in Big Gods' might have more or less detailed records of 'social complexity'. Suppose that, in the absence of any intervention on beliefs in Gods, there is no association between the measurement errors. Here, the errors are differential as they depend on the intensity of religious beliefs but are uncorrelated as the errors in documenting 'beliefs in Big Gods' and 'social complexity' are otherwise independent. Uncorrelated differential (or directed) measurement error is presented in @fig-dag-indep-d-effect and leads to bias under the null, indicated by the red path. Alternatively, equivalently, uncorrelated differential (or directed) measurement error opens a backdoor path between the exposure and the outcome.
 
-Note that the bias presented in @fig-dag-indep-d-effect, which is an example of directed measurement error, also describes the bias we considered when there is panel attrition, and which the exposure and affects selection (see: @fig-dag-8-5). In that scenario, the outcome in the selected group is measured with error -- it no long represents the measurement of the outcome in the source population at baseline -- and further more, this error is affected by the exposure. The previous example described bias in estimation from the vantage point of collider stratification, however the example may be equally explained from the more general vantage point of directed measurement bias.
+Note that the bias presented in @fig-dag-indep-d-effect, an example of directed measurement error, also describes the bias we considered when there is panel attrition and which the exposure affects selection (see: @fig-dag-8-5). In that scenario, the outcome in the selected group is measured with error -- it no longer represents the measurement of the outcome in the source population at baseline -- furthermore, this error is affected by exposure. The previous example described bias in estimation from the vantage point of collider stratification; however, we can also explain the distortion as directed measurement bias.
 
 ```{tikz}
 #| label: fig-dag-indep-d-effect
-#| fig-cap: "Directed independent (uncorrelated) measurement error biases effect estimates, indicated by the red path. The selection bias presented in the previous graph is an instance of directed independent measurement error."
+#| fig-cap: "Directed independent (uncorrelated) measurement error can bias effect estimates under the null. This bias is indicated by the red path."
 #| out-width: 100%
 #| echo: false
 
@@ -1520,11 +1525,11 @@ Note that the bias presented in @fig-dag-indep-d-effect, which is an example of 
 
 #### 3. **Correlated non-differential (undirected) measurement error**
 
-As shown @fig-dag-dep-u-effect correlated non-differential (undirected) measurement error occurs when the errors in measuring both the exposure and outcome are related to each other, but not to the level of exposure or outcome. The scenario is presented in @fig-dag-dep-u-effect. Imagine that some societies had more advanced record-keeping systems that resulted in more accurate and detailed accounts of both 'beliefs in Big Gods' and 'social complexity' and furthermore that the record keepers provide better information about religious beliefs. These errors between beliefs in Big Gods and social complexity might be correlated because the accuracy of records on both variables is influenced by the same underlying factor (the record-keeping abilities), but they are non-differential insofar as true religious beliefs and true social complexity do not affect bias in the record keeping. Correlated non-differential measurement error may induce bias under the null, indicated by the red path in @fig-dag-dep-u-effect.
+As shown, @fig-dag-dep-u-effect correlated non-differential (undirected) measurement error occurs when the errors in measuring both the exposure and outcome are related independently of the exposure. The scenario is presented in @fig-dag-dep-u-effect. Imagine that some societies had more advanced record-keeping systems that resulted in more accurate and detailed accounts of both beliefs in Big Gods and social complexity. Furthermore, imagine that record keepers provide better information about religious beliefs. In this case, the errors between beliefs in Big Gods and social complexity are correlated because the accuracy of records for both variables is influenced by the same underlying factor (the record-keeping abilities). However, the errors are not directed insofar as levels of religious beliefs and social complexity do not affect the assumed bias in record keeping. Correlated non-differential measurement error may induce bias under the null, indicated by the red path in @fig-dag-dep-u-effect.
 
 ```{tikz}
 #| label: fig-dag-dep-u-effect
-#| fig-cap: "Correlated undirected measurement error can dilute the estimates of true effects, indicated by the red path."
+#| fig-cap: "Correlated undirected measurement error can distort causal effect estimates under the null, indicated by the red path."
 #| out-width: 80%
 #| echo: false
 \usetikzlibrary{positioning}
@@ -1566,17 +1571,17 @@ As shown @fig-dag-dep-u-effect correlated non-differential (undirected) measurem
 
 #### 4. **Correlated differential (directed) measurement error**
 
-Correlated differential (directed) measurement error occurs when the errors in measurement are related to each other and also to the level of exposure or outcome. This structural problem is presented in @fig-dag-d-d. Suppose societies with stronger beliefs in Big Gods tend to record both their religious beliefs and social structures more meticulously than do other societies, and that this record-keeping is conducted by religious elites. The errors may be both correlated and differential if societies with beliefs in Big Gods tend to favour these religious elites, leading to biased records.
+Correlated differential (directed) measurement error occurs when the measurement errors are related independently of the exposure, and the exposure also affects levels of these correlated error terms. The structure of this bias is presented in @fig-dag-d-d. Suppose societies with stronger beliefs in Big Gods tend to record their religious beliefs and social structures more meticulously than others. Suppose further that religious elites conduct this record-keeping. The errors may be both correlated and differential if societies with beliefs in Big Gods tend to favour these religious elites, leading to biased records.
 
-Consider further the three-wave panel design where we aim to estimate the effect of self-reported religious service attendance on self-reported monthly donations to charity. A set of confounders is included at baseline, comprising previous measures of religious service attendance and monthly donations to charity. Because our measures rely on self-reports they may be especially prone to measurement error.
+Consider further the three-wave panel design, where we aim to estimate the effect of self-reported religious service attendance on self-reported monthly donations to charity. A set of confounders is included at baseline, comprising previous measures of religious service attendance and monthly donations to charity. Because our measures rely on self-reports, they may be especially prone to measurement error.
 
-Assume there is an unmeasured common cause affecting both the measurement error of religious service attendance and the measurement error of donations to charity. This might occur if individuals consistently over- or under-report their religious service attendance and donations due to social desirability bias.
+Assume there is an unmeasured common cause affecting both the measurement error of religious service attendance and the measurement error of donations to charity. This bias might occur if individuals consistently over- or under-report their religious service attendance and donations due to social desirability bias.
 
-In Part 3, we discussed how including the exposure measured at baseline can reduce confounding in a three-wave panel design. By controlling for the baseline exposure, we effectively adjust for any static characteristics that might cause correlation in both the exposure and outcome.
+In Part 3, we discussed how including the exposure measured at baseline can reduce confounding in a three-wave panel design. By controlling for the baseline exposure, we effectively adjust for any static characteristics that cause a correlation between the exposure and outcome.
 
 Now for measurement error, including baseline measures could mitigate the impact of these errors on causal effect estimation, provided the errors are random and not systematically associated across time points.
 
-To see this, let $A_0$, $A_1$ denote the exposure at baseline and follow-up, and $Y_0$, $Y_1$ denote the outcome at baseline and follow-up. The true values are denoted without primes, and the measured values with primes. We assume the measurement error is additive:
+To see this, let $A_0$, $A_1$ denote the exposure at baseline and follow-up, and $Y_0$, $Y_1$ denote the outcome at baseline and follow-up. The true values are denoted without primes, and the measured values are with primes. We assume the measurement error is additive:
 
 $A'_0 = A_0 + UA_0$,
 
@@ -1588,23 +1593,23 @@ $Y'_2 = Y_2 + UY_2$,
 
 where $UA_0$, $UA_1$ are the measurement errors for the exposure at baseline and follow-up, and $UY_0$, $UY_2$ are the measurement errors for the outcome at baseline and follow-up. If the errors are correlated, then $Cov(UA_0, UY_0) \neq 0$ and/or $Cov(UA_1, UY_2) \neq 0$.
 
-In a model that includes $A'_0$ and $Y'_0$ as covariates, the estimated effect of $A'_1$ on $Y'_2$ identifies the effect of change in the exposure from baseline to follow-up on the incidence-effect. Because our interest is in this incidence-effect, we control for the baseline exposure and outcome measures. This strategy will mitigate bias arising from correlated errors if the following conditions hold:
+In a model that includes $A'_0$ and $Y'_0$ as covariates, the estimated effect of $A'_1$ on $Y'_2$ identifies the effect of change in the exposure from baseline to follow-up on the incidence effect. Because our interest is in this incidence effect, we control for the baseline exposure and outcome measures. This strategy will mitigate bias arising from correlated errors if the following conditions hold:
 
 $E(UA_0) = E(UA_1)$ and $E(UY_0) = E(UY_2)$ (i.e., the expectation of the measurement errors does not change over time),
 
 $Cov(UA_0, UY_2) = Cov(UA_1, UY_2)$ (i.e., the correlation between the errors does not change over time).
 
-Thus, including baseline measurements in our model can help to mitigate undirected measurement error. However, this solution hinges on the measurement error being undirected and non-differential with respect to time. If the measurement error varies over time or with respect to other variables in the model, baseline measurement control will be inadequate for confounding control (see: [@keogh2020a]).
+Thus, including baseline measurements in our model can mitigate undirected measurement errors. However, this solution hinges on the measurement error being undirected and non-differential concerning time. If the measurement error varies over time or affects other variables in the model, baseline measurement control will be inadequate for confounding control (see: [@keogh2020a]).
 
-Consider a scenario where individuals who attend religious service more at time 1 acquire greater social desirability bias, becoming more likely to over-report socially desirable behaviours or under-report socially undesirable ones. The structure of this scenario is presented in @fig-dag-d-d. If the measured outcome at time 2 is charitable giving, the increased social desirability bias could lead to an over-estimation of the true level of giving. If we were to compare reported charity at T2 with reported church attendance at T1, we might falsely attribute the apparent increase in charity to the increase in religious service, when in reality, the over-reporting arose from social desirability bias. Thus, if the error of the outcome is affected by the exposure, the causal effect of the increase in religious service on giving might be different than it appears.
+Consider a scenario where individuals who attend religious service more at wave 1 acquire more substantial social desirability bias, becoming more likely to over-report socially desirable behaviours or under-report socially undesirable ones. The structure of this scenario is presented in @fig-dag-d-d. If the measured outcome at wave 2 is charitable giving, the increased social desirability bias could lead to an overestimation of the actual level of giving. Suppose we compare reported charity at wave 2 with reported religious attendance at wave 1. If there is directed measurement bias we might falsely attribute the apparent increase in charity to the increase in religious service attendance, when, in reality, there was over-reporting from social desirability bias that was induced by religious service attendance. Here we can see that if the error of the outcome is affected by the exposure, the causal effect of the increase in religious service on charitable giving might be different from the association presented in the data.
 
-Thus, although controlling for baseline exposure is a powerful strategy for isolating incidence effects and controlling confounding, we have seen here that it is not a catch-all solution. Attention to the quality of measures at all time points remains critical.
+Thus, although controlling for baseline exposure is a powerful strategy for isolating incidence effects and controlling confounding, we have seen that it is not a catch-all solution. Attention to the quality of measures at all time points remains critical.
 
-For instance, to avoid presentation bias, rather than asking whether one has *offered* help, we might ask whether one has *received help* -- under the assumption that if the community is more altruist then the probability of receiving help will be higher.
+For instance, to avoid presentation bias, rather than asking whether one has *offered* help, we might ask participants in a multi-wave study whether they have *received help* -- under the assumption that if the religious community is more altruistic than the secular community, the probability of receiving help will be higher.
 
 ```{tikz}
 #| label: fig-dag-d-d
-#| fig-cap: "Directed dependent (correlated) measurement error biases effect estimates. Here, the exposure affects the measurement error of the outcome. Additionally, the measurement errors of the exposure and outcome are correlated. These dynamics open pathways for bias, indicated by red path. "
+#| fig-cap: "Directed dependent (correlated) measurement error leads to bias in effect estimates. Here, the exposure affects the measurement error of the outcome. Additionally, the measurement error of the exposure and outcome are correlated. These dynamics open pathways for bias, indicated by the red paths. "
 #| out-width: 100%
 #| echo: false
 
@@ -1649,13 +1654,13 @@ For instance, to avoid presentation bias, rather than asking whether one has *of
 
 In comparative cultural research, a common practice is to use invariance testing, a set of statistical models, to evaluate the appropriateness of the measures employed. However, statistical models do not determine structural models: statistical tests performed on cross-sectional datasets may not effectively identify causal features.
 
-How might we understand those causal features. @fig-dag-dep-u-effect-selection shows how the very act of selecting study participants who systematically differ in their responses to the exposure and outcome leads - as will be common in most cross-cultural research -- may lead to correlated measurement errors. To show this, we adjust the causal diagram presented as @fig-dag-dep-u-effect and incorporate the element of selection into it. The resulting graph can be seen in @fig-dag-dep-u-effect-selection.
+How might we understand those causal features? @fig-dag-dep-u-effect-selection shows how selecting study participants from different cultures that systematically differ in their responses to the exposure and outcome may induce correlated measurement errors. To show this possibility, we adjust the causal diagram presented as @fig-dag-dep-u-effect and incorporate the selection into the study. The resulting graph is presented in @fig-dag-dep-u-effect-selection.
 
-If we were to select participants from a setting devoid of systematic (correlated) error structures between the exposure and outcome measurements, we might avoid such confounding. However, the very process of selection in a cross cultural sample will introduce measurement bias if people from different cultures interpret and respond to the measures differently. We cannot merely stratify on culture to address the problem because stratifying on culture is the cause of the problem.
+If we were to select participants from a setting devoid of systematic (correlated) error structures between the exposure and outcome measurements, we might avoid such confounding. However, the very process of sample selection in a cross-cultural study may open pathways for measurement bias if people from different cultures interpret and respond to the measures differently. We cannot stratify on culture to address the problem because stratifying on culture is what evokes correlated measurement error.
 
 ```{tikz}
 #| label: fig-dag-dep-u-effect-selection
-#| fig-cap: "Measurement bias in comparative cross-cultural research. Selection at baseline induces correlations in the measurement errors of the exposure and outcome. Biasing paths are indicated in red."
+#| fig-cap: "Measurement bias in comparative cross-cultural research. Selection at baseline induces correlations in the measurement error of the exposure and outcome. Biasing paths are presented in red."
 #| out-width: 100%
 #| echo: false
 #| 
@@ -1698,13 +1703,13 @@ If we were to select participants from a setting devoid of systematic (correlate
 
 ### Using causal diagrams to clarify the structural assumptions of latent factor models
 
-Cultural evolution researchers who wish to record cultural evolutionary dynamics in the present may consider using multi-item constructs in their panel studies. Multi-item constructs have long been the favoured by traditional psychometric theory. Notwithstanding, classical psychometric theory developed without the benefit of causal approaches. VanderWeele argues that difficulties surface when assessing the causal assumptions of formative and reflective latent factor models [@vanderweele2022]. Both of these models are based on statistical formulations, yet the causal inferences they embody cannot be determined solely by statistical models. This discussion will concentrate on reflective models, although the concerns raised are equally applicable to formative models, and I refer interested readers to: [@vanderweele2022].[^17]
+Cultural evolution researchers who wish to record cultural evolutionary dynamics in the present may consider using multi-item constructs in their panel studies. Multi-item constructs have long been favoured by traditional psychometric theory. However, classical psychometric theory developed without the benefit of causal approaches. VanderWeele argues that difficulties surface when assessing the causal assumptions of formative and reflective latent factor models [@vanderweele2022]. These models are based on statistical formulations. However, the causal inferences they embody cannot be determined solely by statistical models. This discussion will concentrate on reflective models, although the concerns raised are equally applicable to formative models, and I refer interested readers to: [@vanderweele2022].[^17]
 
-[^17]: In formative models, observed variables are perceived to generate the latent variable. This latent variable is portrayed as a composite of the observed variables, $X_i$, mathematically expressed as: $\eta = \sum_i\lambda_i X_i$. The structural assumption is that a single latent variable causally influences the observed variables. This underpins the structural assumptions depicted in @fig-structural-assumptions-reflective-model.
+[^17]: In formative models, observed variables are perceived to generate the latent variable. This latent variable is assumed to be a composite of the observed variables, $X_i$, mathematically expressed as $\eta = \sum_i\lambda_i X_i$. The structural assumption is that a single latent variable causally influences the observed variables. This structural is depicted in @fig-structural-assumptions-reflective-model.
 
 ```{tikz}
 #| label: fig-structural-assumptions-reflective-model
-#| fig-cap: "Structural assumptions of the reflective model imply a univariate reality causes the outcome. These assumptions are strong because the exclude multivariate causes of the indicators for constructs, as well as independent effects of the indicators on outcomes. The figure is adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| fig-cap: "Structural assumptions of the reflective model imply a univariate reality causes the outcome. These assumptions are strong because they exclude multivariate causes of the indicators for constructs, as well as independent effects of the indicators on outcomes. The figure is adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
 #| out-width: 80%
 #| echo: false
 
@@ -1739,11 +1744,11 @@ Cultural evolution researchers who wish to record cultural evolutionary dynamics
 \end{tikzpicture}
 ```
 
-However, as VanderWeele notes that the statistical model is consistent with multiple causal models. The presumption that a univariate latent reality underlies the reflective (and formative) latent factor models is a stronger assumption than previously acknowledged. For example, an alternative structural model equally compatible with the data is presented in @fig-dag_multivariate_reality_again. Here, multivariate reality gives rise to the indicators from which we draw our measures. Indeed, for certain widely used measures, the assumption of a univariate reality are so strong that they make testable assumptions, and empirical examination of these assumptions reveals the tests fail [@vanderweele2022d]. That is, although we cannot determine which structural model is true, the data rule out the univariate model.
+However, VanderWeele notes that the statistical model is consistent with multiple causal models. The presumption that a univariate latent reality underlies the reflective (and formative) latent factor models is a stronger assumption than previously acknowledged. For example, an alternative structural model equally compatible with the data is presented in @fig-dag_multivariate_reality_again. Here, multivariate reality gives rise to the indicators from which we draw our measures. Indeed, for specific widely used measures, the assumption of a univariate reality is so strong that they make testable assumptions, and empirical examination of these assumptions reveals the tests fail [@vanderweele2022d]. Although we cannot determine which structural model is accurate, the data rule out the univariate model.
 
 ```{tikz}
 #| label: fig-dag_multivariate_reality_again
-#| fig-cap: "Vanderweele's example of an alternative structural model that is consistent with the statistical model that underpines reflective construct modesl Here, a multivariate reality gives rise to the indicators, from which we draw our measures. The figure is adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| fig-cap: "Vanderweele's example of an alternative structural model that is consistent with the statistical model that underpins reflective construct models. Here, a multivariate reality gives rise to the indicators from which we draw our measures. The figure is adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
 #| out-width: 60%
 #| echo: false
 
@@ -1783,11 +1788,11 @@ However, as VanderWeele notes that the statistical model is consistent with mult
 \end{tikzpicture}
 ```
 
-Although the assumptions of a univariate reality that underlie traditional latent factor models are not generally credible, VanderWeele suggests that construct measures can still find application in research. The key to salvaging latent factor models is to extend the theory of causal inference under multiple interventions to latent factor models [@vanderweele2022]. Specifically, by framing measured variables as functions of indicators that may potentially map on to a complex multivariate underlying reality, we may approach them as coarsened indicators for that reality. As long as the potential outcomes of these coarsened indicators are conditionally independent of their treatment assignments and their is no unmeasured confounding we may assume the constructs to consistently estimate causal effects of the complex reality that gives rise to them. This approach is is depicted in @fig-dag-multiple-version-treatment-applied-measurement. Just as with the theory of causal inference under multiple treatments, there may be circumstances where ensuring conditional exchangeability is unattainable; even when such assurance is feasible, interpreting the results or advocating policy intervention may be problematic. Thus, I maintain a more restrained optimism about this generalisation of the theory of causal inference under multiple treatments. In the subsequent section, I employ causal graphs in a setting of directed measurement error to clarify an unresolved issue.
+Although the assumptions of a univariate reality that underlie traditional latent factor models are not generally credible, VanderWeele suggests that construct measures can still find application in research. The key to salvaging latent factor models is to extend the theory of causal inference under multiple interventions to latent factor models [@vanderweele2022]. Specifically, by framing measured variables as functions of indicators that may map onto a complex multivariate underlying reality, we may approach them as coarsened indicators for that reality. As long as the potential outcomes of these coarsened indicators are conditionally independent of their treatment assignments and there is no unmeasured confounding, we may assume the constructs to consistently estimate the causal effects of the complex reality that gives rise to them. This interpretation is presented in @fig-dag-multiple-version-treatment-applied-measurement. Just as with the theory of causal inference under multiple treatments, there may be circumstances where ensuring conditional exchangeability is unattainable; even when such assurance is feasible, interpreting the results or advocating policy intervention may be problematic. Thus, I maintain a more restrained optimism about this generalisation of the theory of causal inference under multiple treatments. In the subsequent section, I show how a causal diagram helps to clarify the unresolved measurement biases.
 
 ```{tikz}
 #| label: fig-dag-multiple-version-treatment-applied-measurement
-#| fig-cap: "Vanderweele's solution: the theory of causal inference under multiple versions of treatment may be applied to measurement models. The indictors used in constructs may map onto a complex multivariate reality if each element of approached as a coarsened indicator that is conditionally indepent of the outcome. The figure is adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
+#| fig-cap: "Vanderweele's solution: the theory of causal inference under multiple treatment versions may be applied to measurement models. The indicators used in constructs may map onto a complex multivariate reality if each element of the approach is a coarsened indicator that is conditionally independent of the outcome. The figure is adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434"
 #| out-width: 80%
 #| echo: false
 
@@ -1822,17 +1827,17 @@ Although the assumptions of a univariate reality that underlie traditional laten
 
 Consider a three-wave panel with the assumption that no unmeasured confounding exists. We represent the exposure $A$ as a function of indicators, $A_{f(A_1, A_2, ..., A_n)}$, representing a coarsened state of a multivariate reality. Each component of this reality corresponds to a structural element, represented as $\eta_{A_1}, \eta_{A_2}, ..., \eta_{A_n}$, each with associated error terms, $U\eta_{A_1}, U\eta_{A_2}, ..., U\eta_{A_n}$.
 
-We can conceptualise the outcome $Y$ in a similar fashion, as a function of indicators, $Y_{f(Y_1, Y_2, ..., Y_n)}$, representing a latent reality. This latent reality is composed of the components $\eta_{Y_1}, \eta_{Y_2}, ..., \eta_{Y_n}$, each with their corresponding error terms $U\eta_{Y_1}, U\eta_{Y_2}, ..., U\eta_{Y_n}$.
+We can similarly conceptualise the outcome $Y$, as a function of indicators, $Y_{f(Y_1, Y_2, ..., Y_n)}$, representing a latent reality. This latent reality is composed of the components $\eta_{Y_1}, \eta_{Y_2}, ..., \eta_{Y_n}$, each with their corresponding error terms $U\eta_{Y_1}, U\eta_{Y_2}, ..., U\eta_{Y_n}$.
 
 @fig-dag-coarsen-measurement-error depicts this assumed reality and outlines potential confounding paths due to directed measurement error. Each path consists of a structural component $\eta_{A_n}$ and its associated error term $U\eta_{Y_n}$. We identify three potential confounding paths resulting from directed measurement error.
 
-The potential for confounding from measurement error in panel designs fundamentally relies on the relationships and dependencies among variables, not simply their quantity. However, it is worth emphasising that, in theory, an increase in the number of latent states or error terms could enhance the potential for confounding. Under simplifying assumptions, the potential direct paths from the exposure to the outcome are given by the product of the number of components of the exposure and the number of error terms associated with the outcome, symbolically represented as $\eta A_n \times U\eta_{Y_n}$. In this simplified scenario, each latent variable connected to an exposure could influence every error term of an outcome, creating a complex network of confounding paths.
+The potential for confounding from measurement error in panel designs fundamentally relies on the relationships and dependencies among variables, not their quantity. However, it is worth emphasising that, in theory, an increase in the number of latent states or error terms could enhance the potential for confounding. Under simplifying assumptions, the potential direct paths from the exposure to the outcome are given by the product of the number of components of the exposure and the number of error terms associated with the outcome, symbolically represented as $\eta A_n \times U\eta_{Y_n}$. In this simplified scenario, each latent variable connected to exposure could influence every error term of an outcome, creating a complex network of confounding paths.
 
-Causal diagrams applied to measurement error in latent factor models reveal the importance for a rigorous consideration of construct measures in evolutionary and other human sciences. Although there is no universal rule here, researchers might, in some cases, opt to use single item measures. Each case, however demands meticulous examination of the items' meanings, probable interpretations, and potential causal implications over time.
+Causal diagrams applied to measurement error in latent factor models reveal the importance of rigorously considering construct measures in evolutionary and other human sciences. Although there is no universal rule here, researchers might sometimes opt to use single-item measures. Each case, however, demands a meticulous examination of the items' meanings, probable interpretations, and potential causal implications over time.
 
 ```{tikz}
 #| label: fig-dag-coarsen-measurement-error
-#| fig-cap: "Where there are many indicators of a psychological construct, there are many opportunities for additional confounding by directed measureemnt error. "
+#| fig-cap: "Where there are many indicators of a psychological construct, there are many opportunities for additional confounding by directed measurement error. "
 #| out-width: 100%
 #| echo: false
 \usetikzlibrary{positioning}
@@ -1899,7 +1904,7 @@ Causal diagrams applied to measurement error in latent factor models reveal the 
 
 ### Summary Part 5
 
-Part 5 has centred on clarifing the biases that measurement error brings to the repeated measures designs. Such designs are typically necessary for the quantitative estimation of causal effects. I have examined four kinds of measurement error, assessing how each might skew inference. While adjustments for baseline exposure can aid in reducing confounding and isolating incidence effects, it is not a panacea for all biases. It is a researcher's duty to meticulously scrutinise the quality of measurements at all time points, assess, and avert potential biases.
+Part 5 has centred on clarifying the biases that measurement error brings to the repeated measures designs. Such designs are typically necessary for the quantitative estimation of causal effects. I have examined four kinds of measurement error, assessing how each might skew inference. While adjustments for baseline exposure can aid in reducing confounding and isolating incidence effects, it is not a panacea for all biases. A researcher must meticulously scrutinise the quality of measurements at all time points, assessing and averting potential biases.
 
 Although methods for adjusting for measurement error are not covered in this article, a host of useful resources exists, including the works of @keogh2020 @buonaccorsi2010 @shi2021b @valeri2014 and @bandalos2018.
 
@@ -1907,67 +1912,71 @@ Although methods for adjusting for measurement error are not covered in this art
 
 Should Cicero have been present in our era, he might exclaim: "*Causalis Ante Statisticum!*" --- prioritise the causal over the statistical!
 
-In the human sciences statistical models hold sway. This interest is understandable. Statistics is indisepensable for quantitative insights. Yet wherever we aim to quantitatively understand the effects of interventions, a structural approach must take precedence. Statistics come later.
+In the human sciences, statistical models hold sway. This interest is understandable. Statistics is indispensable for quantitative insights. However, wherever we aim to understand the effects of interventions quantitatively, a structural approach take precedence. Statistics come later.
 
-Effective causal analysis requires accurate measurements of exposure and outcome variables, and a firm grasp of their chronological order. It also calls for an informed evaluation of any parameters that could associate these variables in ways unrelated causation. Precise measurements of such confounding parameters, and their representative proxies, are essential. At the outset of the study, baseline data -- encompassing these parameters, the exposure, and the outcome -- must be assayed. Following this, a series of measurements of the exposure and, later, of the outcomes, need to be taken on a sufficient number of units to mirror a well-powered "target trial."
+Causal analysis requires a well-defined exposure and outcome that are accurately measured. Establishing the chronological sequence of these variables on a timeline is vital for this accuracy. Additionally, it requires an expert assessment of any factors that could link these variables independent of causation. For such confounding parameters and their proxies, meticulous measurements must also be taken, and their chronological order relative to the exposure and outcome must be clear. Subsequently, sequential measurements of the exposure, followed by the outcomes, should be conducted on enough units to simulate a well-powered target trial.
 
-When comparing outcomes across exposed and unexposed units, typically individuals, a rigorous follow-up and retention effort is needed. Tracking individuals is difficult. Given the inevitability of retention failures in any sizeable sample, counteracting biases from loss-to-follow up forms a vital part of the work. If new data are collected -- as they should be -- this work will be inherently time-intensive. There are no short-cuts.
+When comparing outcomes across exposed and unexposed units, typically individuals, a rigorous follow-up and retention effort is needed. Tracking individuals is difficult. Given the inevitability of retention failures in any sizeable sample, counteracting biases from loss to follow-up forms a vital part of the work. There are no shortcuts.
 
-Nearly all of this endeavour extends beyond merely fitting models to data -- although it is surely that too. Moreover, the statistical models that robust counterfactual data science demands, which I have not covered in this article, are complex. Causal inference, then, is a labour of love. This labour is not for the faint hearted. Yet it is worth the effort because it offers the hope for a quantitative understanding about the causal effects of interventions. I believe that such an understanding animates the curiosity and drive of most human scientists, even if we have too often contented ourselves with correlations. (For many years, I was such a human scientist.) In this discussion, I have described several ways that chronologically ordered causal diagrams significantly contribute to causal inference, or what I have termed "counterfactual data science." Their utility is not limited to modelling; they are excellent guides for data collection. With judicious use, causal diagrams can aid our quest for the robust causal understanding that we seek.
+Nearly all of the work in causal inference extends beyond merely fitting models to data -- although it is undoubtedly that too. Moreover, the statistical models that robust counterfactual data science demands, which I have not covered in this article, are complex. Causal inference, then, is a labour of love. This labour is not for the faint-hearted. Nonetheless, it is worth the effort because it offers hope for a quantitative understanding of the causal effects of interventions. Such an understanding animates the curiosity and drive of most human scientists, even if we have too often contented ourselves with correlations. (For many years, I was such a human scientist.) In this discussion, I have described several ways that chronologically ordered causal diagrams significantly contribute to causal inference, or what I have termed "counterfactual data science." Their utility is not limited to modelling; they are excellent guides for data collection. With judicious use, causal diagrams can aid our quest for the robust causal understanding we seek.
 
 ### Summary of advice for writing causal diagrams
 
 1.  **Clearly define all variables**: define your exposure and outcome through protocols of a hypothetical experiment or "target trial."
 
-2.  **Clearly define novel conventions**: if you are using unique conventions in your diagram -- such as coloured or dash edges -- ensure the conventions are clearly defined.
+2.  **Clearly define novel conventions**: if you use unique conventions in your diagram -- such as coloured or dash edges -- ensure the conventions are clearly defined.
 
 3.  **Ensure the graph is acyclic**: nodes cannot be their own ancestors.
 
-4.  **Time-stamp your nodes**: time-stamping nodes often provides clearer temporal understanding. Because causation occurs in time, causal diagrams benefit if this understanding is visually evident.
+4.  **Time-stamp nodes**: time-stamping nodes often provide clearer temporal understanding. Because causation occurs in time, causal diagrams benefit if this understanding is visually evident.
 
 5.  **Maintain chronological order**: arrange nodes in temporal sequence, generally from left to right or top to bottom.
 
-6.  **Embrace minimalism**: include only those nodes and edges that are essential for clarifying the identification problem. Do not clutter your causal diagram.
+6.  **Embrace minimalism**: include only those essential nodes and edges for clarifying the identification problem. Refrain from cluttering the causal diagram. The sequence of events should be evident in the spatial layout. However, it is rarely necessary to draw that sequence to scale.
 
-7.  **Account for unmeasured confounding**: plan for sensitivity analyses to assess the impact of unmeasured confounding.
+7.  **Present vectors for unmeasured confounding** : plan for sensitivity analyses to assess whether unmeasured confounding might explain away the results.
 
-8.  **Include nodes for selection**: this helps to understand potential sources of selection bias in your study, both for the source population at baseline and for the censored population.
+8.  **Include nodes for post-treatment selection**: this helps to understand potential sources of selection bias.
 
-9.  **Consider mediators and interactions**: these should be appropriately represented in the diagram when of interest.
+9.  **Should mediation or interaction be of interest, extend the graphs to clarify the relevant structures of bias**: Do not attempt to draw non-linear associations between the variables.
 
-10. **Appreciate the qualitative role of causal diagrams**: causal diagrams are akin to compasses that guiding us to close backdoor paths. We should not attempt to use them as exhaustive atlases for empirical reality. Do not attempt to represent non-linear associations.
+10. **Appreciate the qualitative role of causal diagrams**: causal diagrams are akin to compasses that guide us to close backdoor paths. We should refrain from using them as exhaustive atlases.
 
-11. **Include all sources of measurement error**: in particular, consider correlated and directed measurement error.
+11. **Include sources of measurement error where these may lead to bias**
 
-12. **Causal diagrams are structural models, structural equation models are not structural models**: it is important to differentiate between causal diagrams and structural equation models. Structural equation modelling is largely a statistical exercise. The coefficients it generates can often be difficult to interpret in causal terms. Only rarely do regression coefficients of any kind, including those in structural equations modelling, afford a causal interpretation. If our interest is in causal inference, we should generally avoid reporting them -- they have no meaning -- and make for unintentional Rorschach tests. In our exploration of mediation and confounder treatment feedback, we have seen the complexity that arises for causal inferences in what would appear to be simple scenarios.G-methods offer robust strategies for causal estimation and can address complex longitudinal questions involving multiple and sequential exposures. Despite their potency, however, G-methods remain underutilised in fields such as cultural evolution.
+12. **Remember, causal diagrams are structural models; structural equation models are not structural models**: structural equation modelling is essentially a statistical exercise. The coefficients it generates can often be challenging to interpret in causal terms. Regression coefficients, including those in structural equation modelling, rarely afford causal interpretations. If our interest is in causal inference, we should generally avoid reporting them -- they typically have no meaning. In our discussion of mediation and confounder treatment feedback, we considered the complexities that arise for causal inferences in what would appear to be simple scenarios. G-methods offer robust strategies for causal estimation and can address complex longitudinal questions involving multiple and sequential exposures. Despite their potency, G-methods still need to be utilised in fields such as cultural evolution.
 
 ### Concluding thoughts: causal understanding and causal estimation
 
-Causal inference is important to science because if offers a way to quantify the effects of interventions. However, it is only a small part of science. Particularly in the historical sciences, the fundamental assumptions of causal inference may not be applicable. We should not give up on sciences that do not quantify causal effect estimates.
+Causal inference is vital for science because it offers a way to quantify the effects of interventions. However, it is only a small part of science. Particularly in the historical sciences, the fundamental assumptions of causal inference may not be applicable. We should not abandon sciences that do not quantify causal effect estimates.
 
-That said, many human scientists have yet to adopt causal inferential approaches. In most fields, the correlational methods that have held sway at least since Karl Pearson still hold sway. I believe we are a long way from overstating the importance of causal inference.
+That said, many human scientists have yet to adopt causal inferential approaches. In most fields, the correlational methods that have held sway, at least since Karl Pearson, still hold sway. We are a long way from overstating the importance of causal inference.
 
-Chronologically ordered causal diagrams clarify why time-series data are indispensable for addressing quantitative causal questions. The nearly absolute requirement for time-series data collection for causal inference carries profound implications for research design, funding models, and the pace of scientific discovery. Given the time for research preparation, data collection, and data entry, a three-year panel design will require at least five years of support. Existing funding models, often extending only 2-3 years. Researchers who seek causal understanding, along with their funders, must exhibit patience. How many will support such patience? The present funding models across the human sciences do not offer it. (Although I am fortunate to have been an exception.)
+Chronologically ordered causal diagrams clarify why time-series data are indispensable for addressing quantitative causal questions. The nearly absolute requirement for time-series data collection for causal inference carries profound implications for research design, funding models, and the pace of scientific discovery. Given the time for research preparation, data collection, and data entry, a three-year panel design will require at least five years of support. Existing funding models often extend only 2-3 years. Researchers who seek causal understanding and their funders must exhibit patience. How many will support the patience science that causal inference demands? The present funding models across the human sciences have yet to offer it. (Although I am fortunate to have been an exception.)
 
-If we truly want to understand the effects of our interventions upon the world we must transition from a productivity model of human science reminiscent of an assembly line or counterfeit money press to a system that nurtures long-term repeated measures data collection.
+Most human scientists want to understand the effects of interventions on the world. Progress depends on our ability to transition from a productivity model of human science reminiscent of an assembly line or counterfeit money press to a system that nurtures long-term data collection.
 
 {{< pagebreak >}}
 
 ## Appendix 1: Review of the theory of multiple versions of treatment
 
-A causal effect is defined as the difference in potential outcomes expected when everyone is exposed to one level of a treatment, conditional on their confounder levels, compared with the expected potential outcome when everyone is exposed to another level of the treatment, also conditional on confounder levels.
+We denote an average causal effect as the change in the expected potential outcomes when all units receive one level of treatment compared to another.
 
-Suppose $\delta$ is the causal estimand on the difference scale $(\mathbb{E}[Y^1 - Y^0])$. The identification of a causal effect can be expressed as
+Let $\delta$ denote the causal estimand on the difference scale $(\mathbb{E}[Y^1 - Y^0])$. The causal effect identification can be expressed as:
 
 $$ \delta = \sum_l \left( \mathbb{E}[Y|A=a,l] - \mathbb{E}[Y|A=a^*,l] \right) P(l)$$
 
-Causal inference provides us with a theory to manage situations where a treatment is not uniform but has different versions, each of which can have a distinct effect on the outcome. As discussed above, estimation also requires satisfying the causal consistency assumption. The treatments must be comparable. In observational studies, we might assume that the treatments often not clearly comparable.
+The theory of causal inference with multiple treatment versions provides a conceptual framework for causal inference in observational studies. Suppose we can assume that for each treatment version, the outcome under that version equals the observed outcome when that version is administered, conditional on baseline covariates and satisfaction of other assumptions. In that case, we can consistently estimate causal contrasts, even when treatments vary.
 
-Nevertheless, a theory known as causal inference under multiple versions of treatment theory provides a way to think about causal inference in observational studies that respects the consistency rule, even when it is known there are multiple versions of treatement. It states that if we may assume for each version of the treatment, the outcome under that version equates to the observed outcome when that version is administered, conditional on baseline covariates, and on the satisfaction of other assumptions, we may consistently estimate causal contrasts even when treatements are variable. In essence, this approach interprets treatment indicator $A$ as representing multiple versions of the actual treatment $K$. If we may futhermore assume that conditional independence holds, meaning there is no confounding for the effect of $K$ on $Y$ given $L$, we have: $Y(k)\coprod A|K,L$. This condition implies that, given $L$, $A$ provides no additional information about $Y$ after $K$ and $L$ have been accounted for. If $Y = Y(k)$ for $K = k$ and Y$(k)$ is independent of $K$, conditional on $L$. In this case, $A$ can be interpreted as a coarsened indicator of $K$, as shown in @fig-dag_multiple_version_treatment_dag. Then, we can estimate consistent causal effects using:
+This approach interprets treatment indicator $A$ as multiple actual treatment versions $K$. Furthermore, if we can assume conditional independence, meaning there is no confounding for the effect of $K$ on $Y$ given $L$, we have: $Y(k)\coprod A|K,L$.
+
+This condition implies that, given $L$, $A$ adds no additional information about $Y$ after accounting for $K$ and $L$. If $Y = Y(k)$ for $K = k$ and $Y(k)$ is independent of $K$, conditional on $L$, we can interpret $A$ as a simplified indicator of $K$. This scenario is depicted in @fig-dag_multiple_version_treatment_dag.
+
+With the necessary assumptions in place, we can derive consistent causal effects. The causal effect can be expressed
 
 $$ \delta = \sum_{k,l} \left( \mathbb{E}[Y(k)|l] P(k|a,l) P(l) - \mathbb{E}[Y(k)|l] P(k|a^*,l) P(l) \right) $$
 
-This scenario depicts a hypothetical randomised trial in which individuals, within covariate strata $L$, receive a treatment version $K$ that is randomly assigned from the $K$ distribution for the $(A = 1, L = l)$ sub-population. Conversely, individuals in the other group receive a randomly assigned $K$ version from the $(A = 0, L = l)$ distribution.
+This setup is akin to a randomised trial where individuals, stratified by covariate $L$, are assigned a treatment version $K$. This assignment comes from the distribution of $K$ for the $(A = 1, L = l)$ subset. The control group receives a randomly assigned $K$ version from the $(A = 0, L = l)$ distribution."
 
 ```{tikz}
 #| label: fig-dag_multiple_version_treatment_dag
@@ -1999,7 +2008,7 @@ This scenario depicts a hypothetical randomised trial in which individuals, with
 \end{tikzpicture}
 ```
 
-This theoretical framework is particularly useful in circumstances where treatments do not typically resemble each other [@vanderweele2013]. In Part 5 I considered how VanderWeele applies this theory to the interpretation of latent factor models where structural assumptions of a single univariate reality underlying our the items that form constructs is often questionable [@vanderweele2022]. I then considered further difficulties not captured by this extension of the theory of causal inference under multiple versions of treatment arising from the problem from measurement error, noticing that directed and/or correlated error terms for the exposure and outcome may compromise inference.
+This theory of causal inference under multiple versions of treatment is advantageous when treatments exhibit significant variability [@vanderweele2013]. In Part 5, I explored VanderWeele's application of this theory (which he developed) to latent factor models, where the presumption of a single underlying reality for the items that constitute constructs can be challenged [@vanderweele2022]. Furthermore, I acknowledged additional complications not addressed by this theory extension arising from measurement error. Specifically, the possibility that directed or correlated error terms for the exposure and outcome could undermine inference.
 
 {{< pagebreak >}}
 
