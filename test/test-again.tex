@@ -76,6 +76,29 @@
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newlength{\cslentryspacingunit} % times entry-spacing
+\setlength{\cslentryspacingunit}{\parskip}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+  \let\oldpar\par
+  \def\par{\hangindent=\cslhangindent\oldpar}
+  \fi
+  % set entry spacing
+  \setlength{\parskip}{#2\cslentryspacingunit}
+ }%
+ {}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{cancel}
 \usepackage[noblocks]{authblk}
@@ -144,7 +167,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={Building Effective Causal Diagrams for Evolutionary Human Science},
+  pdftitle={TESTS},
   pdfauthor={Joseph A. Bulbulia},
   pdfkeywords={DAGS, Causal
 Inference, Confounding, History, Psychology, Panel},
@@ -155,8 +178,7 @@ Inference, Confounding, History, Psychology, Panel},
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\title{Building Effective Causal Diagrams for Evolutionary Human
-Science}
+\title{TESTS}
 
 
   \author{Joseph A. Bulbulia}
@@ -166,45 +188,110 @@ Science}
                   Research
               }
       
-\date{2023-07-27}
+\date{2023-07-29}
 \begin{document}
 \maketitle
 \begin{abstract}
-Causation unfolds in time. However, quantifying causal effects requires
-counterfactuals that never occur. I show that aligning the spatial
-structure of a causal diagram with temporal order while attending to
-counterfactual identifiability assumptions greatly enhances its utility.
-Part 1 revisits three fundamental assumptions needed for estimating
-causal effects. Part 2 considers confounding and employs chronologically
-ordered causal diagrams to clarify causal interaction, mediation, and
-longitudinal growth. Part 3 demonstrates how time-structured diagrams
-offer practical guidance for data collection and modelling. Part 4
-applies causal diagrams to selection bias in the context of a three-wave
-panel, underlining the need for proper sampling, retention, and
-management of missing data. Lastly, Part 5 uses chronologically ordered
-causal diagrams to outline threats to causal estimation from measurement
-error, with particular attention to comparative cultural research.
+TEST
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[frame hidden, enhanced, boxrule=0pt, sharp corners, interior hidden, breakable, borderline west={3pt}{0pt}{shadecolor}]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, enhanced, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, breakable, sharp corners, frame hidden]}{\end{tcolorbox}}\fi
 
-\hypertarget{abstract}{%
-\subsection{Abstract}\label{abstract}}
+\hypertarget{measurement-error-in-the-confounder}{%
+\subsubsection{Measurement error in the
+confounder}\label{measurement-error-in-the-confounder}}
 
-\begin{verbatim}
-[1] "/Users/joseph/GIT/00_drafts"
-\end{verbatim}
+Measurement error is everywhere. Figure~\ref{fig-dag-measure-confounder}
+shows that even with impeccable measurements of exposure and outcome,
+measurement error in confounders can lead to bias in causal inference.
+Because measurement error is a common, it is important to perform
+sensitivity analyses.
+
+A relatively simple, yet powerful approach for sensitivity analysis
+involves the computation of E-Values. The E-Value computes the minimum
+strength of association that an unmeasured confounder would need to have
+with both the exposure and outcome, above and beyond the measured
+confounders, to explain away the observed exposure-outcome association
+(see: (\protect\hyperlink{ref-mathur2018}{Mathur et al. 2018}) )
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{test-again_files/figure-pdf/fig-dag-coarsen-measurement-error-3-1.pdf}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{test-again_files/figure-pdf/fig-dag-measure-confounder-1.pdf}
 
 }
 
-\caption{\label{fig-dag-coarsen-measurement-error-3}Where there are many
-indicators of a psychological construct, there are many opportunities
-for additional confounding by directed measureemnt error.}
+\caption{\label{fig-dag-measure-confounder}Causal diagram of confounder
+(L) measured with error (L'). Exposure (A) and outcome (Y) are measured
+with out error. Neverless, a biasing (backdoor) path opens A - L - Y,
+denoted by red. Potential bias between (A) and (Y) is denoted by red
+dotted path. Because measurement error is ubiquitous, we must perform
+senstitivity analyses for the threat of unmeasured confounding.}
 
 \end{figure}
+
+\hypertarget{bias-reduction-by-conditioning-on-a-post-outcome-variable-to-reduce-directed-measurement-error-bias}{%
+\subsubsection{Bias reduction by conditioning on a post-outcome variable
+to reduce directed measurement error
+bias}\label{bias-reduction-by-conditioning-on-a-post-outcome-variable-to-reduce-directed-measurement-error-bias}}
+
+Figure~\ref{fig-dag-measure-selection-0} presents a scenario which
+frequently arises in the evolutionary science of historical cultures.
+Suppose there is no relationship between the true exposur, \(A\), and
+true outcome, \(Y\). Suppose further that the outcome affects the
+measurement error, \(UA\), of the exposure. There is directed
+measurement error; a backdoor path is opened between the measured
+exposure \(A'\) and the measured outcome \(Y'\). (Note: for simplicity,
+we will not suppose that the outcome is measured with error; this
+assumption does not affect the structure of the problem.) Problems of
+the kind presented in Figure~\ref{fig-dag-measure-selection-0} are
+common in historical evolutionary human sciencebecause history is
+written by victors.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{test-again_files/figure-pdf/fig-dag-measure-selection-0-1.pdf}
+
+}
+
+\caption{\label{fig-dag-measure-selection-0}Figure X illustrates the
+impact of measurement error on the inferred causal relationship between
+an exposure (A) and an outcome (Y). Both A and Y are assumed to be
+measured without error. However, a confounder (L) is measured with
+error, represented as L'. This error introduces a biasing path A - L -
+Y, depicted in red. The potential for bias between A and Y, shown as a
+red dotted path, is opened up due to this error in confounder
+measurement.}
+
+\end{figure}
+
+Figure~\ref{fig-dag-measure-selection} reveals the structure of bias is
+such post-outcome adjustment is needed to mitigate or remove measurement
+bias when the outcome has caused it. Suppose our interest is again in
+quantifying the effect of beliefs in big Gods on social complexity.
+Suppose that socially complex societies re-write history removing trace
+of beliefs in lesser Gods. Suppose that such traces are nevertheless
+recoverable from linguistic variation.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{test-again_files/figure-pdf/fig-dag-measure-selection-1.pdf}
+
+}
+
+\caption{\label{fig-dag-measure-selection}Causal diagram reveals how
+improved measures diminish bias. Blue doted arrows denote paths of
+diminishing the effect of measurement error bias created because by
+recovering measures of the distorted exposure (echoes of the silenced).}
+
+\end{figure}
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{1}{0}
+\leavevmode\vadjust pre{\hypertarget{ref-mathur2018}{}}%
+Mathur, Maya B, Peng Ding, Corinne A Riddell, and Tyler J VanderWeele.
+2018. {``Website and r Package for Computing e-Values.''}
+\emph{Epidemiology (Cambridge, Mass.)} 29 (5): e45.
+
+\end{CSLReferences}
 
 
 

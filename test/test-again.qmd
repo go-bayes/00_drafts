@@ -1,8 +1,7 @@
 ---
-title: "Building Effective Causal Diagrams for Evolutionary Human Science"
+title: "TESTS"
 abstract: |
-  Causation unfolds in time. However, quantifying causal effects requires counterfactuals that never occur. I show that aligning the spatial structure of a causal diagram with temporal order while attending to counterfactual identifiability assumptions greatly enhances its utility. Part 1 revisits three fundamental assumptions needed for estimating causal effects. Part 2 considers confounding and employs chronologically ordered causal diagrams to clarify causal interaction, mediation, and longitudinal growth. Part 3 demonstrates how time-structured diagrams offer practical guidance for data collection and modelling. Part 4 applies causal diagrams to selection bias in the context of a three-wave panel, underlining the need for proper sampling, retention, and management of missing data. Lastly, Part 5 uses chronologically ordered causal diagrams to outline threats to causal estimation from measurement error, with particular attention to comparative cultural research.
-  
+  TEST
 author: 
   name: Joseph A. Bulbulia
   orcid: 0000-0002-5861-2056
@@ -26,7 +25,7 @@ keywords:
   - Psychology
   - Panel
 format:
-  pdf:
+   pdf:
     sanitize: true
     keep-tex: true
     link-citations: true
@@ -43,6 +42,7 @@ format:
        - text: |
            \usepackage{cancel}
 date: last-modified
+bibliography: references.bib
 ---
 
 ```{r}
@@ -88,18 +88,18 @@ push_mods <-
   )
 ```
 
-## Abstract
+### Measurement error in the confounder
 
-```{r}
-here::here()
-```
+Measurement error is everywhere. @fig-dag-measure-confounder shows that even with impeccable measurements of exposure and outcome, measurement error in confounders can lead to bias in causal inference. Because measurement error is a common, it is important to perform sensitivity analyses.
 
+A relatively simple, yet powerful approach for sensitivity analysis involves the computation of E-Values. The E-Value computes the minimum strength of association that an unmeasured confounder would need to have with both the exposure and outcome, above and beyond the measured confounders, to explain away the observed exposure-outcome association (see: [@mathur2018] )
 
 ```{tikz}
-#| label: fig-dag-coarsen-measurement-error-3
-#| fig-cap: "Where there are many indicators of a psychological construct, there are many opportunities for additional confounding by directed measureemnt error. "
+#| label: fig-dag-measure-confounder
+#| fig-cap: "Causal diagram of confounder (L) measured with error (L'). Exposure (A) and outcome (Y) are measured with out error. Neverless, a biasing (backdoor) path opens A - L - Y, denoted by red. Potential bias between (A) and (Y) is denoted by red dotted path. Because measurement error is ubiquitous, we must perform senstitivity analyses for the threat of unmeasured confounding."
 #| out-width: 100%
 #| echo: false
+
 \usetikzlibrary{positioning}
 \usetikzlibrary{shapes.geometric}
 \usetikzlibrary{arrows}
@@ -107,57 +107,127 @@ here::here()
 \tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
 \tikzset{>=latex}
 
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
 \begin{tikzpicture}[{every node/.append style}=draw]
 
-\node [rectangle, draw=white] (aa1) at (0, 0) {$\eta_{A1}$};
-\node [rectangle, draw=white] (aa2) at (2, 0) {$\eta_{A2}$};
-\node [rectangle, draw=white] (aa3) at (4, 0) {$\eta_{A3}$};
+\node [rectangle, draw=white] (L) at (0, 0) {$L$};
+\node [rectangle, draw=black] (Lp) at (0, 1) {$L^\prime$};
+\node [rectangle, draw=white] (A) at (2, 0) {$A$};
+\node [rectangle, draw=white] (Y) at (4, 0) {$Y$};
 
-\node [rectangle, draw=white] (a1) at (0, 1) {$A_1$};
-\node [rectangle, draw=white] (a2) at (2, 1) {$A_2$};
-\node [rectangle, draw=white] (a3) at (4, 1) {$A_3$};
+\draw [-latex, draw=black] (L) to (Lp);
+\draw [-latex, draw=red, bend right] (L) to (Y);
+\draw [-latex, draw=red] (L) to (A);
 
-\node [rectangle, draw=white] (Uaa1) at (0, 2) {$U_{A1}$};
-\node [rectangle, draw=white] (Uaa2) at (2, 2) {$U_{A2}$};
-\node [rectangle, draw=white] (Uaa3) at (4, 2) {$U_{A3}$};
+\draw [cor, draw=red, draw = red] (A) to (Y);
 
-\node [rectangle, draw=white] (yy1) at (10, 0) {$\eta_{Y1}$};
-\node [rectangle, draw=white] (yy2) at (12, 0) {$\eta_{Y2}$};
-\node [rectangle, draw=white] (yy3) at (14, 0) {$\eta_{Y3}$};
-
-\node [rectangle, draw=white] (y1) at (10, 1) {$Y_1$};
-\node [rectangle, draw=white] (y2) at (12, 1) {$Y_2$};
-\node [rectangle, draw=white] (y3) at (14, 1) {$Y_3$};
-
-\node [rectangle, draw=white] (Uyy1) at (10, 2) {$U_{Y1}$};
-\node [rectangle, draw=white] (Uyy2) at (12, 2) {$U_{Y2}$};
-\node [rectangle, draw=white] (Uyy3) at (14, 2) {$U_{Y3}$};
-
-\node [rectangle, draw=white] (A) at (6, 1) {$A_{f(A_1,A_2,A_3)}^{\textbf{time 1}}$};
-\node [rectangle, draw=white] (Y) at (16, 1) {$Y_{f(Y_1,Y_2,Y_3)}^{\textbf{time 2}}$};
-
-\draw [-latex, draw=black] (aa1) to (a1);
-\draw [-latex, draw=black] (aa2) to (a2);
-\draw [-latex, draw=black] (aa3) to (a3);
-
-\draw [-latex, draw=black] (Uaa1) to (a1);
-\draw [-latex, draw=black] (Uaa2) to (a2);
-\draw [-latex, draw=black] (Uaa3) to (a3);
-
-\draw [-latex, draw=black] (yy1) to (y1);
-\draw [-latex, draw=black] (yy2) to (y2);
-\draw [-latex, draw=black] (yy3) to (y3);
-
-\draw [-latex, draw=black] (Uyy1) to (y1);
-\draw [-latex, draw=red] (Uyy2) to (y2);
-\draw [-latex, draw=red] (Uyy3) to (y3);
-
-\draw [-latex, draw=red] (a3) to (A);
-\draw [-latex, draw=red] (y3) to (Y);
-
-\draw [-latex, draw=red, bend left = 60] (aa3) to (Uyy2);
-\draw [-latex, draw=red, bend left = 60] (aa3) to (Uyy3);
 
 \end{tikzpicture}
+
+```
+
+### Bias reduction by conditioning on a post-outcome variable to reduce directed measurement error bias
+
+@fig-dag-measure-selection-0 presents a scenario which frequently arises in the evolutionary science of historical cultures. Suppose there is no relationship between the true exposur, $A$, and true outcome, $Y$. Suppose further that the outcome affects the measurement error, $UA$, of the exposure. There is directed measurement error; a backdoor path is opened between the measured exposure $A'$ and the measured outcome $Y'$. (Note: for simplicity, we will not suppose that the outcome is measured with error; this assumption does not affect the structure of the problem.) Problems of the kind presented in @fig-dag-measure-selection-0 are common in historical evolutionary human sciencebecause history is written by victors.
+
+```{tikz}
+#| label: fig-dag-measure-selection-0
+#| fig-cap: "Figure X illustrates the impact of measurement error on the inferred causal relationship between an exposure (A) and an outcome (Y). Both A and Y are assumed to be measured without error. However, a confounder (L) is measured with error, represented as L'. This error introduces a biasing path A - L - Y, depicted in red. The potential for bias between A and Y, shown as a red dotted path, is opened up due to this error in confounder measurement."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (A) at (0, 0) {$A$};
+\node [rectangle, draw=white] (Y) at (2, 0) {$Y$};
+\node [rectangle, draw=white] (UA) at (5, 0) {$UA$};
+
+\node [rectangle, draw=white] (Ap) at (8, 0) {$A^\prime$};
+\node [rectangle, draw=white] (Yp) at (10, 0) {$Y^\prime$};
+
+
+\draw [-latex, draw=red, bend left] (Y) to (Yp);
+\draw [-latex, draw=red] (Y) to (UA);
+
+\draw [-latex, draw=black, bend right] (A) to (Ap);
+
+\draw [-latex, draw=red] (UA) to (Ap);
+
+\draw [-latex, draw=red, dotted] (UA) to (Ap);
+
+%\draw [cor, draw=red] (Ap) to (Yp);
+\draw [-latex, draw=red, dotted] (Ap) to (Yp);
+
+
+\end{tikzpicture}
+
+```
+
+@fig-dag-measure-selection reveals the structure of bias is such post-outcome adjustment is needed to mitigate or remove measurement bias when the outcome has caused it. Suppose our interest is again in quantifying the effect of beliefs in big Gods on social complexity. Suppose that socially complex societies re-write history removing trace of beliefs in lesser Gods. Suppose that such traces are nevertheless recoverable from linguistic variation.
+
+```{tikz}
+#| label: fig-dag-measure-selection
+#| fig-cap: "Causal diagram reveals how improved measures diminish bias. Blue doted arrows denote paths of diminishing the effect of measurement error bias created because by recovering measures of the distorted exposure (echoes of the silenced)."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dotted, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (A) at (0, 0) {$A$};
+\node [rectangle, draw=white] (Y) at (2, 0) {$Y$};
+\node [rectangle, draw=black, dashed] (UA) at (5, 0) {$UA$};
+
+\node [rectangle, draw=white] (Ap) at (8, 0) {$A^\prime$};
+\node [rectangle, draw=white] (Yp) at (10, 0) {$Y^\prime$};
+
+
+\draw [-latex, draw=black, dotted, bend left = 30] (Y) to (Yp);
+
+\draw [-latex, draw=black, dotted] (Y) to (UA);
+
+\draw [-latex, draw=black, bend right] (A) to (Ap);
+
+\draw [-latex, draw=black] (UA) to (Ap);
+
+\draw [-latex, draw=black] (UA) to (Ap);
+
+\draw [-latex, draw=blue, dotted] (Ap) to (Yp);
+
+
+\end{tikzpicture}
+
 
 ```
