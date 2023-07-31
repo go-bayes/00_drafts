@@ -1,7 +1,5 @@
 ---
-title: "Effective Causal Diagrams for Evolutionary Human Science"
-abstract: |
- Graphical abstract
+title: "Graphical Abstract for `Effective Causal Diagrams (DAGS) for Evolutionary Human Science: A Practical Guide'"
 author: 
   name: Joseph A. Bulbulia
   orcid: 0000-0002-5861-2056
@@ -30,7 +28,7 @@ format:
     keep-tex: true
     link-citations: true
     colorlinks: true
-    documentclass: article
+    documentclass: report
     classoption: [singlecolumn]
     lof: false
     lot: false
@@ -41,7 +39,7 @@ format:
     include-in-header:
        - text: |
            \usepackage{cancel}
-date: last-modified
+
 ---
 
 ```{r}
@@ -89,49 +87,11 @@ push_mods <-
 
 
 
-```{tikz}
-#| label: fig-dag-mediation-assumptions
-#| fig-cap: "Assumptions for mediation analysis. The brown edges denote the path for common causes of the exposure and coutcome. To block this path we must condition on L1. The green edges denote the path for common causes of the exposure and mediator. To block this path we must condition on L3. The blue edges denote the path for common causes of the mediator and outcome. To block this path we must condition on L2. The red path denotes the effect of the exposure on the confounder of the mediator and outcome. If any such path exists then we cannot obtain natural direct and indirect effects. Conditioning on L2 is necessary to prevent mediator outcome confounding but doing so blocks the effect of the exposure on the mediator."
-#| out-width: 80%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-
-
-\node [rectangle, draw=black] (L1) at (0, 2) {L1$_{t0}$};
-\node [rectangle, draw=black] (L3) at (0, -2) {L3$_{t0}$};
-\node [ellipse, draw=white] (A) at (3, 0) {A$_{t1}$};
-\node [rectangle, draw=black](L2) at (6, -2) {L2$_{t2}$};
-\node [rectangle, draw=white](M) at (9, 0) {M$_{t2*}$};
-\node [rectangle, draw=white](Y) at (12, 0) {Y$_{t3}$};
-
-
-\draw [-latex, draw=brown] (L1) to (A);
-\draw [-latex, draw=brown, bend left] (L1) to (Y);
-\draw [-latex, draw=green] (L3) to (A);
-\draw [-latex, draw=green] (L3) to (M);
-\draw [-latex, draw= gray, dashed] (A) to (M);
-\draw [-latex, draw= gray, dashed, bend left] (A) to (Y);
-\draw [-latex, draw=red] (A) to (L2);
-\draw [-latex, draw=blue] (L2) to (M);
-\draw [-latex, draw=blue] (L2) to (Y);
-\draw [-latex, draw= gray, dashed] (M) to (Y);
-
-\end{tikzpicture}
-
-```
 
 ```{tikz}
 #| label: fig-dag-8-2
 #| fig-cap: "Causal diagram of a three-wave panel design with selection bias: example 2: Unmeasured confounder U_S, is a cause of both of the outcome Y_2 and of a variable, L_2 that affects attrition,  S.  The exposure A affects this cause  L_2 of attrition, S. The selected sample is a descendent of L_2. Hence selection is a form of conditioning on L_2. Such conditioning opens a biasing path, indicated by the red-dashed lines."
-#| out-width: 80%
+#| out-width: 60%
 #| echo: false
 
 \usetikzlibrary{positioning}
@@ -176,7 +136,7 @@ push_mods <-
 ```{tikz}
 #| label: fig-dag-dep-u-effect-selection
 #| fig-cap: "Measurement bias in comparative cross-cultural research. Selection at baseline induces correlations in the measurement error of the exposure and outcome. Biasing paths are presented in red."
-#| out-width: 100%
+#| out-width: 60%
 #| echo: false
 #| 
 \usetikzlibrary{positioning}
@@ -219,7 +179,7 @@ push_mods <-
 ```{tikz}
 #| label: fig-dag-coarsen-measurement-error
 #| fig-cap: "Where there are many indicators of a psychological construct, there are many opportunities for additional confounding by directed measurement error. "
-#| out-width: 100%
+#| out-width: 60%
 #| echo: false
 \usetikzlibrary{positioning}
 \usetikzlibrary{shapes.geometric}
@@ -278,6 +238,51 @@ push_mods <-
 
 \draw [-latex, draw=red, bend left = 60] (aa3) to (Uyy2);
 \draw [-latex, draw=red, bend left = 60] (aa3) to (Uyy3);
+
+\end{tikzpicture}
+
+```
+
+
+
+
+```{tikz}
+#| label: fig-dag-dep-u-effect
+#| fig-cap: "Correlated undirected measurement error can distort causal effect estimates under the null, indicated by the red path."
+#| out-width: 80%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=white] (UAY) at (0, 2) {U$_{AY}$};
+\node [rectangle, draw=white] (UA) at (2, 1) {U$_A$};
+\node [rectangle, draw=white] (UY) at (2, 3) {U$_Y$};
+
+\node [rectangle, draw=white] (A1) at (4, 1) {$A^{\prime}_{1}$};
+\node [rectangle, draw=white] (Y2) at (7, 1) {$Y^{\prime}_{2}$};
+\node [rectangle, draw=white] (Aeta1) at (4, 0) {$A_{1}$};
+\node [rectangle, draw=white] (Yeta2) at (7, 0) {$Y_{1}$};
+
+
+\draw [-latex, draw=red] (UAY) to (UA);
+\draw [-latex, draw=red] (UAY) to (UY);
+\draw [-latex, draw=red] (UA) to (A1);
+\draw [-latex, draw=red] (UY) to (Y2);
+\draw [-latex, draw=red] (Aeta1) to (A1);
+\draw [-latex, draw=red] (Yeta2) to (Y2);
+\draw [cor, draw=red, bend left] (Aeta1) to (UA);
+\draw [cor, draw=red, bend left = 5] (Yeta2) to (UY);
+
 
 \end{tikzpicture}
 
