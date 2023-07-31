@@ -79,7 +79,12 @@ push_mods <-
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
+table(dat$alert_level)
 
+# test of alert level
+dat |> 
+  filter(wave == 2019 & year_measured == 1) |> 
+  count(alert_level)
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
@@ -106,6 +111,12 @@ push_mods
 # you may need to select different confounders. note that the more you include, the less efficient the estimates,
 # particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 
 
+# alert_level_combined
+# 
+
+2 * sd( dat$total_siblings, na.rm=TRUE ) + mean(dat$total_siblings, na.rm=TRUE )
+
+
 dat_long <- dat |>
   arrange(id, wave) |>
   mutate(urban = factor(
@@ -121,6 +132,7 @@ dat_long <- dat |>
   # select variables
   # mutate(across(where(is.double), as.numeric)) |>
   mutate(male = as.numeric(male) - 1) |>
+  mutate(total_siblings_factor = ordered(round(ifelse(total_siblings > 7, 7, total_siblings), 0))) |> 
   rename(religion_religious = religious) |>  # religious yes/no
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
   mutate(religion_church_binary2 = ifelse(religion_church2 > 0, 1, 0)) |>
@@ -131,6 +143,7 @@ dat_long <- dat |>
     "id",
     # "edu",
     "sample_origin_names_combined",
+    "alert_level_combined_lead",
     # Sample origin names combined
     #"alert_level_combined_lead",  not needed because all receive all levels by the point the outcome is measured
     # covid alert levels -> 2019-2020
@@ -165,7 +178,7 @@ dat_long <- dat |>
     "urban",
     # see NZAVS,
     "have_siblings", #Do you have siblings?
-    "total_siblings",# sum siblings
+    "total_siblings_factor",# sum siblings up to seven
     "number_sisters_older", #How many older sisters do you have?   
     "number_sisters_younger", #	How many younger sisters do you have? 
     "number_brothers_older",#	How many older brothers do you have?
@@ -223,7 +236,7 @@ dat_long <- dat |>
     # "began_relationship",
     # "religion_religious",
     # Do you identify with a religion and/or spiritual group?
-   # "religion_identification_level",
+    "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
     "religion_church_binary2",
@@ -325,6 +338,8 @@ dat_long <- dat |>
   droplevels() |>
   select(-c("h_19", "k_19", "h_18", "k_18")) |>
   data.frame()
+# check
+table( dat_long$total_siblings_factor )
 
 here_save(dat_long, "dat_long")
 # Why we did the conversions -- zero inflation
@@ -444,7 +459,6 @@ dat_long_t  <- dat_long %>%
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
-
 # check n again
 n_unique(dat_long_t$id)
 # double check path
@@ -463,7 +477,7 @@ baseline_vars = c(
     #"gen_cohort", #age
     "nz_dep2018",
     "nzsei13",
-    "total_siblings",# added: needed because we are dealing with family giving/receiving
+    "total_siblings_factor",# added: needed because we are dealing with family giving/receiving
     "born_nz",  # added 
     "hlth_disability",  # added 
      "hlth_bmi",
@@ -497,13 +511,12 @@ baseline_vars = c(
   # "religion_scripture",
    "religion_believe_god",
    "religion_believe_spirit",
-    "sample_weights"
+    "sample_weights",
+  "alert_level_combined_lead" # lead to make it 2019
 )
-    "sample_weights"
-)
-
 # check
 baseline_vars
+
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
 exposure_var = c("religion_church_binary2") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
@@ -540,7 +553,6 @@ outcome_vars_warmth = c(
     "religion_perceive_religious_discrim"
   )
 
-
 # set outcomes for the report received domain
 outcome_vars_support = c(
     "family_time",
@@ -556,8 +568,6 @@ outcome_vars_support = c(
     "support_rnoguidance"
     #There is no one I can turn to for guidance in times of stress.
 )
-
-
 
 prep_donate <- margot_wide(dat_long_t, 
   baseline_vars = baseline_vars, 
@@ -692,6 +702,7 @@ mice_donate_long <- mice::complete(mice_donate_mids, "long", inc = TRUE)
 
 # checks
 skim(mice_donate_long)
+
 
 # save
 saveRDS(mice_donate_mids, here::here(push_mods, "mice_donate_mids"))
@@ -862,18 +873,18 @@ mice_support_mids <- mice_support_c %>%
   select(
     where(is.factor),
     sample_weights,
-      t2_family_time_binary,
-      t2_friends_time_binary, 
-      t2_community_time_binary, 
-      t2_family_money_binary,
-      t2_friends_money_binary, 
-      t2_community_money_binary,
-       t2_family_time_ord, 
-        t2_family_money_ord, 
-        t2_friends_time_ord, 
-        t2_friends_money_ord, 
-        t2_community_time_ord, 
-        t2_community_money_ord,
+    t2_family_time_binary,
+    t2_friends_time_binary,
+    t2_community_time_binary,
+    t2_family_money_binary,
+    t2_friends_money_binary,
+    t2_community_money_binary,
+    t2_family_time_ord,
+    t2_family_money_ord,
+    t2_friends_time_ord,
+    t2_friends_money_ord,
+    t2_community_time_ord, 
+    t2_community_money_ord,
     ends_with("_z"),
     .imp,
     .id
@@ -914,12 +925,35 @@ skim(mice_donate_long)
 # Set exposure 
 X <- "t1_religion_church_binary2" #"t1_religion_church_coarsen" #levels( mice_donate_long$t1_religion_church_coarsen )
 
-X
-baseline_vars_donate = mice_donate_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_church_coarsen)|> colnames() # strange to include these -- as they  are income by other names
 
-# check
-baseline_vars_donate
+
+# we have insufficient overlap of religion variables. so we focus on religion
+
+
+baseline_vars_donate = mice_donate_long |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_church_coarsen,
+    -t0_alert_level_combined_lead,
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  )  |> colnames() # strange to include these -- as they  are income by other names
+
+baseline_vars_donate_exposure = mice_donate_long |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_church_coarsen,
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  ) |> colnames() #
+
+hist(mice_donate_long$t0_total_siblings_z)
+# we have insufficient overlap of religion variables. so we focus on religion
+baseline_vars_donate_exposure
 
 # keep outcome vars
 outcome_vars_donate = mice_donate_long |> dplyr::select(starts_with("t2")) |> colnames()
@@ -932,7 +966,7 @@ estimand = "ATE"
 # ebalance
 match_donate_ebal <- match_mi_general(data = mice_donate_mids, 
                                  X = X, 
-                                 baseline_vars = baseline_vars_donate, 
+                                 baseline_vars = baseline_vars_donate_exposure, 
                                  estimand = estimand,  
                                 # focal = "zero",
                                  method = "ebal", 
@@ -940,12 +974,14 @@ match_donate_ebal <- match_mi_general(data = mice_donate_mids,
 saveRDS(match_donate_ebal, here::here(push_mods, "match_donate_ebal"))
 
 
-# match_donate_energy <- match_mi_general(data = mice_donate_mids, 
-#                                  X = X, 
-#                                  baseline_vars = baseline_vars_donate, 
-#                                  estimand = estimand,  
+
+
+# match_donate_energy <- match_mi_general(data = mice_donate_mids,
+#                                  X = X,
+#                                  baseline_vars = baseline_vars_donate,
+#                                  estimand = estimand,
 #                                 # focal = "zero",
-#                                  method = "energy", 
+#                                  method = "energy",
 #                                  sample_weights = NULL)
 # saveRDS(match_donate_energy, here::here(push_mods, "match_donate_energy"))
 
@@ -980,7 +1016,7 @@ plot(sum_ebal)
 bal.tab(match_donate_ebal)
 
 # # if trim is needed
-match_donate_ebal_trim <- WeightIt::trim(match_donate_ebal, at = .997)
+match_donate_ebal_trim <- WeightIt::trim(match_donate_ebal, at = .999)
 here_save(match_donate_ebal_trim,"match_donate_ebal_trim")
 sum_ebal_trim <- summary(match_donate_ebal_trim)
 sum_ebal_trim
@@ -988,9 +1024,8 @@ sum_ebal_trim
 # graphs
 plot(sum_ebal_trim)
 cobalt::bal.tab(match_donate_ebal_trim, stats = c("m", "v"), binary = "std", thresholds = c(m = .05))
-love.plot(match_donate_ebal_trim, binary = "std", thresholds = c(m = .1))
+love.plot(match_donate_ebal_trim, binary = "std", thresholds = c(m = .05)) # 
 
-# settings
 # set dataframe
 dt_donate = match_donate_ebal_trim
 
@@ -998,7 +1033,6 @@ dt_donate = match_donate_ebal_trim
 # set cores
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
-
 #
 #nsims = 1000
 
@@ -1014,14 +1048,13 @@ treat_1 = "1"
 X
  
 ### Models 
-
+baseline_vars_donate
 #### Volunteering Hours
 mod_donate_volunteers_gauss_rd  <- double_robust(
   df = dt_donate,  # note change
   Y = "t2_hours_charity_log_z",
   X = X,
   baseline_vars = baseline_vars_donate,
-  treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
   scale = "RD",
@@ -1049,7 +1082,7 @@ mod_donate_volunteer_binary_rr  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial(link = "logit"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1182,11 +1215,34 @@ skim(mice_warmth_long)
 # Set exposure 
 #X <- "t1_religion_church_coarsen"
 
-# create baseline vars
-baseline_vars_warmth = mice_warmth_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_church_coarsen)|> colnames() # strange to include these -- as they  are income by other names
+
+baseline_vars_warmth = mice_warmth_long |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_church_coarsen,
+    -t0_alert_level_combined_lead,
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  ) |> colnames() # strange to include these -- as they  are income by other names
 
 baseline_vars_warmth
+
+
+baseline_vars_warmth_exposure = mice_warmth_long |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_church_coarsen,
+ #   -t0_alert_level_combined_lead,
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  ) |> colnames() # strange to include these -- as they  are income by other names
+
+baseline_vars_warmth_exposure
+
 
 # create outcome vars
 outcome_vars_warmth = mice_warmth_long |> dplyr::select(starts_with("t2")) |> colnames()
@@ -1198,7 +1254,7 @@ estimand = "ATE"
 # ebalance weights
 mice_warmth_ebal <- match_mi_general(data = mice_warmth_mids, 
                                  X = X, 
-                                 baseline_vars = baseline_vars_warmth, 
+                                 baseline_vars = baseline_vars_warmth_exposure, 
                                  estimand = estimand,  
                                 # focal = "zero",
                                  method = "ebal", 
@@ -1214,14 +1270,14 @@ plot(sum_ebal)
 bal.tab(mice_warmth_ebal)
 
 # if trim (if needed)
-mice_warmth_ebal_trim <- WeightIt::trim(mice_warmth_ebal, at = .997)
+mice_warmth_ebal_trim <- WeightIt::trim(mice_warmth_ebal, at = .999)
 sum_ebal_trim <- summary(mice_warmth_ebal_trim)
 sum_ebal_trim
 
 # graphs
 plot(sum_ebal_trim)
 bal.tab(mice_warmth_ebal_trim,stats = c("m", "ks"), abs = TRUE)
-love.plot(mice_warmth_ebal_trim, binary = "std", thresholds = c(m = .1))
+love.plot(mice_warmth_ebal_trim, binary = "std", thresholds = c(m = .05))
 
 # settings 
 dt_warmth = mice_warmth_ebal_trim
@@ -1231,7 +1287,7 @@ cl =  parallel::detectCores ()
 cores =  parallel::detectCores () 
 
 #levels(dat_long_t$religion_church_coarsen)
-nsims = 1000
+nsims = 200
 #check treatments
 # treat_0 = "zero"
 # #check
@@ -1568,11 +1624,35 @@ skim(mice_support_long)
 X <- "t1_religion_church_binary2"
 
 # create baseline variables
-baseline_vars_support = mice_support_long |> 
-  dplyr::select(starts_with("t0"), -t0_religion_church_coarsen)|> colnames() # used for imputation -- fully co-linear
+baseline_vars_support = mice_support_long |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_church_coarsen,
+    -t0_alert_level_combined_lead,
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  ) |> colnames() # used for imputation -- fully co-linear
 
 # view
 baseline_vars_support
+
+# use alert levels in iptw model
+baseline_vars_support_exposure = mice_support_long |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_church_coarsen,
+ #   -t0_alert_level_combined_lead,
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  ) |> colnames() # used for imputation -- fully co-linear
+
+# view
+baseline_vars_support_exposure
+
 
 # look at outcomes
 outcome_vars_support = mice_support_long |> dplyr::select(starts_with("t2")) |> colnames()
@@ -1603,7 +1683,7 @@ estimand = "ATE"
 # ebalance matching
 match_support_ebal <- match_mi_general(data = mice_support_mids, 
                                  X = X, 
-                                 baseline_vars = baseline_vars_support, 
+                                 baseline_vars = baseline_vars_support_exposure, 
                                  estimand = estimand,  
                                 # focal = "zero",
                                  method = "ebal", 
@@ -1624,7 +1704,7 @@ plot(sum_ebal)
 bal.tab(match_support_ebal)
 
 # trim if needed
-match_support_ebal_trim <- WeightIt::trim(match_support_ebal, at = .997)
+match_support_ebal_trim <- WeightIt::trim(match_support_ebal, at = .999)
 sum_trim_ebal <- summary(match_support_ebal_trim)
 
 # view
@@ -1633,7 +1713,7 @@ sum_trim_ebal
 # graphs
 plot(sum_trim_ebal)
 bal.tab(match_support_ebal_trim,stats = c("m", "ks"), abs = TRUE)
-love.plot(match_support_ebal_trim, binary = "std", thresholds = c(m = .1))
+love.plot(match_support_ebal_trim, binary = "std", thresholds = c(m = .05))
 
 # settings 
 # dataframe
