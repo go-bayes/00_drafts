@@ -1,17 +1,30 @@
-### 
+Dear Editors,
 
-Dear Editors, 
+I am pleased to submit a methods article for the forthcoming special issue on Causal Inference. The article offers a practical guide for building and implementing causal diagrams in the evolutionary human sciences.
 
-I am pleased to submit a commissioned methods article for the special issue on Causal Inference.
+Although it is encouraging that many researchers in evolutionary human sciences are attempting to use causal diagrams, the field would greatly benefit from clearer direction about building and applying them. For this reason, a comprehensive guide would appear timely. 
 
-The article delivers essential clarification on the functions, purposes, and insights afforded by causal diagrams. It underscores the vital matter of temporal order in examining causation, illustrating how aligning a causal diagram's spatial structure with the temporal sequence of causation can clarify data collection and modelling.
+The guide starts by revisiting the foundational assumptions that underpin causal inference. Many applied researchers maintain only a surface-level understanding of these concepts. The demand for a greater understanding of the intellectual framework in which causal inference takes its life motivates a treatment that begins with the basics.
 
-Moreover, it offers guidelines for practical data collection and modelling informed by causal diagrams, that promise to advance our field's research methodology. It also grapples with the issue of selection bias within a three-wave panel design, an area warranting deeper consideration and work. Finally, the article investigates threats to causal estimation arising from correlated and directed measurement error, a topic particularly relevant to comparative cultural research.
+Subsequently, the guide uses causal diagrams to clarify three types of structural bias: (1) confounding bias, (2) selection bias, and (3) measurement bias. A section on data collection links graphical theory to its application. I emphasise the benefits of aligning a graph's spatial organisation with the inherent time sequence of causation. Not only does this emphasise help to clarify conditions for counterfactual identifiability, it also directs attention to mission-critical imperatives for data collection.
 
-Given the present gap in understanding of causal inference, there was a need to build from first principles. The length of the article and the number of figures, albeit greater than typical for the journal, are justified. The 18,847 words and 30 figures offer rich insight and detail, which I believe the field urgently requires.
+The article is comprehensive, with approximately 20,000 words in the main text, 32 figures, and 75 references. I have trimmed the content where possible. However, a detailed guide is needed to substantially improve the quantitative analysis of causation in the Evolutionary Human Sciences. For this reason, I would greatly appreciate your consideration of this article for publication in Evolutionary Human Sciences.
 
-In summary, the article delivers a thorough, step-by-step explanation of critical assumptions, concepts, and challenges in causal inference. It extends from basic foundational principles to more intricate issues of confounding, mediation, longitudinal growth, selection bias, and measurement bias. This comprehensive approach is necessary to enhance attempts at quantitative evaluation of causation in the Evolutionary Human Sciences. 
+Sincerely, 
 
-Thank you very much for your consideration. 
+Joseph Bulbulia
+Reviewers: 
 
-All best wishes,
+Prof Tyler Vandereweele
+tvanderw@hsph.harvard.edu
+
+
+Prof Koichiro Shiba
+Boston University
+shiba_k@g.harvard.edu
+https://www.bu.edu/sph/profile/koichiro-shiba/
+
+
+Prof Etsuji Suzuki
+Visiting Scientist
+esuzuki@hsph.harvard.edu
