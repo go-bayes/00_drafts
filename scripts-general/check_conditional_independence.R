@@ -61,6 +61,41 @@ dagify(Y ~ L,
 
 
 
+
+coords <- tibble::tribble(~ name, ~ x,  ~ y,
+                          "U", 0,   0,
+                          "G", 2,   1,
+                          "D", 3,   1,
+                          "L", 4,   0,
+                          "A", 5,   1,
+                          "Y", 6,   0
+                          )
+
+dagify(Y ~ L,
+       L ~ D,
+       A ~ L, 
+       A ~ D, 
+       A ~ G,
+       Y ~ D,
+       Y ~ G,
+       G ~ U,
+       D ~ G,
+       D ~ U,
+       L ~ U,
+       G ~ U,
+       coords = coords
+) %>%
+  ggdag_dseparated("Y", "A",
+                   controlling_for = c("D", "L", "G"),
+                   collider_lines = TRUE
+  ) + theme_dag_grey()
+
+
+
+
+
+
+
 # some daffner dags
 
 
