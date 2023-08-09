@@ -160,7 +160,7 @@ omega_graph <- ggplot(data = dat, aes(x = omega_scale, y = scale, colour = type)
   geom_point() +
   geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0.2) +
   labs(
-    title = "Validation: Long and Short Sale",
+    title = "Validation: Long and Short Scale",
     x = "Omega Reliability",
     y = "Scale",
     colour = "Type"
@@ -214,8 +214,8 @@ reliability_graph_short <- ggplot(data = dat2, aes(x = short_remainder_reliabili
   geom_point() +
   geom_errorbarh(aes(xmin = lower_99_percent_ci, xmax = upper_99_percent_ci), height = 0.2) +
   labs(
-    title = "Short Sale Reliability",
-    x = "Chronbach's Alpha",
+    title = "Short Scale Reliability",
+    x = "Half-split Reliability",
     y = "Scale",
     colour = "Type"
   )+  theme_classic() + scale_x_continuous(limits = c(0,1))
