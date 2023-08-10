@@ -100,7 +100,6 @@ dat <- arrow::read_parquet(pull_path)
 
 ```
 
-
 ```{r}
 #| label: ideas
 #| echo: false
@@ -121,14 +120,143 @@ dat <- arrow::read_parquet(pull_path)
 
 ```
 
-
-
-## Introduction 
-
+## Introduction
 
 ### Purpose
 
-Here we describe how to calculate causal effects in three-wave panel designs.
+Here I describe how to calculate causal effects in three-wave panel designs. 
+
+**Part 1** introduces definitions and notations
+
+**Part 2** describes the three-wave panel, and its motiviations. 
+
+**Part 3** develops a the step-by-step guide for conducting causal inference within this design. 
+
+**Part 4** summarises reporting advice
+
+An Appendix describes functions for executing the workflows. 
+
+
+## **Part 1** Definitions and notation
+
+#### **Treatment or Exposure**
+
+A treatment or exposure, denoted by $A$, represents an intervention or condition in a study. We assume that it can take different levels such that $(A = a) \neq (A = a')$,  which correspond to different states or intensities of the intervention. 
+
+We use the terms "potential outcomes" and "counterfactual outcomes" synonymously.  
+
+In plain terms, the treatment is the "cause."
+
+
+#### **Potential or Counterfactual Outcomes**
+
+Potential or counterfactual outcomes, denoted by $Y$, represent the values that an outcome would take on if a treatment or exposure were, perhaps contrary to fact, set to a specific level [@ogburn2021].
+
+We  use the terms "potential outcomes" and "counterfactual outcomes" synonymously.  
+
+We denote a potential outcome using the notation $Y(A = a)$ or simply $Y(a)$.
+
+#### **Causal Contrast**
+
+A causal contrast is a function that quantifies a difference, at some scale, in potential outcomes under different treatment levels. 
+
+Formally, a causal contrast is a function of potential outcomes: 
+
+$$f_{\text{causal contrast}}(Y(a), Y(a'))$$
+
+where $Y(a)$ and $Y(a')$ represent the potential outcomes under the specific treatment levels $A = a$ and $A = a'$, respectively.
+
+Where $ATE$ denotes the average treatment effect, a causal contrast on the difference scale may be expressed:
+
+$$\text{Average Treatement Effect}_\text{Difference Scale} = E[Y(a)] - E[Y(a')]$$
+
+ A causal contrast on the ratio scale may be expressed:
+
+$\text{Average Treatement Effect}_\text{Ratio Scale}= \frac{E[Y(1)]}{E[Y(0)]}$$
+
+
+
+#### **Causal Estimand**
+
+A causal estimand or simply "estimand" names the causal contrast of interest. 
+
+To state a causal estimand requires stating:
+
+1. The levels of the exposure to be contrasted. 
+2. The potential outcomes of interest
+3. The scale of the causal contrast
+4. The target population for whom the causal contrast applies.
+
+
+
+#### **Causal Effect**
+
+We say there is a causal effect on the difference scale when a causal estimand does not equal zero, indicating that the exposure influence the outcome. For example:  
+
+$$E[Y(a)|L] - E[Y(a')|L] \neq 0$$
+
+We say there is a causal effect on the ratio scale when a causal estimand does not equal one. For example:
+
+
+$$\frac{E[Y(1)|L]}{E[Y(0)|L]}\neq 1$$
+where 1 and 0 represent specific levels of a binary exposure, and 
+$L$ represents covariates.
+
+
+#### **Observed Association**
+
+The observed association is the relationship between treatment or exposure and the observed outcome in the sample data, we may generally express:
+
+$$f_{\text{observed}}(Y, A)$$
+
+For example the observed correlation between the exposure $A$ and outcome $Y$ in the data may be expressed as linear relationship using ordinary least squares (OLS) 
+
+
+
+<!-- $$ \text{cor}(A, Y) = \frac{\sum_{i=1}^n (A_i - \bar{A})(Y_i - \bar{Y})}{\sqrt{\sum_{i=1}^n (A_i - \bar{A})^2 \sum_{i=1}^n (Y_i - \bar{Y})^2}}$$ -->
+
+<!-- where $A_i$ and $Y_i$  are individual observations of treatment and outcome, respectively, and $\bar{A}$ and $\bar{Y}$ are the means of the treatment and outcome, respectively, over the sample of size $n$. This formula provides a measure of the linear relationship between the treatment or exposure variable $A$ and the observed outcome variable $Y$, accounting for the spread and direction of the relationship in the sample data. -->
+
+
+
+$$Y = \beta_0 + \beta_1 A + \epsilon$$
+
+where $Y$ is the outcome variable, $A$ is the treatment, $\beta_0$ is the outcome when A = 0, and $\beta_1$ is the slope when $A = 1$, and $\epsilon$ is the error term the OLS estimates for the slope (\( \beta_1 \)) and intercept (\( \beta_0 \)) are given by:
+
+$$ \hat{\beta}_1 = \frac{\sum_{i=1}^n (A_i - \bar{A})(Y_i - \bar{Y})}{\sum_{i=1}^n (A_i - \bar{A})^2}$$
+
+$$ \hat{\beta}_0 = \bar{Y} - \hat{\beta}_1 \bar{A} $$
+
+Here, $\bar{A}$ and $\bar{Y}$ are the means of $A$ and $Y$, respectively. These estimates minimise the sum of squared differences between the observed values of $Y$ and the values predicted by the linear model, hence the term "least squares."
+
+
+
+#### **Bias**
+
+We say there is bias when the observed association $ f_{\text{observed}}(Y,A)$ differs from the causal contrast $f_{\text{causal}}(Y(a), Y(a'))$. This difference may arise due to confounding, selection bias, measurement error, or other factors that distort the true causal effect.
+
+These definitions allow for flexibility in describing various forms of causal contrast, while differentiating between the observed association in the data and the underlying causal relationship.
+
+#### **Bias**
+We say there is bias when the observed association between $f_{\text{obeserved}}(Y,A)$ differs from the causal association $f_{\text{caual}}(Y,A)$
+
+#### **Confounding Bias** 
+
+We say there is "confounding" when the observed relationship between the treatment and the outcome is influenced by another variable, not just the treatment itself. Confounding introduces bias. 
+
+
+
+-   **Confounder**: a confounder is a variable that reduces confounding when it is accounted for in the study.
+
+
+#### **Covariates**
+
+Covariates, denoted by $L$, are variables that may provide information about other variables that are of interest in a study. Often, they are characteristics or measurements that might affect the outcome but are not the primary focus of investigation. In the context of causal inference, covariates can help in reducing bias by controlling for confounding factors, thereby assisting in a more accurate estimation of the causal effect of the treatment or exposure on the outcome.
+
+
+#### **Effect Modifier**
+
+An effect modifier, denoted by $G$, is a variable that modifies the magnitude or direction of the effect of a treatment or exposure on an outcome. Unlike a confounder, it does not cause bias in the estimate of the causal effect, but rather it reveals how the effect differs across levels or categories of $G$. Effect modifiers may be of interest for understanding understanding how the effect of the treatment or exposure varies in different subgroups or under varying conditions.
 
 #### **Average Causal Effects in Experiments**
 
@@ -150,12 +278,11 @@ This is a conditional causal effect. It tells us how the treatment might work fo
 
 Randomisation is essential here, too. Because we put people into groups randomly, we can trust that differences in how the groups respond, on average, owe to the treatment, not to other factors. We do not need to guess what would have happened members of a different group had they been assigned to a different condition. Random assignment enables us to compute group-level responses within conditions, bypassing the need to observe what cannot, in reality, ever be observed -- individual-level contrasts.
 
-
 #### **Estimating Causal Effects outside of Experiments Requires Assumptions**
 
 Experiments are the best method for estimating causal effects. They use randomisation and control to identify causation. However, experiments are not always possible or ethical. In those cases, researchers turn to observational studies. These studies are more complex. They do not have random assignment to treatment conditions, and the conditions may vary widely. Some individuals might not even have a chance to receive one or both levels of the treatment being studied.
 
-Therefore, to estimate causal effects in observational settings, certain assumptions must be met [citations]. These assumptions are crucial. Without them, it is risky to draw conclusions about causation outside of experimental settings [cite]. 
+Therefore, to estimate causal effects in observational settings, certain assumptions must be met \[citations\]. These assumptions are crucial. Without them, it is risky to draw conclusions about causation outside of experimental settings \[cite\].
 
 The three fundamental assumptions are the exchangeability assumption, the causal consistency assumption, and the positivity assumption. Each one serves a unique role in ensuring that the causal effects identified in observational studies are valid and reliable.
 
@@ -163,13 +290,11 @@ The three fundamental assumptions are the exchangeability assumption, the causal
 
 In observational studies, the lack of randomisation can lead to challenges in identifying causal effects.
 
+Specifically, the assumption requires that, after controlling for measured variables, the potential outcomes under various exposure levels must be independent of the actual exposure level experienced [@hernán2023].
 
-Specifically, the assumption requires that, after controlling for measured variables, the potential outcomes under various exposure levels must be independent of the actual exposure level experienced [@hernán2023]. 
+The exchangeability assumption addresses this issue. It requires balance in the treatment conditions, considering factors that might influence the outcome. When the data do have balance across the treatment conditions, we say there is "confounding." The task is removing confounding is one of obtaining balance of the kind that randomisation provides in experimental settings.
 
-The exchangeability assumption addresses this issue. It requires balance in the treatment conditions, considering factors that might influence the outcome. When the data do have balance across the treatment conditions, we say there is "confounding."  The task is removing confounding is one of obtaining balance of the kind that randomisation provides in experimental settings. 
-
-In the following sections, we will outline methods for addressing the exchangeability assumption. Because the data do not typically clarify whether counfounding has been fully addressed, we recommend sensitivity analysis. Such analyses describe how much unmeasured confounding would be required to explain away the observed association between the exposure and the outcome. 
-
+In the following sections, we will outline methods for addressing the exchangeability assumption. Because the data do not typically clarify whether counfounding has been fully addressed, we recommend sensitivity analysis. Such analyses describe how much unmeasured confounding would be required to explain away the observed association between the exposure and the outcome.
 
 #### **The Causal Consistency Assumption**
 
@@ -187,26 +312,21 @@ In observational studies, ensuring causal consistency becomes more challenging. 
 
 Though estimating causal effects in heterogeneous treatment settings is complex, it is not incoherent. A mathematical framework, known as causal inference under multiple versions of treatment, shows that unbiased estimation is feasible if all treatment versions meet the exchangeability assumption. Practical challenges do arise, though. Without observing the many versions of treatment, evaluating the exchangeability assumption may become difficult, and the utility of the estimation can be limited. For example, estimating the effect of weight loss through a random assignment to either dieting or heart disease may provide little meaningful insight due to the heterogeneous nature of the treatments.
 
-Unfortunately, the causal consistency assumption typically cannot be verified by inspecting the data. Rather, researchers must rely on a clear understanding of the subject matter, make informed decisions about the definitions of exposures and treatments, and use thorough study design and statistical methods. They must ensure that the exposure or intervention being studied is consistently defined and measured across subjects in the study, without variation that could affect the outcome. This often involves careful consideration of the context, consultation with domain experts, and methodological choices that reflect the underlying science of the phenomenon being studied. 
+Unfortunately, the causal consistency assumption typically cannot be verified by inspecting the data. Rather, researchers must rely on a clear understanding of the subject matter, make informed decisions about the definitions of exposures and treatments, and use thorough study design and statistical methods. They must ensure that the exposure or intervention being studied is consistently defined and measured across subjects in the study, without variation that could affect the outcome. This often involves careful consideration of the context, consultation with domain experts, and methodological choices that reflect the underlying science of the phenomenon being studied.
 
-The protocols we describe below are aimed to help researchers obtain sensible inference by focussing their attention these demands for contextual attention informed by expert advice. 
-
-
+The protocols we describe below are aimed to help researchers obtain sensible inference by focussing their attention these demands for contextual attention informed by expert advice.
 
 #### **The Positivity Assumption**
 
-Positivity is an essential consideration in observational studies. It requires that there is a non-zero probability of receiving every exposure value within all strata of covariates [@hernán2023]. In simpler terms, it means that every subject in the study has some chance of receiving each level of the exposure or treatment. If this assumption is not met, it becomes impossible to make meaningful comparisons between different levels of exposure, as some of the comparisons would be based on groups where the exposure was never applied. Ensuring positivity is vital for the credibility of the causal effect estimation.  
+Positivity is an essential consideration in observational studies. It requires that there is a non-zero probability of receiving every exposure value within all strata of covariates [@hernán2023]. In simpler terms, it means that every subject in the study has some chance of receiving each level of the exposure or treatment. If this assumption is not met, it becomes impossible to make meaningful comparisons between different levels of exposure, as some of the comparisons would be based on groups where the exposure was never applied. Ensuring positivity is vital for the credibility of the causal effect estimation.
 
 Unlike the exchangeability and causal consistency assumptions, we can sometimes verify whether the positivity assumption is satisfied by inspecting the data. We shall describe these methods.
 
-
 ### Causal effects (or Estimands)
 
-**move material to here** 
-
+**move material to here**
 
 ### Causal effect scales
-
 
 ### Scale of effecct
 
@@ -278,39 +398,35 @@ $$\text{Transportability} = ATE_{\text{target}} \approx f(ATE_{\text{source}}, T
 
 where $f$ is a function and $T$ is a function that maps the results from our source population to another population. To achieve transportability, we need information about the source and target populations and an understanding of how the relationships between treatment, outcome, and covariates differ between the populations. Assessing transportability requires scientific knowledge.
 
-
-
 ## Part 1: Three-Wave Panel Designs
 
-Our goal is to explain how researchers can use three waves of data to satisfy the assumptions needed for causal inference. 
+Our goal is to explain how researchers can use three waves of data to satisfy the assumptions needed for causal inference.
 
 Put differently, we aim to demonstrate how, with three waves of data, researchers can emulate the conditions found in a randomised experiment so that they may address causal questions outsider of experiments.
 
 To begin, let us clarify some definitions:
 
-- **Wave**: a wave is a time interval where measurements are taken. It is placed on a timeline, so there are earlier and later intervals. The length can vary, but the order is specific.
+-   **Wave**: a wave is a time interval where measurements are taken. It is placed on a timeline, so there are earlier and later intervals. The length can vary, but the order is specific.
 
-- **Treatment (or Exposure)**: a treatment refers to an event or condition applied to some individuals but not others. In causal terms, it is what we consider the "cause." Our discussion here will be limited to investigating the effects of one cause.
+-   **Treatment (or Exposure)**: a treatment refers to an event or condition applied to some individuals but not others. In causal terms, it is what we consider the "cause." Our discussion here will be limited to investigating the effects of one cause.
 
-- **Outcome**: an outcome is what we study as the effect of the treatment. It is the result we are interested in measuring.
+-   **Outcome**: an outcome is what we study as the effect of the treatment. It is the result we are interested in measuring.
 
-- **Confounding**:  when the observed relationship between the treatment and the outcome may be influenced by another variable, not just the treatment itself, we say there may be confounding. 
+-   **Confounding**: when the observed relationship between the treatment and the outcome may be influenced by another variable, not just the treatment itself, we say there may be confounding.
 
-- **Confounder**:  a confounder is a variable that reduces confounding when it is accounted for in the study.
+-   **Confounder**: a confounder is a variable that reduces confounding when it is accounted for in the study.
 
-- **Panel Design**: a panel design follows the same individuals over time. It enables baseline controls and connects treatments to outcomes.
+-   **Panel Design**: a panel design follows the same individuals over time. It enables baseline controls and connects treatments to outcomes.
 
-- **Baseline**: wave 0, or the baseline, is the interval in which we measure confounders to deal with confounding in a three-wave panel design.
+-   **Baseline**: wave 0, or the baseline, is the interval in which we measure confounders to deal with confounding in a three-wave panel design.
 
-- **Treatment Wave**: wave 1 is the interval in which we measure the treatment or exposure is measured. Other variables at this wave are generally not included. However, we will explain how to address causal questions in which the effect of a treatment may vary between groups measured at baseline. That is, we will explain how to identify conditional causal effects.
+-   **Treatment Wave**: wave 1 is the interval in which we measure the treatment or exposure is measured. Other variables at this wave are generally not included. However, we will explain how to address causal questions in which the effect of a treatment may vary between groups measured at baseline. That is, we will explain how to identify conditional causal effects.
 
-- **Outcome Wave**: wave 2 is the interval is the interval in which we measure, you guessed it, the outcome.  There may be more than one outcome measured.
-
-
+-   **Outcome Wave**: wave 2 is the interval is the interval in which we measure, you guessed it, the outcome. There may be more than one outcome measured.
 
 ### Step 1. Defining the exposure: measure it at wave 0 and wave 1
 
-We begin with a well-defined exposure. 
+We begin with a well-defined exposure.
 
 Consider the causal effect of attending religious services. The first critical step involves defining the exposure in the context of a hypothetical intervention. What aspect is of interest to us? Is it a comparison of attendance versus non-attendance? Are we distinguishing between weekly and monthly attendees? Perhaps, we are interested in a different facet altogether? Visualising a hypothetical experiment - even when it is not feasible - reveals the need for a precise intervention specification [@hernán2022; @hernán2016a; @bulbulia2022].
 
@@ -318,7 +434,9 @@ The exposure is measured at wave 1 (i.e. +1 interval from baseline, wave 0). Whe
 
 a.  **Incidence effect interpretation**: incorporating the baseline exposure allows us to interpret the effect of exposure measured post-baseline as an incidence effect, not a prevalence effect [@vanderweele2020]. This means we can interpret the effect as the change due to a new occurrence (incidence) of the exposure, rather than the overall presence (prevalence) of the exposure. For example, in a study investigating the impact of weekly religious service attendance, including the baseline measure of attendance enables us to understand the effect of starting to attend weekly services (incidence), as opposed to simply being a regular attendee (prevalence).
 
-
+```{=html}
+<!-- -->
+```
 2.  **Confounding control**: the baseline exposure's inclusion helps to reduce unmeasured confounding arising from time-invariant confounders. These are variables that do not change over time and could confound the association between the exposure and the outcome if not properly accounted for. For instance, personal attributes such as unmeasured childhood religiosity could confound the association between religious service attendance and outcomes if not considered [@vantongeren2020].
 
 3.  **Better evaluation of sample adequacy for rare exposures**: Particularly when the exposure is uncommon, such as switching from no religious service attendance to weekly attendance, measuring the baseline exposure and outcome exposure can help assess adequacy of a sample size. Suppose this switch occurs rarely in the non-religious population, say 1 in 1,000 non-attenders per year. To estimate causal effects while conditioning on a rich set of baseline covariates, we would need a large sample, potentially comprising hundreds of thousands of participants. Ideally researchers would understake investigations prior to data collection to assess feasiblity of causal inference. In this example, it might be more practical to examine changes within the religious population, that is -- assuming changes are more common within this group -- than it would be to investigate conversion events. However, by restricting to only religious people who change in their religious habits, we would then typically estimate a causal effect generalisable to the religious population from which the sample was drawn, rather than one that could be applied to the non-religious population. In any case, including the baseline exposure can help address these issues by providing a reference point for changes within the population studied.
@@ -329,13 +447,11 @@ After defining the exposure, we need to determine a well-defined outcome (or pot
 
 Measuring the outcome at baseline offers several advantages:
 
-a.  **temporal ordering**: controlling for the baseline measure of the outcome helps confirm the temporal order of the cause-effect relationship, thereby guarding against reverse causation.
+a.  **Temporal Ordering**: controlling for the baseline measure of the outcome helps confirm the temporal order of the cause-effect relationship, thereby guarding against reverse causation.
 
-b.  **confounding control**: when we also control for the exposure at baseline, an unmeasured confounder would have to negate the association between the exposure at one wave post-baseline and the outcome at two waves post-baseline, independent of the baseline effect, as show in @fig-dag-1. Note, this figure shows that **reduction of bias is preferable to no reduction if bias**. This is an important practical point: although it may not be possible to eliminate all confounding (the dashed arrows symbolise potential sources of uncontrolled bias), the processes of data collection and analysis can help reduce it. Putting this point more sharply, there is a great danger in allowing automated confounding control strategies to govern an analysis. Again, a minimal adjustment set cannot be insured. Our task is always to reduce confounding in the presence of unmeasured confounders. A strategy must be carefully considered at the design phase in light both of the problem at hand, and the data that might be collected.[^18]
+b.  **Confounding Control**: when we also control for the exposure at baseline, an unmeasured confounder would have to negate the association between the exposure at one wave post-baseline and the outcome at two waves post-baseline, independent of the baseline effect, as show in @fig-dag-1. Note, this figure shows that **reduction of bias is preferable to no reduction if bias**. This is an important practical point: although it may not be possible to eliminate all confounding (the dashed arrows symbolise potential sources of uncontrolled bias), the processes of data collection and analysis can help reduce it. Putting this point more sharply, there is a great danger in allowing automated confounding control strategies to govern an analysis. Again, a minimal adjustment set cannot be insured. Our task is always to reduce confounding in the presence of unmeasured confounders. A strategy must be carefully considered at the design phase in light both of the problem at hand, and the data that might be collected.[^1]
 
-[^18]: Given the typical uncertainty about having accounted for all unmeasured confounding, it is prudent for researchers to conduct sensitivity analyses [@shi2021].
-
-
+[^1]: Given the typical uncertainty about having accounted for all unmeasured confounding, it is prudent for researchers to conduct sensitivity analyses [@shi2021].
 
 ```{tikz}
 #| label: fig-dag-1
@@ -386,7 +502,7 @@ We need to define for whom our causal inference applies. For this purpose, it is
 
 2.  **The target population** is the larger population for whom we aim to apply our study's results. The closer the source population matches the target population in structural features relevant to our causal questions, the stronger our causal inferences about the target population will be.
 
-3.  **Generalisability**: when the causal effect estimated from a sample applies to the target population beyond the sample population, we say the causal effect estimates are generalisable. This concept is also known as "external validity."
+3.  **generalisability**: when the causal effect estimated from a sample applies to the target population beyond the sample population, we say the causal effect estimates are generalisable. This concept is also known as "external validity."
 
 Let $PATE$ denote the population average treatment effect for the target population. Let $ATE_{\text{source}}$ denote the average treatment effect in the source population. Let $W$ denote a set of variables upon which the source and target population structurally differ. We say that results *generalise* if there is a function such that
 
@@ -404,13 +520,11 @@ for reasons we clarify in Part 4, sample retention is a mission-critical imperat
 
 ## Part 2. The Steps
 
-
-
 ### STEP 1 Formulate the Research Question
 
 -   **Stating the Question:** Is my question clearly stated? If not, state it.
 -   **Relevance of the Question:** Have I explained its importance? If not, explain.
--   **Ethical Considerations** How might this question affect people? How might not investigating this question affect people? 
+-   **Ethical Considerations** How might this question affect people? How might not investigating this question affect people?
 -   **Causality of the Question:** Is my question causal? If not, refine your question.
 -   **Subgroup Analysis:** Does my question involve a subgroup (e.g., cultural group)? If not, develop a subgroup analysis question.
 -   **Understanding the Framework:** Can I explain the potential outcomes framework, individual causal effects, the experimental method to obtain average causal effects, the fundamental assumptions of causal inference, and the estimation of causal effects in observational data? If not, review course materials.
@@ -489,7 +603,7 @@ If yes, you're on the right track.
 -   **Missing Data Check:** Have I checked for missing data? I should have.
 -   **Missing Data Plan:** If there is missing data, have I described how I will address it? I should have.
 
-###  Selecting the Model Approach
+### Selecting the Model Approach
 
 -   **Approach Decision:** Have I decided on using G-computation, IPTW, or Doubly-Robust Estimation? I should have.
 -   **Interaction Inclusion:** Have I included the interaction of the exposure and baseline covariates? I should have.
@@ -621,7 +735,7 @@ The Doubly Robust Estimation method for Subgroup Analysis Estimator is a sophist
 
 **Step 3** entails the simulation of potential outcomes for each individual in each subgroup. These hypothetical scenarios assume universal exposure to the intervention within each subgroup, regardless of actual exposure levels. The expectation of potential outcomes is calculated for each individual in each subgroup, using individual-specific weights. These scenarios are performed for both the current and alternative interventions.
 
-**Step 4** is the estimation of the average causal effect for each subgroup, achieved by comparing the computed expected values of potential outcomes under each intervention level. The difference represents the average causal effect of changing the exposure within each subgroup. 
+**Step 4** is the estimation of the average causal effect for each subgroup, achieved by comparing the computed expected values of potential outcomes under each intervention level. The difference represents the average causal effect of changing the exposure within each subgroup.
 
 **Step 5** involves comparing differences in causal effects across groups by calculating the differences in the estimated causal effects between different subgroups. Confidence intervals and standard errors for these calculations are determined using simulation-based inference methods [@greifer2023]. This step allows for a comprehensive comparison of the impact of different interventions across various subgroups, while encorporating uncertainty.
 
@@ -629,11 +743,11 @@ The Doubly Robust Estimation method for Subgroup Analysis Estimator is a sophist
 
 Consider the following ideas about what to discuss in one's findings. The order of exposition might be different.
 
-1.  **Summary of results**:  What did you find?
+1.  **Summary of results**: What did you find?
 
-2. **Interpretation of E-values:** Interpret the E-values used for sensitivity analysis. State what they represent in terms of the robustness of the findings to potential unmeasured confounding.
+2.  **Interpretation of E-values:** Interpret the E-values used for sensitivity analysis. State what they represent in terms of the robustness of the findings to potential unmeasured confounding.
 
-3.  **Causal Effect Interpretation:** What is the interest of the effect, if any, if an effect was observed? Interpret the average causal effect of changing the exposure level within each subgroup, and discuss its relevance to the research question. 
+3.  **Causal Effect Interpretation:** What is the interest of the effect, if any, if an effect was observed? Interpret the average causal effect of changing the exposure level within each subgroup, and discuss its relevance to the research question.
 
 4.  **Comparison of Subgroups:** Discuss how differences in causal effect estimates between different subgroups, if observed, or if not observed, contribute to the overall findings of the study.
 
@@ -641,14 +755,13 @@ Consider the following ideas about what to discuss in one's findings. The order 
 
 6.  **Generalisability and Transportability:** Reflect on the generalizability of the study results to other contexts or populations. Discuss any factors that might influence the transportability of the causal effects found in the study. (Again see lecture 9.)
 
-7.  **Assumptions and Limitations:** Reflect on the assumptions made during the study and identify any limitations in the methodology that could affect the interpretation of results. State that the implications of different intervention levels on potential outcomes are not analysed. 
+7.  **Assumptions and Limitations:** Reflect on the assumptions made during the study and identify any limitations in the methodology that could affect the interpretation of results. State that the implications of different intervention levels on potential outcomes are not analysed.
 
-8.  **Theoretical Relevance**: How are these findings relevant to existing theories. 
+8.  **Theoretical Relevance**: How are these findings relevant to existing theories.
 
 9.  **Replication and Future Research:** Consider how the study could be replicated or expanded upon in future research, and how the findings contribute to the existing body of knowledge in the field.
 
 10. **Real-world Implications:** Discuss the real-world implications of the findings, and how they could be applied in policy, practice, or further research.
-
 
 ## Part X Estimators
 
@@ -666,11 +779,11 @@ This equation represents the expected value of the outcome $Y$ given the exposur
 
 **Step 2** Simulate potential outcomes. For each individual, predict their potential outcome under the intervention $A=a$ using the estimated outcome model:
 
-   $$\hat{E}(Y|A=a)  = \hat{E}[Y|A=a,L; \hat{\theta}_Y]$$
+$$\hat{E}(Y|A=a)  = \hat{E}[Y|A=a,L; \hat{\theta}_Y]$$
 
 We also predict the potential outcome for everyone under the causal contrast, setting the intervention to $A=a'$:
 
- $$  \hat{E}(Y|A=a')  = \hat{E}[Y|A=a',L; \hat{\theta}_Y]$$
+$$  \hat{E}(Y|A=a')  = \hat{E}[Y|A=a',L; \hat{\theta}_Y]$$
 
 In these equations, $Y$ represents the potential outcome, $A$ is the intervention, and $L$ are the covariates.
 
@@ -678,10 +791,9 @@ In these equations, $Y$ represents the potential outcome, $A$ is the interventio
 
 $$\hat{\delta} = \hat{E}[Y(a)] - \hat{E}[Y(a')]$$
 
-This difference $\hat{\delta}$  represents the average causal effect of changing the exposure from level $a'$ to level $a$.
+This difference $\hat{\delta}$ represents the average causal effect of changing the exposure from level $a'$ to level $a$.
 
 We use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
-
 
 ### **Inverse Probability of Treatment Weighting (IPTW) Estimator**
 
@@ -707,11 +819,11 @@ In this model, $f_Y$ is a function (such as a weighted regression model) with pa
 
 **Step 3** Simulate potential outcomes. For each individual, simulate their potential outcome under the hypothetical scenario where everyone is exposed to the intervention $A=a$:
 
-   $$\hat{E}(Y|A=a)  = \hat{E}[Y|A=a; \hat{\theta}_Y,  v_i]$$
+$$\hat{E}(Y|A=a)  = \hat{E}[Y|A=a; \hat{\theta}_Y,  v_i]$$
 
 and also under the hypothetical scenario where everyone is exposed to intervention $A=a'$:
 
-   $$\hat{E}(Y|A=a')  = \hat{E}[Y|A=a'; \hat{\theta}_Y,  v_i]$$
+$$\hat{E}(Y|A=a')  = \hat{E}[Y|A=a'; \hat{\theta}_Y,  v_i]$$
 
 The expectation is calculated for each individual $i$, with individual-specific weights $v_i$.
 
@@ -721,13 +833,11 @@ $$\hat{\delta} = \hat{E}[Y(a)] - \hat{E}[Y(a')]$$
 
 The estimated difference $\hat{\delta}$ represents the ATE. We use simulation-based inference methods to compute standard errors and confidence intervals.
 
-
 We again, use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
-
 
 ### Doubly Robust Estimation
 
-**Step 1** Estimate the propensity score. The propensity score $e(L)$ is the conditional probability of the exposure $A = 1$, given the covariates $L$. 
+**Step 1** Estimate the propensity score. The propensity score $e(L)$ is the conditional probability of the exposure $A = 1$, given the covariates $L$.
 
 $$e = P(A = 1 | L) = f_A(L; \theta_A)$$
 
@@ -741,7 +851,7 @@ v =
 \end{cases}
 $$
 
-**Step 2** Fit a weighted outcome model. Using the weights $v$, fit a model for the outcome $Y$, conditional on the exposure $A$. 
+**Step 2** Fit a weighted outcome model. Using the weights $v$, fit a model for the outcome $Y$, conditional on the exposure $A$.
 
 $$ \hat{E}(Y|A, L; v) = f_Y(A, L ; \theta_Y, v) $$
 
@@ -763,9 +873,7 @@ The difference $\delta$ represents the average causal effect of changing the exp
 
 We again use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
 
-
-### Subgroup estimators 
-
+### Subgroup estimators
 
 ### **G-computation for Subgroup Analysis Estimator**
 
@@ -777,13 +885,11 @@ This equation represents the expected value of the outcome $Y$ given the exposur
 
 **Step 2** Simulate potential outcomes. For each individual in each subgroup, predict their potential outcome under the intervention $A=a$ using the estimated outcome model:
 
-   $$\hat{E}(Y|A=a, G=g)  = \hat{E}[Y|A=a,L,G=g; \hat{\theta}_Y]$$
-   
-   
+$$\hat{E}(Y|A=a, G=g)  = \hat{E}[Y|A=a,L,G=g; \hat{\theta}_Y]$$
+
 We also predict the potential outcome for everyone in each subgroup under the causal contrast, setting the intervention for everyone in that group to $A=a'$:
 
- $$\hat{E}(Y|A=a', G=g)  = \hat{E}[Y|A=a',L,G=g; \hat{\theta}_Y]$$
-
+$$\hat{E}(Y|A=a', G=g)  = \hat{E}[Y|A=a',L,G=g; \hat{\theta}_Y]$$
 
 In these equations, $Y$ represents the potential outcome, $A$ is the intervention, $L$ are the covariates, $G=g$ represents the subgroup, and $\theta_Y$ are the parameters of the outcome model.
 
@@ -795,9 +901,7 @@ This difference $\hat{\delta}_g$ represents the average causal effect of changin
 
 We use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
 
-
 **Step 4** Compare differences in causal effects by subgroups:
-
 
 $$\hat{\gamma} = \hat{\delta}_g - \hat{\delta}_{g'}$$
 
@@ -805,11 +909,9 @@ where,
 
 $$\hat{\gamma} = \overbrace{\big( \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^{\prime})|G=g] \big)}^{\hat{\delta_g}} - \overbrace{\big(\hat{E}[Y(a^{\prime})|G=g^{\prime}]- \hat{E}[Y(a)|G=g^{\prime}]\big)}^{\hat{\delta_{g^{\prime}}}}$$
 
-
 This difference $\hat{\gamma}$ represents the difference in the average causal effects between the subgroups $g$ and $g'$. It measures the interaction effect of the exposure $A$ and the subgroup $G$ on the outcome $Y$.
 
 We again use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
-
 
 ### **Inverse Probability of Treatment Weighting (IPTW) for Subgroup Analysis Estimator**
 
@@ -827,12 +929,11 @@ v =
 \end{cases}
 $$
 
-
 Thus, $v$ depends on $A$, and is calculated as the inverse of the propensity score for exposed individuals and as the inverse of $1-e$ for unexposed individuals.
 
 Note that we estimate propensity scores *separately* within strata of the subgroup for whom we are interested in effect modification. $v$ is the weight for each individual in a given subgroup $G$.
 
-**Step 2**  Fit a weighted outcome model. Using the weights calculated from the estimated propensity scores, fit a model for the outcome $Y$, conditional on the exposure $A$ and subgroup $G$. This can be represented as:
+**Step 2** Fit a weighted outcome model. Using the weights calculated from the estimated propensity scores, fit a model for the outcome $Y$, conditional on the exposure $A$ and subgroup $G$. This can be represented as:
 
 $$ \hat{E}(Y|A, G; V) = f_Y(A, G ; \theta_Y, V) $$
 
@@ -842,14 +943,11 @@ Note that in this formulation, unlike doubly-robust estimation, $L$ is not inclu
 
 **Step 3** Simulate potential outcomes. For each individual in each subgroup, simulate their potential outcome under the hypothetical scenario where everyone in the subgroup is exposed to the intervention $A=a$ regardless of their actual exposure level:
 
-   $$\hat{E}(Y|A=a, G=g)  = \hat{E}[Y|A=a,G=g; \hat{\theta}_Y,  v_i]$$
-
-
+$$\hat{E}(Y|A=a, G=g)  = \hat{E}[Y|A=a,G=g; \hat{\theta}_Y,  v_i]$$
 
 and also under the hypothetical scenario where everyone is exposed to intervention $A=a'$:
 
-   $$\hat{E}(Y|A=a', G=g)  = \hat{E}[Y|A=a',G=g; \hat{\theta}_Y,  v_i]$$
-
+$$\hat{E}(Y|A=a', G=g)  = \hat{E}[Y|A=a',G=g; \hat{\theta}_Y,  v_i]$$
 
 Thus the expectation is calculated for each individual $i$ in each subgroup $g$, with individual-specific weights $v_i$.
 
@@ -863,20 +961,15 @@ The estimated difference $\hat{\delta}_g$ represents the average causal effect w
 
 $$\hat{\gamma} = \hat{\delta}_g - \hat{\delta}_{g'}$$
 
-
 where,
-
 
 $$\hat{\gamma} = \overbrace{\big( \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^{\prime})|G=g] \big)}^{\hat{\delta_g}} - \overbrace{\big(\hat{E}[Y(a^{\prime})|G=g^{\prime}]- \hat{E}[Y(a)|G=g^{\prime}]\big)}^{\hat{\delta_{g^{\prime}}}}$$
 
-
 We again use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
-
 
 ### Doubly Robust Estimation for Subgroup Analysis Estimator
 
 Doubly Robust Estimation is a powerful technique that combines the strengths of both the IPTW and G-computation methods. It uses both the propensity score model and the outcome model, which makes it doubly robust: it produces unbiased estimates if either one of the models is correctly specified.
-
 
 **Step 1** Estimate the propensity score. The propensity score $e(L, G)$ is the conditional probability of the exposure $A = 1$, given the covariates $L$ and subgroup indicator $G$. This can be modeled using logistic regression or other suitable methods, depending on the nature of the data and the exposure.
 
@@ -892,12 +985,11 @@ v =
 \end{cases}
 $$
 
-
 Thus, $v$ depends on $A$, and is calculated as the inverse of the propensity score for exposed individuals and as the inverse of $1-e$ for unexposed individuals.
 
 Note that we estimate propensity scores *separately* within strata of the subgroup for whom we are interested in effect modification. $v$ is the weight for each individual in a given subgroup $G$.
 
-**Step 2**  Fit a weighted outcome model. Using the weights calculated from the estimated propensity scores, fit a model for the outcome $Y$, conditional on the exposure $A$ and subgroup $G$. This can be represented as:
+**Step 2** Fit a weighted outcome model. Using the weights calculated from the estimated propensity scores, fit a model for the outcome $Y$, conditional on the exposure $A$ and subgroup $G$. This can be represented as:
 
 $$ \hat{E}(Y|A, L, G; V) = f_Y(A, L, G ; \theta_Y, V) $$
 
@@ -906,13 +998,12 @@ In this model, $f_Y$ is a function (such as a weighted regression model) with pa
 Note that in this formulation, unlike propensity score model, estimation, $L$ is included as a variable in the outcome model, Although imbalance in $L$ on $A$ is accounted for by the weights $V$, by including $L$ in the outcome model this method is doubly robust insofar as we will obtain a consistent effect estimate if either the propensity score or the outcome model is correctly specified. This property reduces the strength of the assumption of correct model specification.
 
 **Step 3** For each individual in each subgroup, simulate their potential outcome under the hypothetical scenario where everyone in the subgroup is exposed to the intervention $A=a$ regardless of their actual exposure level:
-  
-  $$\hat{E}(Y|A=a, G=g)  = \hat{E}[Y|A=a,L,G=g; \hat{\theta}_Y,  v_i]$$
 
+$$\hat{E}(Y|A=a, G=g)  = \hat{E}[Y|A=a,L,G=g; \hat{\theta}_Y,  v_i]$$
 
 and also under the hypothetical scenario where everyone in each subgroup is exposed to intervention $A=a'$:
 
-  $$\hat{E}(Y|A=a', G=g)  = \hat{E}[Y|A=a',L,G=g; \hat{\theta}_Y,  v_i]$$
+$$\hat{E}(Y|A=a', G=g)  = \hat{E}[Y|A=a',L,G=g; \hat{\theta}_Y,  v_i]$$
 
 Thus the expectation is calculated for each individual $i$ in each subgroup $g$, with individual-specific weights $v_i$.
 
@@ -924,21 +1015,12 @@ The difference $\delta_g$ represents the average causal effect of changing the e
 
 We use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
 
-
 **Step 5** Compare differences in causal effects by groups. Compute the differences in the estimated causal effects between different subgroups:
 
 $$\hat{\gamma} = \hat{\delta}_g - \hat{\delta}_{g'}$$
 
-
 where,
-
 
 $$\hat{\gamma} = \overbrace{\big( \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^{\prime})|G=g] \big)}^{\hat{\delta_g}} - \overbrace{\big(\hat{E}[Y(a^{\prime})|G=g^{\prime}]- \hat{E}[Y(a)|G=g^{\prime}]\big)}^{\hat{\delta_{g^{\prime}}}}$$
 
-
 We again use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
-
-
-
-
-

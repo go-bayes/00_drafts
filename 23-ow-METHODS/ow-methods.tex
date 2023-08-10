@@ -202,13 +202,13 @@ Inference, Confounding, History, Psychology, Panel},
                   Research
               }
       
-\date{2023-08-09}
+\date{2023-08-10}
 \begin{document}
 \maketitle
 \begin{abstract}
 How to estimate causal effects in three wave panel designs
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, sharp corners, interior hidden, boxrule=0pt, breakable, enhanced, frame hidden]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, breakable, frame hidden, interior hidden, sharp corners, enhanced]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \subsection{Introduction}\label{introduction}}
@@ -218,6 +218,167 @@ How to estimate causal effects in three wave panel designs
 
 Here we describe how to calculate causal effects in three-wave panel
 designs.
+
+\hypertarget{definitions-and-notation}{%
+\subsubsection{Definitions and
+notation}\label{definitions-and-notation}}
+
+\hypertarget{treatment-or-exposure}{%
+\paragraph{\texorpdfstring{\textbf{Treatment or
+Exposure}}{Treatment or Exposure}}\label{treatment-or-exposure}}
+
+Treatment or exposure, denoted by \(A\), represents an intervention or
+condition in a study. We assume that it can take different levels such
+that \((A = a) \neq (A = a')\), which correspond to different states or
+intensities of the intervention.
+
+We use the terms ``potential outcomes'' and ``counterfactual outcomes''
+synonymously.
+
+\hypertarget{potential-or-counterfactual-outcomes}{%
+\paragraph{\texorpdfstring{\textbf{Potential or Counterfactual
+Outcomes}}{Potential or Counterfactual Outcomes}}\label{potential-or-counterfactual-outcomes}}
+
+Potential or counterfactual outcomes, denoted by \(Y\), represent the
+values that an outcome would take on if a treatment or exposure were,
+perhaps contrary to fact, set to a specific level
+(\protect\hyperlink{ref-ogburn2021}{Ogburn and Shpitser 2021}).
+
+We use the terms ``potential outcomes'' and ``counterfactual outcomes''
+synonymously.
+
+We denote a potential outcome using the notation \(Y(A = a)\) or simply
+\(Y(a)\).
+
+\hypertarget{causal-contrast}{%
+\paragraph{\texorpdfstring{\textbf{Causal
+Contrast}}{Causal Contrast}}\label{causal-contrast}}
+
+A causal contrast is a mathematical expression that quantifies the
+difference in potential outcomes under different treatment or exposure
+levels. Formally, a causal contrast is a function of potential outcomes,
+denoted as \$ f\_\{\text{causal}\}(Y(a), Y(a'))\$, where \(Y(a)\) and
+\(Y(a')\) represent the potential outcomes under the specific treatment
+levels \(A = a\) and \(A = a'\), respectively.
+
+This function encapsulates the comparative effect of the treatment, on
+some scale, in a setting where we wish to systematically evaluate how
+varying a treatment level leads to changes in the expected outcomes, on
+some scale.
+
+For example, a causal contrast for the average effect of treatment on
+the difference scale may be expressed:
+
+\[\text{Average Treatement Effect on The Difference Scale} = E[Y(a)] - E[Y(a')]\]
+
+A causal contrast for the average effect of treatment on the ratio scale
+may be expressed:
+
+\[\text{Average Treatement Effect on The Risk Ratio Scale} = \frac{E[Y(1)]}{E[Y(0)]}\]
+
+\hypertarget{causal-estimand}{%
+\paragraph{\texorpdfstring{\textbf{Causal
+Estimand}}{Causal Estimand}}\label{causal-estimand}}
+
+A causal estimand or causal effect is the mathematical expression of a
+quantitity of a causal contrast of interest to a study.
+
+\hypertarget{average-treatment-effect-ate}{%
+\paragraph{\texorpdfstring{\textbf{Average Treatment Effect
+(ATE)}}{Average Treatment Effect (ATE)}}\label{average-treatment-effect-ate}}
+
+For a binary treatment with levels \(A=0\) and \(A=1\), the ATE, on the
+difference scale, is expressed:
+
+\[ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]\]
+
+On the risk ratio scale, the ATE is expressed:
+
+\[ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}\]
+
+\hypertarget{observed-association}{%
+\paragraph{\texorpdfstring{\textbf{Observed
+Association}}{Observed Association}}\label{observed-association}}
+
+The observed association is the relationship between treatment or
+exposure and the observed outcome in the sample data, we may generally
+express:
+
+\[f_{\text{observed}}(Y, A)\]
+
+For example the observed correlation between \(A\) and \(Y\) in the data
+may be expressed as linear relationship using ordinary least squares
+(OLS)
+
+\[Y = \beta_0 + \beta_1 A + \epsilon\]
+
+where \(Y\) is the outcome variable, \(A\) is the treatment, \(\beta_0\)
+is the outcome when A = 0, and \(\beta_1\) is the slope when \(A = 1\),
+and \(\epsilon\) is the error term such that
+
+\[\hat{\beta}_0 = \bar{Y} - \hat{\beta}_1 \bar{A}\]
+
+Here, \(\bar{A}\) and \(\bar{Y}\) are the means of \(A\) and \(Y\),
+respectively. These estimates minimize the sum of squared differences
+between the observed values of ( Y ) and the values predicted by the
+linear model, hence the term ``least squares.''
+
+\hypertarget{bias}{%
+\paragraph{\texorpdfstring{\textbf{Bias}}{Bias}}\label{bias}}
+
+We say there is bias when the observed association (
+f\_\{\text{observed}\}(Y,A) ) differs from the causal contrast (
+f\_\{\text{causal}\}(Y(a), Y(a')) ). This difference may arise due to
+confounding, selection bias, measurement error, or other factors that
+distort the true causal effect.
+
+These definitions allow for flexibility in describing various forms of
+causal contrast, while differentiating between the observed association
+in the data and the underlying causal relationship.
+
+\hypertarget{bias-1}{%
+\paragraph{\texorpdfstring{\textbf{Bias}}{Bias}}\label{bias-1}}
+
+We say there is bias when the observed association between
+\(f_{\text{obeserved}}(Y,A)\) differs from the causal association
+\(f_{\text{caual}}(Y,A)\)
+
+\hypertarget{confounding}{%
+\paragraph{\texorpdfstring{\textbf{Confounding}}{Confounding}}\label{confounding}}
+
+We say there is ``confounding'' when the observed relationship between
+the treatment and the outcome is influenced by another variable, not
+just the treatment itself. Confounding introduces bias.
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Confounder}: a confounder is a variable that reduces
+  confounding when it is accounted for in the study.
+\end{itemize}
+
+\hypertarget{covariates}{%
+\paragraph{\texorpdfstring{\textbf{Covariates}}{Covariates}}\label{covariates}}
+
+Covariates, denoted by \(L\), are variables that may provide information
+about other variables that are of interest in a study. Often, they are
+characteristics or measurements that might affect the outcome but are
+not the primary focus of investigation. In the context of causal
+inference, covariates can help in reducing bias by controlling for
+confounding factors, thereby assisting in a more accurate estimation of
+the causal effect of the treatment or exposure on the outcome.
+
+\hypertarget{effect-modifier}{%
+\paragraph{\texorpdfstring{\textbf{Effect
+Modifier}}{Effect Modifier}}\label{effect-modifier}}
+
+An effect modifier, denoted by \(G\), is a variable that modifies the
+magnitude or direction of the effect of a treatment or exposure on an
+outcome. Unlike a confounder, it does not cause bias in the estimate of
+the causal effect, but rather it reveals how the effect differs across
+levels or categories of \(G\). Effect modifiers may be of interest for
+understanding understanding how the effect of the treatment or exposure
+varies in different subgroups or under varying conditions.
 
 \hypertarget{average-causal-effects-in-experiments}{%
 \paragraph{\texorpdfstring{\textbf{Average Causal Effects in
@@ -691,11 +852,11 @@ Measuring the outcome at baseline offers several advantages:
 \begin{enumerate}
 \def\labelenumi{\alph{enumi}.}
 \item
-  \textbf{temporal ordering}: controlling for the baseline measure of
+  \textbf{Temporal Ordering}: controlling for the baseline measure of
   the outcome helps confirm the temporal order of the cause-effect
   relationship, thereby guarding against reverse causation.
 \item
-  \textbf{confounding control}: when we also control for the exposure at
+  \textbf{Confounding Control}: when we also control for the exposure at
   baseline, an unmeasured confounder would have to negate the
   association between the exposure at one wave post-baseline and the
   outcome at two waves post-baseline, independent of the baseline
@@ -786,7 +947,7 @@ transportability.
   causal questions, the stronger our causal inferences about the target
   population will be.
 \item
-  \textbf{Generalisability}: when the causal effect estimated from a
+  \textbf{generalisability}: when the causal effect estimated from a
   sample applies to the target population beyond the sample population,
   we say the causal effect estimates are generalisable. This concept is
   also known as ``external validity.''
@@ -1932,6 +2093,11 @@ Hernán, MA, Wang, W, and Leaf, DE (2022) Target trial emulation: A
 framework for causal inference from observational data. \emph{JAMA},
 \textbf{328}(24), 2446--2447.
 doi:\href{https://doi.org/10.1001/jama.2022.21383}{10.1001/jama.2022.21383}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-ogburn2021}{}}%
+Ogburn, EL, and Shpitser, I (2021) Causal modelling: The two cultures.
+\emph{Observational Studies}, \textbf{7}(1), 179--183.
+doi:\href{https://doi.org/10.1353/obs.2021.0006}{10.1353/obs.2021.0006}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-shi2021}{}}%
 Shi, B, Choirat, C, Coull, BA, VanderWeele, TJ, and Valeri, L (2021)
