@@ -189,7 +189,7 @@ Practical Guide}
                   Research
               }
       
-\date{2023-08-13}
+\date{2023-08-14}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -216,7 +216,7 @@ research. Overall, this guide furnishes researchers with the ability to
 construct and interpret causal diagrams to address causal questions
 effectively.
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, boxrule=0pt, sharp corners, borderline west={3pt}{0pt}{shadecolor}, breakable, frame hidden, enhanced]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, boxrule=0pt, frame hidden, interior hidden, sharp corners, borderline west={3pt}{0pt}{shadecolor}, breakable]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \subsection{Introduction}\label{introduction}}
@@ -428,43 +428,40 @@ framework.
 \subsubsection{Identification Assumption 1: Causal
 Consistency}\label{identification-assumption-1-causal-consistency}}
 
-The causal consistency is pivotal role for addressing the special,
-elusive, \emph{missing data problems} at the heart causal inference. The
-causal consistency assumption is considered fulfilled if ``treatment
-variation irrelevance'' is observed, meaning the effects of different
-variations or levels of a treatment can be ignored, and any exposure to
-the treatment is sufficient to consider the unit as treated
-(\protect\hyperlink{ref-vanderweele2009}{VanderWeele 2009a}). Where the
-causal consistency assumption is satisfied, we say that the observed
-outcome, given an individual's actual exposure, matches that an
-individual's counterfactual outcome under the same exposure.
+Causal consistency is crucial for addressing the special, elusive,
+\emph{missing data problems} at the heart of causal inference. First,
+consider at a conceptual level how the causal consistency assumption
+recovers half of the missing counterfactuals required for causal
+contrasts.
 
 Let \(Y_i^{observed}|A_i\) denote an individual's observed outcome in
-response to treatment. Where the causal consistency assumption is
-satisfied, we may derive counterfactual outcomes from the following
+response to treatment \(A_i\). Where the causal consistency assumption
+is satisfied, we may derive counterfactual outcomes from the following
 rule:
 
 \[
-Y_i^{observed}|A = 
+Y_i^{observed}|A_i = 
 \begin{cases} 
-Y_i(~a^*) & \text{if } A_i = a* \\
-Y_i(~a~) & \text{if } A_i = a
+Y_i(a^*) & \text{if } A_i = a^* \\
+Y_i(a) & \text{if } A_i = a
 \end{cases}
 \]
 
-The counterfactual consistency assumption, when fulfilled, plays a
-crucial role by forming a connection between observed and counterfactual
-outcomes. This alignment of counterfactual and observed outcomes offers
-up to half of the counterfactual outcomes necessary to compute causal
-contrasts. While this only provides part of the total counterfactual
-outcomes needed for identifying average treatment effects, it
-nonetheless marks a substantial initial step.
+Where the causal consistency assumption is satisfied, we say that the
+observed outcome, given an individual's actual exposure, matches that an
+individual's counterfactual outcome under the same exposure. The
+assumption might appear to be easily satisfied. An observed outcome is
+just equated to a counterfactual outcome. This hardly seems difficult.
+However, the causal consistency assumption is only met if there is
+treatment variation irrelevance, such that any variations in treatment
+can be ignored conditional on other variables included in the model
+(\protect\hyperlink{ref-vanderweele2009}{VanderWeele 2009a}). On closer
+inspection, treatment variation irrelevance sets a high bar.
 
-\textbf{The no interference assumption}: If the exposure status of a
-unit in a study does not affect the outcome of any other unit, we say
-the study satisfies the ``no interference assumption'' -- the effects of
-exposure are independent across units, and so, an exposure's effect on
-one unit does not depend on the exposure status of other units
+Consider, causal consistency requires satisfaction of \textbf{the no
+interference assumption}: the effects of exposure must be independent
+across units such that an exposure's effect on one unit does not depend
+on the exposure status of other units
 (\protect\hyperlink{ref-rubin2005}{Rubin 2005}). (Note that such
 dependencies violate the assumption of treatment variation irrelevance
 even if the treatment were administered experimentally.)
@@ -475,39 +472,40 @@ interference assumption requires that the potential outcome for unit
 \(i\) is not influenced by the exposure assignment of any other unit
 \(j\):
 
-\$ Y\_i(a\_i, a\_j) = Y\_i(a\_i, a'\_j), \quad \forall a\_i, a\_j,
-a'\_j, \text{ and } \forall j \neq i \$
+\[
+Y_i(a_i, a_j) = Y_i(a_i, a'_j), \quad \forall a_i, a_j, a'_j, \text{ and } \forall j \neq i
+\]
 
 Here, the potential outcome for unit \(i\) remains the same regardless
 of the exposure statuses \(a_j\) and \(a'_j\) of other units.
 
-The no interference assumption can be violated when there are social
-network effects. For instance, the efficacy of a vaccine may depend on
-the vaccination rate in the population
+How might this assumption be challenged? Whenever there are social
+network effects the assumption may fail. For instance, the efficacy of a
+vaccine may depend on the vaccination rate in the population
 (\protect\hyperlink{ref-murray2021}{Murray \emph{et al.} 2021a},
 \protect\hyperlink{ref-murray2021a}{2021b};
-\protect\hyperlink{ref-ogburn2022}{Ogburn \emph{et al.} 2022}).(The no
+\protect\hyperlink{ref-ogburn2022}{Ogburn \emph{et al.} 2022}). (The no
 interference is an aspect of Rubin's Stable Unit Treatment Value
-Assumption (SUTVA) (\protect\hyperlink{ref-rubin2005}{Rubin 2005}).)
+Assumption (SUTVA), see Rubin
+(\protect\hyperlink{ref-rubin2005}{2005}).)
 
-\textbf{The theory of causal inference under multiple versions of
-treatment}: In observational research, there are typically multiple
-versions of treatment. The theory of causal inference under multiple
-versions of treatment proves we can consistently estimate causal effects
-where the different versions of treatment are conditionally independent
-of the outcomes VanderWeele
-(\protect\hyperlink{ref-vanderweele2009}{2009a}) (See Appendix 1 for
+However, there is hope. \textbf{The theory of causal inference under
+multiple versions of treatment} provides a proof showing that even if
+there are multiple versions of treatment, we may consistently estimate
+causal effects if the different versions of treatment are conditionally
+independent of the outcomes VanderWeele and Hernan
+(\protect\hyperlink{ref-vanderweele2013}{2013}). (See Appendix 1 for
 additional discussion of the proof and its implications.)
 
 Where there are \(K\) different versions of treatment \(A\) and no
 confounding for \(K\)'s effect on \(Y\) given measured confounders \(L\)
-such that
+such that:
 
 \[
 K \coprod Y(k) | L
 \]
 
-or equivalently
+or equivalently:
 
 \[
 Y(k) \coprod K | L
@@ -522,12 +520,7 @@ treatment \(K\) on \(Y(k)\)
 (\protect\hyperlink{ref-vanderweele2009}{VanderWeele 2009a},
 \protect\hyperlink{ref-vanderweele2018}{2018};
 \protect\hyperlink{ref-vanderweele2013}{VanderWeele and Hernan 2013}).
-(See Appendix 1 for a discussion of the proof and its implications) (see
-also: (\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022};
-\protect\hyperlink{ref-hernuxe1n2008}{Hernán \emph{et al.} 2008};
-\protect\hyperlink{ref-hernuxe1n2022a}{Hernán \emph{et al.} 2022a};
-\protect\hyperlink{ref-murray2021a}{Murray \emph{et al.} 2021b}). In
-practice, however, the symbol \(K\) m️ight denote little more than our
+In practice, however, the symbol \(K\) might denote little more than our
 ignorance. As such, we might not know how to evaluate the conditional
 independence assumption or know how to interpret the causal quantities
 we compute (see: (\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022};
@@ -556,7 +549,7 @@ observed. In effect (so to speak), satisfying the conditional
 exchangeability assumption is an attempt to simulate experimentally
 controlled randomisation with observational data.
 
-Let \(L\) to be the set of measured covariates required to ensure
+Let \(L\) be the set of measured covariates required to ensure
 conditional independence. Let \(\coprod\) denote independence. We
 express the exchangeability of counterfactual outcomes conditional on
 measured covariates \(L\) as
@@ -643,7 +636,9 @@ individual country is \(Y_i(a^*) - Y_i(a)\). Although we cannot identify
 this effect, if the basic assumptions of causal inference are met, we
 can estimate the average or marginal effect as
 
-\[\frac{1}{n} \left[\sum_i^{n} Y_i(a^*) - \sum_i^{n} Y_i(a)\right],\]
+\[
+\frac{1}{n} \sum_i^{n} \left[ Y_i(a^*) - Y_i(a) \right]
+\]
 
 which, conditioning the confounding effects of \(L\) gives us
 

@@ -219,41 +219,41 @@ Causal inference is a framework of assumptions and methods for deriving causal c
 
 ### Identification Assumption 1: Causal Consistency
 
-The causal consistency is pivotal role for addressing the special, elusive, *missing data problems* at the heart causal inference. The causal consistency assumption is considered met if "treatment variation irrelevance" is observed, meaning the effects of different variations or levels of a treatment can be ignored, and any exposure to the treatment is sufficient to consider the unit as treated [@vanderweele2009]. Where the causal consistency assumption is satisfied, we say that the observed outcome, given an individual's actual exposure, matches that an individual's counterfactual outcome under the same exposure.
+Causal consistency is crucial for addressing the special, elusive, *missing data problems* at the heart of causal inference. First, consider at a conceptual level how the causal consistency assumption recovers half of the missing counterfactuals required for causal contrasts.
 
-Let $Y_i^{observed}|A_i$ denote an individual's observed outcome in response to treatment. Where the causal consistency assumption is satisfied, we may derive counterfactual outcomes from the following rule:
+Let $Y_i^{observed}|A_i$ denote an individual's observed outcome in response to treatment $A_i$. Where the causal consistency assumption is satisfied, we may derive counterfactual outcomes from the following rule:
 
 $$
-Y_i^{observed}|A = 
+Y_i^{observed}|A_i = 
 \begin{cases} 
-Y_i(~a^*) & \text{if } A_i = a* \\
-Y_i(~a~) & \text{if } A_i = a
+Y_i(a^*) & \text{if } A_i = a^* \\
+Y_i(a) & \text{if } A_i = a
 \end{cases}
 $$
 
-The counterfactual consistency assumption, when fulfilled, plays a crucial role by forming a connection between observed and counterfactual outcomes. This alignment of counterfactual and observed outcomes offers up to half of the counterfactual outcomes necessary to compute causal contrasts. While this only provides part of the total counterfactual outcomes needed for identifying average treatment effects, it nonetheless marks a substantial initial step.
+Where the causal consistency assumption is satisfied, we say that the observed outcome, given an individual's actual exposure, matches that an individual's counterfactual outcome under the same exposure. The assumption might appear to be easily satisfied. An observed outcome is just equated to a counterfactual outcome. This hardly seems difficult. However, the causal consistency assumption is only met if there is treatment variation irrelevance, such that any variations in treatment can be ignored conditional on other variables included in the model [@vanderweele2009]. On closer inspection, treatment variation irrelevance sets a high bar.
 
-**The no interference assumption**: If the exposure status of a unit in a study does not affect the outcome of any other unit, we say the study satisfies the "no interference assumption" -- the effects of exposure are independent across units, and so, an exposure's effect on one unit does not depend on the exposure status of other units [@rubin2005]. (Note that such dependencies violate the assumption of treatment variation irrelevance even if the treatment were administered experimentally.)
+Consider, causal consistency requires satisfaction of **the no interference assumption**: the effects of exposure must be independent across units such that an exposure's effect on one unit does not depend on the exposure status of other units [@rubin2005]. (Note that such dependencies violate the assumption of treatment variation irrelevance even if the treatment were administered experimentally.)
 
 Let $Y_i(a_i, a_j)$ denote the potential outcome for unit $i$ under treatment $a_i$ when unit $j$ has exposure status $a_j$. The no interference assumption requires that the potential outcome for unit $i$ is not influenced by the exposure assignment of any other unit $j$:
 
-$
+$$
 Y_i(a_i, a_j) = Y_i(a_i, a'_j), \quad \forall a_i, a_j, a'_j, \text{ and } \forall j \neq i
-$
+$$
 
-Here, the potential outcome for unit $i$ remains the same regardless of the exposure statuses $a_j$ and $a'_j$ of other units. 
+Here, the potential outcome for unit $i$ remains the same regardless of the exposure statuses $a_j$ and $a'_j$ of other units.
 
-The no interference assumption can be violated when there are social network effects. For instance, the efficacy of a vaccine may depend on the vaccination rate in the population [@ogburn2022; @murray2021; @murray2021a].(The no interference is an aspect of Rubin's Stable Unit Treatment Value Assumption (SUTVA) [@rubin2005].)
+How might this assumption be challenged? Whenever there are social network effects the assumption may fail. For instance, the efficacy of a vaccine may depend on the vaccination rate in the population [@ogburn2022; @murray2021; @murray2021a]. (The no interference is an aspect of Rubin's Stable Unit Treatment Value Assumption (SUTVA), see @rubin2005.)
 
-**The theory of causal inference under multiple versions of treatment**: In observational research, there are typically multiple versions of treatment. The theory of causal inference under multiple versions of treatment proves we can consistently estimate causal effects where the different versions of treatment are conditionally independent of the outcomes [@vanderweele2009, @vanderweele2009; @vanderweele2013; @vanderweele2018] (See Appendix 1 for additional discussion of the proof and its implications.)
+However, there is hope. **The theory of causal inference under multiple versions of treatment** provides a proof showing that even if there are multiple versions of treatment, we may consistently estimate causal effects if the different versions of treatment are conditionally independent of the outcomes [@vanderweele2009,@vanderweele2013; @vanderweele2018]. (See Appendix 1 for additional discussion of the proof and its implications.)
 
-Where there are $K$ different versions of treatment $A$ and no confounding for $K$'s effect on $Y$ given measured confounders $L$ such that
+Where there are $K$ different versions of treatment $A$ and no confounding for $K$'s effect on $Y$ given measured confounders $L$ such that:
 
 $$
 K \coprod Y(k) | L
 $$
 
-or equivalently
+or equivalently:
 
 $$
 Y(k) \coprod K | L
@@ -261,13 +261,13 @@ $$
 
 then causal consistency follows.
 
-According to the theory of causal inference under multiple versions of treatment, the measured variable $A$ functions as a "coarsened indicator" for estimating the causal effect of the multiple versions of treatment $K$ on $Y(k)$ [@vanderweele2009; @vanderweele2013; @vanderweele2018]. (See Appendix 1 for a discussion of the proof and its implications) (see also: [@hernán2022a; @murray2021a; @hernán2008; @bulbulia2022]. In practice, however, the symbol $K$ m️ight denote little more than our ignorance. As such, we might not know how to evaluate the conditional independence assumption or know how to interpret the causal quantities we compute (see: [@hernán2022a; @murray2021a; @hernán2008; @bulbulia2022]). We will return to this topic in Part 4.
+According to the theory of causal inference under multiple versions of treatment, the measured variable $A$ functions as a "coarsened indicator" for estimating the causal effect of the multiple versions of treatment $K$ on $Y(k)$ [@vanderweele2009; @vanderweele2013; @vanderweele2018]. In practice, however, the symbol $K$ might denote little more than our ignorance. As such, we might not know how to evaluate the conditional independence assumption or know how to interpret the causal quantities we compute (see: [@hernán2022a; @murray2021a; @hernán2008; @bulbulia2022]). We will return to this topic in Part 4.
 
 ### Identification Assumption 2: (Conditional) Exchangeability
 
 We say that conditional exchangeability is satisfied if, after controlling for observed covariates, the assignment of treatment is independent of the potential outcomes under treatment. Conceptually, assuming both causal consistency (including no interference) and positivity are satisfied, satisfaction of the conditional exchangeability assumption implies that if units were swapped between treatment conditions, the distribution of potential outcomes under different exposures would remain unchanged. This assumption is needed to ensure a balance between exposures in confounders that might affect the outcome. With this assumption satisfied, the counterfactual observations derived from the consistency and positivity assumptions can be viewed as randomly assigned to the exposure conditions under which they were observed. In effect (so to speak), satisfying the conditional exchangeability assumption is an attempt to simulate experimentally controlled randomisation with observational data.
 
-Let $L$ to be the set of measured covariates required to ensure conditional independence. Let $\coprod$ denote independence. We express the exchangeability of counterfactual outcomes conditional on measured covariates $L$ as
+Let $L$ be the set of measured covariates required to ensure conditional independence. Let $\coprod$ denote independence. We express the exchangeability of counterfactual outcomes conditional on measured covariates $L$ as
 
 $$
 Y(a) \coprod  A|L \quad \text{or equivalently} \quad A \coprod  Y(a)|L
@@ -303,7 +303,9 @@ Consider the Protestant Reformation of the 16th century, which initiated religio
 
 Suppose we are interested in estimating the "Average Treatment Effect" of the Protestant Reformation. Let $A = a^*$ denote the adoption of Protestantism. We compare this effect with that of remaining Catholic, represented as $A = a$. We assume that both the concepts of "adopting Protestantism" and of "economic development" are well-defined (e.g. GDP +1 century after a country has a Protestant majority contrasted with remaining Catholic). The causal effect for any individual country is $Y_i(a^*) - Y_i(a)$. Although we cannot identify this effect, if the basic assumptions of causal inference are met, we can estimate the average or marginal effect as
 
-$$\frac{1}{n} \left[\sum_i^{n} Y_i(a^*) - \sum_i^{n} Y_i(a)\right],$$
+$$
+\frac{1}{n} \sum_i^{n} \left[ Y_i(a^*) - Y_i(a) \right]
+$$
 
 which, conditioning the confounding effects of $L$ gives us
 
