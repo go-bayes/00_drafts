@@ -124,43 +124,43 @@ dat <- arrow::read_parquet(pull_path)
 
 ### Purpose
 
-Here I describe how to calculate causal effects in three-wave panel designs. 
+I describe how to calculate causal effects in three-wave panel designs.
 
-**Part 1** introduces definitions and notations
+**Part 1** introduces definitions and notation.
 
-**Part 2** describes the three-wave panel, and its motiviations. 
+**Part 2** describes the three-wave panel, and its motivations.
 
-**Part 3** develops a the step-by-step guide for conducting causal inference within this design. 
+**Part 3** develops a the step-by-step guide for conducting causal inference within the three-wave panel design
 
-**Part 4** summarises reporting advice
+**Part 4** describes common estimators
 
-An Appendix describes functions for executing the workflows. 
+**Part 5** discusses more complex designs where there is scope for confounder treatment feedback. 
+
+
+An Appendix describes custom functions I have written for executing the workflows.
 
 
 ## **Part 1** Definitions and notation
 
 #### **Treatment or Exposure**
 
-A treatment or exposure, denoted by $A$, represents an intervention or condition in a study. We assume that it can take different levels such that $(A = a) \neq (A = a')$,  which correspond to different states or intensities of the intervention. 
-
-We use the terms "potential outcomes" and "counterfactual outcomes" synonymously.  
+A treatment or exposure, denoted by $A$, represents an intervention or condition in a study. We assume that it can take different levels such that $(A = a) \neq (A = a')$, which correspond to different states or intensities of the intervention.
 
 In plain terms, the treatment is the "cause."
-
 
 #### **Potential or Counterfactual Outcomes**
 
 Potential or counterfactual outcomes, denoted by $Y$, represent the values that an outcome would take on if a treatment or exposure were, perhaps contrary to fact, set to a specific level [@ogburn2021].
 
-We  use the terms "potential outcomes" and "counterfactual outcomes" synonymously.  
+We use the terms "potential outcomes" and "counterfactual outcomes" synonymously.
 
 We denote a potential outcome using the notation $Y(A = a)$ or simply $Y(a)$.
 
 #### **Causal Contrast**
 
-A causal contrast is a function that quantifies a difference, at some scale, in potential outcomes under different treatment levels. 
+A causal contrast is a function that quantifies a difference, at some scale, in potential outcomes under different treatment levels.
 
-Formally, a causal contrast is a function of potential outcomes: 
+Formally, a causal contrast is a function of potential outcomes:
 
 $$f_{\text{causal contrast}}(Y(a), Y(a'))$$
 
@@ -168,97 +168,114 @@ where $Y(a)$ and $Y(a')$ represent the potential outcomes under the specific tre
 
 Where $ATE$ denotes the average treatment effect, a causal contrast on the difference scale may be expressed:
 
-$$\text{Average Treatement Effect}_\text{Difference Scale} = E[Y(a)] - E[Y(a')]$$
+$$ATE_{A,A'} = E[Y(a)] - E[Y(a')]$$
 
- A causal contrast on the ratio scale may be expressed:
+This essentially denotes an average treatment effect comparing the outcome under treatment level $A$ to the outcome under treatment level $A'$. For all exposures, including continuous exposures, we must stipulate the level of contrast for the treatment.
 
-$\text{Average Treatement Effect}_\text{Ratio Scale}= \frac{E[Y(1)]}{E[Y(0)]}$$
+
+Likewise we may state the average treatment effect on the ratio scale
+
+$$ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}$$
+
+#### **Causal Effect**
+
+We say there is a causal effect on the difference scale when a causal estimand does not equal zero, indicating that the exposure influences the outcome. For example:
+
+$$E[Y(a)] - E[Y(a')] \neq 0$$
+
+We say there is a causal effect on the ratio scale when a causal estimand does not equal one. For example:
+
+$$\frac{E[Y(1)]}{E[Y(0)]}\neq 1$$
+
+where 1 and 0 represent specific levels of a binary exposure.
+
+#### **Observed Association**
+
+The observed association is the measurable link between a treatment or exposure $A$ and an outcome $Y$ in the sample data. We can represent it as:
+
+$$f_{\text{observed}}(Y, A)$$
+
+For example, we may quantify an association between a treatment and outcome using linear regression:
+
+$$Y = \beta_0 + \beta_1 A + \epsilon$$
+
+Where:
+
+-   $Y$ is the outcome
+-   $A$ is the treatment or exposure
+-   $\beta_0$ and $\beta_1$ are coefficients estimating the relationship
+-   $\epsilon$ is the error term
+
+The slope ($\beta_1$) and intercept ($\beta_0$) estimates, obtained using ordinary least squares (OLS), describe a relationship modelled as linear.
+
+#### **Full Data and Observed Data**
+
+The full data is the random vector $(Y(1), Y(0), X, L)$ for covariates $L$, while the observed data $(Y, X, C)$ is a coarsening of the full data with $Y = X \cdot Y(1) + (1-X) \cdot Y(0)$ [@ogburn2021].
+
+Absent assumptions, we cannot learn about causal estimands from the observed data, because they are functionals of (partially) unobserved potential outcomes.
+
+
+#### **Confounding**
+
+A condition in which the observed association between the treatment and the outcome in the data does not reflect a causal association.
+
+#### **Confounder**
+
+Any variable that when conditioned upon, perhaps in conjunction with other confounders, reduces or minimises confounding. In the scientific investigation of causality, one must often grapple with confounders. These may be categorised into two distinct types:
+
+-   **Measured Confounder** ($L$): A variable that has been meticulously documented in the study. The symbol $L$ is used to represent this kind of confounder, and it is a variable that has influence on both the treatment and the outcome of interest. By incorporating this information into the analysis, researchers can diminish or eradicate bias in the causal estimation.
+
+-   **Unmeasured Confounder** ($U$): Represented by the symbol $U$, an unmeasured confounder is a variable that is influential on both the treatment and the outcome but, regrettably, has not been captured in the study's data. The inability to control for $U$ can potentially introduce an erroneous bias in the estimation of the causal relationship, a situation that can complicate the understanding of true causal effects. This scenario is a subject of considerable concern, especially in observational studies where information on all confounders might not be attainable.
 
 
 
 #### **Causal Estimand**
 
-A causal estimand or simply "estimand" names the causal contrast of interest. 
+A causal estimand names the causal contrast of interest, specifying the levels of exposure to be contrasted, potential outcomes of interest, the scale of the causal contrast, and the target population for whom the causal contrast applies.
 
-To state a causal estimand requires stating:
+#### **Statistical Estimand**
 
-1. The levels of the exposure to be contrasted. 
-2. The potential outcomes of interest
-3. The scale of the causal contrast
-4. The target population for whom the causal contrast applies.
+A statistical estimand is a functional of the observed data that corresponds to the causal estimand of interest. It reduces the causal question to a statistical one, identifying a quantity in the observed data that will provide information about the causal estimand.
 
+#### **Estimator**
 
-
-#### **Causal Effect**
-
-We say there is a causal effect on the difference scale when a causal estimand does not equal zero, indicating that the exposure influence the outcome. For example:  
-
-$$E[Y(a)|L] - E[Y(a')|L] \neq 0$$
-
-We say there is a causal effect on the ratio scale when a causal estimand does not equal one. For example:
+An estimator is a statistical function of the observed data, denoted as $\hat{\theta}(Y, A, L)$, that provides an estimate of the statistical estimand. It translates the observed data into a single value, approximating the unknown parameter. In the context of causal inference, an estimator is used to estimate the statistical estimand, thereby providing information about the corresponding causal estimand.
 
 
-$$\frac{E[Y(1)|L]}{E[Y(0)|L]}\neq 1$$
-where 1 and 0 represent specific levels of a binary exposure, and 
-$L$ represents covariates.
+#### **Source Population**
+
+A source population is the population from who a study sample is drawn.
+
+#### **Target Population**
+
+A target population is the larger group we aim to apply our study's results to. It could be defined by location, demographics, or specific conditions.
+
+The closer the source matches the target in ways that are relevant to our causal questions, the stronger our causal inferences about the target population will be.
+
+#### **Generalisability**
+
+We say our results generalise when the causal effect estimated from a sample apply to the wider population from was drawn from the sample population. This is "external validity." Where $PATE$ denotes the population average treatement effect:
+
+$$\text{Generalisability} = PATE \approx f(ATE_{\text{sample}}, W)$$
+
+#### **Transportability**
+
+We say our results are transportable when the causal effect estimated from a sample apply to a population other than that from which the sample population is drawn. This can be expressed:
+
+$$\text{Transportability} = ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)$$
+
+where $f$ is a function and $T$ is a function that maps the results from our source population to another population.
+
+To achieve transportability, we need information about the source and target populations and an understanding of how the relationships between treatment, outcome, and covariates differ between the populations. That is assessing transportability requires scientific knowledge.
 
 
-#### **Observed Association**
+#### **Elicitation**
 
-The observed association is the relationship between treatment or exposure and the observed outcome in the sample data, we may generally express:
+Elicitation refers to the process of gathering expert opinion or knowledge to inform a model or analysis. We shall see the importance of elicitation throughout. 
 
-$$f_{\text{observed}}(Y, A)$$
+### Experiments
 
-For example the observed correlation between the exposure $A$ and outcome $Y$ in the data may be expressed as linear relationship using ordinary least squares (OLS) 
-
-
-
-<!-- $$ \text{cor}(A, Y) = \frac{\sum_{i=1}^n (A_i - \bar{A})(Y_i - \bar{Y})}{\sqrt{\sum_{i=1}^n (A_i - \bar{A})^2 \sum_{i=1}^n (Y_i - \bar{Y})^2}}$$ -->
-
-<!-- where $A_i$ and $Y_i$  are individual observations of treatment and outcome, respectively, and $\bar{A}$ and $\bar{Y}$ are the means of the treatment and outcome, respectively, over the sample of size $n$. This formula provides a measure of the linear relationship between the treatment or exposure variable $A$ and the observed outcome variable $Y$, accounting for the spread and direction of the relationship in the sample data. -->
-
-
-
-$$Y = \beta_0 + \beta_1 A + \epsilon$$
-
-where $Y$ is the outcome variable, $A$ is the treatment, $\beta_0$ is the outcome when A = 0, and $\beta_1$ is the slope when $A = 1$, and $\epsilon$ is the error term the OLS estimates for the slope (\( \beta_1 \)) and intercept (\( \beta_0 \)) are given by:
-
-$$ \hat{\beta}_1 = \frac{\sum_{i=1}^n (A_i - \bar{A})(Y_i - \bar{Y})}{\sum_{i=1}^n (A_i - \bar{A})^2}$$
-
-$$ \hat{\beta}_0 = \bar{Y} - \hat{\beta}_1 \bar{A} $$
-
-Here, $\bar{A}$ and $\bar{Y}$ are the means of $A$ and $Y$, respectively. These estimates minimise the sum of squared differences between the observed values of $Y$ and the values predicted by the linear model, hence the term "least squares."
-
-
-
-#### **Bias**
-
-We say there is bias when the observed association $ f_{\text{observed}}(Y,A)$ differs from the causal contrast $f_{\text{causal}}(Y(a), Y(a'))$. This difference may arise due to confounding, selection bias, measurement error, or other factors that distort the true causal effect.
-
-These definitions allow for flexibility in describing various forms of causal contrast, while differentiating between the observed association in the data and the underlying causal relationship.
-
-#### **Bias**
-We say there is bias when the observed association between $f_{\text{obeserved}}(Y,A)$ differs from the causal association $f_{\text{caual}}(Y,A)$
-
-#### **Confounding Bias** 
-
-We say there is "confounding" when the observed relationship between the treatment and the outcome is influenced by another variable, not just the treatment itself. Confounding introduces bias. 
-
-
-
--   **Confounder**: a confounder is a variable that reduces confounding when it is accounted for in the study.
-
-
-#### **Covariates**
-
-Covariates, denoted by $L$, are variables that may provide information about other variables that are of interest in a study. Often, they are characteristics or measurements that might affect the outcome but are not the primary focus of investigation. In the context of causal inference, covariates can help in reducing bias by controlling for confounding factors, thereby assisting in a more accurate estimation of the causal effect of the treatment or exposure on the outcome.
-
-
-#### **Effect Modifier**
-
-An effect modifier, denoted by $G$, is a variable that modifies the magnitude or direction of the effect of a treatment or exposure on an outcome. Unlike a confounder, it does not cause bias in the estimate of the causal effect, but rather it reveals how the effect differs across levels or categories of $G$. Effect modifiers may be of interest for understanding understanding how the effect of the treatment or exposure varies in different subgroups or under varying conditions.
-
-#### **Average Causal Effects in Experiments**
+### **Average Causal Effects in Experiments**
 
 Estimating a causal effect means comparing what actually happened to what would have happened if things had been different.
 
@@ -318,47 +335,51 @@ The protocols we describe below are aimed to help researchers obtain sensible in
 
 #### **The Positivity Assumption**
 
-Positivity is an essential consideration in observational studies. It requires that there is a non-zero probability of receiving every exposure value within all strata of covariates [@hernán2023]. In simpler terms, it means that every subject in the study has some chance of receiving each level of the exposure or treatment. If this assumption is not met, it becomes impossible to make meaningful comparisons between different levels of exposure, as some of the comparisons would be based on groups where the exposure was never applied. Ensuring positivity is vital for the credibility of the causal effect estimation.
+There is a non-zero probability of receiving every exposure value within all strata of covariates [@hernán2023]. 
 
-Unlike the exchangeability and causal consistency assumptions, we can sometimes verify whether the positivity assumption is satisfied by inspecting the data. We shall describe these methods.
+In simpler terms, it means that every subject in the study has some chance of receiving each level of the exposure or treatment. 
 
-### Causal effects (or Estimands)
+If this assumption is not met, it becomes impossible to make meaningful comparisons between different levels of exposure, as some of the comparisons would be based on groups where the exposure was never applied. 
 
-**move material to here**
+Unlike the exchangeability and causal consistency assumptions, we can sometimes verify whether the positivity assumption is satisfied by inspecting the data.
 
-### Causal effect scales
+#### **Identification Strategy**
 
-### Scale of effecct
+An identification strategy refers to the set of assumptions and methodologies employed to ensure that a causal estimand (recall -- a quantity representing a causal effect) can be determined uniquely from the observed data. It is the process through which researchers make a bridge from the statistical estimand, derived from the observed data, to the causal estimand that represents the actual causal effect of interest. Identifiability relies on assumptions such as exchangeability, positivity, and consistent measurement. The validity of these assumptions enables a unique mapping of the causal estimand from the statistical estimand, facilitating causal inference from observational data.
 
-Average causal effects can be inferred by contrasting the expected outcome when a population is exposed to an exposure level, $E[Y(A = a)]$, with the expected outcome under a different exposure level, $E[Y(A=a')]$.
+Ide
 
-For a binary treatment with levels $A=0$ and $A=1$, the Average Treatment Effect (ATE), on the difference scale, is expressed:
+<!-- ### Scale of effect -->
 
-$$ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]$$
+<!-- Average causal effects can be inferred by contrasting the expected outcome when a population is exposed to an exposure level, $E[Y(A = a)]$, with the expected outcome under a different exposure level, $E[Y(A=a')]$. -->
 
-On the risk ratio scale, the ATE is expressed:
+<!-- For a binary treatment with levels $A=0$ and $A=1$, the Average Treatment Effect (ATE), on the difference scale, is expressed: -->
 
-$$ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}$$
+<!-- $$ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]$$ -->
 
-Other effect scales, such as the incidence rate ratio, incidence rate difference, or hazard ratio, might also be of interest. We can also define the Average Treatment Effect on the Treated (ATT) :
+<!-- On the risk ratio scale, the ATE is expressed: -->
 
-$$ATT_{\text{risk difference}} = E[Y(1) - Y(0)|A=1,L]$$
+<!-- $$ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}$$ -->
 
-$$ATT_{\text{risk ratio}} = \frac{E[Y(1)|A=1,L]}{E[Y(0)|A=1, L]}$$
+<!-- Other effect scales, such as the incidence rate ratio, incidence rate difference, or hazard ratio, might also be of interest. We can also define the Average Treatment Effect on the Treated (ATT) : -->
 
-Another common estimand is the Population Average Treatment Effect (PATE), which denotes the effect the treatment would have on the entire population if applied universally to that population. This quantity can be expressed:
+<!-- $$ATT_{\text{risk difference}} = E[Y(1) - Y(0)|A=1,L]$$ -->
 
-$$PATE_{\text{risk difference}} = f(E[Y(1) - Y(0)|L], W)$$
+<!-- $$ATT_{\text{risk ratio}} = \frac{E[Y(1)|A=1,L]}{E[Y(0)|A=1, L]}$$ -->
 
-$$PATE_{\text{risk ratio}} = f\left(\frac{E[Y(1)|L]}{E[Y(0)|L]}, W\right)$$
+<!-- Another common estimand is the Population Average Treatment Effect (PATE), which denotes the effect the treatment would have on the entire population if applied universally to that population. This quantity can be expressed: -->
 
-where $f$ is a function that incorporates weights $W$ into the estimation of the expected outcomes. These weights are given from census estimates for the wider population. Note: I will show you how to use weights in future seminars.
+<!-- $$PATE_{\text{risk difference}} = f(E[Y(1) - Y(0)|L], W)$$ -->
 
-We might also be interested in identifying effects specific to certain strata, such as risk differences or risk ratios, as they are modified by baseline indicators. Denote a stratum of interest by $G$. We may then compute:
+<!-- $$PATE_{\text{risk ratio}} = f\left(\frac{E[Y(1)|L]}{E[Y(0)|L]}, W\right)$$ -->
 
-$$ATE_{G,\text{risk difference}} = E[Y(1) - Y(0)|G, L]$$
+<!-- where $f$ is a function that incorporates weights $W$ into the estimation of the expected outcomes. These weights are given from census estimates for the wider population. Note: I will show you how to use weights in future seminars. -->
 
-$$ATE_{G,\text{risk ratio}} = \frac{E[Y(1)|G, L]}{E[Y(0)|G, L]}$$
+<!-- We might also be interested in identifying effects specific to certain strata, such as risk differences or risk ratios, as they are modified by baseline indicators. Denote a stratum of interest by $G$. We may then compute: -->
+
+<!-- $$ATE_{G,\text{risk difference}} = E[Y(1) - Y(0)|G, L]$$ -->
+
+<!-- $$ATE_{G,\text{risk ratio}} = \frac{E[Y(1)|G, L]}{E[Y(0)|G, L]}$$ -->
 
 #### Considerations
 
@@ -384,21 +405,7 @@ This defines the contrast of $A$ and $A'$ on a ratio scale.
 
 Consider the following concepts:
 
--   **Source population**: A source population is where we gather our data for a study. We pull our specific sample from this group. It needs to mirror the broader group for our conclusions to be valid and widely applicable.
-
--   **Target population**: The target population is the larger group we aim to apply our study's results to. It could be defined by location, demographics, or specific conditions. The closer the source matches the target in ways that are relevant to our causal questions, the stronger our causal inferences about the target population will be.
-
-    -   **Generalisability** refers to the ability to apply the causal effects estimated from a sample to the population it was drawn from. In simpler terms, it deals with the extrapolation of causal knowledge from a sample to the broader population. This concept is also called "external validity".
-
-$$\text{Generalisability} = PATE \approx f(ATE_{\text{sample}}, W)$$
-
--   **Transportability** refers to the ability to extrapolate causal effects learned from a source population to a target population when certain conditions are met. It deals with the transfer of causal knowledge across different settings or populations.
-
-$$\text{Transportability} = ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)$$
-
-where $f$ is a function and $T$ is a function that maps the results from our source population to another population. To achieve transportability, we need information about the source and target populations and an understanding of how the relationships between treatment, outcome, and covariates differ between the populations. Assessing transportability requires scientific knowledge.
-
-## Part 1: Three-Wave Panel Designs
+## Part 2`: Three-Wave Panel Designs
 
 Our goal is to explain how researchers can use three waves of data to satisfy the assumptions needed for causal inference.
 
@@ -434,9 +441,8 @@ The exposure is measured at wave 1 (i.e. +1 interval from baseline, wave 0). Whe
 
 a.  **Incidence effect interpretation**: incorporating the baseline exposure allows us to interpret the effect of exposure measured post-baseline as an incidence effect, not a prevalence effect [@vanderweele2020]. This means we can interpret the effect as the change due to a new occurrence (incidence) of the exposure, rather than the overall presence (prevalence) of the exposure. For example, in a study investigating the impact of weekly religious service attendance, including the baseline measure of attendance enables us to understand the effect of starting to attend weekly services (incidence), as opposed to simply being a regular attendee (prevalence).
 
-```{=html}
 <!-- -->
-```
+
 2.  **Confounding control**: the baseline exposure's inclusion helps to reduce unmeasured confounding arising from time-invariant confounders. These are variables that do not change over time and could confound the association between the exposure and the outcome if not properly accounted for. For instance, personal attributes such as unmeasured childhood religiosity could confound the association between religious service attendance and outcomes if not considered [@vantongeren2020].
 
 3.  **Better evaluation of sample adequacy for rare exposures**: Particularly when the exposure is uncommon, such as switching from no religious service attendance to weekly attendance, measuring the baseline exposure and outcome exposure can help assess adequacy of a sample size. Suppose this switch occurs rarely in the non-religious population, say 1 in 1,000 non-attenders per year. To estimate causal effects while conditioning on a rich set of baseline covariates, we would need a large sample, potentially comprising hundreds of thousands of participants. Ideally researchers would understake investigations prior to data collection to assess feasiblity of causal inference. In this example, it might be more practical to examine changes within the religious population, that is -- assuming changes are more common within this group -- than it would be to investigate conversion events. However, by restricting to only religious people who change in their religious habits, we would then typically estimate a causal effect generalisable to the religious population from which the sample was drawn, rather than one that could be applied to the non-religious population. In any case, including the baseline exposure can help address these issues by providing a reference point for changes within the population studied.
@@ -766,8 +772,6 @@ Consider the following ideas about what to discuss in one's findings. The order 
 ## Part X Estimators
 
 ### Average Treatment Effects (Difference Scale)
-
-Certainly. If we are moving from a conditional estimator for G-computation to an unconditional estimator, the main difference will be in the removal of the conditioning on the subgroup $G$. Here are the corresponding steps for the unconditional estimator:
 
 ### **G-computation Estimator**
 

@@ -202,13 +202,13 @@ Inference, Confounding, History, Psychology, Panel},
                   Research
               }
       
-\date{2023-08-10}
+\date{2023-08-11}
 \begin{document}
 \maketitle
 \begin{abstract}
 How to estimate causal effects in three wave panel designs
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, breakable, frame hidden, interior hidden, sharp corners, enhanced]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, interior hidden, enhanced, sharp corners, borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, frame hidden]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \subsection{Introduction}\label{introduction}}
@@ -216,24 +216,37 @@ How to estimate causal effects in three wave panel designs
 \hypertarget{purpose}{%
 \subsubsection{Purpose}\label{purpose}}
 
-Here we describe how to calculate causal effects in three-wave panel
-designs.
+I describe how to calculate causal effects in three-wave panel designs.
 
-\hypertarget{definitions-and-notation}{%
-\subsubsection{Definitions and
-notation}\label{definitions-and-notation}}
+\textbf{Part 1} introduces definitions and notation.
+
+\textbf{Part 2} describes the three-wave panel, and its motivations.
+
+\textbf{Part 3} develops a the step-by-step guide for conducting causal
+inference within the three-wave panel design
+
+\textbf{Part 4} describes common estimators
+
+\textbf{Part 5} discusses more complex designs where there is scope for
+confounder treatment feedback.
+
+An Appendix describes custom functions I have written for executing the
+workflows.
+
+\hypertarget{part-1-definitions-and-notation}{%
+\subsection{\texorpdfstring{\textbf{Part 1} Definitions and
+notation}{Part 1 Definitions and notation}}\label{part-1-definitions-and-notation}}
 
 \hypertarget{treatment-or-exposure}{%
 \paragraph{\texorpdfstring{\textbf{Treatment or
 Exposure}}{Treatment or Exposure}}\label{treatment-or-exposure}}
 
-Treatment or exposure, denoted by \(A\), represents an intervention or
+A treatment or exposure, denoted by \(A\), represents an intervention or
 condition in a study. We assume that it can take different levels such
 that \((A = a) \neq (A = a')\), which correspond to different states or
 intensities of the intervention.
 
-We use the terms ``potential outcomes'' and ``counterfactual outcomes''
-synonymously.
+In plain terms, the treatment is the ``cause.''
 
 \hypertarget{potential-or-counterfactual-outcomes}{%
 \paragraph{\texorpdfstring{\textbf{Potential or Counterfactual
@@ -254,134 +267,213 @@ We denote a potential outcome using the notation \(Y(A = a)\) or simply
 \paragraph{\texorpdfstring{\textbf{Causal
 Contrast}}{Causal Contrast}}\label{causal-contrast}}
 
-A causal contrast is a mathematical expression that quantifies the
-difference in potential outcomes under different treatment or exposure
-levels. Formally, a causal contrast is a function of potential outcomes,
-denoted as \$ f\_\{\text{causal}\}(Y(a), Y(a'))\$, where \(Y(a)\) and
-\(Y(a')\) represent the potential outcomes under the specific treatment
-levels \(A = a\) and \(A = a'\), respectively.
+A causal contrast is a function that quantifies a difference, at some
+scale, in potential outcomes under different treatment levels.
 
-This function encapsulates the comparative effect of the treatment, on
-some scale, in a setting where we wish to systematically evaluate how
-varying a treatment level leads to changes in the expected outcomes, on
-some scale.
+Formally, a causal contrast is a function of potential outcomes:
 
-For example, a causal contrast for the average effect of treatment on
+\[f_{\text{causal contrast}}(Y(a), Y(a'))\]
+
+where \(Y(a)\) and \(Y(a')\) represent the potential outcomes under the
+specific treatment levels \(A = a\) and \(A = a'\), respectively.
+
+Where \(ATE\) denotes the average treatment effect, a causal contrast on
 the difference scale may be expressed:
 
-\[\text{Average Treatement Effect on The Difference Scale} = E[Y(a)] - E[Y(a')]\]
+\[ATE_{A,A'} = E[Y(a)] - E[Y(a')]\]
 
-A causal contrast for the average effect of treatment on the ratio scale
-may be expressed:
+This essentially denotes an average treatment effect comparing the
+outcome under treatment level \(A\) to the outcome under treatment level
+\(A'\). For all exposures, including continuous exposures, we must
+stipulate the level of contrast for the treatment.
 
-\[\text{Average Treatement Effect on The Risk Ratio Scale} = \frac{E[Y(1)]}{E[Y(0)]}\]
+Likewise we may state the average treatment effect on the ratio scale
 
-\hypertarget{causal-estimand}{%
+\[ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}\]
+
+\hypertarget{causal-effect}{%
 \paragraph{\texorpdfstring{\textbf{Causal
-Estimand}}{Causal Estimand}}\label{causal-estimand}}
+Effect}}{Causal Effect}}\label{causal-effect}}
 
-A causal estimand or causal effect is the mathematical expression of a
-quantitity of a causal contrast of interest to a study.
+We say there is a causal effect on the difference scale when a causal
+estimand does not equal zero, indicating that the exposure influences
+the outcome. For example:
 
-\hypertarget{average-treatment-effect-ate}{%
-\paragraph{\texorpdfstring{\textbf{Average Treatment Effect
-(ATE)}}{Average Treatment Effect (ATE)}}\label{average-treatment-effect-ate}}
+\[E[Y(a)] - E[Y(a')] \neq 0\]
 
-For a binary treatment with levels \(A=0\) and \(A=1\), the ATE, on the
-difference scale, is expressed:
+We say there is a causal effect on the ratio scale when a causal
+estimand does not equal one. For example:
 
-\[ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]\]
+\[\frac{E[Y(1)]}{E[Y(0)]}\neq 1\]
 
-On the risk ratio scale, the ATE is expressed:
-
-\[ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}\]
+where 1 and 0 represent specific levels of a binary exposure.
 
 \hypertarget{observed-association}{%
 \paragraph{\texorpdfstring{\textbf{Observed
 Association}}{Observed Association}}\label{observed-association}}
 
-The observed association is the relationship between treatment or
-exposure and the observed outcome in the sample data, we may generally
-express:
+The observed association is the measurable link between a treatment or
+exposure \(A\) and an outcome \(Y\) in the sample data. We can represent
+it as:
 
 \[f_{\text{observed}}(Y, A)\]
 
-For example the observed correlation between \(A\) and \(Y\) in the data
-may be expressed as linear relationship using ordinary least squares
-(OLS)
+For example, we may quantify an association between a treatment and
+outcome using linear regression:
 
 \[Y = \beta_0 + \beta_1 A + \epsilon\]
 
-where \(Y\) is the outcome variable, \(A\) is the treatment, \(\beta_0\)
-is the outcome when A = 0, and \(\beta_1\) is the slope when \(A = 1\),
-and \(\epsilon\) is the error term such that
-
-\[\hat{\beta}_0 = \bar{Y} - \hat{\beta}_1 \bar{A}\]
-
-Here, \(\bar{A}\) and \(\bar{Y}\) are the means of \(A\) and \(Y\),
-respectively. These estimates minimize the sum of squared differences
-between the observed values of ( Y ) and the values predicted by the
-linear model, hence the term ``least squares.''
-
-\hypertarget{bias}{%
-\paragraph{\texorpdfstring{\textbf{Bias}}{Bias}}\label{bias}}
-
-We say there is bias when the observed association (
-f\_\{\text{observed}\}(Y,A) ) differs from the causal contrast (
-f\_\{\text{causal}\}(Y(a), Y(a')) ). This difference may arise due to
-confounding, selection bias, measurement error, or other factors that
-distort the true causal effect.
-
-These definitions allow for flexibility in describing various forms of
-causal contrast, while differentiating between the observed association
-in the data and the underlying causal relationship.
-
-\hypertarget{bias-1}{%
-\paragraph{\texorpdfstring{\textbf{Bias}}{Bias}}\label{bias-1}}
-
-We say there is bias when the observed association between
-\(f_{\text{obeserved}}(Y,A)\) differs from the causal association
-\(f_{\text{caual}}(Y,A)\)
-
-\hypertarget{confounding}{%
-\paragraph{\texorpdfstring{\textbf{Confounding}}{Confounding}}\label{confounding}}
-
-We say there is ``confounding'' when the observed relationship between
-the treatment and the outcome is influenced by another variable, not
-just the treatment itself. Confounding introduces bias.
+Where:
 
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Confounder}: a confounder is a variable that reduces
-  confounding when it is accounted for in the study.
+  \(Y\) is the outcome
+\item
+  \(A\) is the treatment or exposure
+\item
+  \(\beta_0\) and \(\beta_1\) are coefficients estimating the
+  relationship
+\item
+  \(\epsilon\) is the error term
 \end{itemize}
 
-\hypertarget{covariates}{%
-\paragraph{\texorpdfstring{\textbf{Covariates}}{Covariates}}\label{covariates}}
+The slope (\(\beta_1\)) and intercept (\(\beta_0\)) estimates, obtained
+using ordinary least squares (OLS), describe a relationship modelled as
+linear.
 
-Covariates, denoted by \(L\), are variables that may provide information
-about other variables that are of interest in a study. Often, they are
-characteristics or measurements that might affect the outcome but are
-not the primary focus of investigation. In the context of causal
-inference, covariates can help in reducing bias by controlling for
-confounding factors, thereby assisting in a more accurate estimation of
-the causal effect of the treatment or exposure on the outcome.
+\hypertarget{full-data-and-observed-data}{%
+\paragraph{\texorpdfstring{\textbf{Full Data and Observed
+Data}}{Full Data and Observed Data}}\label{full-data-and-observed-data}}
 
-\hypertarget{effect-modifier}{%
-\paragraph{\texorpdfstring{\textbf{Effect
-Modifier}}{Effect Modifier}}\label{effect-modifier}}
+The full data is the random vector \((Y(1), Y(0), X, L)\) for covariates
+\(L\), while the observed data \((Y, X, C)\) is a coarsening of the full
+data with \(Y = X \cdot Y(1) + (1-X) \cdot Y(0)\)
+(\protect\hyperlink{ref-ogburn2021}{Ogburn and Shpitser 2021}).
 
-An effect modifier, denoted by \(G\), is a variable that modifies the
-magnitude or direction of the effect of a treatment or exposure on an
-outcome. Unlike a confounder, it does not cause bias in the estimate of
-the causal effect, but rather it reveals how the effect differs across
-levels or categories of \(G\). Effect modifiers may be of interest for
-understanding understanding how the effect of the treatment or exposure
-varies in different subgroups or under varying conditions.
+Absent assumptions, we cannot learn about causal estimands from the
+observed data, because they are functionals of (partially) unobserved
+potential outcomes.
+
+\hypertarget{confounding}{%
+\paragraph{\texorpdfstring{\textbf{Confounding}}{Confounding}}\label{confounding}}
+
+A condition in which the observed association between the treatment and
+the outcome in the data does not reflect a causal association.
+
+\hypertarget{confounder}{%
+\paragraph{\texorpdfstring{\textbf{Confounder}}{Confounder}}\label{confounder}}
+
+Any variable that when conditioned upon, perhaps in conjunction with
+other confounders, reduces or minimises confounding. In the scientific
+investigation of causality, one must often grapple with confounders.
+These may be categorised into two distinct types:
+
+\begin{itemize}
+\item
+  \textbf{Measured Confounder} (\(L\)): A variable that has been
+  meticulously documented in the study. The symbol \(L\) is used to
+  represent this kind of confounder, and it is a variable that has
+  influence on both the treatment and the outcome of interest. By
+  incorporating this information into the analysis, researchers can
+  diminish or eradicate bias in the causal estimation.
+\item
+  \textbf{Unmeasured Confounder} (\(U\)): Represented by the symbol
+  \(U\), an unmeasured confounder is a variable that is influential on
+  both the treatment and the outcome but, regrettably, has not been
+  captured in the study's data. The inability to control for \(U\) can
+  potentially introduce an erroneous bias in the estimation of the
+  causal relationship, a situation that can complicate the understanding
+  of true causal effects. This scenario is a subject of considerable
+  concern, especially in observational studies where information on all
+  confounders might not be attainable.
+\end{itemize}
+
+\hypertarget{causal-estimand}{%
+\paragraph{\texorpdfstring{\textbf{Causal
+Estimand}}{Causal Estimand}}\label{causal-estimand}}
+
+A causal estimand names the causal contrast of interest, specifying the
+levels of exposure to be contrasted, potential outcomes of interest, the
+scale of the causal contrast, and the target population for whom the
+causal contrast applies.
+
+\hypertarget{statistical-estimand}{%
+\paragraph{\texorpdfstring{\textbf{Statistical
+Estimand}}{Statistical Estimand}}\label{statistical-estimand}}
+
+A statistical estimand is a functional of the observed data that
+corresponds to the causal estimand of interest. It reduces the causal
+question to a statistical one, identifying a quantity in the observed
+data that will provide information about the causal estimand.
+
+\hypertarget{estimator}{%
+\paragraph{\texorpdfstring{\textbf{Estimator}}{Estimator}}\label{estimator}}
+
+An estimator is a statistical function of the observed data, denoted as
+\(\hat{\theta}(Y, A, L)\), that provides an estimate of the statistical
+estimand. It translates the observed data into a single value,
+approximating the unknown parameter. In the context of causal inference,
+an estimator is used to estimate the statistical estimand, thereby
+providing information about the corresponding causal estimand.
+
+\hypertarget{source-population}{%
+\paragraph{\texorpdfstring{\textbf{Source
+Population}}{Source Population}}\label{source-population}}
+
+A source population is the population from who a study sample is drawn.
+
+\hypertarget{target-population}{%
+\paragraph{\texorpdfstring{\textbf{Target
+Population}}{Target Population}}\label{target-population}}
+
+A target population is the larger group we aim to apply our study's
+results to. It could be defined by location, demographics, or specific
+conditions.
+
+The closer the source matches the target in ways that are relevant to
+our causal questions, the stronger our causal inferences about the
+target population will be.
+
+\hypertarget{generalisability}{%
+\paragraph{\texorpdfstring{\textbf{Generalisability}}{Generalisability}}\label{generalisability}}
+
+We say our results generalise when the causal effect estimated from a
+sample apply to the wider population from was drawn from the sample
+population. This is ``external validity.'' Where \(PATE\) denotes the
+population average treatement effect:
+
+\[\text{Generalisability} = PATE \approx f(ATE_{\text{sample}}, W)\]
+
+\hypertarget{transportability}{%
+\paragraph{\texorpdfstring{\textbf{Transportability}}{Transportability}}\label{transportability}}
+
+We say our results are transportable when the causal effect estimated
+from a sample apply to a population other than that from which the
+sample population is drawn. This can be expressed:
+
+\[\text{Transportability} = ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)\]
+
+where \(f\) is a function and \(T\) is a function that maps the results
+from our source population to another population.
+
+To achieve transportability, we need information about the source and
+target populations and an understanding of how the relationships between
+treatment, outcome, and covariates differ between the populations. That
+is assessing transportability requires scientific knowledge.
+
+\hypertarget{elicitation}{%
+\paragraph{\texorpdfstring{\textbf{Elicitation}}{Elicitation}}\label{elicitation}}
+
+Elicitation refers to the process of gathering expert opinion or
+knowledge to inform a model or analysis. We shall see the importance of
+elicitation throughout.
+
+\hypertarget{experiments}{%
+\subsubsection{Experiments}\label{experiments}}
 
 \hypertarget{average-causal-effects-in-experiments}{%
-\paragraph{\texorpdfstring{\textbf{Average Causal Effects in
+\subsubsection{\texorpdfstring{\textbf{Average Causal Effects in
 Experiments}}{Average Causal Effects in Experiments}}\label{average-causal-effects-in-experiments}}
 
 Estimating a causal effect means comparing what actually happened to
@@ -543,77 +635,39 @@ contextual attention informed by expert advice.
 \paragraph{\texorpdfstring{\textbf{The Positivity
 Assumption}}{The Positivity Assumption}}\label{the-positivity-assumption}}
 
-Positivity is an essential consideration in observational studies. It
-requires that there is a non-zero probability of receiving every
-exposure value within all strata of covariates
-(\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Monge 2023}). In
-simpler terms, it means that every subject in the study has some chance
-of receiving each level of the exposure or treatment. If this assumption
-is not met, it becomes impossible to make meaningful comparisons between
-different levels of exposure, as some of the comparisons would be based
-on groups where the exposure was never applied. Ensuring positivity is
-vital for the credibility of the causal effect estimation.
+There is a non-zero probability of receiving every exposure value within
+all strata of covariates (\protect\hyperlink{ref-hernuxe1n2023}{Hernán
+and Monge 2023}).
+
+In simpler terms, it means that every subject in the study has some
+chance of receiving each level of the exposure or treatment.
+
+If this assumption is not met, it becomes impossible to make meaningful
+comparisons between different levels of exposure, as some of the
+comparisons would be based on groups where the exposure was never
+applied.
 
 Unlike the exchangeability and causal consistency assumptions, we can
 sometimes verify whether the positivity assumption is satisfied by
-inspecting the data. We shall describe these methods.
+inspecting the data.
 
-\hypertarget{causal-effects-or-estimands}{%
-\subsubsection{Causal effects (or
-Estimands)}\label{causal-effects-or-estimands}}
+\hypertarget{identification-strategy}{%
+\paragraph{\texorpdfstring{\textbf{Identification
+Strategy}}{Identification Strategy}}\label{identification-strategy}}
 
-\textbf{move material to here}
+An identification strategy refers to the set of assumptions and
+methodologies employed to ensure that a causal estimand (recall -- a
+quantity representing a causal effect) can be determined uniquely from
+the observed data. It is the process through which researchers make a
+bridge from the statistical estimand, derived from the observed data, to
+the causal estimand that represents the actual causal effect of
+interest. Identifiability relies on assumptions such as exchangeability,
+positivity, and consistent measurement. The validity of these
+assumptions enables a unique mapping of the causal estimand from the
+statistical estimand, facilitating causal inference from observational
+data.
 
-\hypertarget{causal-effect-scales}{%
-\subsubsection{Causal effect scales}\label{causal-effect-scales}}
-
-\hypertarget{scale-of-effecct}{%
-\subsubsection{Scale of effecct}\label{scale-of-effecct}}
-
-Average causal effects can be inferred by contrasting the expected
-outcome when a population is exposed to an exposure level,
-\(E[Y(A = a)]\), with the expected outcome under a different exposure
-level, \(E[Y(A=a')]\).
-
-For a binary treatment with levels \(A=0\) and \(A=1\), the Average
-Treatment Effect (ATE), on the difference scale, is expressed:
-
-\[ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]\]
-
-On the risk ratio scale, the ATE is expressed:
-
-\[ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}\]
-
-Other effect scales, such as the incidence rate ratio, incidence rate
-difference, or hazard ratio, might also be of interest. We can also
-define the Average Treatment Effect on the Treated (ATT) :
-
-\[ATT_{\text{risk difference}} = E[Y(1) - Y(0)|A=1,L]\]
-
-\[ATT_{\text{risk ratio}} = \frac{E[Y(1)|A=1,L]}{E[Y(0)|A=1, L]}\]
-
-Another common estimand is the Population Average Treatment Effect
-(PATE), which denotes the effect the treatment would have on the entire
-population if applied universally to that population. This quantity can
-be expressed:
-
-\[PATE_{\text{risk difference}} = f(E[Y(1) - Y(0)|L], W)\]
-
-\[PATE_{\text{risk ratio}} = f\left(\frac{E[Y(1)|L]}{E[Y(0)|L]}, W\right)\]
-
-where \(f\) is a function that incorporates weights \(W\) into the
-estimation of the expected outcomes. These weights are given from census
-estimates for the wider population. Note: I will show you how to use
-weights in future seminars.
-
-We might also be interested in identifying effects specific to certain
-strata, such as risk differences or risk ratios, as they are modified by
-baseline indicators. Denote a stratum of interest by \(G\). We may then
-compute:
-
-\[ATE_{G,\text{risk difference}} = E[Y(1) - Y(0)|G, L]\]
-
-\[ATE_{G,\text{risk ratio}} = \frac{E[Y(1)|G, L]}{E[Y(0)|G, L]}\]
+Ide
 
 \hypertarget{considerations}{%
 \paragraph{Considerations}\label{considerations}}
@@ -658,54 +712,9 @@ populations.}\label{f.-describe-the-populations-for-whom-the-intended-study-is-m
 
 Consider the following concepts:
 
-\begin{itemize}
-\item
-  \textbf{Source population}: A source population is where we gather our
-  data for a study. We pull our specific sample from this group. It
-  needs to mirror the broader group for our conclusions to be valid and
-  widely applicable.
-\item
-  \textbf{Target population}: The target population is the larger group
-  we aim to apply our study's results to. It could be defined by
-  location, demographics, or specific conditions. The closer the source
-  matches the target in ways that are relevant to our causal questions,
-  the stronger our causal inferences about the target population will
-  be.
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \textbf{Generalisability} refers to the ability to apply the causal
-    effects estimated from a sample to the population it was drawn from.
-    In simpler terms, it deals with the extrapolation of causal
-    knowledge from a sample to the broader population. This concept is
-    also called ``external validity''.
-  \end{itemize}
-\end{itemize}
-
-\[\text{Generalisability} = PATE \approx f(ATE_{\text{sample}}, W)\]
-
-\begin{itemize}
-\tightlist
-\item
-  \textbf{Transportability} refers to the ability to extrapolate causal
-  effects learned from a source population to a target population when
-  certain conditions are met. It deals with the transfer of causal
-  knowledge across different settings or populations.
-\end{itemize}
-
-\[\text{Transportability} = ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)\]
-
-where \(f\) is a function and \(T\) is a function that maps the results
-from our source population to another population. To achieve
-transportability, we need information about the source and target
-populations and an understanding of how the relationships between
-treatment, outcome, and covariates differ between the populations.
-Assessing transportability requires scientific knowledge.
-
-\hypertarget{part-1-three-wave-panel-designs}{%
-\subsection{Part 1: Three-Wave Panel
-Designs}\label{part-1-three-wave-panel-designs}}
+\hypertarget{part-2-three-wave-panel-designs}{%
+\subsection{Part 2`: Three-Wave Panel
+Designs}\label{part-2-three-wave-panel-designs}}
 
 Our goal is to explain how researchers can use three waves of data to
 satisfy the assumptions needed for causal inference.
@@ -1619,11 +1628,6 @@ The order of exposition might be different.
 \hypertarget{average-treatment-effects-difference-scale}{%
 \subsubsection{Average Treatment Effects (Difference
 Scale)}\label{average-treatment-effects-difference-scale}}
-
-Certainly. If we are moving from a conditional estimator for
-G-computation to an unconditional estimator, the main difference will be
-in the removal of the conditioning on the subgroup \(G\). Here are the
-corresponding steps for the unconditional estimator:
 
 \hypertarget{g-computation-estimator}{%
 \subsubsection{\texorpdfstring{\textbf{G-computation
