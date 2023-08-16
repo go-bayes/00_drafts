@@ -1028,3 +1028,88 @@ where,
 $$\hat{\gamma} = \overbrace{\big( \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^{\prime})|G=g] \big)}^{\hat{\delta_g}} - \overbrace{\big(\hat{E}[Y(a^{\prime})|G=g^{\prime}]- \hat{E}[Y(a)|G=g^{\prime}]\big)}^{\hat{\delta_{g^{\prime}}}}$$
 
 We again use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
+
+
+
+
+## Inverse Probability of Treatment Weighting (IPTW) Protocolos
+
+We assess balance using **standardised mean differences**, **Mean and Max Difference Adjusted**
+
+
+### Standardised means difference in the context of Inverse Probability of Treatment Weighting (IPTW)
+
+Standardised means difference is a measure used to compare the difference between two groups. 
+
+### Definition:
+
+1. **Standardised Means Difference (SMD)**: SMD is used to express the size of the intervention effect in each study relative to the variability observed in that study. It is computed as the difference between means divided by a standard deviation of the data. Formula for SMD is:
+   $$
+   \text{SMD} = \frac{{\bar{X}_1 - \bar{X}_2}}{{s}}
+   $$
+   where $\bar{X}_1$ and $\bar{X}_2$ are the means of the two groups, and $s$ is the pooled standard deviation.
+
+2. **Inverse Probability of Treatment Weighting (IPTW)**: IPTW uses propensity scores to create a synthetic sample in which the distribution of measured baseline covariates is independent of treatment assignment. It aims to mimic a randomised experiment by creating a balanced comparison.
+
+3. **Weighting IPTW with SMD**: Weighting using IPTW can adjust the SMD between the treated and untreated groups. The balance in covariates is often assessed by checking whether the absolute value of the SMD is close to 0.
+
+### Step-by-step:
+
+1. **Estimate Propensity Score**: Use logistic regression, or other methods, to estimate the propensity score for each subject.
+
+2. **Calculate IPTW**: The weight for each subject is the inverse of the probability of receiving the treatment that was actually received. For treated subjects:
+   $$
+   w = \frac{1}{{\text{propensity score}}}
+   $$
+   For untreated subjects:
+   $$
+   w = \frac{1}{{1 - \text{propensity score}}}
+   $$
+
+3. **Compute Standardised Means Difference**: Calculate the SMD for each covariate using the IPTW, comparing the treated and untreated groups.
+
+4. **Assess Balance**: If the absolute value of the SMD for a covariate is close to 0, the groups are considered balanced for that covariate.
+
+This approach allows for causal inference in observational studies, making the comparison of treated and untreated groups as if randomisation had occurred. It is crucial in causal inference, to minimise bias due to confounding variables.
+
+
+### Min and Max adjusted average difference in means 
+
+
+When achieving balance using Inverse Probability of Treatment Weighting (IPTW), "Mean.Diff.Adj" and "Max.Diff.Adj" are specific statistics often used to assess the balance of covariates between the treatment and control groups after weighting. Definitions:
+
+1. **Mean.Diff.Adj**:
+   - Refers to the average difference in means of covariates between the treated and untreated groups after applying IPTW.
+   - Formula: 
+   $$
+   \text{Mean.Diff.Adj} = \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}}
+   $$
+   where $w_i$ is the weight for subject $i$, and $X_{1i}$ and $X_{0i}$ are the values of the covariate for the treated and untreated subjects, respectively.
+   - Close to 0 indicates good balance.
+
+2. **Max.Diff.Adj**:
+   - Refers to the maximum absolute difference in means of covariates between the treated and untreated groups after applying IPTW.
+   - Formula:
+   $$
+   \text{Max.Diff.Adj} = \max \left| \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}} \right|
+   $$
+   - Close to 0 indicates good balance, and it focuses on the worst-balanced covariate, which could be a point of concern even if the overall mean difference is small.
+
+The difference between "Mean.Diff.Adj" and "Max.Diff.Adj" in the context of Inverse Probability of Treatment Weighting (IPTW) lies in what they measure regarding the balance of covariates:
+
+1. **Mean.Diff.Adj**:
+   - Measures the **average** difference in means of covariates between the treated and untreated groups after applying IPTW.
+   - Reflects the overall balance across all covariates.
+   - A value close to 0 indicates good overall balance.
+
+2. **Max.Diff.Adj**:
+   - Measures the **maximum absolute** difference in means of covariates between the treated and untreated groups after applying IPTW.
+   - Focuses on the worst-balanced covariate, regardless of the overall balance.
+   - A value close to 0 indicates that even the most imbalanced covariate is well-balanced, but a high value could be a concern even if the mean difference is small.
+
+In summary, while "Mean.Diff.Adj" provides a sense of the general balance achieved across all covariates, "Max.Diff.Adj" zeroes in on the single most imbalanced covariate. The former gives a global view, while the latter highlights the potentially problematic area, both crucial for understanding the balance achieved by IPTW.
+
+
+
+
+

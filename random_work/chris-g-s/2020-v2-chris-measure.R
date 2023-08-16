@@ -24,7 +24,7 @@ colnames(omega)
 omega_cleaned <- omega %>% clean_names()
 
 #check
-colnames(omega_cleaned)
+
 
 # data wrangling -- data is a wee bit  messy
 library(tidyr)
@@ -142,10 +142,13 @@ srmr_mlr <- omega_cleaned %>%
   mutate(type = rep("SRMR_MLR", nrow(omega_cleaned)))  
 
 
-head(srmr_mlr)
 
 
 colnames(omega_cleaned)
+
+omega_cleaned$scale <- factor(omega_cleaned$scale,  levels = unique(omega_cleaned$scale))
+
+omega_cleaned$scale <- factor(omega_cleaned$scale, levels = unique(omega_cleaned$scale))
 
 # "Could you please do two panel graphs."
 #
@@ -171,6 +174,9 @@ dat_1$scale <- factor(dat_1$scale, levels = unique(dat_1$scale))
 #chris wants to reverse this
 dat_1$scale <- forcats::fct_rev(dat_1$scale)
 
+levels(dat_1$scale)
+dat_1 |> 
+  filter(scale == "Individual Permeability" )
 
 # build graph 
 library(ggplot2)
