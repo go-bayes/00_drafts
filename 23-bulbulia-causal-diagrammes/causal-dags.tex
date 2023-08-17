@@ -189,7 +189,7 @@ Practical Guide}
                   Research
               }
       
-\date{2023-08-14}
+\date{2023-08-17}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -213,10 +213,10 @@ examines structures of \emph{measurement bias}. Here, causal diagrams
 clarify how confounding arises from correlated and directed measurement
 errors, with applications to comparative cultural and historical
 research. Overall, this guide furnishes researchers with the ability to
-construct and interpret causal diagrams to address causal questions
-effectively.
+construct and interpret causal diagrams to effectively address their
+causal questions.
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, boxrule=0pt, frame hidden, interior hidden, sharp corners, borderline west={3pt}{0pt}{shadecolor}, breakable]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, frame hidden, boxrule=0pt, breakable, borderline west={3pt}{0pt}{shadecolor}, interior hidden, sharp corners]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \subsection{Introduction}\label{introduction}}
@@ -249,15 +249,14 @@ data, causal effect estimates are generally unwarranted: causal diagrams
 should not be used. Ideally, causal diagrams would serve as circuit
 breakers that halt such misapplications.
 
-In this article, I present an array of methods for building causal
-diagrams that enhance their practical use. Central to these
-recommendations is creating \emph{chronologically ordered causal
-diagrams}. These are causal diagrams in which the graph's spatial layout
-and the labelling of the nodes clearly display the temporal sequence of
-cause and effect. While not infallible circuit breakers against
+In this article, I present advice for building causal diagrams. Central
+to my recommendations is to \emph{chronologically order causal
+diagrams}. The spatial layout of the graph and the labelling of the
+nodes should clearly display the temporal sequence of (assumed) cause
+and effect. While not infallible circuit breakers against
 misapplications, temporally organised causal diagrams significantly
-bolster safety. More constructively, they clarify imperatives for data
-collection and analysis.
+bolster safety, greatly clarifying imperatives for data collection and
+analysis.
 
 There are many excellent introductions to causal diagrams
 (\protect\hyperlink{ref-barrett2021}{Barrett 2021};
@@ -277,7 +276,9 @@ approach I present here hopes to add value in five ways.
 \textbf{Part 1} introduces the counterfactual framework for causal
 inference as the appropriate theoretical setting for developing causal
 diagrams. Here, I review the three fundamental identification
-assumptions required for causal inference.
+assumptions required for causal inference. Researchers should not
+attempt to use causal diagrams without understanding these assumptions.
+So I devote space to clarifying them.
 
 \textbf{Part 2} discusses structures of \emph{confounding bias}. Here, I
 introduce chronologically ordered causal diagrams. I also explain how
@@ -313,7 +314,7 @@ Causal
 Inference}\label{part-1.-the-three-fundamental-identifiability-assumptions-of-causal-inference}}
 
 Before answering causal questions, we must understand how to ask them
-(\protect\hyperlink{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016a}). In
+(\protect\hyperlink{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016}). In
 this section, I review the three fundamental identification assumptions
 required for causal inference.
 
@@ -325,25 +326,25 @@ We are entitled to claim that \(A\) causes \(Y\) if altering \(A\) would
 have influenced the outcome of \(Y\)
 (\protect\hyperlink{ref-hume1902}{Hume 1902};
 \protect\hyperlink{ref-lewis1973}{Lewis 1973}). This claim requires
-counterfactual reasoning. The causal effect is conceived as a contrast
-between the world as it is and the world as it could have been. Our
-objective in causal inference is to quantify the magnitude of such
-contrasts.
+counterfactual reasoning. We must contrast the world as it is when \(A\)
+is set to one level with the world as it might have been when \(A\) is
+set to another level. Our objective in causal inference is to quantify
+the magnitude of such contrasts.
 
 Suppose we observe a correlation between cultural beliefs in Big Gods
 and social complexity. Suppose further that we seek to quantify the
 magnitude of the causal effect of such beliefs. Denote beliefs in Big
-Gods, the ``exposure'' or ``treatment,'' by \(A\). Denote social
-complexity, the outcome, by \(Y\). For now, assume the exposure,
+Gods, the ``exposure'' or ``treatment,'' by \(A_i\). Denote social
+complexity, the outcome, by \(Y_i\). For now, assume the exposure,
 outcome, and the units on which the exposures and outcomes are measured,
-``cultures,'' are well-defined. (We will revisit these assumptions
-shortly.)
+``cultures'' (units \(i\dots N\)) are well-defined. (We will relax these
+assumptions shortly.)
 
-The causal effect of belief in Big Gods on social complexity in culture
-\(i\) may be defined as the difference between two potential outcomes.
 Let \(A_i = 1\) denote the presence of belief in Big Gods and
-\(A_i = 0\) denote its absence. The potential outcome \(Y_i(a)\) denotes
-social complexity when the exposure is set to \(A = a\). The contrast
+\(A_i = 0\) denote its absence. The causal effect of belief in Big Gods
+on social complexity in culture \(i\) may be defined as the difference
+between two potential outcomes. The potential outcome \(Y_i(a)\) denotes
+social complexity when the exposure is set to \(A_i = a\). The contrast
 between the two potential outcomes is expressed:
 
 \[
@@ -363,22 +364,47 @@ potential outcomes:
   \(Y_i(a = 0)\): The social complexity of culture \(i\) without belief
   in Big Gods. This outcome is counterfactual for each culture where
   \(A_i = 1\).\footnote{The counterfactual outcome under exposure
-    \(A = a\) can be denoted in several ways, such as \(Y(a)\),
-    \(Y^{a}\), and \(Y_a\). Here, use the notation \(Y(a)\).}
+    \(A_i = a\) can be denoted in several ways, such as \(Y_i(a)\),
+    \(Y_i^{a}\), and \(Y_a\) (without a subscript). Here, we use the
+    notation \(Y(a)\), dropping the subscript \(i\) for clarity.}
 \end{itemize}
 
-To compute an individual causal effect, then, we require a contrast
-between two states of the world, one of which is inevitably
-counterfactual. That individual causal effects are not identified in the
-data is ``the fundamental problem of causal inference''
+To compute an individual causal effect, we contrast two potential
+outcomes for the same unit, representing two different states of the
+world. Since each individual can be observed under one treatment
+condition at a time, one of these states is inevitably counterfactual.
+
+For a binary treatment \(A\):
+
+\begin{itemize}
+\item
+  If
+  \(A = 14, the outcome under treatment is observed (\)Y\_i\textbar A=1\(), but the outcome under no treatment is unobserved (\)Y\_i\textbar A=0\$).
+  This can be expressed as:
+
+  \[ Y_i|A = 1 \implies Y_i|A=0~ \text{is counterfactual} \]
+\item
+  Conversely, if ( A = 0 ), the outcome under no treatment is observed
+  (\(Y_i|A=0\)), but the outcome under treatment is unobserved
+  (\(Y_i|A=1\)). This can be expressed as:
+
+  \[ Y_i|A = 0 \implies Y_i|A=1~ \text{is counterfactual} \]
+\end{itemize}
+
+This framework highlights the fundamental challenge of causal inference,
+where one of the potential outcomes is always missing. That individual
+causal effects are not identified from observations is ``\emph{the
+fundamental problem of causal inference}''
 (\protect\hyperlink{ref-holland1986}{Holland 1986};
-\protect\hyperlink{ref-rubin1976}{Rubin 1976}). Next, we will consider
-assumptions under which average causal effects may be identified from
-the data. However, because average causal effects require summing over
-individual causal effects, causal inference must solve a special,
-elusive, \emph{missing data problem}
-(\protect\hyperlink{ref-edwards2015}{Edwards \emph{et al.} 2015};
-\protect\hyperlink{ref-westreich2015}{Westreich \emph{et al.} 2015}).
+\protect\hyperlink{ref-rubin1976}{Rubin 1976}).
+
+Next, we consider assumptions under which average causal effects may be
+identified from the data. For now, it is important to note that because
+average causal effects require summing over individual causal effects,
+causal inference must inevitably solve a special, elusive, \emph{missing
+data problem} (\protect\hyperlink{ref-edwards2015}{Edwards \emph{et al.}
+2015}; \protect\hyperlink{ref-westreich2015}{Westreich \emph{et al.}
+2015}).
 
 \hypertarget{causal-inference-is-an-approach-for-estimating-average-marginal-causal-effects}{%
 \paragraph{Causal inference is an approach for estimating average
@@ -386,16 +412,16 @@ elusive, \emph{missing data problem}
 effects}\label{causal-inference-is-an-approach-for-estimating-average-marginal-causal-effects}}
 
 Individual-level causal effects are typically unobservable. However,
-under certain conditions we may use observations in data to obtain
-average causal effect estimates. To obtain average causal effect
-estimates on the difference scale, we must compute a contrast in average
-outcomes from units exposed to different treatment levels (or
-equivalently, we must compute the average of the differences in
-outcomes). In the case of a binary exposure, this is the contrast is
-between the average differences when (1) all units are exposed to a
-certain level of treatment and (2) none are exposed.\footnote{Note that
-  the difference in average expectations is equivalent to the average of
-  the differences in expectations.}
+under certain conditions we may use observations to obtain average
+causal effect estimates. To obtain average causal effect estimates on
+the difference scale, we must compute a contrast in average outcomes for
+units exposed to different treatment levels (or equivalently, we must
+compute the average of the differences in outcomes). In the case of a
+binary exposure, this is quantity is obtained as the contrast is between
+the average differences when (1) all units are exposed to a certain
+level of treatment and (2) no units are exposed.\footnote{Note that the
+  difference in average expectations is equivalent to the average of the
+  differences in expectations.}
 
 On the difference scale, where \(a\) and \(a^*\) denote different levels
 of treatment, this average treatment effect (ATE) is given by the
@@ -409,34 +435,41 @@ How may we compute these contrasts in expectations when \emph{all units}
 are exposed and when *all units** are not exposed? We have just stated
 that each unit may receive only one level of the exposure, \(A_i = a\)
 or \(A_i = a^*\), and that as such individual-level causal effects are
-generally not identifiable. Yet because the exposure groups are composed
-of individual units, at least half the observations in each exposure
-group will contain missing observations. Where \(\delta\) denotes the
-average treatment effect, the problem can be expressed:
+generally not identifiable. Does it not follow that, because the
+exposure groups are composed of individual units, at least half the
+observations in each exposure group will contain missing observations?!
+
+Where \(\delta\) denotes the average treatment effect, the problem of
+obtaining missing counterfactuals within exposure groups can be
+expressed:
 
 \[
 \delta = \underbrace{\big(\mathbb{E}[Y(1)|A = 1]\big)}_{\text{observed}} + \underbrace{\big(\mathbb{E}[Y(1)|A = 0]\big)}_{\text{unobserved}} - \underbrace{\big(\mathbb{E}[Y(0)|A = 0]\big)}_{\text{observed}}  - \underbrace{\big(\mathbb{E}[Y(0)|A = 1]\big)}_{\text{unobserved}}
 \]
 
 Causal inference is a framework of assumptions and methods for deriving
-causal contrasts from observed or observable data. This is why we may
-call it \emph{counterfactual data science.} To effectively use causal
-diagrams, it is essential to comprehend their role within this broader
-framework.
+causal contrasts from observed or observable data. We may call it
+\emph{counterfactual data science.} To effectively use causal diagrams,
+it is essential to comprehend their role within this broader framework
+of assumptions.\footnote{There are different formulations of causality,
+  and so arguably different frameworks. I use the singular ``the''
+  because, as used in applied research, the varieties of framework are
+  mathematically equivalent. The variety I present here is called the
+  ``potential outcomes'' framework. It traces its origins to works of
+  Neyman (\protect\hyperlink{ref-neyman1923}{\textbf{neyman1923?}}),
+  Rubin Rubin (\protect\hyperlink{ref-rubin1976}{1976}), and Robins
+  Robins (\protect\hyperlink{ref-robins1986}{1986}).}
 
 \hypertarget{identification-assumption-1-causal-consistency}{%
 \subsubsection{Identification Assumption 1: Causal
 Consistency}\label{identification-assumption-1-causal-consistency}}
 
 Causal consistency is crucial for addressing the special, elusive,
-\emph{missing data problems} at the heart of causal inference. First,
-consider at a conceptual level how the causal consistency assumption
-recovers half of the missing counterfactuals required for causal
-contrasts.
+\emph{missing data problems} at the heart of causal inference.
 
 Let \(Y_i^{observed}|A_i\) denote an individual's observed outcome in
 response to treatment \(A_i\). Where the causal consistency assumption
-is satisfied, we may derive counterfactual outcomes from the following
+is satisfied, we may obtain counterfactual outcomes from the following
 rule:
 
 \[
@@ -447,21 +480,23 @@ Y_i(a) & \text{if } A_i = a
 \end{cases}
 \]
 
-Where the causal consistency assumption is satisfied, we say that the
-observed outcome, given an individual's actual exposure, matches that an
-individual's counterfactual outcome under the same exposure. The
-assumption might appear to be easily satisfied. An observed outcome is
-just equated to a counterfactual outcome. This hardly seems difficult.
-However, the causal consistency assumption is only met if there is
-treatment variation irrelevance, such that any variations in treatment
-can be ignored conditional on other variables included in the model
+That is, where the causal consistency assumption is satisfied, an
+individual's observed outcome under the realised level of exposure
+matches that individual's counterfactual outcome for that same level of
+exposure. The assumption might appear to be easily satisfied. An
+observed outcome is just equated to a counterfactual outcome. This
+hardly seems difficult. However, the causal consistency assumption is
+only met if there is treatment variation irrelevance, such that any
+variations in treatment can be ignored conditional on other variables
+included in the model
 (\protect\hyperlink{ref-vanderweele2009}{VanderWeele 2009a}). On closer
-inspection, treatment variation irrelevance sets a high bar.
+inspection, however, the requirement for treatment variation irrelevance
+sets a high bar.
 
 Consider, causal consistency requires satisfaction of \textbf{the no
-interference assumption}: the effects of exposure must be independent
-across units such that an exposure's effect on one unit does not depend
-on the exposure status of other units
+interference assumption (SUTVA)}: the effects of exposure must be
+independent across units such that an exposure's effect on one unit does
+not depend on the exposure status of any other other unit
 (\protect\hyperlink{ref-rubin2005}{Rubin 2005}). (Note that such
 dependencies violate the assumption of treatment variation irrelevance
 even if the treatment were administered experimentally.)
@@ -1261,9 +1296,9 @@ If such temporal order is preserved, \(L\) cannot be an effect of \(A\),
 and thus neither of \(Y\).\footnote{This rule is not absolute. As
   indicated in Figure~\ref{fig-dag-descendent-solution}, it may be
   helpful in certain circumstances to condition on a confounder that
-  occurs after the outcome has occurred.} In the example just described
-for beliefs and social complexity, such assurance typically requires
-time-series data with accurate measurements. Also required is a
+  occurs \emph{after} the outcome has occurred.} In the example just
+described for beliefs and social complexity, such assurance typically
+requires time-series data with accurate measurements. Also required is a
 sufficiently large sample of cultures that transition in religious
 beliefs, with measurements of social complexity before and after.
 Moreover, the cultures in the dataset would need to be independent of
@@ -1430,9 +1465,9 @@ importance of explicitly stating the temporal ordering of our
 variables.\footnote{Note that if \(L\) were associated with \(Y\) and
   could not be caused by \(A\), conditioning on \(L\) would typically
   enhance the precision of the causal effect estimate of \(A \to Y\).
-  This precision enhancement holds even if \(L\) occurs after \(A\).
-  However, the onus is on the researcher to show that the post-treatment
-  factor cannot be a consequence of the exposure.}
+  This precision enhancement holds even if \(L\) occurs \emph{after}
+  \(A\). However, the onus is on the researcher to show that the
+  post-treatment factor cannot be a consequence of the exposure.}
 
 \begin{figure}
 
@@ -1476,7 +1511,7 @@ opening of a backdoor path between the exposure, A, and the outcome, Y.}
 \end{figure}
 
 Again, the advice is evident from the chronology of the graph: we should
-measure the (\(L^\prime\)) before the exposure (\(A\)). This solution is
+measure the (\(L^\prime\)) before the exposure (\(A\)). This strategy is
 presented in Figure~\ref{fig-dag-descendent-solution}.
 
 \begin{figure}
@@ -2116,7 +2151,7 @@ between weekly and monthly attendees? Perhaps, we are interested in a
 different facet altogether? Visualising a hypothetical experiment - even
 when it is not feasible - reveals the need for a precise intervention
 specification (\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022};
-\protect\hyperlink{ref-hernuxe1n2016a}{Hernán \emph{et al.} 2016b};
+\protect\hyperlink{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016};
 \protect\hyperlink{ref-hernuxe1n2022}{Hernán \emph{et al.} 2022b}).
 
 The exposure is measured at wave 1 (i.e.~+1 interval from baseline, wave
@@ -2803,7 +2838,7 @@ analyses.
 Following Hernán and Cole (\protect\hyperlink{ref-hernuxe1n2009}{2009}),
 we define structural concepts of measurement error and utilise causal
 diagrams to understand how such errors may bias causal effect estimates.
-A deeper understanding of these concepts (also explored by
+A deeper understanding of these concepts (developed in
 (\protect\hyperlink{ref-vanderweele2012}{VanderWeele and Hernán 2012}),
 will equip us to better manage and account for assessing bias from
 measurement error in causal inference.
@@ -2955,78 +2990,77 @@ In Part 3, we discussed how including the exposure measured at baseline
 can reduce confounding in a three-wave panel design. By controlling for
 the baseline exposure, we effectively adjust for any static
 characteristics that cause a correlation between the exposure and
-outcome.
+outcome. Taking this further, including baseline measures in the
+analysis might mitigate the impact of measurement errors on causal
+effect estimation, provided the errors meet specific conditions.
 
-Now for measurement error, including baseline measures could mitigate
-the impact of these errors on causal effect estimation, provided the
-errors are random and not systematically associated across time points.
+Consider a study with two time points: baseline and follow-up. Let
+\(A_0\) and \(A_1\) represent the true exposure levels at baseline and
+follow-up, respectively, and \(Y_0\) and \(Y_2\) represent the true
+outcomes at these respective time points. In practice, the observed or
+measured values may differ from the true values due to measurement
+error. We use primes to denote these measured values:
 
-To see this, let \(A_0\), \(A_1\) denote the exposure at baseline and
-follow-up, and \(Y_0\), \(Y_1\) denote the outcome at baseline and
-follow-up. The true values are denoted without primes, and the measured
-values are with primes. We assume the measurement error is additive:
+\begin{itemize}
+\tightlist
+\item
+  \(A'_0 = A_0 + UA_0\)
+\item
+  \(A'_1 = A_1 + UA_1\)
+\item
+  \(Y'_0 = Y_0 + UY_0\)
+\item
+  \(Y'_2 = Y_2 + UY_2\)
+\end{itemize}
 
-\(A'_0 = A_0 + UA_0\),
+Here, \(UA_0\), \(UA_1\), \(UY_0\), and \(UY_2\) are the additive
+measurement errors for exposure and outcome at baseline and follow-up,
+respectively. The primes on \(A\) and \(Y\) symbolise the values as they
+are observed, reflecting their true values and the corresponding
+measurement errors.
 
-\(A'_1 = A_1 + UA_1\),
+By including \(A'_0\) and \(Y'_0\) as covariates, we aim better identify
+the incidence effect of a change in exposure from baseline to follow-up
+on the outcome. However, to mitigate bias arising from correlated
+measurement errors, the following conditions must hold:
 
-\(Y'_0 = Y_0 + UY_0\),
+\begin{itemize}
+\tightlist
+\item
+  The expectation of the measurement errors is consistent over time:
+  \(E(UA_0) = E(UA_1)\) and \(E(UY_0) = E(UY_2)\).
+\item
+  The conditional correlation between the errors is zero given baseline
+  measures: \(Cov(UA_1, UY_2) = 0 | A'_0,Y'_0,L'_0\).
+\end{itemize}
 
-\(Y'_2 = Y_2 + UY_2\),
+Including measurements of the baseline exposure and baseline outcome can
+reduce undirected measurement errors, but the strategy require that the
+errors are both constant over time and undirected. If the errors vary
+over time or if the the exposure affects the error of the outcome then
+controlling for baseline measurements of the exposure and outcome will
+be inadequate for confounding control (see:
+(\protect\hyperlink{ref-keogh2020}{Keogh \emph{et al.} 2020})).
 
-where \(UA_0\), \(UA_1\) are the measurement errors for the exposure at
-baseline and follow-up, and \(UY_0\), \(UY_2\) are the measurement
-errors for the outcome at baseline and follow-up. If the errors are
-correlated, then \(Cov(UA_0, UY_0) \neq 0\) and/or
-\(Cov(UA_1, UY_2) \neq 0\).
+Consider a scenario where individuals attending religious services at
+wave 1 acquire greater social desirability bias, affecting their
+reporting. If the outcome at wave 2 is charitable giving, this bias
+could distort the real level of giving. Directed measurement bias could
+falsely link the increase in charity to religious service attendance,
+masking the true effect of over-reporting due to social desirability
+bias.
 
-In a model that includes \(A'_0\) and \(Y'_0\) as covariates, the
-estimated effect of \(A'_1\) on \(Y'_2\) identifies the effect of change
-in the exposure from baseline to follow-up on the incidence effect.
-Because our interest is in this incidence effect, we control for the
-baseline exposure and outcome measures. This strategy will mitigate bias
-arising from correlated errors if the following conditions hold:
-
-\(E(UA_0) = E(UA_1)\) and \(E(UY_0) = E(UY_2)\) (i.e., the expectation
-of the measurement errors does not change over time),
-
-\(Cov(UA_0, UY_2) = Cov(UA_1, UY_2)\) (i.e., the correlation between the
-errors does not change over time).
-
-Thus, including baseline measurements in our model can mitigate
-undirected measurement errors. However, this solution hinges on the
-measurement error being undirected and non-differential concerning time.
-If the measurement error varies over time or affects other variables in
-the model, baseline measurement control will be inadequate for
-confounding control (see: (\protect\hyperlink{ref-keogh2020}{Keogh
-\emph{et al.} 2020})).
-
-Consider a scenario where individuals who attend religious service more
-at wave 1 acquire more substantial social desirability bias, becoming
-more likely to over-report socially desirable behaviours or under-report
-socially undesirable ones. The structure of this scenario is presented
-in Figure~\ref{fig-dag-d-d}. If the measured outcome at wave 2 is
-charitable giving, the increased social desirability bias could lead to
-an overestimation of the actual level of giving. Suppose we compare
-reported charity at wave 2 with reported religious attendance at wave 1.
-If there is directed measurement bias we might falsely attribute the
-apparent increase in charity to the increase in religious service
-attendance, when, in reality, there was over-reporting from social
-desirability bias that was induced by religious service attendance. Here
-we can see that if the error of the outcome is affected by the exposure,
-the causal effect of the increase in religious service on charitable
-giving might be different from the association presented in the data.
-
-Thus, although controlling for baseline exposure is a powerful strategy
-for isolating incidence effects and controlling confounding, we have
-seen that it is not a catch-all solution. Attention to the quality of
-measures at all time points remains critical.
-
-For instance, to avoid presentation bias, rather than asking whether one
-has \emph{offered} help, we might ask participants in a multi-wave study
-whether they have \emph{received help} -- under the assumption that if
-the religious community is more altruistic than the secular community,
-the probability of receiving help will be higher.
+In short, controlling for baseline exposure, while powerful for
+confounding control, is not a panacea. Confounding control requires
+careful consideration of the quality of measures across time and may
+require further steps, such as changing the wording of questions, to
+mitigate directed measurement error bias. For example, to bypass
+presentation bias, questions about charity from presentation bias that
+is affected by the exposure may focus on \emph{received help} rather
+than \emph{offered help}. This approach assumes that a more altruistic
+religious community would lead to a higher probability of receiving
+help, that the measure is relatively accurate, and that biases in
+reporting do not differ by exposure status.
 
 \begin{figure}
 
@@ -3354,24 +3388,26 @@ the works of Keogh \emph{et al.}
 (\protect\hyperlink{ref-buonaccorsi2010}{2010}) Shi \emph{et al.}
 (\protect\hyperlink{ref-shi2021}{2021}) Valeri \emph{et al.}
 (\protect\hyperlink{ref-valeri2014}{2014}) and Bandalos
-(\protect\hyperlink{ref-bandalos2018}{2018}). Additionally, sometimes
-specialist knowledge will tell us about the direction of influence in
-the error terms, whether positive or negative
+(\protect\hyperlink{ref-bandalos2018}{2018}). Additionally, specialist
+knowledge may often indicate the direction of influence in the
+associations of measurement error terms, whether positive or negative
 (\protect\hyperlink{ref-suzuki2020}{Suzuki \emph{et al.} 2020};
 \protect\hyperlink{ref-vanderweele2007a}{VanderWeele and Robins 2007a},
-\protect\hyperlink{ref-vanderweele2010}{2010}). In these cases, we may
-employ causal diagrams with signed paths to improve causal inferences
+\protect\hyperlink{ref-vanderweele2010}{2010}). In such cases,
+researchers may sometimes employ causal diagrams with signed paths to
+improve causal inferences
 (\protect\hyperlink{ref-vanderweele2012}{VanderWeele and Hernán 2012}).
-The purpose of this section has been to examine how causal diagrams can
-be used to reveal sources of counfounding from measurement bias, how
-measurement bias arises in settings of comparative cultural research,
-why latent factor models make exceptionally strong causal claims, and
-why in some cases single item measures might do better. Chronologically
-ordered causal diagrams, once more, disclose imperatives not only for
-data analysis but also for data collection. They underscore the need to
-devise and use measurement tools that minimise error. And they empower
-us to reject blind adherence to psychometric tradition by contemplating
-causality in the context of a specific question at hand.
+Such methods take us beyond the purpose of this section, which has been
+to review how causal diagrams can be used to reveal sources of
+counfounding from measurement bias, how measurement bias arises in
+settings of comparative cultural research, why the latent factor models
+employed to validate construct measures make exceptionally strong causal
+claims, and why in some cases single item measures might do better.
+Chronologically ordered causal diagrams, once more, disclose imperatives
+not only for data analysis but also for data collection. They underscore
+the need to devise and use measurement tools that minimise error. And
+they empower us to reject blind adherence to psychometric tradition by
+contemplating causality in the context of a specific question at hand.
 
 \hypertarget{conclusions}{%
 \subsection{Conclusions}\label{conclusions}}
@@ -3392,10 +3428,11 @@ summary of advice.
 \item
   Clearly define all nodes on the graph. Ambiguity leads to confusion.
 \item
-  Simplify the graph. Keep only essential nodes and edges for clarifying
-  the identification problem. Avoid clutter.
+  Simplify the graph by combining nodes where this is possible. Keep
+  only those nodes and edges that are essential for clarifying the
+  identification problem at hand. Avoid clutter.
 \item
-  Define any novel conventions in your diagram explicitly. Do not assume
+  Define any novel convention in your diagram explicitly. Do not assume
   familiarity.
 \item
   Ensure acyclicity in the graph. This guarantees that a node cannot be
@@ -3409,8 +3446,12 @@ summary of advice.
   Time-stamp nodes. Causation happens over time; reflect this visually
   in the diagrams.
 \item
-  Be pragmatic. Employ a \emph{modified disjunctive cause criterion} to
-  reduce, if not eliminate, bias.
+  Be pragmatic. Use the \emph{modified disjunctive cause criterion} to
+  minimise or possibly eliminate bias. As we discussed in Part 2, this
+  criterion identifies a variable as part of a confounder set if it can
+  reduce bias stemming from confounding, even if bias cannot be
+  eliminated. Using this criterion will typically reduce your reliance
+  on sensitivity analyses.
 \item
   Draw nodes for unmeasured confounding where it aids confounding
   control strategies. Assume unmeasured confounding always exists,
@@ -3439,8 +3480,8 @@ summary of advice.
   atlases.
 \end{enumerate}
 
-\hypertarget{discussion}{%
-\subsubsection{Discussion}\label{discussion}}
+\hypertarget{pitfalls}{%
+\subsubsection{Pitfalls}\label{pitfalls}}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -3472,7 +3513,8 @@ summary of advice.
   before data collection.
 \item
   Ignoring structural assumptions in classical measurement theory, such
-  as in latent factor models, and blindly using factor measures.
+  as in latent factor models, and blindly using construct measures
+  derived from factor analysis.
 \item
   Trying to represent interactions and non-linear dynamics on a causal
   diagram, which can lead to confusion about their purposes.
@@ -3510,21 +3552,30 @@ summary of advice.
 \tightlist
 \item
   Failing to recognise that simple models work for time series data with
-  three measurement intervals. A repeated measures model is unnecessary
-  for the three-wave design described in Part 3.
+  three measurement intervals. A multi-level regression does not make
+  sense for the three-wave panel design described in Part 3.
 \end{enumerate}
 
 \hypertarget{concluding-remarks}{%
 \subsubsection{Concluding remarks}\label{concluding-remarks}}
 
-Chronologically ordered causal diagrams show the necessity of
-time-series data for answering quantitative causal questions. The demand
-for time-series data collection in causal inference brings substantial
-implications for research design, funding models, and the pace of
-scientific discovery. Scientific progress will be contingent on our
-institutional capacity to transition from a productivity model
-reminiscent of an assembly line or counterfeit money press to a system
-that nurtures long-term data collection.
+In causal analysis, the passage of time is not just another variable but
+the stage on which the entire causal play unfolds. Time-ordered causal
+diagrams articulate this temporal structure, revealing the necessity for
+collecting time-series data in our quest to answer our causal questions.
+
+This need places new demands on our research designs, funding
+mechanisms, and the very rhythm of scientific investigation. Rather than
+continuing in the high-throughput, assembly-line model of research,
+where rapid publication may sometimes come at the expense of depth and
+precision, we must pivot towards an approach that nurtures the careful
+and extended collection of data over time.
+
+The pace of scientific progress in the human sciences of causal
+inference hinges on this transformation. Our challenge is not merely
+methodological but institutional, requiring a shift in our scientific
+culture towards one that values the slow but essential work of building
+rich, time-resolved data sets.
 
 \newpage{}
 
@@ -3690,14 +3741,8 @@ Taylor \& Francis. Retrieved from
 \url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}
 
 \leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2016}{}}%
-Hernán, MA, Sauer, BC, Hernández-Díaz, S, Platt, R, and Shrier, I
-(2016a) Specifying a target trial prevents immortal time bias and other
-self-inflicted injuries in observational analyses. \emph{Journal of
-Clinical Epidemiology}, \textbf{79}, 7075.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2016a}{}}%
-Hernán, MA, Sauer, BC, Hernández-Díaz, S, Platt, R, and Shrier, I
-(2016b) Specifying a target trial prevents immortal time bias and other
+Hernán, MA, Sauer, BC, Hernández-Díaz, S, Platt, R, and Shrier, I (2016)
+Specifying a target trial prevents immortal time bias and other
 self-inflicted injuries in observational analyses. \emph{Journal of
 Clinical Epidemiology}, \textbf{79}, 7075.
 

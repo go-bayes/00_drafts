@@ -4527,12 +4527,8 @@ group_tab_support_rrX |>
 
 
 ```{r}
-# for modified treatment policies
+# for modified treatment policies # causal effects on volunteering/ charity
 library("lmtp")
-
-
-
-head(dat)
 
 # get ids of people who are religious
 dt_18_religious <- dat_long %>% 
@@ -4547,8 +4543,10 @@ nrow(dt_18_religious)
 religious_ids <- dt_18_religious$id
 
 #  select data of these individuals from the entire dataset
-# also create meaningful exposure variable
+#  also create meaningful exposure variable
 
+
+## first the general population 
 dat_long_tX1  <- dat %>%
  # filter(id %in% religious_ids) %>%
   arrange(id, wave) |>
@@ -4703,43 +4701,6 @@ outcome_vars_donateX1 = c(
 )
 
 
-# set outcome for the acceptance domain
-outcome_vars_warmthX1 = c(
-"warm_asians",
-"warm_chinese",
-# "warm_disabled" , not at time 10
-# begins w9
-"warm_immigrants",
-"warm_indians",
-"warm_elderly",
-# warm_lgbtq starts w12
-"warm_maori",
-"warm_mental_illness",
-"warm_muslims",
-"warm_nz_euro",
-"warm_overweight",
-"warm_pacific",
-"warm_refugees",
-"religion_perceive_religious_discrim"
-)
-
-# set outcomes for the report received domain
-outcome_vars_supportX1 = c(
-"family_time",
-"friends_time",
-"community_time",
-"family_money",
-"friends_money",
-"community_money",
-"support_help",
-# 'There are people I can depend on to help me if I really need it.
-"support_turnto",
-# There is no one I can turn to for guidance in times of stress.
-"support_rnoguidance"
-#There is no one I can turn to for guidance in times of stress.
-)
-
-
 exposure_varX1
 prep_donateX1 <- margot_wide(
 dat_long_tX1,
@@ -4752,55 +4713,11 @@ outcome_vars = outcome_vars_donateX1
 str(prep_donateX1)
 nrow(prep_donateX1)
 
-prep_warmthX1 <- margot_wide(
-dat_long_tX1,
-baseline_vars = baseline_varsX1,
-exposure_var = exposure_varX1,
-outcome_vars = outcome_vars_warmthX1
-)
-
-#check must be a dataframe
-str(prep_warmthX1)
-nrow(prep_warmthX1)
-
-
-prep_supportX1 <- margot_wide(
-dat_long_tX1,
-baseline_vars = baseline_varsX1,
-exposure_var = exposure_varX1,
-outcome_vars = outcome_vars_supportX1
-)
-
-#check must be a dataframe
-str(prep_supportX1)
-nrow(prep_supportX1)
-
-## data for mice
-# exposure_varsX1 = c("t1_religion_church_round")
-# 
-# here_save(exposure_varsX1 , "exposure_varsX1")
-
 
 df_wide_censored_donate<- 
   prep_donateX1 |> 
   relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
   relocate("t1_not_censored", .before = starts_with("t2_"))
-
-df_wide_censored_warmth <- 
-  prep_warmthX1 |> 
-  relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_censored", .before = starts_with("t2_"))
-  # select(-"t0_not_censored") 
-
-
-df_wide_censored_support<- 
-  prep_supportX1 |> 
-  relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_censored", .before = starts_with("t2_"))
-
-
-head( df_wide_censored_donate$ t2_charity_donate ) 
-
 
 
 df_clean_donate <- df_wide_censored_donate %>%
@@ -4810,8 +4727,8 @@ df_clean_donate <- df_wide_censored_donate %>%
   filter(!rowSums(is.na(select(., starts_with("t0_"))))) |> 
   dplyr::mutate(across(where(is.numeric) &
                         !t0_not_censored & !t1_not_censored & !t0_sample_weights & !t1_religion_church_round & !t2_charity_donate & 
-                         !t2_gratitude, ~ scale(.x), .names = "{col}_z"))|>
-  select(where(is.factor), t0_not_censored, t1_not_censored, t0_sample_weights, t1_religion_church_round, t2_gratitude,  t2_charity_donate, ends_with("_z")) |>
+                         !t2_gratitude & !t2_hours_charity, ~ scale(.x), .names = "{col}_z"))|>
+  select(where(is.factor), t0_not_censored, t1_not_censored, t0_sample_weights, t1_religion_church_round, t2_gratitude,  t2_charity_donate,t2_hours_charity, ends_with("_z")) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
   relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
@@ -4819,159 +4736,212 @@ df_clean_donate <- df_wide_censored_donate %>%
   mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |> 
   data.frame()
 
-
+# few checks
 mean(df_clean_donate$t2_charity_donate, na.rm = TRUE)
 table(df_wide_censored_donate$t1_religion_church_round)
-
-
-
 colnames(df_clean_donate)
-n_unique(df_clean_donate$id)#10402
-
-df_clean_warmth <- df_wide_censored_warmth %>%
-  mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
-  mutate(t1_not_censored = ifelse(t2_na_flag, 0, t1_not_censored)) %>%
- # select(-t2_na_flag) %>%
-  filter(!rowSums(is.na(select(., starts_with("t0_"))))) |> 
-  dplyr::mutate(across(where(is.numeric) &
-                        !t0_not_censored & !t1_not_censored & !t0_sample_weights & !t1_religion_church_round, ~ scale(.x), .names = "{col}_z")) |>
-  select(where(is.factor), t0_not_censored, t1_not_censored, t0_sample_weights, t1_religion_church_round, ends_with("_z")) |>
-  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-  relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_censored", .before = starts_with("t2_")) |> 
-  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |> 
-  data.frame()
-
-colnames(df_clean_warmth)
-n_unique(df_clean_warmth$id)#10402
-table(df_clean_warmth$t1_not_censored)
+n_unique(df_clean_donate$id)#29770
 
 
-df_clean_support <- df_wide_censored_support %>%
-  mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
-  mutate(t1_not_censored = ifelse(t2_na_flag, 0, t1_not_censored)) %>%
- # select(-t2_na_flag) %>%
-  filter(!rowSums(is.na(select(., starts_with("t0_"))))) |> 
-  dplyr::mutate(across(where(is.numeric) &
-                        !t0_not_censored & !t1_not_censored & !t0_sample_weights & !t1_religion_church_round, ~ scale(.x), .names = "{col}_z")) |>
-  select(where(is.factor), t0_not_censored, t1_not_censored, t0_sample_weights, t1_religion_church_round, ends_with("_z")) |>
-  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-  relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_censored", .before = starts_with("t2_")) |> 
-  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |> 
-  data.frame()
+vis_miss(df_clean_donate)
+#dev.off()
 
-colnames(df_clean_support)
-n_unique(df_clean_support$id)#10402
+# save data
+push_mods
+here_save(df_clean_donate,"df_clean_donate")
 
 
-table(df_clean_support$t1_not_censored)
-
-# Continue on with the other steps
-
-
-head(df_clean_support)
-
-## Donate models
-
+# get names
 names_base_donate <- df_clean_donate |> select( starts_with("t0"), - t0_sample_weights,-t0_not_censored )|> colnames()
 names_base_donate2 <- df_clean_donate |> select( starts_with("t2"))|> colnames()
 
+# check
 names_base_donate
 names_base_donate2
 
 # check: 
 df_clean_donate$t1_religion_church_round
 
-exposure_varX1
+
+# exposure_varX1
 outcome_vars
-# attempt model
+
+
+
+#  model
 A <- c( "t1_religion_church_round")
 C <- c( "t1_not_censored")
 
 #L <- list(c("L1"), c("L2")) 
 W <- c(paste(names_base_donate, collapse = ", "))
 
+# check 
 print(W) 
 df_clean_donate$t1_religion_church_round
 
 
-
-
 #baseline confounders
 #L <- as.list(names_base)
-min(df_clean_donate$t1_religion_church_round, na.rm=TRUE)
+table(df_clean_donate$t1_religion_church_round)
 
 # shift function -- what if everyone increased by .5 standard deviation, except those above 2 
 
-
+# possible shift
 # f <- function(data, trt){
 #   ifelse( data[[trt]] < 4,  data[[trt]] + 1,  data[[trt]] )
 # }
 
+# simple shift, everyone goes to church at least 4 times per week
 f <- function(data, trt){
   ifelse( data[[trt]] < 4, 4,  data[[trt]] )
 }
 
 
-# f <- function(data, trt){
-#   ifelse( data[[trt]] < 4, 4,  data[[trt]] + 1)
-# }
-# 
-
-
-
-#f <- function(data, trt) data[[trt]] + 1 # add one church to all church goers
-
 # Create a vector indicating what algorithms should be R. # used in the SuperLearner 
-sl_lib <- c("SL.glmnet", "SL.ranger", "SL.earth") 
-# "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
 
+# libraries
+library(SuperLearner)
+library(xgboost)
+listWrappers()
+
+
+# "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
 # MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
 
+# super learner libraries
+sl_lib <- c("SL.mean", 
+           "SL.glmnet", 
+           "SL.ranger", # faster implementation of random forset
+           "SL.earth") #
 
-sl_lib2<- c("SL.glmnet", "SL.xgboost", "SL.randomForest") # faster
-
-vis_miss(df_clean_donate)
-#dev.off()
-
-#head(sim_cens)
-# save model
-push_mods
-here_save(df_clean_donate,"df_clean_donate")
 
 # BONUS: progressr progress bars!
 progressr::handlers(global = TRUE)
 
-
+# we will only assess behaviour 
 names_base_donate2
 # recomend tmle for single time point
 # recommend sdr for multiple time points
-
-m_t2_hours_charity_z <- lmtp_tmle(data = df_clean_donate, 
-                                   trt = A, 
-                                   baseline = names_base_donate,
-                                   outcome = "t2_hours_charity",  
-                                   cens = C,
-                                   shift = f, 
-                                   mtp = TRUE, 
-                                   folds = 5, # ideally use ten
-                                   .trim = 0.999,
-                                  # time_vary = NULL,
-                                   outcome_type = "continuous",
-                                 #  id = "id",
-                                   weights = df_clean_donate$t0_sample_weights,
-                                   learners_trt =  "SL.earth",
-                                   learners_outcome =  "SL.earth")
+f
+A
+C
+names_base_donate
 
 
-here_save(m_t2_hours_charity_z, "m_t2_hours_charity_z")
-m_t2_hours_charity_z
+# model charitable giving in population 
+m_t2_hours_charity <- lmtp_tmle(
+  data = df_clean_donate,
+  trt = A,
+  baseline = names_base_donate,
+  outcome = "t2_hours_charity",
+  cens = C,
+  shift = f,
+  k = 1,
+  mtp = TRUE,
+  folds = 10,
+  # ideally use ten
+  .trim = 0.99,
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean_donate$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib
+)
 
-progressr::handlers(global = TRUE)
+here_save(m_t2_hours_charity, "m_t2_hours_charity")
+m_t2_hours_charity <- here_read("m_t2_hours_charity")
 
+
+
+
+
+m_t2_hours_charity_null <- lmtp_tmle(
+  data = df_clean_donate,
+  trt = A,
+  baseline = names_base_donate,
+  outcome = "t2_hours_charity",
+  cens = C,
+  shift = NULL,
+  k = 1,
+  mtp = TRUE,
+  folds = 10,
+  # ideally use ten
+  .trim = 0.99,
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean_donate$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib
+)
+
+here_save(m_t2_hours_charity_null, "m_t2_hours_charity_null")
+m_t2_hours_charity_null <- here_read( "m_t2_hours_charity_null")
+
+str(m_t2_hours_charity_null)
+
+
+
+# caluclate contrast 
+contrast_hours_full <- lmtp_contrast(m_t2_hours_charity,ref = m_t2_hours_charity_null, type = "additive")
+str(contrast_hours_full)
+contrast_hours_full
+
+
+
+
+# not right
+church_four <- format_tab_tmle(church_four, scale = "RD", new_name = "church_four")
+church_four
+
+
+format_tab_tmle <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
+
+  scale <- match.arg(scale)
+
+  require(dplyr)
+
+  tab_tmle <- cbind.data.frame(
+    tmtp_output$theta,
+    tmtp_output$std.error,
+    tmtp_output$conf.low,
+    tmtp_output$conf.high
+  )
+
+  if (scale == "RD") {
+    colnames(tab_tmle) <- c("E[Y(1)]-E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
+  } else if (scale == "RR") {
+    colnames(tab_tmle) <- c("E[Y(1)]/E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
+  }
+
+  tab_tmle_round <- tab_tmle |>
+    dplyr::mutate(across(where(is.numeric), round, digits = 4))
+
+  rownames(tab_tmle_round)[1] <- paste0(new_name)
+
+  return(tab_tmle_round)
+}
+
+church_four_hours<- format_tab_tmle(m_t2_hours_charity, scale = "RD", new_name = "church_four")
+
+
+theta <- contrast_hours_full$vals$theta
+# adult population
+nz_adult_population = 3989000
+
+# min wage workers 
+min_wage_2023 = 22.70
+
+# off the cuff
+hours_volunteering_gained = theta * nz_adult_population
+hours_volunteering_gained
+
+# cash value of intervention
+hours_volunteering_gained * min_wage_2023
+
+
+## donation model 
 m_t2_charity_donate <- lmtp_tmle(
   data = df_clean_donate,
   trt = A,
@@ -4979,7 +4949,7 @@ m_t2_charity_donate <- lmtp_tmle(
   outcome = "t2_charity_donate",
   cens = C,
   shift = f,
-  k = 0,
+  k = 1,
   mtp = TRUE,
   folds = 5,
   # ideally use ten
@@ -4988,143 +4958,50 @@ m_t2_charity_donate <- lmtp_tmle(
   outcome_type = "continuous",
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
-  learners_trt = "SL.earth",
-  learners_outcome = "SL.earth"
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib
 )
 here_save(m_t2_charity_donate, "m_t2_charity_donate")
 m_t2_charity_donate
 
-#sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
+
+# under null
+m_t2_charity_donate_null <- lmtp_tmle(
+  data = df_clean_donate,
+  trt = A,
+  baseline = names_base_donate,
+  outcome = "t2_charity_donate",
+  cens = C,
+  shift = NULL,
+  k = 1,
+#  mtp = TRUE,
+  folds = 5,
+  # ideally use ten
+  .trim = 0.99,
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean_donate$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome =  sl_lib
+)
+here_save(m_t2_charity_donate_null, "m_t2_charity_donate_null")
+m_t2_charity_donate_null
+
+lmtp_contrast(m_t2_charity_donate,ref = m_t2_charity_donate_null, type = "additive")
+
+
+  #sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
 
 
 # calculate proportion 4 or greater
 proportion = sum(df_clean_donate$t1_religion_church_round >= 4) / nrow(df_clean_donate)
-interv = 1181.9471 * population_not_attending
+
+  
  
-# 5,542,555,713
-base = 1100.29 * 5123000
 
- base - interv
-
-population_not_attending <- 5123000 - (5123000 *proportion)
 
 mean ( df_clean_donate$t2_charity_donate, na.rm = TRUE)
-
-
-
-m_t2_honesty_humility_z <- lmtp_tmle(
-  data = df_clean_donate,
-  trt = A,
-  baseline = names_base_donate,
-  outcome = "t2_honesty_humility_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 10,
-  # ideally use ten
-  .trim = 0.999,
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  #  id = "id",
-  weights = df_clean_donate$t0_sample_weights,
-  learners_trt = "SL.glmnet",
-  learners_outcome = "SL.glmnet"
-)
-
-
-here_save(m_t2_honesty_humility_z, "m_t2_honesty_humility_z")
-m_t2_honesty_humility_z
-
-
-m_t2_gratitude <- lmtp_tmle(
-  data = df_clean_donate,
-  trt = A,
-  baseline = names_base_donate,
-  outcome = "t2_gratitude",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 10,
-  # ideally use ten
-  .trim = 0.999,
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  #  id = "id",
-  weights = df_clean_donate$t0_sample_weights,
-  learners_trt = "SL.earth",
-  learners_outcome = "SL.earth"
-)
-
-
-here_save(m_t2_gratitude, "m_t2_gratitude")
-m_t2_gratitude
-
-# calculate proportion 4 or greater
-proportion = sum(df_clean_donate$t1_religion_church_round >= 4) / nrow(df_clean_donate)
-interv = 1181.9471 * population_not_attending
- 
-mean(df_clean_donate$t2_gratitude, na.rm = TRUE)
-5.959 -5.944314
-# 5,542,555,713
-base = 1100.29 * 5123000
-
- base - interv
-
-population_not_attending <- 5123000 - (5123000 *proportion)
-
-mean ( df_clean_donate$t2_charity_donate, na.rm = TRUE)
-
-
-
-m_t2_vengeful_rumin_z <- lmtp_tmle(
-  data = df_clean_donate,
-  trt = A,
-  baseline = names_base_donate,
-  outcome = "t2_vengeful_rumin_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 10,
-  # ideally use ten
-  .trim = 0.999,
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  #  id = "id",
-  weights = df_clean_donate$t0_sample_weights,
-  learners_trt = "SL.glmnet",
-  learners_outcome = "SL.glmnet"
-)
-
-
-
-here_save(m_t2_vengeful_rumin_z, "m_t2_vengeful_rumin_z")
-m_t2_vengeful_rumin_z
-
-m_t2_modesty_z <- lmtp_tmle(
-  data = df_clean_donate,
-  trt = A,
-  baseline = names_base_donate,
-  outcome = "t2_modesty_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 10,
-  # ideally use ten
-  .trim = 0.999,
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  #  id = "id",
-  weights = df_clean_donate$t0_sample_weights,
-  learners_trt = "SL.glmnet",
-  learners_outcome = "SL.glmnet"
-)
-
-
-
-here_save(m_t2_modesty_z, "m_t2_modesty_z")
-m_t2_modesty_z
-
-
 
 ```
 
