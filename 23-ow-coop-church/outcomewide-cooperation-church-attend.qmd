@@ -4896,17 +4896,17 @@ church_four <- format_tab_tmle(church_four, scale = "RD", new_name = "church_fou
 church_four
 
 
-format_tab_tmle <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
+margot_tab_lmtp <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
 
   scale <- match.arg(scale)
 
   require(dplyr)
 
   tab_tmle <- cbind.data.frame(
-    tmtp_output$theta,
-    tmtp_output$std.error,
-    tmtp_output$conf.low,
-    tmtp_output$conf.high
+    tmtp_output$vals$theta,
+    tmtp_output$vals$std.error,
+    tmtp_output$vals$conf.low,
+    tmtp_output$vals$conf.high
   )
 
   if (scale == "RD") {
@@ -4923,7 +4923,9 @@ format_tab_tmle <- function(tmtp_output, scale = c("RD", "RR"), new_name = "char
   return(tab_tmle_round)
 }
 
-church_four_hours<- format_tab_tmle(m_t2_hours_charity, scale = "RD", new_name = "church_four")
+church_four_hours <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "LMTP + 4")
+grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full,  scale = "RD") 
+
 
 
 theta <- contrast_hours_full$vals$theta

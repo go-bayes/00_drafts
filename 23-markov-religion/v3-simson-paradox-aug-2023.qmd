@@ -1,0 +1,1174 @@
+---
+title: "Religious Change is a Simpson's Paradox"
+subtitle: 
+abstract: |
+  Religious affiliation is declining across Western societies. This average trend is the product of two opposing trends at the level of individuals: (i) disaffiliation among those who are religious and (ii) affiliation among those who are not. Previously, estimating the religious switching dynamics of individuals has been challenging because nearly all relevant data sets, such as national censuses, do not track individuals over time. To investigate stability and change simultaneously at both social and individual levels, we built a national-scale longitudinal probability study of attitudes and values that repeatedly measures the same individuals each year (New Zealand Attitudes and Values Study, years: 2009-2020: $N=67,690$ observed). Here, we apply hidden first order Markov models (HMM) to analyze the dynamics of religious affiliation among $N=46,681$ participants who recorded their religious affiliation at least twice during the years 2009-2020. This approach confirms the society-wide trend to disaffiliate and furthermore shows that this trend arises predominantly from a relatively high disaffiliation rate among young people. However, the data also reveal an unexpected feature: as non-religious individuals age, they become more likely to religiously affiliate. Thus, counter-intuitively, while religious affiliation is declining at a national level, religious affiliation is increasing at an individual level. This seemingly paradoxical, yet credible, opposition between national and individual-level trends illustrates the power of national-scale longitudinal designs that measure the same individuals over many years to clarify fundamental questions about the dynamics of core beliefs across the lifespan.
+author: 
+  - name: Joseph A. Bulbulia
+    affiliation: Victoria University of Wellington, New Zealand
+    orcid_id: 0000-0002-5861-2056
+    email: joseph.bulbulia@vuw.ac.nz
+    corresponding: yes
+  - name: Don E Davis
+    affiliation: Georgia State University
+    orcid_id: 0000-0003-3169-6576 
+  - name: Ken Rice
+    affiliation: Georgia State University 
+  - name: Geoffrey Troughton
+    affiliation: Victoria University of Wellington
+  - name: Chris G. Sibley
+    affiliation: School of Psychology, University of Auckland
+    orcid_id: 0000-0002-4064-8800
+execute:
+  warning: false
+  eval: false
+keywords:
+  - measurement
+date: last-modified
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+# read general libraries
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+
+# study specific libraries
+# packages
+source(here::here("23-markov-religion", "libs.R"))
+source(here::here("23-markov-religion", "functions.R"))
+
+
+
+# read  general functions
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+
+# for saving models (bulbulia only - use own paths for simulated data)
+
+# set paths for JB
+# ** YOU WILL NEED TO SET PATHS TO YOUR OWN COMPUTER**
+push_mods <-
+  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-sim-par")
+
+
+# read data/ set to path in your computer
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
+  )
+
+
+
+
+
+dat <- arrow::read_parquet(pull_path)
+
+# function to count participants by wave 
+# participants by wave 
+count_waves_participants <- function(x){
+  out<-dplyr::count(tally(group_by(x, id), sort = TRUE, name="number_waves"), number_waves)
+  print(out)
+}
+
+# create a Religious1 variable which is needed for MSM
+dt <- dat |> 
+  #  dplyr::filter( wave == 2016  | wave == 2017  | 
+  #                  wave == 2018 |
+  #                 wave ==2019 | wave ==2020 ) %>%
+  # droplevels() %>%
+  # dplyr::mutate(org2016 =  ifelse(wave == 2016 & year_measured ==1,1,0 ))%>%
+  # group_by(id) %>%
+  # dplyr::mutate(hold = mean(org2016, na.rm = TRUE)) %>%  # Hack
+  # filter(hold>0) %>% # hack to enable repeat of baseline in 2016
+ # # dplyr::filter(year_measured != -1)%>% # remove people who passed away
+ #  ungroup(id) %>%
+  arrange(id,wave) %>%
+  group_by(id) %>%
+  dplyr::mutate(
+    religion_religious_1 = as.numeric(religious),
+    religion_church_1 = if_else(religion_church2 == 0, 1, 2),
+    religion_believe_god_1 = as.numeric(religion_believe_god)+1,
+    religion_believe_spirit_1 = as.numeric(religion_believe_spirit)+1
+  ) |>
+  dplyr::select(
+    id,
+    age,
+    gen_cohort,
+    wave,
+    religion_religious_1,
+    religion_church_1,
+    religion_believe_god_1,
+    religion_believe_spirit_1,
+    year_measured
+  ) %>%
+  dplyr::filter(wave != 2009 &
+                  wave != 2021 &
+                  year_measured == 1) %>% # filtering only people who have responded in a year, no
+  droplevels() %>%
+  dplyr::mutate(year_w  = as.numeric(wave) - 1) %>%
+  group_by(id) |> filter(n() > 1) |> # have responded to at least 2 x waves
+  # dplyr::filter(n() > 1) %>%
+  # add_tally(religion_religious_1) %>%
+  # dplyr::filter(n > 1) %>%
+  # dplyr::select(-n) %>%
+  # add_tally(religion_church_1) %>%
+  # dplyr::filter(n > 1) %>%
+  # dplyr::select(-n) %>%
+  # add_tally(religion_believe_god_1) %>%
+  # dplyr::filter(n > 1) %>%
+  # dplyr::select(-n) %>%
+  # add_tally(religion_believe_spirit_1) %>%
+  # dplyr::filter(n > 1) %>%
+  # dplyr::select(-n) %>%
+  # add_tally(year_w) %>%
+  # dplyr::filter(n > 1) %>%
+  # dplyr::select(-n) %>%
+   ungroup(id) |> 
+  drop_na() |> 
+  arrange(id,year_w) 
+
+
+# number participants
+n_unique(dt$)
+
+
+table(dt$cohort)
+
+#count repeats
+count_waves_participants(dt) # in the full study
+
+
+```
+
+```{r}
+# for markov
+
+
+q <- rbind(c(.9, .1),
+            c(.1, .9))
+
+# intensity matrix
+q
+
+# Initialise
+init_rel <- msm::crudeinits.msm(religion_religious_1 ~ year_w, id, # Id = identifier
+                      data = dt,
+                      qmatrix = q)
+
+# model
+# msm_rel  <- msm(
+#   religion_religious_1 ~ year_w,
+#   id,
+#   data = dt,
+#   covariates =  ~ age,
+#   qmatrix = init_rel,
+#   ematrix = rbind(c(.1, .1), c(.1, .1)),
+#   est.initprobs = TRUE,
+#   exacttimes = TRUE,# not running without this assumption.
+#   gen.inits = TRUE
+# )
+
+msm_rel
+# check path
+push_mods
+
+#save
+here_save(msm_rel,"msm_rel")
+msm_rel <- here_read("msm_rel")
+
+pmatrix.msm(msm_rel, covariates = list(age = 30 ), ci = "normal")
+
+# function to make graph
+graph_data_rel <- msm_graph(msm_rel, l_str = "dissaffiliate", u_str = "affiliate")
+graph_data_rel
+
+# graphs rel -----------------------------------------------------------
+
+library(igraph)
+library(ggraph)
+require(tidygraph)
+library(tidyverse)
+library(ggplot2)
+markov_graph_religion <-
+  ggplot(
+    aes(
+      x = age,
+      y = conv_probability,
+      ymin = conv_lower,
+      ymax = conv_upper, # Add this line, or provide appropriate values for xmin and xmax
+      colour = Group
+    ),
+    data = graph_data_rel
+  ) +
+  geom_point(alpha = 1, stroke = 1) +
+  geom_linerange(alpha = 1) +
+  geom_smooth(se = F) +
+  scale_y_continuous(limits = c(0, .115)) +
+  labs(x = "Age", y = "Annual Probability of Religious Affiliation w/ 95 CI ") +
+  theme_bw() +
+  labs(title = "Hidden Markov Model: Religious Affiliation Loss/Gain in New Zealand",
+       subtitle= "N = 51470, years 2010-2021") +
+  scale_colour_manual(values=c("#E69F00", "#56B4E9")) +
+  theme(legend.position = "bottom")
+
+markov_graph_religion
+
+
+ggsave(
+  markov_graph_religion,
+  path = here::here(here::here(push_mods, "markov_graph_religion")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "markov_graph_religion.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+## model for church
+
+# Initialise
+init_church <- msm::crudeinits.msm(religion_church_1 ~ year_w, id, # Id = identifier
+                      data = dt,
+                      qmatrix = q)
+# 
+# model
+# msm_church <- msm(
+#   religion_church_1 ~ year_w,
+#   id,
+#   data = dt,
+#   covariates =  ~ age,
+#   qmatrix = init_church,
+#   ematrix = rbind(c(.1, .1), c(.1, .1)),
+#   est.initprobs = TRUE,
+#   exacttimes = TRUE,# not running without this assumption.
+#   gen.inits = TRUE
+# )
+
+msm_church
+# check path
+push_mods
+
+#save
+here_save(msm_church,"msm_church")
+#msm_church <- here_read("msm_church")
+
+
+msm_church
+
+pmatrix.msm(msm_church, covariates = list(age = 80), ci = "normal")
+
+# function to make graph
+graph_data_church <- msm_graph(msm_church, l_str = "loss", u_str = "gain")
+graph_data_church
+
+
+#  graphs -----------------------------------------------------------
+library(ggplot2)
+markov_graph_church <-
+  ggplot(
+    aes(
+      x = age,
+      y = conv_probability,
+      ymin = conv_lower,
+      ymax = conv_upper, # Add this line, or provide appropriate values for xmin and xmax
+      colour = Group
+    ),
+    data = graph_data_church
+  ) +
+  geom_point(alpha = 2, stroke = 2) +
+  geom_linerange(alpha = 1) +
+  geom_smooth(se = F, span = .5) +
+  scale_y_continuous(limits = c(0, .115)) +
+  labs(x = "Age", y = "Annual Probability of Religious Service w/ 95 CI ") +
+  theme_bw() +
+  labs(title = "Hidden Markov Model: Religious Service Loss/Gain in New Zealand",
+       subtitle= "N = 51470, years 2010-2021") +
+  scale_colour_manual(values=c("red", "dodgerblue")) +
+  theme(legend.position = "bottom")
+
+markov_graph_church
+
+
+ggsave(
+  markov_graph_church,
+  path = here::here(here::here(push_mods, "markov_graph_church")),
+  width =16,
+  height = 9,
+  units = "in",
+  filename = "markov_graph_church.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+
+# matrix graph 
+
+church_mat <- matrix(
+  c(0.997, 0.003,
+    0.016, 0.984),
+  byrow = TRUE,
+  nrow = 2,
+  dimnames = list(
+    c("Not-Attend (85%)", "Attend (15%)"),
+    c("Not-Attend (85%)", "Attend (15%)")
+  )
+)
+
+# matrix graph
+edges <- data.frame(
+  from = rep(rownames(church_mat), each = ncol(church_mat)),
+  to = rep(colnames(church_mat), times = nrow(church_mat)),
+  label = as.vector(church_mat)
+)
+
+
+edges <- edges[edges$label != 0,]
+
+ggraph(graph_church, layout = 'circle') +
+  geom_edge_fan(aes(alpha = after_stat(index)), arrow = arrow(type = "closed"), show.legend = FALSE) +
+  geom_node_circle(aes(r = size / 100, fill = colour), colour = 'black') +
+  geom_node_text(aes(label = name), vjust = -1.5, size = 5) +
+  geom_text(data = edges, aes(x = (xend + x)/2, y = (yend + y)/2, label = label), vjust = 2, hjust = 0.5) +
+  labs(title = "Transition Rates Between Religious Service Attendance States",
+       subtitle = "Nodes represent states; edges represent transition rates") +
+  theme_graph(foreground = 'steelblue',
+              fg_text_colour = 'white') +  
+  theme(legend.position = "none")
+
+
+
+graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
+V(graph_church)$size <- c(85, 15) # Assign sizes to vertices based on percentage
+V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue", "red") # Conditionally set colour
+E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984) # Add edge labels as attributes
+edges <- igraph::as_data_frame(igraph::get.edgelist(graph_church, names = TRUE))
+
+edges <- igraph::as_data_frame(get.edgelist(graph_church, names = TRUE))
+edges$label <- c(0.997, 0.003, 0.016, 0.984)
+
+
+
+ggraph(graph_church, layout = 'circle') +
+  geom_edge_fan(aes(alpha = after_stat(index)), show.legend = FALSE) +
+  geom_node_circle(aes(r = size / 100), fill = 'steelblue') + # Map radius to vertex size
+  geom_node_text(aes(label = name)) +# vjust = -1.5, size = 5) +
+  labs(title = "Transition Rates Between Religious Service Attendance States",
+       subtitle = "Nodes represent states; edges represent transition rates") +
+  theme_graph(foreground = 'white',
+              fg_text_colour = 'white') +  
+  theme(legend.position = "none")
+
+
+
+library(igraph)
+library(ggraph)
+
+## USE
+
+
+church_mat <- matrix(
+  c(0.997, 0.003,
+    0.016, 0.984),
+  byrow = TRUE,
+  nrow = 2,
+  dimnames = list(
+    c("Not-Attend (85%)", "Attend (15%)"),
+    c("Not-Attend (85%)", "Attend (15%)")
+  )
+)
+# Create a layout for the graph
+
+graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
+ V(graph_church)$size <- c(85, 15) # Assign sizes to vertices based on percentage
+V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue2", "red")
+ E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984) # Add edge labels as attributes
+edgelist <- igraph::get.edgelist(graph_church, names = TRUE)
+edges <- data.frame(from = edgelist[, 1], to = edgelist[, 2])
+
+
+layout <- create_layout(graph_church, layout = 'circle')
+
+# Get coordinates of edge midpoints
+edges <- data.frame(
+  x = (layout$x[get.edgelist(graph_church)[, 1]] + layout$x[get.edgelist(graph_church)[, 2]]) / 2,
+  y = (layout$y[get.edgelist(graph_church)[, 1]] + layout$y[get.edgelist(graph_church)[, 2]]) / 2,
+  label = E(graph_church)$label
+)
+
+# Plot
+ggraph(graph_church, layout = 'circle') +
+  geom_edge_arc(aes(alpha = after_stat(index)), arrow = arrow(ends = "last")) +
+  geom_node_point(aes(size = size, fill = colour), shape = 21) +
+ # geom_node_circle(aes(r = size / 100), fill = 'white') + # Map radius to vertex size
+  geom_node_text(aes(label = name))+# vjust = -1.5, size = 5) +
+  geom_text(data = edges, aes(x = x, y = y, label = sprintf("%.3f", label)), vjust = 2, hjust = 0.5) +
+  labs(title = "Transition Rates Between Religious Service Attendance States",
+       subtitle = "Nodes represent states; edges represent transition rates") +
+  theme_graph(foreground = 'white',
+              fg_text_colour = 'white') +
+  theme(legend.position = "none")
+
+library(igraph)
+library(ggraph)
+library(grid)
+
+church_mat <- matrix(
+  c(0.997, 0.003, 0.016, 0.984),
+  byrow = TRUE,
+  nrow = 2
+)
+
+graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
+V(graph_church)$size <- c(85, 15)
+V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue2", "red")
+E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984)
+
+layout <- create_layout(graph_church, layout = 'circle')
+
+ggraph(graph_church, layout = 'circle') +
+  geom_edge_arc(aes(alpha = after_stat(index)), arrow = arrow(ends = "last")) +
+  geom_node_point(aes(size = size, colour = colour), shape = 21) +
+  geom_node_circle(aes(r = size / 100), fill = 'white') +
+  geom_node_text(aes(label = name)) +
+  geom_edge_text(aes(label = sprintf("%.3f", label)), vjust = 2, hjust = 0.5) +
+  labs(title = "Transition Rates Between Religious Service Attendance States",
+       subtitle = "Nodes represent states; edges represent transition rates") +
+  theme_graph(foreground = 'white',
+              fg_text_colour = 'white') +
+  theme(legend.position = "none")
+
+
+
+library(igraph)
+library(ggraph)
+library(grid)
+library(igraph)
+library(ggraph)
+library(grid)
+
+church_mat <- matrix(
+  c(0.997, 0.003, 0.016, 0.984),
+  byrow = TRUE,
+  nrow = 2
+)
+
+graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
+V(graph_church)$size <- c(85, 15)
+V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue2", "red")
+E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984)
+
+layout <- create_layout(graph_church, layout = 'circle')
+
+edges <- data.frame(
+  x = (layout$x[get.edgelist(graph_church)[, 1]] + layout$x[get.edgelist(graph_church)[, 2]]) / 2,
+  y = (layout$y[get.edgelist(graph_church)[, 1]] + layout$y[get.edgelist(graph_church)[, 2]]) / 2,
+  label = E(graph_church)$label
+)
+
+V(graph_church)$name <- c("State 1", "State 2") # Add names to vertices
+
+ggraph(graph_church, layout = 'circle') +
+  geom_edge_arc(aes(alpha = after_stat(index)), arrow = arrow(ends = "last")) +
+  geom_node_point(aes(size = size, colour = colour), shape = 21) +
+  geom_node_text(aes(label = name), repel = TRUE) + # Use name attribute for label
+  geom_text(data = edges, aes(x = x, y = y, label = sprintf("%.3f", label)), vjust = 2, hjust = 0.5) +
+  labs(title = "Transition Rates Between Religious Service Attendance States",
+       subtitle = "Nodes represent states; edges represent transition rates") +
+  theme_graph(foreground = 'white',
+              fg_text_colour = 'white') +
+  theme(legend.position = "none")
+
+# simulate data
+data <- data.frame(
+  item_1 = rnorm(100),
+  item_2 = rnorm(100),
+  item_3 = rnorm(100)
+)
+
+# calculate  covariance matrix
+cov_matrix <- cov(data)
+
+# printing the covariance matrix
+print(cov_matrix)
+
+
+
+## GOD
+
+
+## model for church
+# Initialise
+init_god <- msm::crudeinits.msm(religion_believe_god_1 ~ year_w, id, # Id = identifier
+                      data = dt,
+                      qmatrix = q)
+
+# # # model
+# msm_god <- msm(
+#   religion_believe_god_1 ~ year_w,
+#   id,
+#   data = dt,
+#   covariates =  ~ age,
+#   qmatrix = init_god,
+#   ematrix = rbind(c(.1, .1), c(.1, .1)),
+#   est.initprobs = TRUE,
+#   exacttimes = TRUE,# not running without this assumption.
+#   gen.inits = TRUE
+# )
+
+msm_god
+# check path
+push_mods
+
+#save
+here_save(msm_god,"msm_god")
+msm_god <- here_read("msm_god")
+
+msm_god
+
+
+pmatrix.msm(msm_god, covariates = list(age = 80), ci = "normal")
+
+# function to make graph
+graph_data_god <- msm_graph(msm_god, l_str = "loss", u_str = "gain")
+graph_data_god
+# 5 year graphs -----------------------------------------------------------
+library(ggplot2)
+markov_graph_god <-
+  ggplot(
+    aes(
+      x = age,
+      y = conv_probability,
+      ymin = conv_lower,
+      ymax = conv_upper, # Add this line, or provide appropriate values for xmin and xmax
+      colour = Group
+    ),
+    data = graph_data_god
+  ) +
+  geom_point(alpha = 2, stroke = 2) +
+  geom_linerange(alpha = 1) +
+  geom_smooth(se = F, method = loess) +
+  scale_y_continuous(limits = c(0, .115)) +
+  labs(x = "Age", y = "Annual Probability of Belief in God w/ 95 CI ") +
+  theme_bw() +
+  labs(title = "Hidden Markov Model: Belief in God: Loss/Gain in New Zealand",
+       subtitle= "N = 51470, years 2010-2021") +
+  scale_colour_manual(values=c("brown", "lightblue")) +
+  theme(legend.position = "bottom")
+
+markov_graph_god
+
+
+ggsave(
+  markov_graph_god,
+  path = here::here(here::here(push_mods, "markov_graph_god")),
+  width =16,
+  height = 9,
+  units = "in",
+  filename = "markov_graph_god.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+## SPIRIT
+# function to make graph
+
+init_spirit <- msm::crudeinits.msm(religion_believe_spirit_1 ~ year_w, id, # Id = identifier
+                      data = dt,
+                      qmatrix = q)
+# 
+# # # model
+msm_spirit <- msm(
+  religion_believe_spirit_1 ~ year_w,
+  id,
+  data = dt,
+  covariates =  ~ age,
+  qmatrix = init_spirit,
+  ematrix = rbind(c(.1, .1), c(.1, .1)),
+  est.initprobs = TRUE,
+  exacttimes = TRUE,# not running without this assumption.
+  gen.inits = TRUE
+)
+
+msm_spirit
+# check path
+push_mods
+
+#save
+here_save(msm_spirit,"msm_spirit")
+msm_spirit <- here_read(push_mods,"msm_spirit")
+
+
+
+
+pmatrix.msm(msm_spirit, covariates = list(age = 80), ci = "normal")
+
+# function to make graph
+graph_data_spirit <- msm_graph(msm_spirit, l_str = "loss", u_str = "gain")
+graph_data_spirit
+
+graph_data_spirit <- msm_graph(graph_data_spirit, l_str = "loss", u_str = "gain")
+graph_data_spirit
+# 5 year graphs -----------------------------------------------------------
+
+
+library(ggplot2)
+
+
+markov_graph_spirit <-
+  ggplot(
+    aes(
+      x = age,
+      y = conv_probability,
+      ymin = conv_lower,
+      ymax = conv_upper, # Add this line, or provide appropriate values for xmin and xmax
+      colour = Group
+    ),
+    data = graph_data_spirit
+  ) +
+  geom_point(alpha = 2, stroke = 2) +
+  geom_linerange(alpha = 1) +
+  geom_smooth(se = F, method = loess) +
+  scale_y_continuous(limits = c(0, .115)) +
+  labs(x = "Age", y = "Annual Probability of Belief in a Spirit or Life Force w/ 95 CI ") +
+  theme_bw() +
+  labs(title = "Hidden Markov Model: Belief in a Spirit or Life Force: Loss/Gain in New Zealand",
+       subtitle= "N = 51470, years 2010-2021") +
+  scale_colour_manual(values=c("darkred", "darkblue")) +
+  theme(legend.position = "bottom")
+
+markov_graph_spirit
+
+
+ggsave(
+  markov_graph_spirit,
+  path = here::here(here::here(push_mods, "markov_graph_spirit")),
+  width =16,
+  height = 9,
+  units = "in",
+  filename = "markov_graph_spirit.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+combo_graph <- markov_graph_religion + markov_graph_church + markov_graph_god + markov_graph_spirit + plot_annotation(tag_levels = "a")
+
+combo_graph
+
+ggsave(
+  combo_graph,
+  path = here::here(here::here(push_mods, "combo_graph")),
+  width =32,
+  height = 18,
+  units = "in",
+  filename = "combo_graph.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+## example graphs
+#probability matrix
+
+# table church
+dt_church<-  print( round( msm::pmatrix.msm( msm_church) , 4 ) )
+
+# label cols, rows:
+rownames(dt_church) = c("Not-Attend Religious Service time 0", "Attend Religious Service time 0")
+colnames(dt_church) = c("Not-Attend Religious Service t+1","Attend Religious Service t+1")
+
+#table
+dt_church%>%
+  kbl(caption = "Hidden Markov Model: inferred population average Religious Service Attendance state change, N = 51470, years 2010-2021", format = "markdown")
+
+
+
+
+
+
+# table god
+dt_god<-  print( round( msm::pmatrix.msm( msm_god) , 4 ) )
+
+# label cols, rows:
+rownames(dt_god) = c("Not-Believe God time 0", "Believe God time 0")
+colnames(dt_god) = c("Not-Believe God t+1","Believe God t+1")
+
+#table
+dt_god%>%
+  kbl(caption = "Hidden Markov Model: inferred population average Belief in God state change,  N = 51470, years 2010-2021", format = "markdown")
+
+
+
+# table spirit
+dt_spirit<-  print( round( msm::pmatrix.msm( msm_spirit ) , 4 ) )
+
+# label cols, rows:
+rownames(dt_spirit) = c("Not-Believe Spirit time 0", "Believe Spirit time 0")
+colnames(dt_spirit) = c("Not-Believe Spirit t+1","Believe Spirit t+1")
+
+#table
+dt_spirit%>%
+  kbl(caption = "Hidden Markov Model: inferred population average Belief in Spirit state change,  N = 51470, years 2010-2021", format = "markdown")
+
+#%>%
+ # kable_material(c("hover")) 
+
+
+## different graphs
+msm_church
+oz_church <- as.matrix( msm::pmatrix.msm( msm_church ) )
+oz_church <- round(oz_church, digits = 3)
+oz_church
+is.matrix(oz_church)
+
+stateNames_church <- c("Not-Attend Religious Service (85%)","Attend Religious Service (15%)") # 10 waves
+row.names(oz_church) <- stateNames_church; colnames(oz_church) <- stateNames_church
+oz_church
+## need to transpose or else arrows go in the wrong direction
+toz_church <- t(oz_church) 
+toz_church
+#library(pracma)
+
+# 
+# jpeg("your_filename.jpg", width = 4200, height = 3200, res = 800) # Substantially increase width, height, and resolution
+# 
+# #jpeg("plot_mat_church.jpg", width = 1600, height = 1200, res = 300) # Increase width, height, and resolution
+# 
+# plotmat(toz_church,
+#         # pos = c(1,2), 
+#         # lwd = 1, 
+#         # box.lwd = 2, 
+#         cex.txt = 0.9, 
+#         box.size = 0.09, 
+#         # box.type = "circle", 
+#         box.prop = 0.5,
+#         arr.pos =  0.4, 
+#         shadow.size = 0.001,
+#         box.col = c("lightgreen","lightblue","orange"),
+#         # arr.length=.1,
+#         # arr.width=.1,
+#         self.cex = .4,
+#         self.shifty = -.01,
+#         self.shiftx = .12,
+#         main = "Hidden Markov Model reveals low transition to Belief in God \nNew Zealand:  N = 51470, years 2010-2021")
+# 
+# # Close the JPEG file
+# dev.off()
+
+
+## another method
+
+
+
+```
+
+
+
+```{r}
+ # dplyr::filter(Wave == 2016  | Wave == 2017  | Wave == 2018 | 
+ #                  Wave ==2019 | Wave ==2020 ) %>%
+ #  droplevels() %>%
+ #  dplyr::mutate(org2016 =  ifelse(Wave == 2016 & YearMeasured ==1,1,0 ))%>%
+ #  group_by(Id) %>%
+ #  dplyr::mutate(hold = mean(org2016, na.rm = TRUE)) %>%  # Hack
+ #  filter(hold>0) %>% # hack to enable repeat of baseline in 2016 
+ #  dplyr::filter(YearMeasured != -1)%>% # remove people who passed away
+ #  ungroup(Id) %>%
+ # #  arrange(Id,Wave) %>%
+ #  group_by(Id) %>%
+```
+
+
+
+
+\documentclass[fleqn,10pt]{wlscirep}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\title{Secularization is a Simpson’s Paradox}
+
+\author[1,2,*]{Joseph A Bulbulia}
+\author[3]{Don E Davis}
+\author[1]{Geoffrey Troughton}
+\author[4]{John Shaver}
+\author[5]{Chris G. Sibley}
+\affil[1]{Faculty of Science, Psychology, Victoria University, New Zealand}
+\affil[2]{Max Planck Institute for the Science of Human History}
+\affil[5]{Faculty of Science, Psychology, University of Auckland, New Zealand}
+\affil[4]{Faculty of Humanities and Social Science, Religion, University of Otago Mew Zealand}
+\affil[*]{corresponding author: joseph.bulbulia@vuw.ac.nz}
+
+
+\keywords{Hidden Markov Model, Longitudinal, Panel, Religious Change}
+
+\begin{abstract}
+Religious affiliation is declining across Western societies. This average trend is the product of two opposing trends at the level of individuals: (i) disaffiliation among those who are religious and (ii) affiliation among those who are not. Previously, estimating the religious switching dynamics of individuals has been challenging because nearly all relevant data sets, such as national censuses, do not track individuals over time. To investigate stability and change simultaneously at both social and individual levels, we built a national-scale longitudinal probability study of attitudes and values that repeatedly measures the same individuals each year (New Zealand Attitudes and Values Study, years: 2009-2020: $N=67,690$ observed). Here, we apply hidden first order Markov models (HMM) to analyze the dynamics of religious affiliation among $N=46,681$ participants who recorded their religious affiliation at least twice during the years 2009-2020. This approach confirms the society-wide trend to disaffiliate and furthermore shows that this trend arises predominantly from a relatively high disaffiliation rate among young people. However, the data also reveal an unexpected feature: as non-religious individuals age, they become more likely to religiously affiliate. Thus, counter-intuitively, while religious affiliation is declining at a national level, religious affiliation is increasing at an individual level. This seemingly paradoxical, yet credible, opposition between national and individual-level trends illustrates the power of national-scale longitudinal designs that measure the same individuals over many years to clarify fundamental questions about the dynamics of core beliefs across the lifespan.
+\end{abstract}
+\begin{document}
+
+\flushbottom
+\maketitle
+% * <john.hammersley@gmail.com> 2015-02-09T12:07:31.197Z:
+%  Click the title above to edit the author information and abstract
+%
+\thispagestyle{empty}
+
+
+\section*{Introduction}
+
+For over a century, sociologists have documented declining religious affiliation across western societies -- a process that Max Weber called "the disenchantment of the world” \cite{weber_science_1946, norris_sacred_2004,zuckerman_faith_2011,hout_why_2002}. However, the data on which sociological findings are based are aggregated at the society-level. At the level of individuals, religious change is a function of two opposing processes: (1) religious disaffiliation among previously religious individuals and (2) religious affiliation among previously secular individuals. In any finite group there will be overall religious decline when more religious individuals disaffiliate than secular individuals affiliate. 
+
+However, previous studies investigating religious change at the levels of individuals point to age-related effects that oppose the society-wide disaffiliation trend. That is, the properties of change at the level of groups over time differ from the properties of change at the level of individuals over time. For example, using repeated cross-sectional cross-cultural data, Hayward and colleagues find a positive association between age, and importance of God and religious service attendance\cite{hayward_aging_2015}. This implies increasing religiosity with age. Similarly, Hayward and Krause find that within religiously people, there is an increase in church attendance and prayer \cite{hayward_patterns_2013}. This result adds further support for a individual-level dynamic in which there is increasing religiosity with age. Bengston et al. find positive trends in religious intensity and belief as people age and stable service attendance in adulthood among 420 families who participated in the 35-year Longitudinal Study of Generations, \cite{bengtson_does_2015}. Still other studies find that older, non-religious Americans acquire faith at a higher rate than do younger secular people \cite{hayward_changes_2014, hunsberger_religion_1985,kose_religious_1996}. These results reveal processes of affiliation may deviate from the society-wide secularization trend.
+%However, this study is limited to a religious sample and therefore cannot assess processes of affiliation/dis-affiliation within individuals across national diversity over time
+
+ % However, the strength of this relationship differed by between- and within-nation changes in wealth, as well as cross-culturally. \dots \cite{Bengtson2015-pg} \dots  Such studies support previous research about the relevance of aging to understanding religious change within a mixed population of religious and non-religious people. However, approaches that focus on expected levels of religiosity at the level of population do not clarify the two potentially opposing types of change occurring among people who move through different stages of religious development. Nor does this approach enable the assessment of distinct types of switcher.   
+
+There has been little previous work has been the explicit estimation of switching rates. An exception is Hout's investigatation of religious switching within 1200 adult Americans who responded to measures of religious affiliation and behavior at three time points between 2006 and 2014 \cite{hout_religious_2017}. Whereas previous research relied on regression to estimate levels of religiosity averaging over these states, Hout's approach recovers stage-change dynamics. A second advantage of Hout's approach is that it addresses oscillation between states. For example, a person who identifies as religious one year, then disaffiliates the next, then re-affiliates the year after$\dots$ is different from a person who switches affiliation and remains constants in their new state.  Hout allows three possible switching states: affiliation, disaffiliation, and instability or -- "liminality" \cite{lim_secular_2010}. We shall see that lacking a method for handling state-change oscillation, estimates for religious switching from panel data imply substantially greater levels of religious change at the population level than is evident from national censuses. That is, without a method for handling oscillation, models of state change are susceptible to bias. A third advantage of Hout's approach is that it models religious identification states as latent variables. This allows adjustment for measurement error. 
+
+For our purposes, Hout's approach is limited because it does not estimate switching within individuals as they age. As such, the study not clarify whether religious state change varies as a function of age. A second limitation of Hout's approach for our purposes is in its handling of oscillation.  The question of how to model oscillation -- which must be addressed -- requires a decision in advance of the analysis. For any discrete time series with $t$ intervals and $n$ states, there are $n^t$ potential distinct combinations of states. Rather than arbitrarily setting oscillation to one distinct type, we model oscillation as measurement error. The advantage of approaching oscillation as measurement error will be apparent when we consider the diversity of response profiles (see Methods). We model a three-stage process in Appendix X, and recover a similar inference. Finally, Hout estimates change using a *X* model. However, a Hidden Markov a hidden first-order Markov model offers substantial improvement in performance. Here, use a hidden first-order Markov model to analyse responses from XYZ individuals in a diverse national sample of New Zealanders from 2009-2020 to systematically infer processes of state change in religious disaffiliation and affiliation within individuals, and assess whether these dynamics change as a function of age. This approach allows us to estimate whether religious dynamics within individuals differ from population-level dynamics. That is, we are able to ask whether religious change at social and individual levels presents a Simpson's Paradox. 
+
+
+
+
+
+%Hout's model adjusts for measurement error, and infers that XYZ\% of Americans are “liminals” who switch repeatedly between religion and secular states. 
+%Using hidden Markov Models over ten measurement intervals (ten years) in XYZ individuals we find that multiple switching is an artefact of measurement error. % Using panel data from \dots \cite{Hout2017-ps} estimates… %Conceptually speaking, however, there may be a variety of states of switching across a population over time. For example, there might be a class of people who are stably unaffiliated but then affiliate occasionally -- liminal affiliates. By contrast there might be a class of people who are stably affiliated but who disaffiliate occasionally -- liminal disaffiliates.  Within these categories we might find subtypes -- unstably liminal affiliates, stably liminal disaffiliates, and so forth.  To assess the number of types of switchers requires time series data measuring the same individuals as they age. Importantly, survey questions are prone to measuring people with error. As one commentator observes, repeated switching might be artefact of measurement error arising from “people who think about religion and have some beliefs, but [who] do not identify with an organised religion unless they are pushed” \cite{Hout2017-ps}.
+
+
+
+%A key challenge then, is to explicitly model rates of religious switch across the lifespan. %A more basic challenge arises from the classification of all people who switch back and forth at least once as liminal. For example, some people might switch back and forth only once, and then remain in the original state thereafter. Another group of people, however, might respond differently to questions about religious affiliation in different years, manifesting signals of instability. A parsimonious modelling approach would model both underlying states of religious affiliation and the rates of transitions between such underlying states as latent variables. Previous studies have lacked the appropriate statistical models to infer rates of change between latent mixtures of religious/secular types within a population. 
+
+
+
+% HOUT: "These results confirm Lim et al.’s (2010) main insight: some Americans are ambivalent about organized religion, and over time they become more likely to prefer no religion to naming one. To Lim, MacGregor, and Putnam (2010), these results add precision, showing that liminals were twice as numerous as Lim, MacGregor, and Putnam (2010) thought, and slightly more numerous over time."
+
+\section*{Method}
+
+\subsection*{}
+
+\subsection*{How many states?}
+
+
+The question of how to model oscillation requires a decision in advance of the analysis. For any discrete time series with $t$ intervals and $n$ states, there are $n^t$ potential distinct combinations of states. Drawing on previous theory \cite{lim_secular_2010}, Hout models five distinct states over three waves: (1) stable religious, (2) stable not-religious, (3) convert to religious from not-religious, (4) convert to not-religious from religious, (5) oscillation between not-religious and religious. However, there are three problems in modelling oscillation as a unique state (liminality). These problems become evident when we consider the prospect for religious state change over multiple waves.\ref{fig:Figure1} presents a sub-sample of NZAVS participants who recoreded religious affiliation across 11 waves (years 2009-2020). We will refer to these responses to illustrate the problems. Note that for any time series of $t$ measurement intervals and $n$ response categories, there are potentially $n^{t}$ unique combinations of states that any individual might express over the time series. The first problem is that it would appear arbitrary to classify all examples of oscillation as of the same type. For example, case number 5759 changes six times across the series.  We might classify these types as liminal. However,  others change back-and-forth once and are otherwise stable. For example, case number 2502 moves from religious$\to$not-religious$\to$religious and then is stable. By contrast case numbers 1740, 932, 798, 3208 move from not-religious$\to$religious$\to$not-religious and then remain stable, the cases are better approached as examples of measurement error. Yet i
+
+Suppose, however, that we have strong reasons to believe that religious liminals represent a distinct category. Case number 4217 changes three times at the beginning of the time series, then remains stable, from religious oscillating to not stably not-religious. So does case number 3469, here, from not-religious oscillating to stably religious. If we assume oscillation as a distinctive category we need to allow that people might change to-from this oscillating category to a stable identification. This gives us a minimal of 
+
+
+
+ Were we restricted to three-wave time segments we might estimate a liminal switching pattern 
+
+
+\begin{figure}
+\centering
+    \caption{Example of religious states (state changes) in a random sub-sample of respondents to 11 waves (n=64) reveals prospects of many different types of state changes.}
+    \includegraphics[width=.9\textwidth,height=\textheight,keepaspectratio]{figs/trajectories.png}
+    \label{fig:Figure1}
+\end{figure}
+
+
+We might allow that the state of liminal religious orientation is   we assume that people might "convert" from ossilation to 
+
+
+Secondly, modelling oscillation as "liminality" has its challenges.
+
+
+
+\subsection*{Why modelling raw transition states is misleading}
+
+\begin{table}
+
+\caption{Raw sample religious state change: years 2009-2020}
+\centering
+\begin{tabular}[t]{lrr}
+\toprule
+  & Not-religious t+1 & Religious t+1\\
+\midrule
+Not-religious time 0 & 0.94 & 0.06\\
+Religious time 0 & 0.16 & 0.84\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection*{Hidden Markov Model}
+
+Minimally, there are four states 
+
+\begin{enumerate}
+    \item {religious affiliation \it} people might affiliate from a
+    position of no-affiliation.
+    \item {religious disaffiliation}: people might disaffiliate
+    from a position of affiliation.
+    \item {stability in non-affiliation}:
+    \item {stability in affiliation}:
+\end{enumerate}
+
+A multi-state model is appropriate in the context of longitudinal research for understanding how people undergo processes over time. For example, a person might be religious at one time, and subsequently remain religious over a period. Then, a person might disaffiliate, and switch state from religious to non-religious, and this state of affiliation might be tracked at the next measurement interval, and for subsequent intervals. It is possible that a person is unstably religious, switching back and forth between these two states. Here, a person
+
+undergoes an affiliation/disaffiliation process over time. Summed over many people who are religious or nonreligious, a multi-state model can be appropriate for assessing the stability of religious affiliation and disaffiliation. A Hidden Markov Model is a multi-state model that estimates paths of latent state changes over time. In doing so, a Hidden Markov model assumes that recorded observations are generated conditionally on the underlying latent state. These probability distributions are called “emissions probabilities.” The model also seeks to estimate the transition probabilities of these latent states, or “state transition probabilities.” The model estimates the state transition probabilities by assuming that the latent states at any given time are realizations of a Markov process. For a Markov process, all that matters to predicting future state transitions at any given time is the present state of the process. A key advantage of Hidden Markov Models is their ability to adjust for measurement error. Measurements recorded at any given time point are modelled as “tokens” that are “emitted” from the underlying latent states of stability and change for an unobserved latent process. In a Hidden Markov Model, the probability that an indicator (“token”) measures (“emits”) an underlying latent state is called an “emissions” probability \cite{van_tongeren_religious_2020}.
+
+
+\section*{Results}
+
+%Up to three levels of \textbf{subheading} are permitted. Subheadings should not be numbered.
+
+\subsection*{Overall Rates of Religious Affiliation and Dis-affiliation}
+By estimating transition probabilities as equal over time, our model pooled information across waves to estimate one transition matrix representing the average rate of yearly religious switching. The average yearly transition probabilities for binary change religious affiliation are presented in the first two rows of Table \ref{tab:BasicTable}. These overall transition probabilities represent estimates after centered age at the sample mean. This transition probability matrix provides the estimated annual probability of (1) remaining religiously affiliated; (b) remaining religiously disaffiliated; (c) switching to religious affiliation (affiliation); (d) switching to religious disaffiliation (disaffiliation). 
+
+
+\begin{table}
+  \caption{Average yearly transition probabilities for binary change religious affiliation (religious, non-religious)}
+  \label{tab:BasicTable}
+  \begin{tabular}{@{}llr@{}}         \toprule
+  \multicolumn{3}{c}{\textbf{Overall}}        \\\cline{2-3}
+  & Religious $(t_{i})$ & Non-Religious $(t_{i})$ \\ \midrule
+  Religious $(t_{i-1})$ & XXX & XXX \\
+  Non-Religious $(t_{i-1})$ & XXX & XXX \\ \bottomrule
+  \end{tabular}
+\end{table}
+
+
+\subsection*{Rates of Religious Affiliation and Dis-affiliation by Age}
+
+We also assessed whether the probability of affiliation and de-affiliation varied as a function of age, thus estimating the extent to which a person’s age affects the transition probabilities.
+
+As shown in Table \ref{tab:BasicTable}, and consistent with our focal hypothesis, age was reliably associated with the rate of change in religious affiliation over time. 
+
+
+%The transition probabilities from our model can be used to estimate the number of people affiliating and disaffiliating in New Zealand each year. According to the 2013 New Zealand census, 2,146,164 people reported a religious affiliation and 1,635,348 people stated that they had no religion (Center, 2013). Using the estimated transition probabilities from the present model in combination with census information suggests that over the 2013-2014 period, approximately 26,165 people affilliateed and 53,654 people disaffiliateed across the country. The net decrease in people affiliating with a religious group from 2013-2014 is thus approximately 27,489, which represents 0.73\% of the overall New Zealand population. 
+
+%Our estimate of overall society-wide religious decline based on the NZAVS is broadly consistent with the rate of society-wide annual decline observed in the latest New Zealand censuses. In the 2006 Census 56.40\% of the population identified with a religious group. Seven years later, in the 2013 census, this had dropped by 5.81\% to a total of 50.59\%. This equates to a rate of decline of 0.83\% per annum over this period. The rate of society-level religious decline derived from the present model (0.73\% per annum) is 0.1\% less than the 0.83\% per annum effect observed by comparing the 2006 and 2013 Censuses. This difference likely reflects the effect of immigration and the gradual increase in other religious faiths in New Zealand, which somewhat counterbalances the higher rate of decline among Christians based on consecutive census data. Note that the census estimates also includes non-responses in the denominator. 
+
+
+
+We estimated the annual average transition probabilities of both affiliation and disaffiliation across the age range from 20-75 and plotted these slopes, see Figure \ref{fig:Figure1}. The annual average probability of religious affiliation generally followed a positively accelerating trend among older people, whereas the probability of disaffiliation followed a negatively accelerating trend among older people. 
+
+As can be seen in Figure \ref{fig:Figure1}, the probability of de-affiliation was highest among younger persons. Conversely, affiliation was most likely among older persons. Odds ratios estimated from these transition probabilities indicate that 20-year-olds are 3.90 times more likely to disaffiliate than to affilliate (OR = 3.90 = .010/.039). Conversely, 75-year-olds are 1.41 times more likely to affilliate than disaffiliate (OR = 1.41 = .024/.017). Setting OR = 1 and solving for age indicated that the odds of disaffiliateing and affilliateing are equal at age 64, which approximates the age of government-supported retirement in New Zealand. From age XXX and on, secular people are more likely to affilliate to a religion than religious people are to de=affilliate from religion. 
+
+
+% \begin{figure}
+%     \caption{Average yearly conditional transition probabilities for religious affiliation and disaffiliation across the age range. (Note that the likelihood of affiliation and disaffiliation intersect, i.e., are equal to one another, at age 64.)}
+%     \includegraphics[width=.49\textwidth,height=\textheight,keepaspectratio]{PLACEHOLDER_age-dis.png}
+%     \label{fig:Figure1}
+% \end{figure}
+
+
+\section*{Discussion}
+
+Processes of affiliation and disaffiliation are happening simultaneously across any population. However, we are unaware of any previous study that has systematically investigated affiliation and disaffiliation dynamics within individuals over time in a national sample of religious and secular people using a Hidden Markov Model. By summing our estimates of affiliation and disaffiliation our model predicts that from 2009 to 2020 the proportion of religious people in New Zealand decreased by .073\%. This prediction closely approximates the independent national census estimate of .09\% over that period. Thus, in agreement with independent national census estimates, we find that New Zealand society as a whole is growing less religious. 
+
+Focusing on individual-level features, we find that the society-wide trend to disaffiliation arises predominantly from a relatively high disaffiliation rate among young people. Notably, these tendencies among religious people to disaffiliate diminish over the lifespan, or put differently, religious people tend to increasingly retain their faith as they grow older. On the other hand, tendencies among non-religious people to affilliate are relatively low among young people. However, tendencies to affilliate increase as non-religious grow older. Thus, even as society in the aggregate is becoming less religiously affiliated, both religious and non-religious individuals are tending to become more religiously affiliated. Our study of affiliation and disaffiliation dynamics within New Zealand thus recovers a Simpson’s paradox: whereas the population-level process trends to religious disaffiliation over time, both affiliation and disaffiliation processes within individuals trend to religious affiliation. This finding challenges the assumption that secularization is a suitable for inferring the dynamics of religious change within people as they age
+
+%Our results are important to the study of religion and aging because they point to the inadequacy of secularization theories for investigating religious change over the lifespan. A recent Pew Study reports, “while the drop in Christian affiliation is particularly pronounced among young adults, it is occurring among Americans of all ages” \cite{noauthor_americas_2015-1}. Our within-subject analysis reveals that as people age they are growing less secular: the slope of disaffiliation among religious people steadily diminishes as they age. Likewise, the slope of religious affiliation steadily increases among non-religious people as they age. Non-religious people are becoming more prone to religion, and religious people are becoming less prone to disaffiliation. In this way, both religious and non-religious individuals within an increasingly secularized society are trending more to religion, not less. .
+
+Why are people drawn to religious affiliation as they age? The skeptic W. C Fields is rumoured to have taken up Bible reading on his deathbed, remarking, “I'm looking for loopholes.” Though deathbed affiliations are difficult to verify, the idea that religion becomes more attractive at death finds recent empirical support \cite{arrowood_guest_2018, jong_death_2016,norenzayan_belief_2006}. However, given that the trend to religious affiliation applies at all points of the lifespan, not just with the approach of death, a general theory is needed. Speculating, perhaps it is the accumulation of existential stressors that explains the appeal of religion. Orthogonal evidence indicates cultures that experience a combination of ecological uncertainty and ecological hardship tend to favour moralizing gods \cite{botero_ecology_2014}. Moreover, there is individual evidence for increased religious affiliation in the wake of natural disaster \cite{sibley_faith_2012}. Whether “existential slaps” increase support for religious affiliation remains to be investigated. Of course, there might also be “pull” factors at play. From the vantage point of individuals, religious affiliation might arise from what people take to be spiritual learning. The qualities of religious pull factors also remains to be investigated. Additionally the push and pull factors that underpin disaffiliation remain to be clarified. It has been found that openness values tend to diminish levels of religious identification \cite{sibley_how_2014}. However, whether openness leads to disaffiliation has yet to be examined. These are some of the avenues this study opens for the study of religion and aging.
+
+Finally, our results hold interest beyond the social scientific study of religion because they illustrate the perils of using society-wide time series data to estimate individual level dynamics. We identify a general problem in using time series data aggregated at a population level to understand change within people as they age. Findings from population-level re-sampling studies are useful in describing where societies are heading, however such studies do not clarify -- and indeed may obscure -- the individual-level psychological processes occurring across the lifespan. Looking outside the ambit of religion, we maintain that to understand whether people are becoming more nationalistic, less tolerant of immigrants, more accepting of climate change, less trusting of the media, or any other matter of public importance, social scientist must repeatedly sampling the same people as they age. 
+
+
+\bibliography{references}
+
+
+\section*{Acknowledgements (not compulsory)}
+
+\section*{Author contributions statement}
+
+
+\section*{Additional information}
+
+\subsection*{Sampling Procedure}
+The Time 1 (2009) NZAVS contained responses from 6,518 participants sampled from the 2009 New Zealand electoral roll, who were currently residing in New Zealand (one can be registered to vote in New Zealand but living overseas). The electoral roll is publicly available for scientific research and in 2009 contained 2,986,546 registered voters. This represented all citizens over 18 years of age who were eligible to vote regardless of whether they chose to vote, barring people who had their contact details removed due to specific case- by-case concerns about privacy. The sample frame was spilt into three parts. Sample Frame 1 constituted a sample of 25,000 people from the electoral roll (4,060 respondents). Sample Frame 2 constituted a further 10,000 people from the electoral roll (1,609 respondents). Sample Frame 3 constituted 5,500 people randomly selected from meshblock area units of the country with a high proportion of Māori, Pacific Nations and Asian peoples (671 respondents).\footnote{Statistics New Zealand (2013) define the meshblock as “the smallest geographic unit for which statistical data is collected and processed by Statistics New Zealand. A meshblock is a defined geographic area, varying in size
+from part of a city block to large areas of rural land. Each meshblock abuts against another to form a network
+covering all of New Zealand including coasts and inlets, and extending out to the two-hundred-mile economic zone. Meshblocks are added together to ‘build up’ larger geographic areas such as area units and urban areas.
+They are also the principal unit used to draw-up and define electoral district and local authority boundaries.”
+Meshblocks were selected using ethnic group proportions based on 2006 national census data.} All three samples were drawn using a stratified random procedure in which 25,000, 10,000 and 5,500 unique households (postal addresses) were first drawn, and then one person per household was randomly selected. A further 178 people responded but did not provide contact details and so could not be matched to a sample frame. In sum, postal questionnaires were sent to 40,500 registered voters or roughly 1.36\% of all registered voters in New Zealand. The overall response rate (adjusting for the address accuracy of the electoral roll and including anonymous responses) was 16.6%.
+
+Participants
+The Time 1 wave included 3879 women and 2639 men, with a mean age of 48.10 years (SD = 15.75). With regard to ethnicity, 5340 people identified as European, 1168 as Maori, 280 were Pacific Nations peoples, and 322 identified with an Asian ethnic group. Note that people could identify with multiple ethnic groups (and hence be counted multiple times). Education (M = 4.04, SD = 2.78) was coded using the New Zealand Qualifications Authority scheme, which ranged from 0 (none) to 10 (doctoral degree or equivalent). Deprivation (M = 5.06, SD = 2.85) was coded using the New Zealand Deprivation index for the meshblock level (approx. 100 person-sized geographic units), with a decile rank from 1 (low) 10 (high; Atkinson, Salmond \& Crampton, 2014). Socioeconomic status (M = 49.75, SD = 15.77) was scored from 10 (low) to 90 (high) using the New Zealand Socioeconomic Index, which assigned a score based on occupation and derived from census data (Fahy, Lee, & Milne, 2017). Mean household income was NZD 81,055 (SD = NZD 65,579, median = NZD 70,000). Of the 6518 people sampled, 2,826 were religious; 4,888 were parents; 4,558 had a romantic partner; 4,742 were employed; 3,839 lived in an urban or suburban area; and 5,138 were born in New Zealand.
+
+
+We declare no competing interests.
+
+% \begin{figure}[ht]
+% \centering
+% \includegraphics[width=\linewidth]{stream}
+% \caption{Legend (350 words max). Example legend text.}
+% \label{fig:stream}
+% \end{figure}
+
+% \begin{table}[ht]
+% \centering
+% \begin{tabular}{|l|l|l|}
+% \hline
+% Condition & n & p \\
+% \hline
+% A & 5 & 0.1 \\
+% \hline
+% B & 10 & 0.01 \\
+% \hline
+% \end{tabular}
+% \caption{\label{tab:example}Legend (350 words max). Example legend text.}
+% \end{table}
+
+% Figures and tables can be referenced in LaTeX using the ref command, e.g. Figure \ref{fig:stream} and Table \ref{tab:example}.
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+\addbibresource{references.bib}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{rotating}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{mathtools}  
+%\usepackage[firstpage]{draftwatermark}
+\mathtoolsset{showonlyrefs}  
+
+
+\title{Secularization is a Simpson’s Paradox}
+\shorttitle{Simpson's Paradox}
+
+\author{Author, Author, Author}
+\affiliation{a. A University, Somewhere; b. A University, Somewhere; c. A University, Somewhere}
+
+\leftheader{Author, Author, Author}
+
+\abstract{Religious affiliation appears to be declining across all Western societies. This average trend is the product of two opposing trends at the level of individuals: disaffiliation among those who are religious and affiliation among those who are not. Previously, estimating the religious switching dynamics of individuals has been challenging because nearly all relevant data sets, such as national censuses, do not track individuals over time. To investigate stability and change simultaneously at both social and individual levels, we built a national-scale longitudinal study of attitudes and values that repeatedly measures the same New Zealanders each year. We use a hidden first-order Markov model to analyze the dynamics of religious affiliation measured on 31,464 individuals over a nine-year period, from 2009-2017. This approach confirmed the society-wide trend to disaffiliate and furthermore showed that this trend arises predominantly from a relatively high disaffiliation rate among young people. However, the data also revealed an unexpected feature: as non-religious individuals age, they become more likely to affilliate. Thus, counterintuitively, while religious affiliation is declining at a national level, religious affiliation is increasing at an individual level. This seemingly paradoxical, yet credible, opposition between national and individual-level trends illustrates the power of national-scale longitudinal designs that measure the same individuals over many years  to clarify fundamental questions about the dynamics of core beliefs across the lifespan. }
+
+\keywords{affiliation; Ecological Fallacy; Hidden-Markov Model; Secularization; Simpson’s Paradox}
+
+\authornote{
+   \addORCIDlink{Author}{0000-0000-0000-0000}
+   \addORCIDlink{Author}{0000-0000-0000-0000}
+   \addORCIDlink{Author}{0000-0000-0000-0000}
+
+  Correspondence concerning this article should be addressed to Author, Department of Something, A University Somewhere, 123 Main St., Oneonta, NY
+  13820.  E-mail: author@email.com}
+
+
+\begin{document}
+\maketitle
+
+%\section{Significance Statement (PNAS)}
+%Society-wide declines in religious faith, secularization, is evident across all Western societies. However, whether individuals are becoming more religious as they age is unclear. This is because religious change at the society level aggregates over two distinct processes:  tendencies to disaffiliate among religious individuals and tendencies to affilliate among non-religious individuals. Population-level statistics aggregate over these opposing processes, concealing how religious tendencies change within individuals over that same time period. Here, we apply hidden first-order Markov models to longitudinal religious affiliation responses tracking over a nine-year interval (N = 31,464, New Zealand, years: 2009-2018). The model recovers aggregate society-level secularization at levels similar to independent national census estimates. Within non-religious individuals, however, the affiliation rate steadily increases over time. Similarly, within religious individuals, the disaffiliation rate steadily decreases. Net society-level secularization arises from substantially higher disaffiliation rates among young people. The age at which the religious affiliation and disaffiliation rates equalise is XXX years old, after this age the religious affiliation rates exceed the religious disaffiliation rates. These results illustrate the perils of using aggregate society-level time series data, such as census responses, to infer how individuals change.
+
+It has long been observed that religion is a central feature of the human condition (CITE). However, evidence for organised religious systems appears recently in the human life-way, at the beginning of the Holocene (CITE). Sociologists have documented persistent declines in religious affiliation across western societies, a process Max Weber called “the disenchantment of the world” \cite{Weber1946-zp}. Though the causes of disaffiliation remain disputed \cite{Norris2004-gu, Zuckerman2011-hz}, there is clear evidence for society-wide disaffiliation across Western societies \cite{pew2015-USlandscape, pew2015-futureWorld}.
+
+However, most studies estimating society-level trends in religious affiliation sample at the level of populations over time \cite{Field2017-zj, Hout2002-cd}. This approach is effective for characterizing how societies change. Nevertheless, trends within individuals may differ from society-level trends. This is because population-level studies aggregate over two clearly structured and opposing processes at the level of individuals. On the one hand, there are processes of disaffiliation among religious individuals. The population trend to secularization arises because individuals disaffiliate. However, even within societies that are becoming less religious, processes of religious affiliation are also occurring: previously secular individuals may choose to affiliate. In a finite population, if more religious individuals disaffiliate than secular individuals affiliate there will be population-level falls in religion. However, because population-level re-sampling averages over these processes of affiliation and disaffiliation, it does not clarify features of religious change within individuals. To assess how and why religious people change, we must assess responses within the same individuals as they age. Also needed are statistical models that disentangle genuine religious change from fluctuations arising from measurement error. Put simply, responses to questions about religious affiliation might not capture stable features of a person’s religious or secular orientation. Patterns of unstable religious change are better characterised as "fence-sitting". 
+
+\section{Background}
+
+Several previous studies investigating religious change at the levels of individuals point to age-effects. Hayward and Krause find that as religious people age, there is an increase in church attendance \cite{Hayward2013-ji} and prayer \cite{Hayward2013-ja}. These studies point to increasing religiosity across the life-span, with a trend to increasing religious behavior and belief in the latter half of life. However, because the studies focus on change within religious people, they cannot assess religious switching, 
+
+Several studies suggest that older, non-religiously affiliated people appear to acquire faith at a higher rate than do younger secular people \cite{Hayward2014-io, Hunsberger1985-bt, Kose1996-mw}. Evidence that disaffiliation declines with age and that affiliation increases with age suggests that individual processes of affiliation and disaffiliation may deviate from the society-wide secularization trend. This is supported by studies such as \cite{Bengtson2015-pg}, who, using data from ~420 families from the 35-year Longitudinal Study of Generations, found positive trends in religious intensity and belief across the lifespan, and stable service attendance in adulthood, despite a gradual across-generation shift to a less linear religious development trajectory, and changing personal conceptions of religion and God. Similarly, \cite{Hayward2015-vm} found a positive association between age, and importance of God and religious service attendance, globally on average, using repeated cross-sectional data spanning multiple historical cultural zones. However, the strength of this relationship differed by between- and within-nation changes in wealth, as well as cross-culturally. \dots \cite{Bengtson2015-pg} \dots  Such studies support previous research about the relevance of aging to understanding religious change within a mixed population of religious and non-religious people. However, approaches that focus on expected levels of religiosity at the level of population do not clarify the two potentially opposing types of change occurring among people who move through different stages of religious development. Nor does this approach enable the assessment of distinct types of switcher.   
+
+It has been observed that people might switch back and forth between states of religious identification and non-identification -- a phenomenon previous research has called “liminality” \cite{Lim2010-vf}. Using panel data from \dots \cite{Hout2017-ps} estimates… 
+
+Conceptually speaking, however, there may be a variety of states of switching across a population over time. For example, there might be a class of people who are stably unaffiliated but then affiliate occasionally -- liminal affiliates. By contrast there might be a class of people who are stably affiliated but who disaffiliate occasionally -- liminal disaffiliates.  Within these categories we might find subtypes -- unstably liminal affiliates, stably liminal disaffiliates, and so forth.  To assess the number of types of switchers requires time series data measuring the same individuals as they age. Importantly, survey questions are prone to measuring people with error. As one commentator observes, repeated switching might be artefact of measurement error arising from “people who think about religion and have some beliefs, but [who] do not identify with an organised religion unless they are pushed” \cite{Hout2017-ps}.
+ 
+Recently, \cite{Hout2017-ps} assessed religious switching within 1200 adult Americans who responded to measures of religious affiliation and behavior at three time points between 2006 and 2014. \cite{Hout2017-ps} categorized individuals as belonging to one of two religious types: “Some” and “None”. This approach enabled \cite{Hout2017-ps} to identify individuals who repeatedly switch between religious affiliation and disaffiliation in the three waves, by either disaffiliateing, affilliateing, and then disaffiliateing,  or by affilliateing, disaffiliateing, and then affilliateing, a process deemed “liminality” \cite{Lim2010-vf}. \cite{Hout2017-ps} analysis reveals that (1) XXX proportion of religious people in the United States are “liminals” who switch repeatedly between religion and that the expected proportions of liminals differ from predicted population-level proportions derived from population re-sampling methods. This finding adds additional support to within-individual approaches to modeling religious change. Additionally, the study proves the concept that people may change in their religious states repeatedly. That is, the time-series observes those who switch back and forth between religion, an important factor to model, and that the time series itself can be a window into distinct group of switchers.  
+
+\cite{Hout2017-ps}'s model is focused on religious liminals, and does not explicitly model switching as a function of age, and assess whether age trends within individuals deviate from population-level trends over which stability and switching is aggregated. A key challenge then, is to explicitly model rates of religious switch across the lifespan. A more basic challenge arises from the classification of all people who switch back and forth at least once as liminal. For example, some people might switch back and forth only once, and then remain in the original state thereafter. Another group of people, however, might respond differently to questions about religious affiliation in different years, manifesting signals of instability. A parsimonious modelling approach would model both underlying states of religious affiliation and the rates of transitions between such underlying states as latent variables. Previous studies have lacked the appropriate statistical models to infer rates of change between latent mixtures of religious/secular types within a population. However, Hidden Markov Models provide appropriate statistical models for addressing the these problems. Here, we use a hidden first-order Markov model to analyze responses from 31,604 individuals over a nine-year period, from 2009-2017 to systematically infer processes of religious disaffiliation and affiliation at the level of individuals. 
+
+\section{Method}
+
+Hidden Markov models belong to the class of multi-state model that are appropriate for understanding how people undergo processes of change over time. A Hidden Markov Model is a multi-state model that estimates the paths of latent state changes over time. In doing so, a Hidden Markov model assumes that recorded observations are generated conditionally on the underlying latent state. These probability distributions are called “emissions probabilities.”  
+
+A Hidden Markov Model also seeks to estimate the transition probabilities of these latent states, or “state transition probabilities.” The model estimates the state-transition probabilities by assuming that the latent states at any given time are realisations of a Markov process. For a Markov process, all that matters to predicting future state transitions at any given time is the present state of the process. Notably, Hidden Markov Models are useful even when the number of underlying latent states is assumed to be identical to the number of indicators for those states. For example, we might imagine that the true states are measured imperfectly by an indicator. In the medical sciences, Hidden Markov Models are frequently used to assess the states of disease progression from imperfect measured diagnostic markers.  
+
+\subsection{Participants}
+\lipsum[1]
+
+\subsection{Model Estimation}
+
+We examined change in religious affiliation by estimating a hidden first-order Markov model. This type of model is variously referred to as a "Hidden Markov model" \cite{Muthen2012-bh} or a "latent Markov model" \cite{Kaplan2008-kl}. By estimating religious affiliation as a categorical latent variable the model adjusts for measurement error and hence allows for disagreement between the observed responses and estimated latent class membership. The model assumes that religious change arises from a stationary process, in which the transition probability from any one given year to the next is the same as the rate of change over any two other sequential years within the 2009-2017 period. 
+
+\section{Results}
+
+\subsection{Estimated Transition Probabilities}
+
+By constraining the transition probabilities to be equal over time, our model thus pooled information across waves to estimate one transition matrix representing the average rate of yearly change. The average yearly transition probabilities for binary change religious affiliation are presented in the first two rows of Table \ref{tab:BasicTable}. These overall transition probabilities represent estimates after centered age at the sample mean. This transition probability matrix provides the estimated annual probability of (1) remaining religiously affiliated; (b) remaining religiously disaffiliated; (c) switching to religious affiliation (affiliation); (d) switching to religious disaffiliation (disaffiliation). 
+
+
+\begin{table}
+  \caption{Average yearly transition probabilities for binary change religious affiliation (religious, non-religious)}
+  \label{tab:BasicTable}
+  \begin{tabular}{@{}llr@{}}         \toprule
+  \multicolumn{3}{c}{\textbf{Overall}}        \\\cline{2-3}
+  & Religious $(t_{i})$ & Non-Religious $(t_{i})$ \\ \midrule
+  Religious $(t_{i-1})$ & XXX & XXX \\
+  Non-Religious $(t_{i-1})$ & XXX & XXX \\ \bottomrule
+  \end{tabular}
+\end{table}
+
+We also assessed whether the probability of affiliation and disaffiliation varied as a function of age. The model assesses the extent to which a person’s age moderates the transition probabilities.
+
+As shown in Table \ref{tab:BasicTable}, and consistent with our focal hypothesis, age was statistically significantly associated with the rate of change in religious affiliation over time when adjusting for other demographics included in the model. 
+
+These results indicate that people who were religious at one time were extremely likely to remain religious one year later, $P(ReligTi|ReligTi-1) = XXX$. Likewise, results indicate that people who were non-religious at a given point in time were also likely to remain non-religious the following year, $P(Non-ReligTi|Non-ReligTi-1) = .XXX$. Unsurprisingly, religious affiliation was not perfectly stable over time. Our hidden Markov model indicated that there was a small probability of change in religious affiliation, and that affiliation and disaffiliation were occurring simultaneously within the population. 
+
+The annual probability of disaffiliation was $P(Non-ReligTi|ReligTi-1) = XXXX$.  Thus while our model indicates that both the probability and odds were relatively small, this translates into roughly XXX in XXX people changing from being religious to non-religious in New Zealand annually. Transition probabilities were affilliateed into odds ratios by using the diagonal of the transition probability matrix as the reference category \cite{Muthen2011-gu}.
+
+This small but appreciable annual probability of disaffiliation was counterbalanced to some extent by the slightly smaller probability of affiliation, $P(ReligTi|Non-ReligTi-1) = .016$. This translates into roughly 1 in XXXX people affilliateing from being non-religious to religious annually. Keeping in mind that the base rate for disaffiliation and affiliation are both relatively low (a probability of .XXX and .XXX, respectively), our model indicates that the annual odds of disaffiliation are roughly XXX times greater than those of affiliation (XXX= .025/.015). In New Zealand, the net effect should thus be a slow and gradual decrease in religious affiliation.  
+
+The transition probabilities from our model can be used to estimate the number of people affiliating and disaffiliating in New Zealand each year. According to the 2013 New Zealand census, 2,146,164 people reported a religious affiliation and 1,635,348 people stated that they had no religion (Center, 2013). Using the estimated transition probabilities from the present model in combination with census information suggests that over the 2013-2014 period, approximately 26,165 people affilliateed and 53,654 people disaffiliateed across the country. The net decrease in people affiliating with a religious group from 2013-2014 is thus approximately 27,489, which represents 0.73\% of the overall New Zealand population. 
+
+Our estimate of overall society-wide religious decline based on the NZAVS is broadly consistent with the rate of society-wide annual decline observed in the latest New Zealand censuses. In the 2006 Census 56.40\% of the population identified with a religious group. Seven years later, in the 2013 census, this had dropped by 5.81\% to a total of 50.59\%. This equates to a rate of decline of 0.83\% per annum over this period. The rate of society-level religious decline derived from the present model (0.73\% per annum) is 0.1\% less than the 0.83\% per annum effect observed by comparing the 2006 and 2013 Censuses. This difference likely reflects the effect of immigration and the gradual increase in other religious faiths in New Zealand, which somewhat counterbalances the higher rate of decline among Christians based on consecutive census data. Note that the census estimates also includes non-responses in the denominator. 
+
+\subsection{Individual level transition probabilities}
+
+We estimated the annual average transition probabilities of both affiliation and disaffiliation across the age range from 20-75 and plotted these slopes, see Figure \ref{fig:Figure1}. The annual average probability of religious affiliation generally followed a positively accelerating trend among older people, whereas the probability of disaffiliation followed a negatively accelerating trend among older people. 
+
+As can be seen in Figure \ref{fig:Figure1}, the probability of disaffiliation was highest among younger persons. Conversely, affiliation was most likely among older persons. Odds ratios estimated from these transition probabilities indicate that 20-year-olds are 3.90 times more likely to disaffiliate than to affilliate (OR = 3.90 = .010/.039). Conversely, 75-year-olds are 1.41 times more likely to affilliate than disaffiliate (OR = 1.41 = .024/.017). Setting OR = 1 and solving for age indicated that the odds of disaffiliateing and affilliateing are equal at age 64, which approximates the age of government-supported  retirement in New Zealand. From age XXX and on, secular people are more likely to affilliate to a religion than religious people are to disaffiliate from religion. 
+
+
+\begin{figure}
+    \caption{Average yearly conditional transition probabilities for religious affiliation and disaffiliation across the age range. (Note that the likelihood of affiliation and disaffiliation intersect, i.e., are equal to one another, at age 64.)}
+    \includegraphics[width=.49\textwidth,height=\textheight,keepaspectratio]{PLACEHOLDER_age-dis.png}
+    \label{fig:Figure1}
+\end{figure}
+
+Focusing on individual-level processes, the key interest of our investigation of religious change, we find that the probability of affiliation and disaffiliation differs as a function of age. In both cases, the individual-level trends over the lifespan run contrary to society-level trends over time. As secular people age they steadily become more inclined to affilliate to religion. On the other hand, as religious people age they steadily become less inclined to disaffiliate. These trends to religion run contrary the population-level trend to disaffiliation.
+
+\section{Discussion}
+
+A priori, it is known that processes of affiliation and disaffiliation are happening simultaneously across any population. However, we are unaware of any previous study that has systematically investigated affiliation and disaffiliation dynamics within individuals over time in a national sample of religious and secular people. By summing our estimates of affiliation and disaffiliation our model predicts that from 2013 to 2014 the proportion of religious people in New Zealand decreased by .073\%. This prediction closely approximates the independent national census estimate of .09\% over that period. Thus, in agreement with independent national census estimates, we find that New Zealand society as a whole is growing less religious. Focusing on individual-level features, we find that the society-wide trend to disaffiliation arises predominantly from a relatively high disaffiliation rate among young people. Notably, these tendencies among religious people to disaffiliate diminish over the lifespan, or put differently, religious people tend to increasingly retain their faith as they grow older. On the other hand, tendencies among non-religious people to affilliate are relatively low among young people. However, tendencies to affilliate increase as non-religious grow older. Thus, even as society in the aggregate is becoming less religiously affiliated, both religious and non-religious individuals are tending to become more religiously affiliated. Our study of affiliation and disaffiliation dynamics within New Zealand thus recovers a Simpson’s paradox: whereas the population-level process trends to religious disaffiliation over time, both affiliation and disaffiliation processes within individuals trend to religious affiliation.
+
+Our results are important to the study of religion and aging because they point to the inadequacy of secularization theories for investigating religious change over the lifespan. A recent Pew Study reports, “while the drop in Christian affiliation is particularly pronounced among young adults, it is occurring among Americans of all ages.” \cite{pew2015-USlandscape}. This is of course true. Likewise, religious disaffiliation is occurring at all ages. Our within-subject analysis reveals that as people age they are growing less secular: the slope of disaffiliation among religious people steadily diminishes as they age. Likewise, the slope of religious affiliation steadily increases among non-religious people as they age. Non-religious people are becoming more prone to religion, and religious people are becoming less prone to disaffiliation. In this way, both religious and non-religious individuals within an increasingly secularized society are trending more to religion, not less. This finding challenges the assumption that secularization is a suitable for inferring the dynamics of religious change within people as they age.
+
+Why are people drawn to religious affiliation as they age? The skeptic W. C Fields is rumoured to have taken up Bible reading on his deathbed, remarking, “I'm looking for loopholes.” Though deathbed affiliations are difficult to verify, the idea that religion becomes more attractive at death finds recent empirical support \cite{Arrowood2018-ko, Jong2016-zm, Norenzayan2006-ks}. However, given that the trend to religious affiliation applies at all points of the lifespan, not just with the approach of death, a general theory is needed. Speculating, perhaps it is the accumulation of existential stressors that explains the appeal of religion. Orthogonal evidence indicates cultures that experience a combination of ecological uncertainty and ecological hardship tend to favour moralizing gods \cite{Botero2014-qw}. Moreover, there is individual evidence for increased religious affiliation in the wake of natural disaster \cite{Sibley2012-yf}. Whether “existential slaps” increase support for religious affiliation remains to be investigated. Of course, there might also be “pull” factors at play. From the vantage point of individuals, religious affiliation might arise from what people take to be spiritual learning. The qualities of religious pull factors also remains to be investigated.  Additionally the push and pull factors that underpin disaffiliation remain to be clarified. It has been found that openness values tend to diminish levels of religious identification \cite{Sibley2014-nd}. However, whether openness leads to disaffiliation has yet to be examined. These are some of the avenues this study opens for the study of religion and aging.
+
+Finally, our results hold interest beyond the social scientific study of religion because they illustrate the perils of using society-wide time series data to estimate individual level dynamics. We identify a general problem in using time series data aggregated at a population level to understand change within people as they age. Findings from population-level re-sampling studies are useful in describing where societies are heading, however such studies do not clarify -- and indeed may obscure -- the individual-level psychological processes occurring across the lifespan. Looking outside the ambit of religion, we maintain that to understand whether people are becoming more nationalistic, less tolerant of immigrants, more accepting of climate change, less trusting of the media, or any other matter of public importance, social scientist must repeatedly sampling the same people as they age. 
+
+
+
+
