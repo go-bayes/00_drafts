@@ -266,6 +266,109 @@ pmatrix.msm(msm_church, covariates = list(age = 80), ci = "normal")
 graph_data_church <- msm_graph(msm_church, l_str = "loss", u_str = "gain")
 graph_data_church
 
+# initial state graph
+library(ggplot2)
+library(igraph)
+library(ggraph)
+
+church_mat <- matrix(
+  c(0.997, 0.003,
+    0.016, 0.984),
+  byrow = TRUE,
+  nrow = 2,
+  dimnames = list(
+    c("Not-Attend (85%)", "Attend (15%)"),
+    c("Not-Attend (85%)", "Attend (15%)")
+  )
+)
+
+library(diagram)
+
+# Your transition matrix
+church_mat <- matrix(
+  c(0.997, 0.003,
+    0.016, 0.984),
+  byrow = TRUE,
+  nrow = 2,
+  dimnames = list(
+    c("Not-Attend (85%)", "Attend (15%)"),
+    c("Not-Attend (85%)", "Attend (15%)")
+  )
+)
+
+# Plot the transition diagram
+plotmat(church_mat, pos = c(2, 1), cex.txt = 0.8)
+
+
+
+
+# 
+# # create edges
+# edges <- as.data.frame(as.table(church_mat))
+# 
+# # graph object
+# g <- graph_from_data_frame(edges, directed = TRUE)
+# 
+# g
+# # define node size
+# 
+# # size
+# size_values <- c(0.85, 0.15)
+# 
+# g <- set_vertex_attr(g, "size", value = size_values)
+# 
+# g <- set_vertex_attr(g, "color", value = ifelse(size_values < mean(size_values), "red", "blue"))
+# layout <- create_layout(g, layout = 'linear')
+# edge_data <- layout$edges
+# edge_data$mid_x <- (edge_data$x + edge_data$xend) / 2
+# edge_data$mid_y <- (edge_data$y + edge_data$yend) / 2
+# edge_data_df <- as.data.frame(edge_data)
+# # Extract Freq from the graph object
+# edge_data$Freq <- as.numeric(E(g)$Freq)
+# 
+# edge_data
+# # Convert to edge list
+# edge_data_df <- as.data.frame(get.edgelist(g, names = TRUE))
+# colnames(edge_data_df) <- c("from", "to")
+# 
+# edge_data_df$Freq <- as.numeric(E(g)$Freq)
+# edge_data_df$Freq
+# # Add midpoint coordinates
+# layout <- create_layout(g, layout = 'linear')
+# edge_data_df$mid_x <- (layout$x[edge_data_df$from] + layout$x[edge_data_df$to]) / 2
+# edge_data_df$mid_y <- (layout$y[edge_data_df$from] + layout$y[edge_data_df$to]) / 2
+# 
+# edge_data_df$mid_x 
+# 
+# # Get the edge list
+# edge_list <- get.edgelist(g, names = TRUE)
+# 
+# # Convert vertex names to indices
+# from_indices <- match(edge_list[, 1], V(g)$name)
+# to_indices <- match(edge_list[, 2], V(g)$name)
+# 
+# # Create a data frame for the edge information
+# edge_data_df <- data.frame(
+#   from = from_indices,
+#   to = to_indices,
+#   Freq = E(g)$Freq
+# )
+# 
+# # Get the layout information
+# layout_info <- create_layout(g, layout = 'linear')
+# 
+# # Compute the midpoint coordinates
+# edge_data_df$mid_x <- (layout_info$x[edge_data_df$from] + layout_info$x[edge_data_df$to]) / 2
+# edge_data_df$mid_y <- (layout_info$y[edge_data_df$from] + layout_info$y[edge_data_df$to]) / 2
+# 
+# # Create the plot
+# ggraph(g, layout = 'linear') +
+#   geom_edge_arc(aes(alpha = Freq * 100 ), arrow = arrow(type = "closed"), show.legend = FALSE, colour = 'grey') +
+#   geom_node_point(aes(size = size, color = color), show.legend = FALSE) +
+#   geom_node_text(aes(label = paste0(scales::percent(size))), vjust = 1.5, hjust = 0.5) +
+#   geom_text(data = edge_data_df, aes(x = mid_x, y = mid_y, label = scales::percent(Freq)), vjust = -2) +
+#   scale_color_identity() +
+#   theme_void()
 
 #  graphs -----------------------------------------------------------
 library(ggplot2)
@@ -335,7 +438,7 @@ edges <- edges[edges$label != 0,]
 
 ggraph(graph_church, layout = 'circle') +
   geom_edge_fan(aes(alpha = after_stat(index)), arrow = arrow(type = "closed"), show.legend = FALSE) +
-  geom_node_circle(aes(r = size / 100, fill = colour), colour = 'black') +
+#  geom_node_circle(aes(r = size / 100, fill = colour), colour = 'black') +
   geom_node_text(aes(label = name), vjust = -1.5, size = 5) +
   geom_text(data = edges, aes(x = (xend + x)/2, y = (yend + y)/2, label = label), vjust = 2, hjust = 0.5) +
   labs(title = "Transition Rates Between Religious Service Attendance States",
@@ -385,6 +488,9 @@ church_mat <- matrix(
     c("Not-Attend (85%)", "Attend (15%)")
   )
 )
+
+church_mat
+
 # Create a layout for the graph
 
 graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
@@ -486,20 +592,6 @@ ggraph(graph_church, layout = 'circle') +
   theme_graph(foreground = 'white',
               fg_text_colour = 'white') +
   theme(legend.position = "none")
-
-# simulate data
-data <- data.frame(
-  item_1 = rnorm(100),
-  item_2 = rnorm(100),
-  item_3 = rnorm(100)
-)
-
-# calculate  covariance matrix
-cov_matrix <- cov(data)
-
-# printing the covariance matrix
-print(cov_matrix)
-
 
 
 ## GOD
