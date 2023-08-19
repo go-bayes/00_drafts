@@ -1,5 +1,5 @@
 ---
-title: "Causal effects of church attendance on cooperation"
+title: "Causal effects of scripture attendance on cooperation"
 subtitle: "An outcomewide approach"
 abstract: |
   Counterfactual Prediction
@@ -59,9 +59,9 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
 # experimental functions (more functions)
-source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-)
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 
 # read data/ set to path in your computer
@@ -72,18 +72,48 @@ pull_path <-
 
 # for saving models. # set path fo your computer
 push_mods <-  fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23_church_charity"
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-coop-scripture"
   )
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
-table(dat$alert_level)
+
+# check
+# table( is.na(dat$religion_scripture) ) 
+# table( is.na( dat$religion_scripture) )
+
+# dat$religion_scripture
+# table(dat$alert_level)
+# hist(dat$religion_scripture)
+# mean(dat$religion_scripture, na.rm = TRUE)
+# sd(dat$religion_scripture, na.rm = TRUE)
+# 
+# ## prop total pop
+# dat_pr <- dat |> filter( wave == 2018 & year_measured == 1) |>  filter(!is.na(religion_scripture))
+# sum(dat_pr$religion_scripture ==0, na.rm=TRUE)/nrow(dat_pr)
+# 
+# ## prop religious
+# dat_pr_rel <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==1) |>  filter(!is.na(religion_scripture))
+# sum(dat_pr_rel$religion_scripture >1, na.rm=TRUE)/nrow(dat_pr_rel)
+# sum(dat_pr_rel$religion_scripture==0, na.rm=TRUE)/nrow(dat_pr_rel)
+# sum(dat_pr_rel$religion_scripture>=7, na.rm=TRUE)/nrow(dat_pr_rel)
+# 
+# 
+# # ## prop not religious
+# dat_pr_rel_not <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==0) |>  filter(!is.na(religion_scripture))
+# nrow(dat_pr_rel_not)
+# sum(dat_pr_rel_not$religion_scripture >0, na.rm=TRUE)/nrow(dat_pr_rel_not) # 2.3 in 100
+# sum(dat_pr_rel_not$religion_scripture>7, na.rm=TRUE)/nrow(dat_pr_rel_not) # 4 in 1000
+# sum(dat_pr_rel_not$religion_scripture, na.rm=TRUE)/nrow(dat_pr_rel_not)
+
+
+
 
 # test of alert level
-dat |> 
-  filter(wave == 2019 & year_measured == 1) |> 
-  count(alert_level)
+# dat |> 
+#   filter(wave == 2019 & year_measured == 1) |> 
+#   count(alert_level)
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
@@ -96,11 +126,11 @@ push_mods
 #| include: false
 #| eval: false
 
-# note that religion church NA we impute zero to those who are not religious in the "religion_church2" variable
+# note that religion church NA we impute zero to those who are not religious in the "religion_church" variable
 
 # check here
 # table(is.na( dat$religion_church)) 
-# table(is.na( dat$religion_church2)) 
+# table(is.na( dat$religion_church)) 
 
 # Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
@@ -132,8 +162,9 @@ dat_long <- dat |>
   mutate(male = as.numeric(male) - 1) |>
   mutate(total_siblings_factor = ordered(round(ifelse(total_siblings > 7, 7, total_siblings), 0))) |> 
   rename(religion_religious = religious) |>  # religious yes/no
+  mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
-  mutate(religion_church_binary2 = ifelse(religion_church2 > 0, 1, 0)) |>
+  mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
   mutate(religion_religious = as.numeric(religion_religious) - 1) |>
   dplyr::select(
     "wave",
@@ -187,7 +218,9 @@ dat_long <- dat |>
     "hours_work",#Hours - Working in paid employment
     "hours_housework", # Hours - Housework/cooking
     "agreeableness",
-    "religion_church_binary2",
+    "religion_church_binary",
+    "religion_prayer_binary",
+    "religion_scripture_binary",
     # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
     # Sympathize with others' feelings.
     # Am not interested in other people's problems.
@@ -238,13 +271,13 @@ dat_long <- dat |>
     "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
-    "religion_church_binary2",
-    "religion_church2",
+    "religion_church",
     "religion_prayer",
+    "religion_scripture",
     # How many times did you pray in the last week?
     "religion_scripture",
     # How many times did you read religious scripture in the last week?
-    "religion_church2",
+    "religion_church",
     # How many times did you attend a church or place of worship in the last month?
     "religion_believe_spirit",
     #Do you believe in some form of spirit or lifeforce?
@@ -316,12 +349,12 @@ dat_long <- dat |>
                   (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                 !is.na(religion_church_binary2) & !is.na(bigger_doms), 1, 0)) |>   # creating an indicator for the first wave
+                                 !is.na(religion_scripture_binary) & !is.na(bigger_doms), 1, 0)) |>   # creating an indicator for the first wave
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(
     wave == 2019 &
       year_measured == 1 &
-      !is.na(religion_church_binary2),
+      !is.na(religion_scripture_binary),
     1,
     0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
@@ -340,15 +373,7 @@ dat_long <- dat |>
   data.frame()
 # check
 
-table( dat_long$religion_church2 )
-
-
-
-dat_1 <- dat |> 
-  filter(wave == 2010 | wave == 2019) 
-  
-
-table1::table1(~ religion_church| wave, data=dat_1)
+table( dat_long$religion_scripture_binary )
 
 
 here_save(dat_long, "dat_long")
@@ -448,20 +473,20 @@ saveRDS(dat_18, here::here(push_mods, "dat_18"))
 dat_long_t  <- dat_long %>%
 #  filter(id %in% religious_ids) %>%   only if subsetting religious ids 
   mutate(
-    religion_church_coarsen = cut(
-      religion_church2,
-      breaks = c(-Inf, 0, 1, 3.99, Inf),
-      labels = c("zero", "one", "less_four", "four_up"),
+    religion_scripture_coarsen = cut(
+      religion_scripture,
+      breaks = c(-Inf, 0, 1, 6.99, Inf),
+      labels = c("zero", "one", "less_seven", "seven_up"),
       include.lowest = TRUE,
       right = TRUE
     )
   ) %>%
   mutate(
-    religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
-    religion_church_binary2_n = as.numeric(religion_church_binary2)
+    religion_scripture_coarsen_n = as.numeric(religion_scripture_coarsen) - 1,
+    religion_scripture_binary_n = as.numeric(religion_scripture_binary)
   ) |>
   mutate(
-    religion_church_binary2 = as.factor(religion_church_binary2),
+    religion_scripture_binary = as.factor(religion_scripture_binary),
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
@@ -470,7 +495,7 @@ dat_long_t  <- dat_long %>%
   arrange(id, wave) |>
   data.frame()
 # check n again
-n_unique(dat_long_t$id)
+n_unique(dat_long_t$id) #33174
 # double check path
 push_mods
 saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
@@ -513,12 +538,12 @@ baseline_vars = c(
     "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
    # "religion_religious", # Do you identify with a religion and/or spiritual group?
    # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-   "religion_church_coarsen", # for prediction
+   "religion_scripture_coarsen", # for prediction
     # "religion_religious", # perfectly colinear
    "religion_spiritual_identification",   
    "religion_identification_level",
   # "religion_church_binary2",
-  # "religion_prayer",
+  # "religion_scripture",
   # "religion_scripture",
    "religion_believe_god",
    "religion_believe_spirit",
@@ -530,8 +555,7 @@ baseline_vars
 
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("religion_church_binary2") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
-
+exposure_var = c("religion_scripture_binary") 
 
 # set outcomes for prosocial domain
 outcome_vars_donate = c(
@@ -610,7 +634,7 @@ nrow(prep_support)
 
 
 ## data for mice
-exposure_vars = c("t1_religion_church_binary2")
+exposure_vars = c("t1_religion_scripture_binary")
 
 here_save(exposure_vars , "exposure_vars" )
 
@@ -823,6 +847,7 @@ mice_support_c <-mice_support_c |> select(-c(.id.1, .imp.1))
 # prepare
 row.names(mice_support_c) <- NULL
 
+
 # note that poisson models for rates inference await development.  Evalues are invalid, and se estimates are invalid.
 # we keep the code here for that day
 # poisson models do work for binary data though.
@@ -860,16 +885,9 @@ mice_support_mids <- mice_support_c %>%
   dplyr::group_by(.imp) |>
   rowwise() |>
   dplyr::ungroup() |>
-  dplyr::group_by(.imp) |>
-  rowwise() |> # group by id within .imp 
-  dplyr::mutate(t2_support = mean(
-    c(t2_support_rnoguidance,
-      t2_support_turnto,
-      t2_support_help),
-    na.rm = TRUE
-  )) |>
-  dplyr::ungroup() |>
-  dplyr::mutate(across(where(is.numeric) & !sample_weights & 
+  dplyr::mutate(
+    across(
+      where(is.numeric) & !sample_weights & 
         !t2_family_time_binary &
         !t2_friends_time_binary &
         !t2_community_time_binary &
@@ -914,7 +932,6 @@ mice_support_mids <- mice_support_c %>%
   droplevels() |> 
   as.mids()
   
-  
 # needed for checks
 mice_support_long <- mice::complete(mice_support_mids, "long", inc = TRUE)
 
@@ -941,7 +958,7 @@ skim(mice_donate_long)
 #name exposure
 
 # Set exposure 
-X <- "t1_religion_church_binary2" #"t1_religion_church_coarsen" #levels( mice_donate_long$t1_religion_church_coarsen )
+X <- "t1_religion_scripture_binary" # #levels( mice_donate_long$t1_religion_scripture_binary )
 
 
 # we have insufficient overlap of religion variables. so we focus on religion
@@ -949,24 +966,14 @@ X <- "t1_religion_church_binary2" #"t1_religion_church_coarsen" #levels( mice_do
 baseline_vars_donate = mice_donate_long |>
   dplyr::select(
     starts_with("t0"),
-    -t0_religion_church_coarsen,
+    -t0_religion_scripture_coarsen,
     -t0_religion_believe_god_z,
     -t0_religion_believe_spirit_z,
     -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z,
-    -t0_bigger_doms
+    -t0_religion_spiritual_identification_z#,
+  #  -t0_bigger_doms
   )  |> colnames() # strange to include these -- as they  are income by other names
 
-# baseline_vars_donate_exposure = mice_donate_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z,
-#     -t0_bigger_doms
-#   ) |> colnames() #
 
 # we have insufficient overlap of religion variables. so we focus on religion
 baseline_vars
@@ -1230,49 +1237,22 @@ mice_warmth_long <- readRDS(here::here(push_mods, "mice_warmth_long"))
 # check
 skim(mice_warmth_long)
 
-# Set exposure 
-#X <- "t1_religion_church_coarsen"
-
-# 
-# baseline_vars_warmth = mice_warmth_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_alert_level_combined_lead,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z
-#   ) |> colnames() # strange to include these -- as they  are income by other names
-# 
-# baseline_vars_warmth
 
 
 baseline_vars_warmth = mice_warmth_long |>
   dplyr::select(
     starts_with("t0"),
-    -t0_religion_church_coarsen,
+    -t0_religion_prayer_coarsen,
     -t0_religion_believe_god_z,
     -t0_religion_believe_spirit_z,
     -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z,
-    -t0_bigger_doms
+    -t0_religion_spiritual_identification_z#,
+   # -t0_bigger_doms
   ) |> colnames() # strange to include these -- as they  are income by other names
 
 baseline_vars_warmth
-# 
-# baseline_vars_exposure = mice_donate_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z,
-#     -t0_bigger_doms
-#   ) |> colnames() #
 
-
+push_mods
 # create outcome vars
 outcome_vars_warmth = mice_warmth_long |> dplyr::select(starts_with("t2")) |> colnames()
 outcome_vars_warmth
@@ -1315,12 +1295,11 @@ dt_warmth = mice_warmth_ebal_trim
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
-#levels(dat_long_t$religion_church_coarsen)
 nsims = 200
 #check treatments
 # treat_0 = "zero"
 # #check
-# treat_1 = "four_up" 
+# treat_1 = "seven_up" 
 #  
 treat_0
 treat_1
@@ -1650,34 +1629,22 @@ mice_support_long <- readRDS(here::here(push_mods, "mice_support_long"))
 skim(mice_support_long)
 
 # set exposure 
-X <- "t1_religion_church_binary2"
+X <- "t1_religion_scripture_binary"
 
 # create baseline variables
 baseline_vars_support = mice_support_long |>
   dplyr::select(
     starts_with("t0"),
-    -t0_religion_church_coarsen,
+    -t0_religion_scripture_coarsen,
     -t0_religion_believe_god_z,
     -t0_religion_believe_spirit_z,
     -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z,
-    -t0_bigger_doms
+    -t0_religion_spiritual_identification_z#,
+   # -t0_bigger_doms
   ) |> colnames() # used for imputation -- fully co-linear
 
 # view
 baseline_vars_support
-
-
-# baseline_vars_exposure = mice_donate_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z,
-#     -t0_bigger_doms
-#   ) |> colnames() #
 
 
 # look at outcomes
@@ -1748,7 +1715,6 @@ dt_support = match_support_ebal_trim #mice_support_ebal
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
-#levels(dat_long_t$religion_church_coarsen)
 nsims = 200
 
 #check
@@ -1833,77 +1799,77 @@ mod_support_community_time_binary_rr
 saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support_community_time_binary_rr"))
 
 
-# # family money rr
-# mod_support_family_money_binary_rr  <- double_robust(
-#   df = dt_support,  # note change
-#   Y = "t2_family_money_binary",
-#   X = X,
-#   baseline_vars = 1,#baseline_vars_support,  ## always check
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RR",
-#   nsims = nsims,
-#   cores = cores,
-#   family = "poisson",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE, 
-#   vcov = "HC",
-#   new_name = "Family money (y/n)"
-# )
-# 
-# mod_support_family_money_binary_rr
-# saveRDS(mod_support_family_money_binary_rr, here::here(push_mods, "mod_support_family_money_binary_rr"))
-# 
-# 
-# # friends money rr
-# mod_support_friends_money_binary_rr  <- double_robust(
-#   df = dt_support,  # note change
-#   Y = "t2_friends_money_binary",
-#   X = X,
-#   baseline_vars = 1, #baseline_vars_support,  ## always check
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RR",
-#   nsims = nsims,
-#   cores = cores,
-#   family = "poisson",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE, 
-#   vcov = "HC",
-#   new_name = "Friends money (y/n)"
-# )
-# 
-# mod_support_friends_money_binary_rr
-# saveRDS(mod_support_friends_money_binary_rr, here::here(push_mods, "mod_support_friends_money_binary_rr"))
-# 
-# mod_support_friends_money_binary_rr <- here_read("mod_support_friends_money_binary_rr")
-# 
-# # comunity money rr
-# mod_support_community_money_binary_rr  <- double_robust(
-#   df = dt_support,  # note change
-#   Y = "t2_community_money_binary",
-#   X = X,
-#   baseline_vars = 1, #baseline_vars_support,  ## always check
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RR",
-#   nsims = nsims,
-#   cores = cores,
-#   family = "poisson",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE, 
-#   vcov = "HC",
-#   new_name = "Community money (y/n)"
-# )
-# 
-# mod_support_community_money_binary_rr
-# saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
+# family money rr
+mod_support_family_money_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_family_money_binary",
+  X = X,
+  baseline_vars = 1,#baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Family money (y/n)"
+)
+
+mod_support_family_money_binary_rr
+saveRDS(mod_support_family_money_binary_rr, here::here(push_mods, "mod_support_family_money_binary_rr"))
+
+
+# friends money rr
+mod_support_friends_money_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_friends_money_binary",
+  X = X,
+  baseline_vars = 1, #baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Friends money (y/n)"
+)
+
+mod_support_friends_money_binary_rr
+saveRDS(mod_support_friends_money_binary_rr, here::here(push_mods, "mod_support_friends_money_binary_rr"))
+
+mod_support_friends_money_binary_rr <- here_read("mod_support_friends_money_binary_rr")
+
+# comunity money rr
+mod_support_community_money_binary_rr  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_community_money_binary",
+  X = X,
+  baseline_vars = 1, #baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RR",
+  nsims = nsims,
+  cores = cores,
+  family = "poisson",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE, 
+  vcov = "HC",
+  new_name = "Community money (y/n)"
+)
+
+mod_support_community_money_binary_rr
+saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
 #mod_support_community_money_binary_rr<- here_read("mod_support_community_money_binary_rr")
 ### support continuous 
 # mod_donate_support <- double_robust(
@@ -1993,52 +1959,6 @@ mod_support_support_rnoguidance  <- double_robust(
 # save model
 mod_support_support_rnoguidance
 saveRDS(mod_support_support_rnoguidance, here::here(push_mods, "mod_support_support_rnoguidance"))
-
-
-
-mod_support_support_combo  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_support_z",
-  X = X,
-  baseline_vars = baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-    vcov = vcov,
-  new_name = "Support Construct (sd)"
-)
-# save model
-mod_support_support_combo
-saveRDS(mod_support_support_combo, here::here(push_mods, "mod_support_support_combo"))
-
-
-
-mod_support_support_combo  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_support_z",
-  X = X,
-  baseline_vars = baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-    vcov = vcov,
-  new_name = "Support Construct (sd)"
-)
-
 ```
 
 
@@ -2058,9 +1978,9 @@ mod_support_support_combo  <- double_robust(
 
 dt_positivity_full <- readRDS(here::here(push_mods,"dt_positivity_full"))
 
-out <- msm::statetable.msm(religion_church_binary2, id, data = dt_positivity_full)
+out <- msm::statetable.msm(religion_scripture_binary, id, data = dt_positivity_full)
 #state_names <-c("zero", "one", "less_four", "four_up")
-state_names <-c("church-no", "church-yes")
+state_names <-c("scripture-no", "scripture-yes")
 
 # transition table
 t_tab <- transition_table(out, state_names)
@@ -2075,7 +1995,7 @@ print(t_tab$table)
 
 ```{r}
 #| label: fig-results-virtue
-#| fig-cap: "Causal effects of church gain on virtue"
+#| fig-cap: "Causal effects of scripture gain on virtue"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2099,7 +2019,7 @@ tab_virtue <- rbind(
 group_tab_virtue <- group_tab(tab_virtue, type = "RD")
 
 
-title = "ATE: +1 year causal effect from gain of church"
+title = "ATE: +1 year causal effect from gain of scripture"
 subtitle_warmth_rd = "Virtues (population)"
 
 group_plot_virtue <- margot_plot(group_tab_virtue,    
@@ -2122,20 +2042,6 @@ group_plot_virtue <- margot_plot(group_tab_virtue,
 
 group_plot_virtue
 
-
-
-# ggsave(
-#   group_plot_virtue,
-#   path = here::here(here::here(push_mods, "group_plot_virtue_CHURCH_POP")),
-#   width = 8,
-#   height = 4.5,
-#   units = "in",
-#   filename = "group_plot_virtue_CHURCH_POP.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
-
 ```
 
 
@@ -2143,7 +2049,7 @@ group_plot_virtue
 
 ```{r}
 #| label: tbl-results-virtue
-#| tbl-cap: "Causal effects of church gain on virtues"
+#| tbl-cap: "Causal effects of scripture gain on virtues"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2157,7 +2063,7 @@ group_tab_virtue |>
 
 ```{r}
 #| label: fig-results-virtue-binary
-#| fig-cap: "Causal effects of church gain on volunteering (y/n)"
+#| fig-cap: "Causal effects of scripture gain on volunteering (y/n)"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2206,7 +2112,7 @@ gr_plot_virtue_rr
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-volunteers_CHURCH_population.png",
+#   filename = "group_plot_ate_support_rr-volunteers_scripture_population.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2218,7 +2124,7 @@ gr_plot_virtue_rr
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-volunteers_CHURCH_population.png",
+#   filename = "group_plot_ate_support_rr-volunteers_scripture_population.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2228,7 +2134,7 @@ gr_plot_virtue_rr
 
 ```{r}
 #| label: tbl-results-volunteer
-#| tbl-cap: "Causal effects of church gain on revealed social support"
+#| tbl-cap: "Causal effects of scripture gain on revealed social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2247,7 +2153,7 @@ gr_tab_virtue_rr |>
 
 ```{r}
 #| label: fig-results-warmth
-#| fig-cap: "Causal effects of church gain on warmth"
+#| fig-cap: "Causal effects of scripture gain on warmth"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2285,7 +2191,7 @@ mod_warmth_per_rel_discrimination
 group_tab_warmth <- group_tab(tab_warmth, type = "RD")
 
 
-title = "ATE: +1 year causal effect from gain of church"
+title = "ATE: +1 year causal effect from gain of scripture"
 subtitle_warmth_rd = "Warmth/Prejudice (population)"
 
 group_plot_ate_warmth_rd <- margot_plot(group_tab_warmth,    
@@ -2309,11 +2215,11 @@ group_plot_ate_warmth_rd
 group_plot_ate_warmth_rd
 # ggsave(
 #   group_plot_ate_warmth_rd,
-#   path = here::here(here::here(push_mods, "group_plot_ate_warmth_rd_CHURCH_POP")),
+#   path = here::here(here::here(push_mods, "group_plot_ate_warmth_rd_scripture_POP")),
 #   width = 8,
 #   height = 4,
 #   units = "in",
-#   filename = "group_plot_ate_warmth_rd_CHURCH_POP.png",
+#   filename = "group_plot_ate_warmth_rd_scripture_POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2321,11 +2227,11 @@ group_plot_ate_warmth_rd
 
 # ggsave(
 #   group_plot_ate_warmth_rd,
-#   path = here::here(here::here("figs", "godin", "group_plot_ate_warmth_rd_CHURCH_POP")),
+#   path = here::here(here::here("figs", "godin", "group_plot_ate_warmth_rd_scripture_POP")),
 #   width = 8,
 #   height = 4,
 #   units = "in",
-#   filename = "group_plot_ate_warmth_rd_CHURCH_POP.png",
+#   filename = "group_plot_ate_warmth_rd_scripture_POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2338,7 +2244,7 @@ group_plot_ate_warmth_rd
 
 ```{r}
 #| label: tbl-results-warmth
-#| tbl-cap: "Causal effects of church gain on warmth"
+#| tbl-cap: "Causal effects of scripture gain on warmth"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2356,7 +2262,7 @@ group_tab_warmth |>
 
 ```{r}
 #| label: fig-results-support-continous
-#| fig-cap: "Causal effects of church gain on perceived social support"
+#| fig-cap: "Causal effects of scripture gain on perceived social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2366,15 +2272,14 @@ mod_support_support_turnto <- readRDS( here::here(push_mods, "mod_support_suppor
 mod_support_support_rnoguidance <- readRDS( here::here(push_mods, "mod_support_support_rnoguidance"))
 
 tab_support_rd <- rbind(
-#  mod_support_support_help,
-#  mod_support_support_turnto,
-#  mod_support_support_rnoguidance,
-  mod_support_support_combo
+  mod_support_support_help,
+  mod_support_support_turnto,
+  mod_support_support_rnoguidance
 )
 
 group_tab_support_rd <- group_tab(tab_support_rd, type = "RD")
 
-#title = "ATE: +1 year causal effect of church gain"
+#title = "ATE: +1 year causal effect of scripture gain"
 subtitle_social = "Social support: perceived (population)"
 
 group_plot_support_rd <- margot_plot(group_tab_support_rd,    
@@ -2401,11 +2306,11 @@ group_plot_support_rd
 
 ggsave(
   group_plot_support_rd,
-  path = here::here(here::here(push_mods, "group_plot_support_rd_CHURCH_POP")),
+  path = here::here(here::here(push_mods, "group_plot_support_rd_scripture_POP")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "group_plot_support_rd_CHURCH_POP.png",
+  filename = "group_plot_support_rd_scripture_POP.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -2413,11 +2318,11 @@ ggsave(
 
 # ggsave(
 #   group_plot_support_rd,
-#   path = here::here(here::here("figs", "godin", "group_plot_support_rd_CHURCH_POP")),
+#   path = here::here(here::here("figs", "godin", "group_plot_support_rd_scripture_POP")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_support_rd_CHURCH_POP.png",
+#   filename = "group_plot_support_rd_scripture_POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2430,7 +2335,7 @@ ggsave(
 
 ```{r}
 #| label: tbl-results-support-continous
-#| tbl-cap: "Causal effects of church gain on perceived social support"
+#| tbl-cap: "Causal effects of scripture gain on perceived social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2447,7 +2352,7 @@ group_tab_support_rd |>
 
 ```{r}
 #| label: fig-results-support-binary
-#| fig-cap: "Causal effects of church gain on revealed social support"
+#| fig-cap: "Causal effects of scripture gain on revealed social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2502,11 +2407,11 @@ group_plot_ate_support_rr
 # 
 # ggsave(
 #   group_plot_ate_support_rr,
-#   path = here::here(here::here(push_mods, "group_plot_ate_support_rr-CHURCH-POP")),
+#   path = here::here(here::here(push_mods, "group_plot_ate_support_rr-scripture-POP")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-CHURCH-POP.png",
+#   filename = "group_plot_ate_support_rr-scripture-POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2516,11 +2421,11 @@ group_plot_ate_support_rr
 
 # ggsave(
 #   group_plot_ate_support_rr,
-#   path = here::here(here::here("figs","godin", "group_plot_ate_support_rr-CHURCH-POP")),
+#   path = here::here(here::here("figs","godin", "group_plot_ate_support_rr-scripture-POP")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-CHURCH-POP.png",
+#   filename = "group_plot_ate_support_rr-scripture-POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2530,7 +2435,7 @@ group_plot_ate_support_rr
 
 ```{r}
 #| label: tbl-results-support-binary
-#| tbl-cap: "Causal effects of church gain on revealed social support"
+#| tbl-cap: "Causal effects of scripture gain on revealed social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -2572,8 +2477,8 @@ religious_ids <- dt_18_religious$id
 dat_long_tX  <- dat_long %>%
   filter(id %in% religious_ids) %>%
   mutate(
-    religion_church_coarsen = cut(
-      religion_church2,
+    religion_scripture_coarsen = cut(
+      religion_scripture,
       breaks = c(-Inf, 0, 1, 3.99, Inf),
       labels = c("zero", "one", "less_four", "four_up"),
       include.lowest = TRUE,
@@ -2581,14 +2486,14 @@ dat_long_tX  <- dat_long %>%
       ordered = TRUE
     )
   ) %>%
-  mutate(religion_church_coarsen_n = as.numeric(religion_church_coarsen) -
+  mutate(religion_scripture_coarsen_n = as.numeric(religion_scripture_coarsen) -
            1) |>
   mutate(
-    religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
-    religion_church_binary2_n = as.numeric(religion_church_binary2)
+    religion_scripture_coarsen_n = as.numeric(religion_scripture_coarsen) - 1,
+    religion_scripture_binary_n = as.numeric(religion_scripture_binary)
   ) |>
   mutate(
-    religion_church_binary2 = as.factor(religion_church_binary2),
+    religion_scripture_binary = as.factor(religion_scripture_binary),
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
@@ -2674,7 +2579,7 @@ baseline_varsX = c(
 baseline_varsX
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_varX = c("religion_church_coarsen") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
+exposure_varX = c("religion_scripture_coarsen") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
 
 
 # set outcomes for prosocial domain
@@ -2761,7 +2666,7 @@ str(prep_supportX)
 nrow(prep_supportX)
 
 ## data for mice
-exposure_varsX = c("t1_religion_church_coarsen")
+exposure_varsX = c("t1_religion_scripture_coarsen")
 
 here_save(exposure_varsX , "exposure_varsX")
 
@@ -3076,20 +2981,19 @@ mice_donate_midsX <- readRDS(here::here(push_mods, "mice_donate_midsX"))
 mice_donate_longX <- readRDS(here::here(push_mods, "mice_donate_longX"))
 
 
-levels( mice_donate_longX$t1_religion_church_coarsen)
+levels( mice_donate_longX$t1_religion_scripture_coarsen)
 # check
 skim(mice_donate_longX)
 
 #name exposure
-#levels( mice_donate_longX$t1_religion_church_coarsen )
+#levels( mice_donate_longX$t1_religion_scripture_coarsen )
 # Set exposure 
-X <- "t1_religion_church_coarsen" #"t1_religion_church_coarsen" 
+X <- "t1_religion_scripture_coarsen" #"t1_religion_scripture_coarsen" 
 X
 
 
 baseline_vars_donateX = mice_donate_longX |> 
-  dplyr::select(starts_with("t0"),
-    -t0_bigger_doms)|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"))|> colnames() # strange to include these -- as they  are income by other names
 
 # check
 baseline_vars_donateX
@@ -3353,11 +3257,11 @@ mice_warmth_longX <- readRDS(here::here(push_mods, "mice_warmth_longX"))
 skim(mice_warmth_longX)
 
 # Set exposure 
-#X <- "t1_religion_church_coarsen"
+#X <- "t1_religion_scripture_coarsen"
 
 # create baseline vars
 baseline_vars_warmthX = mice_warmth_longX |> 
-  dplyr::select(starts_with("t0"), -t0_bigger_doms)|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"))|> colnames() # strange to include these -- as they  are income by other names
 
 baseline_vars_warmthX
 
@@ -3403,7 +3307,7 @@ dt_warmth = mice_warmth_ebal_trimX
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
-#levels(dat_long_t$religion_church_coarsen)
+#levels(dat_long_t$religion_scripture_coarsen)
 nsims = 200
 #check treatments
 #treat_0 = "zero"
@@ -3740,7 +3644,7 @@ skim(mice_support_longX)
 
 # create baseline variables
 baseline_vars_supportX = mice_support_longX |> 
-  dplyr::select(starts_with("t0"), -t0_bigger_doms)|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(starts_with("t0"))|> colnames() # strange to include these -- as they  are income by other names
 
 # view
 baseline_vars_supportX
@@ -3815,7 +3719,7 @@ dt_supportX = match_support_ebal_trimX #mice_support_ebal
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
-#levels(dat_long_t$religion_church_coarsen)
+#levels(dat_long_t$religion_scripture_coarsen)
 nsims = 200
 
 #check
@@ -3827,7 +3731,7 @@ X <-here_read("exposure_varsX")
 # view X 
 X
 
-str(dat_long_tX$religion_church_binary2)
+str(dat_long_tX$religion_scripture_binary)
 
 ## models
 
@@ -4081,9 +3985,9 @@ saveRDS(mod_support_support_rnoguidanceX, here::here(push_mods, "mod_support_sup
 
 dt_positivity_fullX <- readRDS(here::here(push_mods,"dt_positivity_fullX"))
 
-out <- msm::statetable.msm(religion_church_coarsen, id, data = dt_positivity_fullX)
+out <- msm::statetable.msm(religion_scripture_coarsen, id, data = dt_positivity_fullX)
 state_names <-c("zero", "one", "less_four", "four_up")
-#state_names <-c("church-no", "church-yes")
+#state_names <-c("scripture-no", "scripture-yes")
 
 # transition table
 t_tab <- transition_table(out, state_names)
@@ -4098,7 +4002,7 @@ print(t_tab$table)
 
 ```{r}
 #| label: fig-results-virtueX
-#| fig-cap: "Causal effects of church gain on virtue"
+#| fig-cap: "Causal effects of scripture gain on virtue"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4122,7 +4026,7 @@ tab_virtueX <- rbind(
 group_tab_virtueX <- group_tab(tab_virtueX, type = "RD")
 
 
-titleX = "ATE: +1 year causal effect of +4 church gain (RELIGIOUS ONLY)"
+titleX = "ATE: +1 year causal effect of +4 scripture gain (RELIGIOUS ONLY)"
 subtitle_warmth_rdX = "Virtues (religious baseline)"
 
 group_plot_virtueX <- margot_plot(group_tab_virtueX,    
@@ -4145,11 +4049,11 @@ group_plot_virtueX <- margot_plot(group_tab_virtueX,
 group_plot_virtueX
 ggsave(
   group_plot_virtueX,
-  path = here::here(here::here(push_mods, "group_plot_virtueX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "group_plot_virtueX_scripture_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "group_plot_virtueX_CHURCH_REL.png",
+  filename = "group_plot_virtueX_scripture_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4158,11 +4062,11 @@ ggsave(
 # 
 # ggsave(
 #   group_plot_virtueX,
-#   path = here::here(here::here('figs', "godin", "group_plot_virtueX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin", "group_plot_virtueX_scripture_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_virtueX_CHURCH_REL.png",
+#   filename = "group_plot_virtueX_scripture_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4177,7 +4081,7 @@ ggsave(
 
 ```{r}
 #| label: tbl-results-virtueX
-#| tbl-cap: "Causal effects of church gain on virtues"
+#| tbl-cap: "Causal effects of scripture gain on virtues"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4192,7 +4096,7 @@ group_tab_virtueX |>
 
 ```{r}
 #| label: fig-results-virtue-binaryX
-#| fig-cap: "Causal effects of church gain on volunteering (y/n)"
+#| fig-cap: "Causal effects of scripture gain on volunteering (y/n)"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4233,11 +4137,11 @@ gr_plot_virtue_rrX
 
 ggsave(
   gr_plot_virtue_rrX,
-  path = here::here(here::here(push_mods, "gr_plot_virtue_rrX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "gr_plot_virtue_rrX_scripture_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "gr_plot_virtue_rrX_CHURCH_REL.png",
+  filename = "gr_plot_virtue_rrX_scripture_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4246,11 +4150,11 @@ ggsave(
 # 
 # ggsave(
 #   gr_plot_virtue_rrX,
-#   path = here::here(here::here('figs', "godin",  "gr_plot_virtue_rrX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin",  "gr_plot_virtue_rrX_scripture_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "gr_plot_virtue_rrX_CHURCH_REL.png",
+#   filename = "gr_plot_virtue_rrX_scripture_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4261,7 +4165,7 @@ ggsave(
 
 ```{r}
 #| label: tbl-results-volunteerX
-#| tbl-cap: "Causal effects of church gain on revealed social support"
+#| tbl-cap: "Causal effects of scripture gain on revealed social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4280,7 +4184,7 @@ gr_tab_virtue_rrX |>
 
 ```{r}
 #| label: fig-results-warmthX
-#| fig-cap: "Causal effects of church gain on warmth"
+#| fig-cap: "Causal effects of scripture gain on warmth"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4319,7 +4223,7 @@ mod_warmth_per_rel_discriminationX
 group_tab_warmthX <- group_tab(tab_warmthX, type = "RD")
 
 
-#titleX = "ATE: +1 year causal effect of +4 church gain"
+#titleX = "ATE: +1 year causal effect of +4 scripture gain"
 subtitle_warmth_rdX = "Warmth/Prejudice (religious baseline)"
 
 group_plot_ate_warmth_rdX <- margot_plot(group_tab_warmthX,    
@@ -4343,11 +4247,11 @@ group_plot_ate_warmth_rdX <- margot_plot(group_tab_warmthX,
 group_plot_ate_warmth_rdX 
 ggsave(
   group_plot_ate_warmth_rdX,
-  path = here::here(here::here(push_mods, "group_plot_warmth_rdX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "group_plot_warmth_rdX_scripture_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "group_plot_warmth_rdX_CHURCH_REL.png",
+  filename = "group_plot_warmth_rdX_scripture_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4355,11 +4259,11 @@ ggsave(
 
 # ggsave(
 #   group_plot_ate_warmth_rdX,
-#   path = here::here(here::here('figs', "godin",  "group_plot_warmth_rdX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin",  "group_plot_warmth_rdX_scripture_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_warmth_rdX_CHURCH_REL.png",
+#   filename = "group_plot_warmth_rdX_scripture_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4371,7 +4275,7 @@ ggsave(
 
 ```{r}
 #| label: tbl-results-warmthX
-#| tbl-cap: "Causal effects of church gain on warmth"
+#| tbl-cap: "Causal effects of scripture gain on warmth"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4389,7 +4293,7 @@ group_tab_warmthX |>
 
 ```{r}
 #| label: fig-results-support-continousX
-#| fig-cap: "Causal effects of church gain on perceived social support"
+#| fig-cap: "Causal effects of scripture gain on perceived social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4406,7 +4310,7 @@ tab_support_rdX <- rbind(
 
 group_tab_support_rdX <- group_tab(tab_support_rdX, type = "RD")
 
-#titleX = "ATE: +1 year causal effect of +4 church gain"
+#titleX = "ATE: +1 year causal effect of +4 scripture gain"
 subtitle_socialX = "Social support: perceived (religious at baseline)"
 
 group_plot_support_rdX <- margot_plot(group_tab_support_rdX,    
@@ -4432,11 +4336,11 @@ group_plot_support_rdX
 
 ggsave(
   group_plot_support_rdX,
-  path = here::here(here::here(push_mods, "group_plot_support_rdX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "group_plot_support_rdX_scripture_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "group_plot_support_rdX_CHURCH_REL.png",
+  filename = "group_plot_support_rdX_scripture_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4444,11 +4348,11 @@ ggsave(
 group_plot_support_rdX
 # ggsave(
 #   group_plot_support_rdX,
-#   path = here::here(here::here('figs', "godin",  "group_plot_support_rdX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin",  "group_plot_support_rdX_scripture_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_support_rdX_CHURCH_REL.png",
+#   filename = "group_plot_support_rdX_scripture_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4462,7 +4366,7 @@ group_plot_support_rdX
 
 ```{r}
 #| label: tbl-results-support-continousX
-#| tbl-cap: "Causal effects of church gain on perceived social support"
+#| tbl-cap: "Causal effects of scripture gain on perceived social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4479,7 +4383,7 @@ group_tab_support_rdX |>
 
 ```{r}
 #| label: fig-results-support-binaryX
-#| fig-cap: "Causal effects of church gain on revealed social supportX"
+#| fig-cap: "Causal effects of scripture gain on revealed social supportX"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4534,11 +4438,11 @@ group_plot_ate_support_rrX
  
 ggsave(
   group_plot_ate_support_rrX,
-  path = here::here(here::here(push_mods, "group_plot_ate_support_rrX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "group_plot_ate_support_rrX_scripture_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "group_plot_ate_support_rrX_CHURCH_REL.png",
+  filename = "group_plot_ate_support_rrX_scripture_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4546,11 +4450,11 @@ ggsave(
 # 
 #  ggsave(
 #   group_plot_ate_support_rrX,
-#   path = here::here(here::here('figs', "godin", "group_plot_ate_support_rrX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin", "group_plot_ate_support_rrX_scripture_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rrX_CHURCH_REL.png",
+#   filename = "group_plot_ate_support_rrX_scripture_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4564,7 +4468,7 @@ ggsave(
 
 ```{r}
 #| label: tbl-results-support-binaryX
-#| tbl-cap: "Causal effects of church gain on revealed social support"
+#| tbl-cap: "Causal effects of scripture gain on revealed social support"
 #| eval: true
 #| include: true
 #| echo: false
@@ -4599,7 +4503,6 @@ religious_ids <- dt_18_religious$id
 #  select data of these individuals from the entire dataset
 #  also create meaningful exposure variable
 
-
 ## first the general population 
 dat_long_tX1  <- dat %>%
  # filter(id %in% religious_ids) %>%
@@ -4620,10 +4523,9 @@ dat_long_tX1  <- dat %>%
   mutate(total_siblings_factor = ordered(round(ifelse(total_siblings > 7, 7, total_siblings), 0))) |> 
   rename(religion_religious = religious) |>  # religious yes/no
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
-  mutate(religion_church_binary2 = ifelse(religion_church2 > 0, 1, 0)) |>
   mutate(religion_religious = as.numeric(religion_religious) - 1) |>
   mutate(
-    religion_church_round = round( ifelse(religion_church2 > 4, 5, religion_church2), 0) )|> 
+    religion_scripture_round = round( ifelse(religion_scripture > 14, 8, religion_church), 0) )|> 
   mutate(
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
@@ -4635,11 +4537,11 @@ dat_long_tX1  <- dat %>%
                   (wave == 2020 )) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                 !is.na(religion_church2), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
+                                 !is.na(religion_church), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(wave == 2019 &
                                  year_measured == 1 &
-                                 !is.na(religion_church2), #  Inclusion criteria
+                                 !is.na(religion_church), #  Inclusion criteria
                                1,
                                0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
@@ -4741,7 +4643,7 @@ baseline_varsX1 = c(
 baseline_varsX1
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_varX1 = c("religion_church_round","not_censored") # 
+exposure_varX1 = c("religion_scripture_round","not_censored") # 
 
 
 # set outcomes for prosocial domain

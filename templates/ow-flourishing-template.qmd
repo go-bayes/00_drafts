@@ -1,12 +1,14 @@
 ---
-title: "Causal effects of meaning of life on multi-dimensional well-being"
+title: "Causal effects of meaning of XXXX on multi-dimensional well-being"
 subtitle: "An outcome-wide study"
 abstract: |
-  Meaning and purpose averaged.
-  
+  XXXX
 author: 
-  - name: Daryl Van Tongeren
-    affiliation: Hope College
+  - name: Joseph A. Bulbulia
+    affiliation: Victoria University of Wellington, New Zealand
+    orcid_id: 0000-0002-5861-2056
+    email: joseph.bulbulia@vuw.ac.nz
+    corresponding: yes
   - name: Don E Davis
     affiliation: Georgia State University
     orcid_id: 0000-0003-3169-6576 
@@ -17,11 +19,8 @@ author:
   - name: Chris G. Sibley
     affiliation: School of Psychology, University of Auckland
     orcid_id: 0000-0002-4064-8800
-  - name: Joseph A. Bulbulia
-    affiliation: Victoria University of Wellington, New Zealand
-    orcid_id: 0000-0002-5861-2056
-    email: joseph.bulbulia@vuw.ac.nz
-    corresponding: yes
+  - name: Daryl Van Tongeren
+    affiliation: Hope College
 keywords:
   - Author order TBA.
 execute:
@@ -38,7 +37,6 @@ editor_options:
 #| echo: false
 #| include: false
 #| eval: true
-
 # for html use the following in the headign 
 # format:
 #   pdf:
@@ -104,6 +102,19 @@ dat <- arrow::read_parquet(pull_path)
 push_mods
 
 
+library(rlang)
+## set nzavs exposure
+nzavs_exposure <- "lifemeaning"
+
+# will use this
+#   dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 & !is.na(get(nzavs_exposure)), 1, 0))
+
+
+
+## Set exposure 
+
+X <- 
+
 ```
 
 ```{r}
@@ -114,28 +125,6 @@ push_mods
 
 # preliminaries 
 # this distributions look very different
-hist( dat$lifemeaning)
-hist( dat$meaning_purpose )
-hist( dat$meaning_sense )
-
-
-mean( dat$lifemeaning, na.rm = TRUE)
-mean( dat$meaning_sense, na.rm = TRUE )
-mean( dat$meaning_purpose, na.rm = TRUE)
-
-sd( dat$lifemeaning, na.rm = TRUE)
-sd( dat$meaning_sense, na.rm = TRUE )
-sd( dat$meaning_purpose, na.rm = TRUE)
-
-table( is.na( dat$meaning_purpose) )
-table( is.na( dat$meaning_sense) )
-
-# note that religion church NA we impute zero to those who are not religious in the "religion_church2" variable
-
-# check here
-# table(is.na( dat$religion_church)) 
-# table(is.na( dat$religion_church2)) 
-
 # Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
 
@@ -147,6 +136,9 @@ table( is.na( dat$meaning_sense) )
 # select variables and emulate a target trial according to eligibility criteria
 # you may need to select different confounders. note that the more you include, the less efficient the estimates,
 # particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 0
+
+nzavs_exposure_name
+
 
 dat_long <- dat |>
   arrange(id, wave) |>
@@ -170,7 +162,6 @@ dat_long <- dat |>
   mutate(religion_religious = as.integer(as.numeric(as.character(religion_religious)))) |> 
   mutate(religion_religious_not = abs(religion_religious - 1)) |> 
   mutate(religion_believe_spirit = as.integer(as.numeric(as.character(religion_believe_spirit))) - 1) |> 
- # mutate(religion_believe_spirit_not = abs(religion_believe_spirit - 1)) |> # see target trial for use of this variable
   mutate(religion_believe_god = as.integer(as.numeric(as.character(religion_believe_god))) - 1) |> 
   mutate(religion_believe_god_not = abs(religion_believe_god - 1)) |> 
   dplyr::select(
@@ -482,7 +473,7 @@ dat_long <- dat |>
     "emp_job_valued"
   )|> 
   dplyr::rename(sample_weights = w_gend_age_euro) |>
-  dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &  ! is.na(lifemeaning), 1, 0) )|>
+ dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 & !is.na(get(nzavs_exposure)), 1, 0)) |>  # using R lang
   dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   arrange(id) |>
   filter((wave == 2018 & year_measured == 1) |
@@ -526,86 +517,14 @@ source(path_funs)
 table( dt_test$lifemeaning) 
 table(dt_test$meaning_sense)
 
-dt_test <- create_ordered_variable(dt_test, "lifemeaning", 2)
-dt_test <- create_ordered_variable(dt_test, "meaning_purpose", 2)
-dt_test <- create_ordered_variable(dt_test, "lifemeaning", 4)
-dt_test <- create_ordered_variable(dt_test, "meaning_purpose", 4)
-dt_test <- create_ordered_variable(dt_test, "meaning_sense", 2) # won't work otherwise
-dt_test <- create_ordered_variable(dt_test, "meaning_sense", 4) # won't work otherwise
-
-# see the trouble -- the scale is too top-heavy
-print(quantile(dt_test$meaning_sense, probs = seq(0, 1, 1/4), na.rm = TRUE))
-table(dt_test$meaning_sense_4tile)
-
-# not suited to quartiles 
-max(dt_test$meaning_sense, na.rm=TRUE)
+result_table <- dat_long %>%
+  count(wave, get(nzavs_exposure)) %>%
+  pivot_wider(names_from = get(nzavs_exposure), values_from = n, values_fill = 0) %>%
+  as.table()
 
 
-table( dt_test$lifemeaning_4tile)
-table( dt_test$meaning_purpose_4tile)
-table( dt_test$meaning_sense_4tile)
-
-table( dt_test$lifemeaning_2tile)
-table( dt_test$meaning_purpose_2tile)
-table( dt_test$meaning_sense_2tile)
-
-
-lifemeaning_labels <- levels( dt_test$lifemeaning_4tile )
-lifemeaning_labels
-
-# save labels for use in positivity table
-here_save(lifemeaning_labels, "lifemeaning_labels")
-
-# create ordered varaible based on quartiles at time 11 (exposure wave)
-# note these values may change from year to year because "quartile" is relative. So we pick the exposure year to define our units
-
+## create ordered variable
 dat_long_t <- create_ordered_variable_custom(dat_long, "lifemeaning", c(1, 5, 5.5, 6.5,  7), lifemeaning_labels)
-
-table( dat_long_t$lifemeaning_coarsen )
-
-
-# 12677     +  5614  +    11774    +   4680 
-
-sd( dat_long_t$lifemeaning, na.rm = TRUE) + mean(dat_long_t$lifemeaning, na.rm = TRUE)
-# check positivity
-mean(dat_long_t$lifemeaning, na.rm = TRUE)
-# make data for positivity
-dt_positivity_full <- dat_long_t|>
-  filter(wave == 2018 | wave == 2019) |> 
-  select(wave, id, lifemeaning_coarsen, lifemeaning) |> 
-  mutate(lifemeaning_coarsen_n = as.numeric( lifemeaning_coarsen ))
-
-table( dt_positivity_full$lifemeaning_coarsen_n ) 
-
-# save for use later
-here_save(dt_positivity_full, "dt_positivity_full")
-
-
-hist( dt_positivity_full$lifemeaning_coarsen_n )
-
-out <- msm::statetable.msm(lifemeaning_coarsen_n, id, data = dt_positivity_full)
-
-# transition table
-t_tab <- transition_table(out, state_names = lifemeaning_labels)
-t_tab
-
-# old method
-#| label: prepare-data
-# prepare on basis of positivity chack
-# dat_long_t  <- dat_long %>%
-#   # mutate(
-#   #   hours_work_coarsen = cut(
-#   #     hours_work,
-#   #     breaks = c( 10, 30, 41, Inf),
-#   #     labels = c("[10_30)", "[30_41)", "[41_up]"),
-#   #     include.lowest = TRUE,
-#   #     right = FALSE,
-#   #     ordered = TRUE
-#   #   )
-#   # )  |>
-#   droplevels() |> 
-#   arrange(id, wave) |> 
-#   data.frame()
 
 
 # better for imputation - make factors numeric. the mice package likes this
@@ -682,7 +601,7 @@ baseline_vars = c(
     "hlth_disability",  # added 
     "household_inc_log", # added: measured with error but OK for imputations
     "partner",
-    "religion_church_binary2",
+    "religion_church_binary",
     "religion_identification_level",
    # "parent",  # newly changed - have information in child number
     "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
@@ -702,12 +621,9 @@ baseline_vars = c(
     "neuroticism",
     "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
   #  "religion_religious", # Do you identify with a religion and/or spiritual group?
-    #"religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
+    "religion_identification_level", #How important is your religion to how you see yourself?"  
     "sample_weights" # will make binary after imputation
 )
-
-
-
 
 
 # check
