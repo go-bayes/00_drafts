@@ -48,7 +48,6 @@ library("tinytex")
 library(extrafont)
 loadfonts(device = "all")
 
-
 ### ALWAYS RESTART R IN A FRESH SESSION ####
 
 # libraries for jb (when internet is not accessible)
@@ -59,9 +58,9 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
 # experimental functions (more functions)
-source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-)
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 
 # read data/ set to path in your computer
@@ -72,18 +71,65 @@ pull_path <-
 
 # for saving models. # set path fo your computer
 push_mods <-  fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23_church_charity"
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-coop-church"
   )
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
-table(dat$alert_level)
+
+# check
+# table( is.na(dat$religion_church) ) 
+# table( is.na( dat$religion_church) )
+
+# dat$religion_church
+# table(dat$alert_level)
+# hist(dat$religion_church)
+# mean(dat$religion_church, na.rm = TRUE)
+# sd(dat$religion_church, na.rm = TRUE)
+# 
+# ## prop total pop
+# dat_pr <- dat |> filter( wave == 2018 & year_measured == 1) |>  filter(!is.na(religion_church))
+# sum(dat_pr$religion_church ==0, na.rm=TRUE)/nrow(dat_pr)
+# 
+# ## prop religious
+# dat_pr_rel <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==1) |>  filter(!is.na(religion_church))
+# sum(dat_pr_rel$religion_church >1, na.rm=TRUE)/nrow(dat_pr_rel)
+# sum(dat_pr_rel$religion_church==0, na.rm=TRUE)/nrow(dat_pr_rel)
+# sum(dat_pr_rel$religion_church>=8, na.rm=TRUE)/nrow(dat_pr_rel)
+# 
+# 
+# # ## prop not religious
+# dat_pr_rel_not <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==0) |>  filter(!is.na(religion_church))
+# nrow(dat_pr_rel_not)
+# sum(dat_pr_rel_not$religion_church >0, na.rm=TRUE)/nrow(dat_pr_rel_not) # 2.3 in 100
+# sum(dat_pr_rel_not$religion_church>7, na.rm=TRUE)/nrow(dat_pr_rel_not) # 4 in 1000
+# sum(dat_pr_rel_not$religion_church, na.rm=TRUE)/nrow(dat_pr_rel_not)
+# 
+# dat_pr_rel_not <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==0) |>  filter(!is.na(religion_church))
+# nrow(dat_pr_rel_not)
+# sum(dat_pr_rel_not$religion_church >0, na.rm=TRUE)/nrow(dat_pr_rel_not) # 2.3 in 100
+# sum(dat_pr_rel_not$religion_church>7, na.rm=TRUE)/nrow(dat_pr_rel_not) # 4 in 1000
+# sum(dat_pr_rel_not$religion_church, na.rm=TRUE)/nrow(dat_pr_rel_not)
+# 
+# dat_pr_rel_not <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==0) |>  filter(!is.na(religion_church))
+# nrow(dat_pr_rel_not)
+# sum(dat_pr_rel_not$religion_church >0, na.rm=TRUE)/nrow(dat_pr_rel_not) # 2.3 in 100
+# sum(dat_pr_rel_not$religion_church >7, na.rm=TRUE)/nrow(dat_pr_rel_not) # 4 in 1000
+# sum(dat_pr_rel_not$religion_church, na.rm=TRUE)/nrow(dat_pr_rel_not)
+# 
+# dat_pr_rel_not <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==0) |>  filter(!is.na(religion_scripture))
+# nrow(dat_pr_rel_not)
+# sum(dat_pr_rel_not$religion_scripture >0, na.rm=TRUE)/nrow(dat_pr_rel_not) # 2.3 in 100
+# sum(dat_pr_rel_not$religion_scripture >7, na.rm=TRUE)/nrow(dat_pr_rel_not) # 4 in 1000
+# sum(dat_pr_rel_not$religion_church, na.rm=TRUE)/nrow(dat_pr_rel_not)
+
+
 
 # test of alert level
-dat |> 
-  filter(wave == 2019 & year_measured == 1) |> 
-  count(alert_level)
+# dat |> 
+#   filter(wave == 2019 & year_measured == 1) |> 
+#   count(alert_level)
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
@@ -96,11 +142,11 @@ push_mods
 #| include: false
 #| eval: false
 
-# note that religion church NA we impute zero to those who are not religious in the "religion_church2" variable
+# note that religion church NA we impute zero to those who are not religious in the "religion_church" variable
 
 # check here
 # table(is.na( dat$religion_church)) 
-# table(is.na( dat$religion_church2)) 
+# table(is.na( dat$religion_church)) 
 
 # Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
 # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
@@ -132,8 +178,9 @@ dat_long <- dat |>
   mutate(male = as.numeric(male) - 1) |>
   mutate(total_siblings_factor = ordered(round(ifelse(total_siblings > 7, 7, total_siblings), 0))) |> 
   rename(religion_religious = religious) |>  # religious yes/no
+  mutate(religion_prayer_binary = ifelse(religion_prayer > 0, 1, 0)) |>
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
-  mutate(religion_church_binary2 = ifelse(religion_church2 > 0, 1, 0)) |>
+  mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
   mutate(religion_religious = as.numeric(religion_religious) - 1) |>
   dplyr::select(
     "wave",
@@ -187,7 +234,9 @@ dat_long <- dat |>
     "hours_work",#Hours - Working in paid employment
     "hours_housework", # Hours - Housework/cooking
     "agreeableness",
-    "religion_church_binary2",
+    "religion_church_binary",
+    "religion_prayer_binary",
+    "religion_scripture_binary",
     # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
     # Sympathize with others' feelings.
     # Am not interested in other people's problems.
@@ -238,13 +287,13 @@ dat_long <- dat |>
     "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
-    "religion_church_binary2",
-    "religion_church2",
+    "religion_church",
     "religion_prayer",
+    "religion_scripture",
     # How many times did you pray in the last week?
     "religion_scripture",
     # How many times did you read religious scripture in the last week?
-    "religion_church2",
+    "religion_church",
     # How many times did you attend a church or place of worship in the last month?
     "religion_believe_spirit",
     #Do you believe in some form of spirit or lifeforce?
@@ -316,12 +365,12 @@ dat_long <- dat |>
                   (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                 !is.na(religion_church_binary2) & !is.na(bigger_doms), 1, 0)) |>   # creating an indicator for the first wave
+                                 !is.na(religion_church_binary) & !is.na(bigger_doms), 1, 0)) |>   # creating an indicator for the first wave
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(
     wave == 2019 &
       year_measured == 1 &
-      !is.na(religion_church_binary2),
+      !is.na(religion_church_binary),
     1,
     0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
@@ -340,15 +389,7 @@ dat_long <- dat |>
   data.frame()
 # check
 
-table( dat_long$religion_church2 )
-
-
-
-dat_1 <- dat |> 
-  filter(wave == 2010 | wave == 2019) 
-  
-
-table1::table1(~ religion_church| wave, data=dat_1)
+table( dat_long$religion_church_binary )
 
 
 here_save(dat_long, "dat_long")
@@ -449,7 +490,7 @@ dat_long_t  <- dat_long %>%
 #  filter(id %in% religious_ids) %>%   only if subsetting religious ids 
   mutate(
     religion_church_coarsen = cut(
-      religion_church2,
+      religion_church,
       breaks = c(-Inf, 0, 1, 3.99, Inf),
       labels = c("zero", "one", "less_four", "four_up"),
       include.lowest = TRUE,
@@ -458,10 +499,10 @@ dat_long_t  <- dat_long %>%
   ) %>%
   mutate(
     religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
-    religion_church_binary2_n = as.numeric(religion_church_binary2)
+    religion_church_binary_n = as.numeric(religion_church_binary)
   ) |>
   mutate(
-    religion_church_binary2 = as.factor(religion_church_binary2),
+    religion_church_binary = as.factor(religion_church_binary),
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
@@ -470,7 +511,7 @@ dat_long_t  <- dat_long %>%
   arrange(id, wave) |>
   data.frame()
 # check n again
-n_unique(dat_long_t$id)
+n_unique(dat_long_t$id) #33174
 # double check path
 push_mods
 saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
@@ -517,9 +558,10 @@ baseline_vars = c(
     # "religion_religious", # perfectly colinear
    "religion_spiritual_identification",   
    "religion_identification_level",
+   "religion_church_binary",
   # "religion_church_binary2",
-  # "religion_prayer",
-  # "religion_scripture",
+  # "religion_church",
+   "religion_scripture_binary",
    "religion_believe_god",
    "religion_believe_spirit",
     "sample_weights",
@@ -530,8 +572,7 @@ baseline_vars
 
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("religion_church_binary2") # we could construct this after imputation. # "perfectionism_high" to be replace by "perfectionism_coarsen" - do the data wrangling after imputation.
-
+exposure_var = c("religion_church_binary") 
 
 # set outcomes for prosocial domain
 outcome_vars_donate = c(
@@ -610,7 +651,7 @@ nrow(prep_support)
 
 
 ## data for mice
-exposure_vars = c("t1_religion_church_binary2")
+exposure_vars = c("t1_religion_church_binary")
 
 here_save(exposure_vars , "exposure_vars" )
 
@@ -641,6 +682,7 @@ naniar::vis_miss(prep_donate, warn_large_data = FALSE)
 # check for collinear vars
 mice:::find.collinear(prep_donate)
 
+push_mods
 # impute
 mice_donate <- impute_and_combine(prep_multiple_donate, m = 10)
 
@@ -823,6 +865,7 @@ mice_support_c <-mice_support_c |> select(-c(.id.1, .imp.1))
 # prepare
 row.names(mice_support_c) <- NULL
 
+
 # note that poisson models for rates inference await development.  Evalues are invalid, and se estimates are invalid.
 # we keep the code here for that day
 # poisson models do work for binary data though.
@@ -857,9 +900,6 @@ mice_support_mids <- mice_support_c %>%
         t2_community_time_ord = as.integer(round(t2_community_time,0)), 
         t2_community_money_ord = as.integer(round(t2_community_money,0)))|>
   dplyr::select(-t0_family_time, -t0_friends_time, -t0_community_time, -t0_family_money, -t0_friends_money,-t0_community_money) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
-  dplyr::group_by(.imp) |>
-  rowwise() |>
-  dplyr::ungroup() |>
   dplyr::group_by(.imp) |>
   rowwise() |> # group by id within .imp 
   dplyr::mutate(t2_support = mean(
@@ -914,12 +954,12 @@ mice_support_mids <- mice_support_c %>%
   droplevels() |> 
   as.mids()
   
-  
 # needed for checks
 mice_support_long <- mice::complete(mice_support_mids, "long", inc = TRUE)
 
 # check
 skim(mice_support_long)
+
 
 # save
 saveRDS(mice_support_mids, here::here(push_mods, "mice_support_mids"))
@@ -941,7 +981,7 @@ skim(mice_donate_long)
 #name exposure
 
 # Set exposure 
-X <- "t1_religion_church_binary2" #"t1_religion_church_coarsen" #levels( mice_donate_long$t1_religion_church_coarsen )
+X <- "t1_religion_church_binary" # #levels( mice_donate_long$t1_religion_church_binary )
 
 
 # we have insufficient overlap of religion variables. so we focus on religion
@@ -953,20 +993,10 @@ baseline_vars_donate = mice_donate_long |>
     -t0_religion_believe_god_z,
     -t0_religion_believe_spirit_z,
     -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z,
-    -t0_bigger_doms
+    -t0_religion_spiritual_identification_z#,
+  #  -t0_bigger_doms
   )  |> colnames() # strange to include these -- as they  are income by other names
 
-# baseline_vars_donate_exposure = mice_donate_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z,
-#     -t0_bigger_doms
-#   ) |> colnames() #
 
 # we have insufficient overlap of religion variables. so we focus on religion
 baseline_vars
@@ -1072,7 +1102,7 @@ mod_donate_volunteers_gauss_rd  <- double_robust(
   df = dt_donate,  # note change
   Y = "t2_hours_charity_log_z",
   X = X,
-  baseline_vars = baseline_vars_donate,
+  baseline_vars = 1,#baseline_vars_donate,
   treat_0 = treat_0,
   estimand = estimand,
   scale = "RD",
@@ -1230,22 +1260,6 @@ mice_warmth_long <- readRDS(here::here(push_mods, "mice_warmth_long"))
 # check
 skim(mice_warmth_long)
 
-# Set exposure 
-#X <- "t1_religion_church_coarsen"
-
-# 
-# baseline_vars_warmth = mice_warmth_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_alert_level_combined_lead,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z
-#   ) |> colnames() # strange to include these -- as they  are income by other names
-# 
-# baseline_vars_warmth
 
 
 baseline_vars_warmth = mice_warmth_long |>
@@ -1255,22 +1269,10 @@ baseline_vars_warmth = mice_warmth_long |>
     -t0_religion_believe_god_z,
     -t0_religion_believe_spirit_z,
     -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z,
-    -t0_bigger_doms
+    -t0_religion_spiritual_identification_z#,
   ) |> colnames() # strange to include these -- as they  are income by other names
 
 baseline_vars_warmth
-# 
-# baseline_vars_exposure = mice_donate_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z,
-#     -t0_bigger_doms
-#   ) |> colnames() #
 
 
 # create outcome vars
@@ -1289,11 +1291,13 @@ mice_warmth_ebal <- match_mi_general(data = mice_warmth_mids,
                                  method = "ebal", 
                                  sample_weights = "sample_weights")
 saveRDS(mice_warmth_ebal, here::here(push_mods, "mice_warmth_ebal"))
+mice_warmth_ebal<- here_read( "mice_warmth_ebal")
 
 # summary
 sum_ebal <- summary(mice_warmth_ebal)
 sum_ebal
 
+push_mods
 # graphs
 plot(sum_ebal)
 bal.tab(mice_warmth_ebal)
@@ -1315,7 +1319,6 @@ dt_warmth = mice_warmth_ebal_trim
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
-#levels(dat_long_t$religion_church_coarsen)
 nsims = 200
 #check treatments
 # treat_0 = "zero"
@@ -1650,7 +1653,7 @@ mice_support_long <- readRDS(here::here(push_mods, "mice_support_long"))
 skim(mice_support_long)
 
 # set exposure 
-X <- "t1_religion_church_binary2"
+X <- "t1_religion_church_binary"
 
 # create baseline variables
 baseline_vars_support = mice_support_long |>
@@ -1660,24 +1663,12 @@ baseline_vars_support = mice_support_long |>
     -t0_religion_believe_god_z,
     -t0_religion_believe_spirit_z,
     -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z,
-    -t0_bigger_doms
+    -t0_religion_spiritual_identification_z#,
+   # -t0_bigger_doms
   ) |> colnames() # used for imputation -- fully co-linear
 
 # view
 baseline_vars_support
-
-
-# baseline_vars_exposure = mice_donate_long |>
-#   dplyr::select(
-#     starts_with("t0"),
-#     -t0_religion_church_coarsen,
-#     -t0_religion_believe_god_z,
-#     -t0_religion_believe_spirit_z,
-#     -t0_religion_identification_level_z,
-#     -t0_religion_spiritual_identification_z,
-#     -t0_bigger_doms
-#   ) |> colnames() #
 
 
 # look at outcomes
@@ -1748,7 +1739,6 @@ dt_support = match_support_ebal_trim #mice_support_ebal
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
-#levels(dat_long_t$religion_church_coarsen)
 nsims = 200
 
 #check
@@ -1762,7 +1752,6 @@ X
 
 
 ## models
-
 ## family time rr
 mod_support_family_time_binary_rr  <- double_robust(
   df = dt_support,  # note change
@@ -1775,7 +1764,7 @@ mod_support_family_time_binary_rr  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial (link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1798,7 +1787,7 @@ mod_support_friends_time_binary_rr  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial (link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1808,8 +1797,31 @@ mod_support_friends_time_binary_rr  <- double_robust(
 
 mod_support_friends_time_binary_rr
 saveRDS(mod_support_friends_time_binary_rr, here::here(push_mods, "mod_support_friends_time_binary_rr"))
+# 
+# # community time rr/  not converging so use prop scores only
+# mod_support_community_time_binary_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_community_time_binary",
+#   X = X,
+#   baseline_vars = 1, #baseline_vars_support, 
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = binomial (link = "log"),
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Community time (y/n)"
+# )
+# 
+# mod_support_community_time_binary_rr
+# saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support_community_time_binary_rr"))
+# 
 
-# community time rr/  not converging so use prop scores only
 mod_support_community_time_binary_rr  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_community_time_binary",
@@ -1821,7 +1833,7 @@ mod_support_community_time_binary_rr  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -1832,7 +1844,7 @@ mod_support_community_time_binary_rr  <- double_robust(
 mod_support_community_time_binary_rr
 saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support_community_time_binary_rr"))
 
-
+# 
 # # family money rr
 # mod_support_family_money_binary_rr  <- double_robust(
 #   df = dt_support,  # note change
@@ -1845,7 +1857,7 @@ saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support
 #   scale = "RR",
 #   nsims = nsims,
 #   cores = cores,
-#   family = "poisson",
+#   family = binomial (link = "log"),
 #   weights = TRUE,
 #   continuous_X = FALSE,
 #   splines = FALSE, 
@@ -1869,7 +1881,7 @@ saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support
 #   scale = "RR",
 #   nsims = nsims,
 #   cores = cores,
-#   family = "poisson",
+#   family = binomial (link = "log"),
 #   weights = TRUE,
 #   continuous_X = FALSE,
 #   splines = FALSE, 
@@ -1894,7 +1906,7 @@ saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support
 #   scale = "RR",
 #   nsims = nsims,
 #   cores = cores,
-#   family = "poisson",
+#   family = binomial (link = "log"),
 #   weights = TRUE,
 #   continuous_X = FALSE,
 #   splines = FALSE, 
@@ -1904,33 +1916,33 @@ saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support
 # 
 # mod_support_community_money_binary_rr
 # saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
-#mod_support_community_money_binary_rr<- here_read("mod_support_community_money_binary_rr")
-### support continuous 
-# mod_donate_support <- double_robust(
-#   df = dt_support,
-#   Y = "t2_support_z",
-#   X = X,
-#   baseline_vars = baseline_vars_support,
-#   treat_1 = treat_1,
-#   treat_0 = treat_0,
-#   estimand = estimand,
-#   scale = "RD",
-#   nsims = nsims,
-#   cores = cores,
-#   family = "gaussian",
-#   weights = TRUE,
-#   continuous_X = FALSE,
-#   splines = FALSE,
-#   vcov = "HC",
-#   new_name = "Social Support (sd)"
-# )
+# #mod_support_community_money_binary_rr<- here_read("mod_support_community_money_binary_rr")
+# ### support continuous 
+# # mod_donate_support <- double_robust(
+# #   df = dt_support,
+# #   Y = "t2_support_z",
+# #   X = X,
+# #   baseline_vars = baseline_vars_support,
+# #   treat_1 = treat_1,
+# #   treat_0 = treat_0,
+# #   estimand = estimand,
+# #   scale = "RD",
+# #   nsims = nsims,
+# #   cores = cores,
+# #   family = "gaussian",
+# #   weights = TRUE,
+# #   continuous_X = FALSE,
+# #   splines = FALSE,
+# #   vcov = "HC",
+# #   new_name = "Social Support (sd)"
+# # )
 
 #'There are people I can depend on to help me if I really need it.
 mod_support_support_help  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_support_help_z",
   X = X,
-  baseline_vars = 1,#baseline_vars_support,  ## always check
+  baseline_vars = baseline_vars_support,  ## always check
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
@@ -1947,13 +1959,59 @@ mod_support_support_help  <- double_robust(
 # save model
 mod_support_support_help
 saveRDS(mod_support_support_help, here::here(push_mods, "mod_support_support_help"))
+# 
+# #There are people I can depend on to help me if I really need it.
+# mod_support_support_turnto  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_support_turnto_z",
+#   X = X,
+#   baseline_vars = baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#     vcov = vcov,
+#   new_name = "Support turnto (sd)"
+# )
+# # save model
+# mod_support_support_turnto
+# saveRDS(mod_support_support_turnto, here::here(push_mods, "mod_support_support_turnto"))
+# 
+# #There is no one I can turn to for guidance in times of stress.
+# mod_support_support_rnoguidance  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_support_rnoguidance_z",
+#   X = X,
+#   baseline_vars = baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#     vcov = vcov,
+#   new_name = "Support noguidance (reversed, sd)"
+# )
+# # save model
+# mod_support_support_rnoguidance
+# saveRDS(mod_support_support_rnoguidance, here::here(push_mods, "mod_support_support_rnoguidance"))
+# 
 
-#There are people I can depend on to help me if I really need it.
-mod_support_support_turnto  <- double_robust(
+mod_support_support_combo  <- double_robust(
   df = dt_support,  # note change
-  Y = "t2_support_turnto_z",
+  Y = "t2_support_z",
   X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
+  baseline_vars = baseline_vars_support,  ## always check
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
@@ -1965,79 +2023,11 @@ mod_support_support_turnto  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE,
     vcov = vcov,
-  new_name = "Support turnto (sd)"
-)
-# save model
-
-saveRDS(mod_support_support_turnto, here::here(push_mods, "mod_support_support_turnto"))
-
-#There is no one I can turn to for guidance in times of stress.
-mod_support_support_rnoguidance  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_support_rnoguidance_z",
-  X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-    vcov = vcov,
-  new_name = "Support noguidance (reversed, sd)"
-)
-# save model
-mod_support_support_rnoguidance
-saveRDS(mod_support_support_rnoguidance, here::here(push_mods, "mod_support_support_rnoguidance"))
-
-
-
-mod_support_support_combo  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_support_z",
-  X = X,
-  baseline_vars = baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-    vcov = vcov,
   new_name = "Support Construct (sd)"
 )
 # save model
 mod_support_support_combo
 saveRDS(mod_support_support_combo, here::here(push_mods, "mod_support_support_combo"))
-
-
-
-mod_support_support_combo  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_support_z",
-  X = X,
-  baseline_vars = baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-    vcov = vcov,
-  new_name = "Support Construct (sd)"
-)
 
 ```
 
@@ -2049,8 +2039,7 @@ mod_support_support_combo  <- double_robust(
 #| eval: true
 #| echo: false
 
-
-# dt_positivity_full<- dat_long_t |> 
+# dt_positivity_full<- dat_long_t |>
 #   filter(wave == 2018 | wave == 2019)
 # here_save(dt_positivity_full, "dt_positivity_full")
 
@@ -2058,9 +2047,46 @@ mod_support_support_combo  <- double_robust(
 
 dt_positivity_full <- readRDS(here::here(push_mods,"dt_positivity_full"))
 
-out <- msm::statetable.msm(religion_church_binary2, id, data = dt_positivity_full)
+out <- msm::statetable.msm(religion_church_binary, id, data = dt_positivity_full)
 #state_names <-c("zero", "one", "less_four", "four_up")
 state_names <-c("church-no", "church-yes")
+
+# transition_table <- function(data, state_names = NULL) {
+#   # Ensure the data is a dataframe
+#   if (!is.data.frame(data)) {
+#     data <- as.data.frame(data)
+#   }
+# 
+#   # Check if state names are provided
+#   if (is.null(state_names)) {
+#     state_names <- paste0("State ", sort(unique(c(
+#       data$from, data$to
+#     ))))
+#   }
+# 
+#   # Convert the data frame to a wide format
+#   df <- data %>%
+#     pivot_wider(names_from = to, values_from = Freq) %>%
+#     mutate(from = factor(from, levels = sort(unique(from)))) %>%
+#     arrange(from) %>%
+#     mutate(from = state_names[from]) %>%
+#     setNames(c("From", state_names))
+# 
+#   # Create the markdown table using knitr's kable function
+#   markdown_table <- df %>%
+#     kbl(format = "markdown", align = 'c')
+# 
+#   # Create the explanation
+#   explanation <- paste(
+#     "This transition matrix describes the shifts from one state to another between the baseline wave and the following wave.",
+#     "The numbers in the cells represent the number of individuals who transitioned from one state (rows) to another (columns).",
+#     "For example, the cell in the first row and second column shows the number of individuals who transitioned from the first state (indicated by the left-most cell in the row) to the second state.",
+#     "The top left cell shows the number of individuals who remained in the first state."
+#   )
+# 
+#   list(explanation = explanation, table = markdown_table)
+# }
+
 
 # transition table
 t_tab <- transition_table(out, state_names)
@@ -2122,20 +2148,30 @@ group_plot_virtue <- margot_plot(group_tab_virtue,
 
 group_plot_virtue
 
-
-
 # ggsave(
 #   group_plot_virtue,
-#   path = here::here(here::here(push_mods, "group_plot_virtue_CHURCH_POP")),
+#   path = here::here(here::here(push_mods, "group_plot_virtue_church_POP")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_virtue_CHURCH_POP.png",
+#   filename = "group_plot_virtue-church-POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
 # )
-
+# 
+# 
+# ggsave(
+#   group_plot_virtue,
+#   path = here::here(here::here("figs", "godin", "group_plot_virtue_church_POP")),
+#   width = 8,
+#   height = 4.5,
+#   units = "in",
+#   filename = "group_plot_virtue_church_POP",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
 ```
 
 
@@ -2206,7 +2242,7 @@ gr_plot_virtue_rr
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-volunteers_CHURCH_population.png",
+#   filename = "group_plot_ate_support_rr-volunteers_church_population.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2218,7 +2254,7 @@ gr_plot_virtue_rr
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-volunteers_CHURCH_population.png",
+#   filename = "group_plot_ate_support_rr-volunteers_church_population.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2306,14 +2342,13 @@ group_plot_ate_warmth_rd <- margot_plot(group_tab_warmth,
                            x_lim_lo = -1.75,
                            x_lim_hi =  1)  
 group_plot_ate_warmth_rd
-group_plot_ate_warmth_rd
 # ggsave(
 #   group_plot_ate_warmth_rd,
-#   path = here::here(here::here(push_mods, "group_plot_ate_warmth_rd_CHURCH_POP")),
+#   path = here::here(here::here(push_mods, "group_plot_ate_warmth_rd_church_POP")),
 #   width = 8,
 #   height = 4,
 #   units = "in",
-#   filename = "group_plot_ate_warmth_rd_CHURCH_POP.png",
+#   filename = "group_plot_ate_warmth_rd_church_POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2321,11 +2356,11 @@ group_plot_ate_warmth_rd
 
 # ggsave(
 #   group_plot_ate_warmth_rd,
-#   path = here::here(here::here("figs", "godin", "group_plot_ate_warmth_rd_CHURCH_POP")),
+#   path = here::here(here::here("figs", "godin", "group_plot_ate_warmth_rd_church_POP")),
 #   width = 8,
 #   height = 4,
 #   units = "in",
-#   filename = "group_plot_ate_warmth_rd_CHURCH_POP.png",
+#   filename = "group_plot_ate_warmth_rd_church_POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2361,14 +2396,15 @@ group_tab_warmth |>
 #| include: true
 #| echo: false
 
-mod_support_support_help <- readRDS( here::here(push_mods, "mod_support_support_help"))
-mod_support_support_turnto <- readRDS( here::here(push_mods, "mod_support_support_turnto"))
-mod_support_support_rnoguidance <- readRDS( here::here(push_mods, "mod_support_support_rnoguidance"))
+#mod_support_support_help <- readRDS( here::here(push_mods, "mod_support_support_help"))
+#mod_support_support_turnto <- readRDS( here::here(push_mods, "mod_support_support_turnto"))
+#mod_support_support_rnoguidance <- readRDS( here::here(push_mods, "mod_support_support_rnoguidance"))
+mod_support_support_combo <- readRDS( here::here(push_mods, "mod_support_support_combo"))
 
 tab_support_rd <- rbind(
-#  mod_support_support_help,
-#  mod_support_support_turnto,
-#  mod_support_support_rnoguidance,
+  # mod_support_support_help,
+  # mod_support_support_turnto,
+  # mod_support_support_rnoguidance,
   mod_support_support_combo
 )
 
@@ -2399,25 +2435,25 @@ group_plot_support_rd <- margot_plot(group_tab_support_rd,
 group_plot_support_rd
 
 
-ggsave(
-  group_plot_support_rd,
-  path = here::here(here::here(push_mods, "group_plot_support_rd_CHURCH_POP")),
-  width = 8,
-  height = 4.5,
-  units = "in",
-  filename = "group_plot_support_rd_CHURCH_POP.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
 # ggsave(
 #   group_plot_support_rd,
-#   path = here::here(here::here("figs", "godin", "group_plot_support_rd_CHURCH_POP")),
+#   path = here::here(here::here(push_mods, "group_plot_support_rd_church_POP")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_support_rd_CHURCH_POP.png",
+#   filename = "group_plot_support_rd_church_POP.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+# 
+# ggsave(
+#   group_plot_support_rd,
+#   path = here::here(here::here("figs", "godin", "group_plot_support_rd_church_POP.png")),
+#   width = 8,
+#   height = 4.5,
+#   units = "in",
+#   filename = "group_plot_support_rd_church_POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2457,9 +2493,9 @@ mod_support_family_time_binary_rr <- readRDS( here::here(push_mods, "mod_support
 mod_support_friends_time_binary_rr <- readRDS( here::here(push_mods, "mod_support_friends_time_binary_rr"))
 mod_support_community_time_binary_rr <- readRDS( here::here(push_mods, "mod_support_community_time_binary_rr"))
 
-mod_support_family_money_binary_rr <- readRDS( here::here(push_mods, "mod_support_family_money_binary_rr"))
-mod_support_friends_money_binary_rr <- readRDS( here::here(push_mods, "mod_support_friends_money_binary_rr"))
-mod_support_community_money_binary_rr <- readRDS( here::here(push_mods, "mod_support_community_money_binary_rr"))
+# mod_support_family_money_binary_rr <- readRDS( here::here(push_mods, "mod_support_family_money_binary_rr"))
+# mod_support_friends_money_binary_rr <- readRDS( here::here(push_mods, "mod_support_friends_money_binary_rr"))
+# mod_support_community_money_binary_rr <- readRDS( here::here(push_mods, "mod_support_community_money_binary_rr"))
 
 
 # table
@@ -2499,28 +2535,29 @@ group_plot_ate_support_rr <- margot_plot(
 )
 group_plot_ate_support_rr
 
-# 
+#
+
 # ggsave(
 #   group_plot_ate_support_rr,
-#   path = here::here(here::here(push_mods, "group_plot_ate_support_rr-CHURCH-POP")),
+#   path = here::here(here::here(push_mods, "group_plot_ate_support_rr_church_POP")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-CHURCH-POP.png",
+#   filename = "group_plot_ate_support_rr-church-POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
 # )
 
-
+# 
 
 # ggsave(
 #   group_plot_ate_support_rr,
-#   path = here::here(here::here("figs","godin", "group_plot_ate_support_rr-CHURCH-POP")),
+#   path = here::here(here::here("figs","godin", "group_plot_ate_support_rr_church_POP")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rr-CHURCH-POP.png",
+#   filename = "group_plot_ate_support_rr_church_POP.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -2573,22 +2610,21 @@ dat_long_tX  <- dat_long %>%
   filter(id %in% religious_ids) %>%
   mutate(
     religion_church_coarsen = cut(
-      religion_church2,
+      religion_church,
       breaks = c(-Inf, 0, 1, 3.99, Inf),
       labels = c("zero", "one", "less_four", "four_up"),
       include.lowest = TRUE,
-      right = TRUE,
-      ordered = TRUE
+      right = TRUE
     )
   ) %>%
   mutate(religion_church_coarsen_n = as.numeric(religion_church_coarsen) -
            1) |>
   mutate(
     religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
-    religion_church_binary2_n = as.numeric(religion_church_binary2)
+    religion_church_binary_n = as.numeric(religion_church_binary)
   ) |>
   mutate(
-    religion_church_binary2 = as.factor(religion_church_binary2),
+    religion_church_binary = as.factor(religion_church_binary),
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
@@ -2616,60 +2652,56 @@ saveRDS(dat_long_tX, here::here(push_mods, "dat_long_tX"))
 #|label: data-wrangling-for-imputationsX
 # Create wide data frame
 
-
 baseline_varsX = c(
-"male",
-"age",
-"education_level_coarsen",
-# factors
-"bigger_doms",
-"eth_cat",
-#factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-# "employed", # Are you currently employed? (this includes self-employment or casual work)
-#"gen_cohort", #age
-"nz_dep2018",
-"nzsei13",
-"have_siblings",
-# added: needed because we are dealing with family giving/receiving
-"born_nz",
-# added
-"hlth_disability",
-# added
-"hlth_bmi",
-"household_inc_log",
-# added: measured with error but OK for imputations
-"partner",
-# "parent",  # newly changed - have information in child number
-"pol_orient",
-#Please rate how politically liberal versus conservative you see yourself as being.
-"pol_wing",
-# Please rate how politically left-wing versus right-wing you see yourself as being.
-"sample_origin",
-# Sample origin names combined
-"urban",
-"children_num",
-"household_inc_log",
-# new from previous study. needed because we are dealing with family giving/receiving
-"hours_children_log",
-# new
-"hours_work_log",
-# new
-"hours_housework_log",
-#new
-"agreeableness",
-"conscientiousness",
-"extraversion",
-"honesty_humility",
-"openness",
-"neuroticism",
-"modesty",
-# I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
-# "religion_religious", # Do you identify with a religion and/or spiritual group?
-# "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-"sample_weights",
-"alert_level_combined_lead" # lead to make it 2019
+    "male",
+    "age",
+    "education_level_coarsen", # factors
+    "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+   # "employed", # Are you currently employed? (this includes self-employment or casual work)
+    #"gen_cohort", #age
+    "bigger_doms",
+    "nz_dep2018",
+    "nzsei13",
+    "have_siblings",# added: needed because we are dealing with family giving/receiving
+    "born_nz",  # added 
+    "hlth_disability",  # added 
+     "hlth_bmi",
+    "household_inc_log", # added: measured with error but OK for imputations
+    "partner",
+   # "parent",  # newly changed - have information in child number
+    "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
+    "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
+    "sample_origin",    # Sample origin names combined
+    "urban",
+    "children_num",
+    "household_inc_log", # new from previous study. needed because we are dealing with family giving/receiving
+    "hours_children_log", # new
+    "hours_work_log", # new
+    "hours_housework_log", #new
+    "agreeableness", 
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
+   # "religion_religious", # Do you identify with a religion and/or spiritual group?
+   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
+   "religion_church_coarsen", # for prediction
+    # "religion_religious", # perfectly colinear
+   "religion_spiritual_identification",   
+   "religion_identification_level",
+   "religion_church_binary",
+  # "religion_church_binary2",
+  # "religion_church",
+   "religion_scripture_binary",
+   "religion_believe_god",
+   "religion_believe_spirit",
+    "sample_weights",
+  "alert_level_combined_lead" # lead to make it 2019
 )
-
+# check
+baseline_vars
 # check
 baseline_varsX
 
@@ -3006,11 +3038,15 @@ mice_support_midsX<- mice_support_cX %>%
         t2_community_money_ord = as.integer(round(t2_community_money,0)))|>
   dplyr::select(-t0_family_time, -t0_friends_time, -t0_community_time, -t0_family_money, -t0_friends_money,-t0_community_money) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
   dplyr::group_by(.imp) |>
-  rowwise() |>
+  rowwise() |> # group by id within .imp 
+  dplyr::mutate(t2_support = mean(
+    c(t2_support_rnoguidance,
+      t2_support_turnto,
+      t2_support_help),
+    na.rm = TRUE
+  )) |>
   dplyr::ungroup() |>
-  dplyr::mutate(
-    across(
-      where(is.numeric) & !sample_weights & 
+  dplyr::mutate(across(where(is.numeric) & !sample_weights & 
         !t2_family_time_binary &
         !t2_friends_time_binary &
         !t2_community_time_binary &
@@ -3031,18 +3067,18 @@ mice_support_midsX<- mice_support_cX %>%
   select(
     where(is.factor),
     sample_weights,
-      t2_family_time_binary,
-      t2_friends_time_binary, 
-      t2_community_time_binary, 
-      t2_family_money_binary,
-      t2_friends_money_binary, 
-      t2_community_money_binary,
-       t2_family_time_ord, 
-        t2_family_money_ord, 
-        t2_friends_time_ord, 
-        t2_friends_money_ord, 
-        t2_community_time_ord, 
-        t2_community_money_ord,
+    t2_family_time_binary,
+    t2_friends_time_binary,
+    t2_community_time_binary,
+    t2_family_money_binary,
+    t2_friends_money_binary,
+    t2_community_money_binary,
+    t2_family_time_ord,
+    t2_family_money_ord,
+    t2_friends_time_ord,
+    t2_friends_money_ord,
+    t2_community_time_ord, 
+    t2_community_money_ord,
     ends_with("_z"),
     .imp,
     .id
@@ -3086,10 +3122,14 @@ skim(mice_donate_longX)
 X <- "t1_religion_church_coarsen" #"t1_religion_church_coarsen" 
 X
 
-
-baseline_vars_donateX = mice_donate_longX |> 
-  dplyr::select(starts_with("t0"),
-    -t0_bigger_doms)|> colnames() # strange to include these -- as they  are income by other names
+baseline_vars_donateX = mice_donate_longX |>
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  )|> colnames() # strange to include these -- as they  are income by other names
 
 # check
 baseline_vars_donateX
@@ -3156,6 +3196,7 @@ match_donate_ebal_trimX <- WeightIt::trim(match_donate_ebalX, at = .999)
 here_save(match_donate_ebal_trimX,"match_donate_ebal_trimX")
 sum_ebal_trimX <- summary(match_donate_ebal_trimX)
 sum_ebal_trimX
+levels( mice_donate_longX$t1_religion_church_coarsen)
 
 # graphs
 cobalt::bal.tab(match_donate_ebalX, stats = c("m", "v"), binary = "std", thresholds = c(m = .1), which.treat = c("zero", "four_up"))
@@ -3177,6 +3218,8 @@ cores =  parallel::detectCores ()
 
 nsims = 200
 
+levels( mice_donate_longX$t1_religion_church_coarsen)
+
 #check
 treat_0 = "zero"
 
@@ -3189,28 +3232,28 @@ X
 ### Models 
 
 #### Volunteering Hours
-mod_donate_volunteers_gauss_rdX  <- double_robust(
-  df = dt_donateX,  # note change
-  Y = "t2_hours_charity_log_z",
-  X = X,
-  baseline_vars = baseline_vars_donateX,
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name =  "Volunteers (sd)"
-)
-mod_donate_volunteers_gauss_rdX
-saveRDS(mod_donate_volunteers_gauss_rdX, here::here(push_mods, "mod_donate_volunteers_gauss_rdX"))
-
-# volunteer
+# mod_donate_volunteers_gauss_rdX  <- double_robust(
+#   df = dt_donateX,  # note change
+#   Y = "t2_hours_charity_log_z",
+#   X = X,
+#   baseline_vars = baseline_vars_donateX,
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name =  "Volunteers (sd)"
+# )
+# mod_donate_volunteers_gauss_rdX
+# saveRDS(mod_donate_volunteers_gauss_rdX, here::here(push_mods, "mod_donate_volunteers_gauss_rdX"))
+# 
+# # volunteer
 mod_donate_volunteer_binary_rrX  <- double_robust(
   df = dt_donateX,  # note change
   Y = "t2_volunteers",
@@ -3222,7 +3265,7 @@ mod_donate_volunteer_binary_rrX  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -3356,8 +3399,14 @@ skim(mice_warmth_longX)
 #X <- "t1_religion_church_coarsen"
 
 # create baseline vars
-baseline_vars_warmthX = mice_warmth_longX |> 
-  dplyr::select(starts_with("t0"), -t0_bigger_doms)|> colnames() # strange to include these -- as they  are income by other names
+baseline_vars_warmthX = mice_warmth_longX |>  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z
+  )|> colnames() # strange to include these -- as they  are income by other names
+
 
 baseline_vars_warmthX
 
@@ -3377,6 +3426,8 @@ mice_warmth_ebalX <- match_mi_general(data = mice_warmth_midsX,
                                  method = "ebal", 
                                  sample_weights = "sample_weights")
 saveRDS(mice_warmth_ebalX, here::here(push_mods, "mice_warmth_ebalX"))
+mice_warmth_ebalX<-here_read( "mice_warmth_ebalX")
+
 
 # summary
 sum_ebal <- summary(mice_warmth_ebalX)
@@ -3739,8 +3790,16 @@ exposure_varsX
 skim(mice_support_longX)
 
 # create baseline variables
-baseline_vars_supportX = mice_support_longX |> 
-  dplyr::select(starts_with("t0"), -t0_bigger_doms)|> colnames() # strange to include these -- as they  are income by other names
+baseline_vars_supportX = mice_support_longX |>  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+    -t0_religion_identification_level_z,
+    -t0_religion_spiritual_identification_z,
+    -t0_religion_scripture_binary_z
+  )|> colnames() # strange to include these -- as they  are income by other names
+
+
 
 # view
 baseline_vars_supportX
@@ -3827,7 +3886,6 @@ X <-here_read("exposure_varsX")
 # view X 
 X
 
-str(dat_long_tX$religion_church_binary2)
 
 ## models
 
@@ -3836,14 +3894,14 @@ mod_support_family_time_binary_rrX  <- double_robust(
   df = dt_supportX,  # note change
   Y = "t2_family_time_binary",
   X = X,
-  baseline_vars = 1, #baseline_vars_supportX, 
+  baseline_vars = baseline_vars_supportX, 
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -3869,7 +3927,7 @@ mod_support_friends_time_binary_rrX  <- double_robust(
   scale = "RR",
   nsims = 1000,
   cores = cores,
-  family = "poisson",
+  family = binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -3892,7 +3950,7 @@ mod_support_community_time_binary_rrX  <- double_robust(
   scale = "RR",
   nsims = nsims,
   cores = cores,
-  family = "poisson",
+  family = binomial(link = "log"),
   weights = TRUE,
   continuous_X = FALSE,
   splines = FALSE, 
@@ -3903,83 +3961,13 @@ mod_support_community_time_binary_rrX  <- double_robust(
 mod_support_community_time_binary_rrX
 saveRDS(mod_support_community_time_binary_rrX, here::here(push_mods, "mod_support_community_time_binary_rrX"))
 
-
-# family money rr
-mod_support_family_money_binary_rrX  <- double_robust(
-  df = dt_supportX,  # note change
-  Y = "t2_family_money_binary",
-  X = X,
-  baseline_vars = 1,#baseline_vars_supportX,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Family money (y/n)"
-)
-
-mod_support_family_money_binary_rrX
-saveRDS(mod_support_family_money_binary_rrX, here::here(push_mods, "mod_support_family_money_binary_rrX"))
-
-
-# friends money rr
-mod_support_friends_money_binary_rrX  <- double_robust(
-  df = dt_supportX,  # note change
-  Y = "t2_friends_money_binary",
-  X = X,
-  baseline_vars = 1, #baseline_vars_supportX,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC2",
-  new_name = "Friends money (y/n)"
-)
-
-mod_support_friends_money_binary_rrX
-saveRDS(mod_support_friends_money_binary_rrX, here::here(push_mods, "mod_support_friends_money_binary_rrX"))
-
-# comunity money rr
-mod_support_community_money_binary_rrX  <- double_robust(
-  df = dt_supportX,  # note change
-  Y = "t2_community_money_binary",
-  X = X,
-  baseline_vars = 1,  ## always check
-  treat_1 =treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Community money (y/n)"
-)
-
-mod_support_community_money_binary_rrX
-saveRDS(mod_support_community_money_binary_rrX, here::here(push_mods, "mod_support_community_money_binary_rrX"))
-#mod_support_community_money_binary_rr<- here_read("mod_support_community_money_binary_rr")
-### support continuous 
-# mod_donate_support <- double_robust(
-#   df = dt_supportX,
-#   Y = "t2_support_z",
+# 
+# #'There are people I can depend on to help me if I really need it.
+# mod_support_support_helpX  <- double_robust(
+#   df = dt_supportX,  # note change
+#   Y = "t2_support_help_z",
 #   X = X,
-#   baseline_vars = baseline_vars_supportX,
+#   baseline_vars = 1,  ## always check
 #   treat_1 = treat_1,
 #   treat_0 = treat_0,
 #   estimand = estimand,
@@ -3990,14 +3978,63 @@ saveRDS(mod_support_community_money_binary_rrX, here::here(push_mods, "mod_suppo
 #   weights = TRUE,
 #   continuous_X = FALSE,
 #   splines = FALSE,
-#   vcov = "HC",
-#   new_name = "Social Support (sd)"
+#     vcov = vcov,
+#   new_name = "Support help (sd)"
 # )
+# # save model
+# mod_support_support_helpX
+# saveRDS(mod_support_support_helpX, here::here(push_mods, "mod_support_support_helpX"))
+# 
+# #There are people I can depend on to help me if I really need it.
+# mod_support_support_turntoX  <- double_robust(
+#   df = dt_supportX,  # note change
+#   Y = "t2_support_turnto_z",
+#   X = X,
+#   baseline_vars = 1,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE,
+#     vcov = vcov,
+#   new_name = "Support turnto (sd)"
+# )
+# # save model
+# mod_support_support_turntoX
+# saveRDS(mod_support_support_turntoX, here::here(push_mods, "mod_support_support_turntoX"))
+# 
+# #There is no one I can turn to for guidance in times of stress.
+# mod_support_support_rnoguidanceX  <- double_robust(
+#   df = dt_supportX,  # note change
+#   Y = "t2_support_rnoguidance_z",
+#   X = X,
+#   baseline_vars = 1,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RD",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "gaussian",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#     vcov = vcov,
+#   new_name = "Support noguidance (reversed, sd)"
+# )
+# # save model
+# mod_support_support_rnoguidanceX
+# saveRDS(mod_support_support_rnoguidanceX, here::here(push_mods, "mod_support_support_rnoguidanceX"))
 
-#'There are people I can depend on to help me if I really need it.
-mod_support_support_helpX  <- double_robust(
+
+mod_support_support_comboX  <- double_robust(
   df = dt_supportX,  # note change
-  Y = "t2_support_help_z",
+  Y = "t2_support_z",
   X = X,
   baseline_vars = baseline_vars_supportX,  ## always check
   treat_1 = treat_1,
@@ -4011,57 +4048,11 @@ mod_support_support_helpX  <- double_robust(
   continuous_X = FALSE,
   splines = FALSE,
     vcov = vcov,
-  new_name = "Support help (sd)"
+  new_name = "Support Construct (sd)"
 )
 # save model
-mod_support_support_helpX
-saveRDS(mod_support_support_helpX, here::here(push_mods, "mod_support_support_helpX"))
-
-#There are people I can depend on to help me if I really need it.
-mod_support_support_turntoX  <- double_robust(
-  df = dt_supportX,  # note change
-  Y = "t2_support_turnto_z",
-  X = X,
-  baseline_vars = baseline_vars_supportX,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE,
-    vcov = vcov,
-  new_name = "Support turnto (sd)"
-)
-# save model
-mod_support_support_turntoX
-saveRDS(mod_support_support_turntoX, here::here(push_mods, "mod_support_support_turntoX"))
-
-#There is no one I can turn to for guidance in times of stress.
-mod_support_support_rnoguidanceX  <- double_robust(
-  df = dt_supportX,  # note change
-  Y = "t2_support_rnoguidance_z",
-  X = X,
-  baseline_vars = baseline_vars_supportX,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RD",
-  nsims = nsims,
-  cores = cores,
-  family = "gaussian",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-    vcov = vcov,
-  new_name = "Support noguidance (reversed, sd)"
-)
-# save model
-mod_support_support_rnoguidanceX
-saveRDS(mod_support_support_rnoguidanceX, here::here(push_mods, "mod_support_support_rnoguidanceX"))
+mod_support_support_comboX
+saveRDS(mod_support_support_comboX, here::here(push_mods, "mod_support_support_comboX"))
 ```
 
 
@@ -4143,26 +4134,26 @@ group_plot_virtueX <- margot_plot(group_tab_virtueX,
                            x_lim_lo = -1.75,
                            x_lim_hi =  1)  
 group_plot_virtueX
-ggsave(
-  group_plot_virtueX,
-  path = here::here(here::here(push_mods, "group_plot_virtueX_CHURCH_REL")),
-  width = 8,
-  height = 4.5,
-  units = "in",
-  filename = "group_plot_virtueX_CHURCH_REL.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-# 
 # ggsave(
 #   group_plot_virtueX,
-#   path = here::here(here::here('figs', "godin", "group_plot_virtueX_CHURCH_REL")),
+#   path = here::here(here::here(push_mods, "group_plot_virtueX_church_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_virtueX_CHURCH_REL.png",
+#   filename = "group_plot_virtueX_church_REL.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+# 
+# 
+# ggsave(
+#   group_plot_virtueX,
+#   path = here::here(here::here('figs', "godin", "group_plot_virtueX_church_REL")),
+#   width = 8,
+#   height = 4.5,
+#   units = "in",
+#   filename = "group_plot_virtueX_church_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4233,11 +4224,11 @@ gr_plot_virtue_rrX
 
 ggsave(
   gr_plot_virtue_rrX,
-  path = here::here(here::here(push_mods, "gr_plot_virtue_rrX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "gr_plot_virtue_rrX_church_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "gr_plot_virtue_rrX_CHURCH_REL.png",
+  filename = "gr_plot_virtue_rrX_church_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4246,11 +4237,11 @@ ggsave(
 # 
 # ggsave(
 #   gr_plot_virtue_rrX,
-#   path = here::here(here::here('figs', "godin",  "gr_plot_virtue_rrX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin",  "gr_plot_virtue_rrX_church_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "gr_plot_virtue_rrX_CHURCH_REL.png",
+#   filename = "gr_plot_virtue_rrX_church_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4343,11 +4334,11 @@ group_plot_ate_warmth_rdX <- margot_plot(group_tab_warmthX,
 group_plot_ate_warmth_rdX 
 ggsave(
   group_plot_ate_warmth_rdX,
-  path = here::here(here::here(push_mods, "group_plot_warmth_rdX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "group_plot_warmth_rdX_church_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "group_plot_warmth_rdX_CHURCH_REL.png",
+  filename = "group_plot_warmth_rdX_church_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4355,11 +4346,11 @@ ggsave(
 
 # ggsave(
 #   group_plot_ate_warmth_rdX,
-#   path = here::here(here::here('figs', "godin",  "group_plot_warmth_rdX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin",  "group_plot_warmth_rdX_church_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_warmth_rdX_CHURCH_REL.png",
+#   filename = "group_plot_warmth_rdX_church_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4394,14 +4385,17 @@ group_tab_warmthX |>
 #| include: true
 #| echo: false
 
-mod_support_support_helpX <- readRDS( here::here(push_mods, "mod_support_support_helpX"))
-mod_support_support_turntoX <- readRDS( here::here(push_mods, "mod_support_support_turntoX"))
-mod_support_support_rnoguidanceX <- readRDS( here::here(push_mods, "mod_support_support_rnoguidanceX"))
+# mod_support_support_helpX <- readRDS( here::here(push_mods, "mod_support_support_helpX"))
+# mod_support_support_turntoX <- readRDS( here::here(push_mods, "mod_support_support_turntoX"))
+# mod_support_support_rnoguidanceX <- readRDS( here::here(push_mods, "mod_support_support_rnoguidanceX"))
+mod_support_support_comboX <- readRDS( here::here(push_mods, "mod_support_support_comboX"))
+
 
 tab_support_rdX <- rbind(
-  mod_support_support_helpX,
-  mod_support_support_turntoX,
-  mod_support_support_rnoguidanceX
+  # mod_support_support_helpX,
+  # mod_support_support_turntoX,
+  # mod_support_support_rnoguidanceX
+  mod_support_support_comboX
 )
 
 group_tab_support_rdX <- group_tab(tab_support_rdX, type = "RD")
@@ -4430,30 +4424,30 @@ group_plot_support_rdX <- margot_plot(group_tab_support_rdX,
 #check
 group_plot_support_rdX
 
-ggsave(
-  group_plot_support_rdX,
-  path = here::here(here::here(push_mods, "group_plot_support_rdX_CHURCH_REL")),
-  width = 8,
-  height = 4.5,
-  units = "in",
-  filename = "group_plot_support_rdX_CHURCH_REL.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-group_plot_support_rdX
 # ggsave(
 #   group_plot_support_rdX,
-#   path = here::here(here::here('figs', "godin",  "group_plot_support_rdX_CHURCH_REL")),
+#   path = here::here(here::here(push_mods, "group_plot_support_rdX_church_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_support_rdX_CHURCH_REL.png",
+#   filename = "group_plot_support_rdX_church_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
 # )
-# 
+group_plot_support_rdX
+# ggsave(
+#   group_plot_support_rdX,
+#   path = here::here(here::here('figs', "godin",  "group_plot_support_rdX_church_REL")),
+#   width = 8,
+#   height = 4.5,
+#   units = "in",
+#   filename = "group_plot_support_rdX_church_REL.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+
 
 
 
@@ -4534,11 +4528,11 @@ group_plot_ate_support_rrX
  
 ggsave(
   group_plot_ate_support_rrX,
-  path = here::here(here::here(push_mods, "group_plot_ate_support_rrX_CHURCH_REL")),
+  path = here::here(here::here(push_mods, "group_plot_ate_support_rrX_church_REL")),
   width = 8,
   height = 4.5,
   units = "in",
-  filename = "group_plot_ate_support_rrX_CHURCH_REL.png",
+  filename = "group_plot_ate_support_rrX_church_REL.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -4546,11 +4540,11 @@ ggsave(
 # 
 #  ggsave(
 #   group_plot_ate_support_rrX,
-#   path = here::here(here::here('figs', "godin", "group_plot_ate_support_rrX_CHURCH_REL")),
+#   path = here::here(here::here('figs', "godin", "group_plot_ate_support_rrX_church_REL")),
 #   width = 8,
 #   height = 4.5,
 #   units = "in",
-#   filename = "group_plot_ate_support_rrX_CHURCH_REL.png",
+#   filename = "group_plot_ate_support_rrX_church_REL.png",
 #   device = 'png',
 #   limitsize = FALSE,
 #   dpi = 600
@@ -4584,21 +4578,20 @@ group_tab_support_rrX |>
 # for modified treatment policies # causal effects on volunteering/ charity
 library("lmtp")
 
-# get ids of people who are religious
-dt_18_religious <- dat_long %>% 
-  dplyr::filter(wave == 2018 & religion_religious == 1) |> 
-  droplevels()
-
-# check n
-nrow(dt_18_religious)
-
-# prepare data for modelling
-# get unique identifiers of these individuals (replace `id` with your actual id variable)
-religious_ids <- dt_18_religious$id
+# # get ids of people who are religious
+# dt_18_religious <- dat_long %>% 
+#   dplyr::filter(wave == 2018 & religion_religious == 1) |> 
+#   droplevels()
+# 
+# # check n
+# nrow(dt_18_religious)
+# 
+# # prepare data for modelling
+# # get unique identifiers of these individuals (replace `id` with your actual id variable)
+# religious_ids <- dt_18_religious$id
 
 #  select data of these individuals from the entire dataset
 #  also create meaningful exposure variable
-
 
 ## first the general population 
 dat_long_tX1  <- dat %>%
@@ -4619,11 +4612,12 @@ dat_long_tX1  <- dat %>%
   mutate(male = as.numeric(male) - 1) |>
   mutate(total_siblings_factor = ordered(round(ifelse(total_siblings > 7, 7, total_siblings), 0))) |> 
   rename(religion_religious = religious) |>  # religious yes/no
+  mutate(religion_prayer_binary = ifelse(religion_prayer > 0, 1, 0)) |>
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
-  mutate(religion_church_binary2 = ifelse(religion_church2 > 0, 1, 0)) |>
+  mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
   mutate(religion_religious = as.numeric(religion_religious) - 1) |>
   mutate(
-    religion_church_round = round( ifelse(religion_church2 > 4, 5, religion_church2), 0) )|> 
+    religion_church_round = round( ifelse(religion_church >=8, 8, religion_church), 0) )|> 
   mutate(
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
@@ -4635,11 +4629,11 @@ dat_long_tX1  <- dat %>%
                   (wave == 2020 )) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                 !is.na(religion_church2), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
+                                 !is.na(religion_church), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(wave == 2019 &
                                  year_measured == 1 &
-                                 !is.na(religion_church2), #  Inclusion criteria
+                                 !is.na(religion_church), #  Inclusion criteria
                                1,
                                0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
@@ -4670,7 +4664,29 @@ dat_long_tX1  <- dat %>%
   data.frame() |> 
   droplevels() |>
   arrange(id, wave) |>
+    mutate(
+    religion_church_coarsen = cut(
+      religion_church,
+      breaks = c(-Inf, 0, 1, 3.99, Inf),
+      labels = c("zero", "one", "less_four", "four_up"),
+      include.lowest = TRUE,
+      right = TRUE
+    )
+  ) %>%
+  mutate(
+    religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
+    religion_church_binary_n = as.numeric(religion_church_binary)
+  ) |>
+  mutate(
+    religion_church_binary = as.factor(religion_church_binary),
+    eth_cat = as.integer(eth_cat),
+    urban = as.numeric(urban),
+    education_level_coarsen = as.integer(education_level_coarsen)
+  ) |>
+  droplevels() |>
+  arrange(id, wave) |>
   data.frame()
+
 
 
 # check n again
@@ -4680,63 +4696,59 @@ n_unique(dat_long_tX1$id)
 push_mods
 
 
+
+
 # save
 saveRDS(dat_long_tX1, here::here(push_mods, "dat_long_tX1"))
 
-
 baseline_varsX1 = c(
-"male",
-"age",
-"education_level_coarsen",
-# factors
-#"bigger_doms",
-"eth_cat",
-#factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-# "employed", # Are you currently employed? (this includes self-employment or casual work)
-#"gen_cohort", #age
-"nz_dep2018",
-"nzsei13",
-"have_siblings",
-# added: needed because we are dealing with family giving/receiving
-"born_nz",
-# added
-#"hlth_disability",
-# added
-#"hlth_bmi",
-#"household_inc_log",
-# added: measured with error but OK for imputations
-#"partner",
-# "parent",  # newly changed - have information in child number
-"pol_orient",
-#Please rate how politically liberal versus conservative you see yourself as being.
-#"pol_wing",
-# Please rate how politically left-wing versus right-wing you see yourself as being.
-"sample_origin",
-# Sample origin names combined
-"urban",
-"children_num",
-#"household_inc_log",
-# new from previous study. needed because we are dealing with family giving/receiving
-"hours_children_log",
-# new
-"hours_work_log",
-# new
-"hours_housework_log",
-#new
-"agreeableness",
-"conscientiousness",
-"extraversion",
-"honesty_humility",
-"openness",
-"neuroticism",
-"modesty",
-# I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
-# "religion_religious", # Do you identify with a religion and/or spiritual group?
-# "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-"sample_weights",
-"alert_level_combined_lead" # lead to make it 2019
+    "male",
+    "age",
+    "education_level_coarsen", # factors
+    "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+   # "employed", # Are you currently employed? (this includes self-employment or casual work)
+    #"gen_cohort", #age
+    "bigger_doms",
+    "nz_dep2018",
+    "nzsei13",
+    "have_siblings",# added: needed because we are dealing with family giving/receiving
+    "born_nz",  # added 
+    "hlth_disability",  # added 
+     "hlth_bmi",
+    "household_inc_log", # added: measured with error but OK for imputations
+    "partner",
+   # "parent",  # newly changed - have information in child number
+    "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
+    "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
+    "sample_origin",    # Sample origin names combined
+    "urban",
+    "children_num",
+    "household_inc_log", # new from previous study. needed because we are dealing with family giving/receiving
+    "hours_children_log", # new
+    "hours_work_log", # new
+    "hours_housework_log", #new
+    "agreeableness", 
+    "conscientiousness",
+    "extraversion",
+    "honesty_humility",
+    "openness",
+    "neuroticism",
+    "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
+   # "religion_religious", # Do you identify with a religion and/or spiritual group?
+   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
+   "religion_church_coarsen", # for prediction
+    # "religion_religious", # perfectly colinear
+   "religion_spiritual_identification",   
+   "religion_identification_level",
+   "religion_church_binary",
+  # "religion_church_binary2",
+  # "religion_church",
+   "religion_scripture_binary",
+   "religion_believe_god",
+   "religion_believe_spirit",
+    "sample_weights",
+  "alert_level_combined_lead" # lead to make it 2019
 )
-
 # check
 baseline_varsX1
 
@@ -4756,12 +4768,17 @@ outcome_vars_donateX1 = c(
 
 
 exposure_varX1
-prep_donateX1 <- margot_wide(
+prep_donateX1 <- margot_wide_impute_baseline(
 dat_long_tX1,
 baseline_vars = baseline_varsX1,
 exposure_var = exposure_varX1,
 outcome_vars = outcome_vars_donateX1
 )
+
+# 
+# imputed_data <- mice(data, method='pmm', m=5)
+# complete_data <- complete(imputed_data, 1)
+
 
 #check must be a dataframe
 str(prep_donateX1)
@@ -4773,6 +4790,9 @@ df_wide_censored_donate<-
   relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
   relocate("t1_not_censored", .before = starts_with("t2_"))
 
+
+# check missingness
+naniar::vis_miss(df_wide_censored_donate, warn_large_data = FALSE)
 
 df_clean_donate <- df_wide_censored_donate %>%
   mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
@@ -4794,16 +4814,17 @@ df_clean_donate <- df_wide_censored_donate %>%
 mean(df_clean_donate$t2_charity_donate, na.rm = TRUE)
 table(df_wide_censored_donate$t1_religion_church_round)
 colnames(df_clean_donate)
-n_unique(df_clean_donate$id)#29770
+n_unique(df_clean_donate$id)#33198
 
 
-vis_miss(df_clean_donate)
+naniar::vis_miss(df_clean_donate, warn_large_data = FALSE)
 #dev.off()
 
 # save data
 push_mods
 here_save(df_clean_donate,"df_clean_donate")
 
+df_clean_donate <-here_read("df_clean_donate")
 
 # get names
 names_base_donate <- df_clean_donate |> select( starts_with("t0"), - t0_sample_weights,-t0_not_censored )|> colnames()
@@ -4831,7 +4852,6 @@ W <- c(paste(names_base_donate, collapse = ", "))
 
 # check 
 print(W) 
-df_clean_donate$t1_religion_church_round
 
 
 #baseline confounders
@@ -4847,7 +4867,7 @@ table(df_clean_donate$t1_religion_church_round)
 
 # simple shift, everyone goes to church at least 4 times per week
 f <- function(data, trt){
-  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
+  ifelse( data[[trt]] <= 7, 7,  data[[trt]] )
 }
 
 
@@ -4863,9 +4883,9 @@ listWrappers()
 # MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
 
 # super learner libraries
-sl_lib <- c("SL.mean", 
+sl_lib <- c(
            "SL.glmnet", 
-           "SL.ranger", # faster implementation of random forset
+           "SL.ranger", # faster implementation of random forest
            "SL.earth") #
 
 
@@ -4890,22 +4910,20 @@ m_t2_hours_charity <- lmtp_tmle(
   outcome = "t2_hours_charity",
   cens = C,
   shift = f,
-  k = 1,
   mtp = TRUE,
-  folds = 10,
+  folds = 5,
   # ideally use ten
-  .trim = 0.99,
+  #.trim = 0.99,
   # time_vary = NULL,
   outcome_type = "continuous",
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger"
 )
 
 here_save(m_t2_hours_charity, "m_t2_hours_charity")
 m_t2_hours_charity <- here_read("m_t2_hours_charity")
-
 
 
 
@@ -4919,17 +4937,17 @@ m_t2_hours_charity_null <- lmtp_tmle(
   shift = NULL,
   k = 1,
   mtp = TRUE,
-  folds = 10,
+  folds = 5,
   # ideally use ten
-  .trim = 0.99,
+  #trim = 0.99,
   # time_vary = NULL,
   outcome_type = "continuous",
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger"
 )
-
+m_t2_hours_charity_null
 here_save(m_t2_hours_charity_null, "m_t2_hours_charity_null")
 m_t2_hours_charity_null <- here_read( "m_t2_hours_charity_null")
 
@@ -4946,8 +4964,6 @@ contrast_hours_full
 
 
 # not right
-church_four <- format_tab_tmle(church_four, scale = "RD", new_name = "church_four")
-church_four
 
 
 margot_tab_lmtp <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
@@ -4977,10 +4993,11 @@ margot_tab_lmtp <- function(tmtp_output, scale = c("RD", "RR"), new_name = "char
   return(tab_tmle_round)
 }
 
+contrast_hours_full
 church_four_hours <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "LMTP + 4")
-grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full,  scale = "RD") 
+church_four_hours
 
-
+push_mods
 
 theta <- contrast_hours_full$vals$theta
 # adult population
@@ -5009,19 +5026,36 @@ m_t2_charity_donate <- lmtp_tmle(
   mtp = TRUE,
   folds = 5,
   # ideally use ten
-  .trim = 0.99,
+ # .trim = 0.99,
   # time_vary = NULL,
   outcome_type = "continuous",
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
+  learners_trt = "SL.ranger",
+  learners_outcome ="SL.ranger",
 )
+
+m_t2_charity_donate
+
 here_save(m_t2_charity_donate, "m_t2_charity_donate")
 m_t2_charity_donate
 
 
-# under null
+# Population intervention estimate
+#       Estimate: 1318.0003
+#     Std. error: 34.2481
+#         95% CI: (1250.8752, 1385.1254)
+# # under null
+
+# LMTP Estimator: TMLE
+#    Trt. Policy: (f)
+# 
+# Population intervention estimate
+#       Estimate: 1312.0819
+#     Std. error: 40.1903
+#         95% CI: (1233.3103, 1390.8535)
+#         
+#         
 m_t2_charity_donate_null <- lmtp_tmle(
   data = df_clean_donate,
   trt = A,
@@ -5038,8 +5072,8 @@ m_t2_charity_donate_null <- lmtp_tmle(
   outcome_type = "continuous",
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome =  sl_lib
+  learners_trt = "SL.ranger",
+  learners_outcome =  "SL.ranger"
 )
 here_save(m_t2_charity_donate_null, "m_t2_charity_donate_null")
 m_t2_charity_donate_null
@@ -5051,7 +5085,7 @@ lmtp_contrast(m_t2_charity_donate,ref = m_t2_charity_donate_null, type = "additi
 
 
 # calculate proportion 4 or greater
-proportion = sum(df_clean_donate$t1_religion_church_round >= 4) / nrow(df_clean_donate)
+proportion = sum(df_clean_donate$t1_religion_church_round >=  8) / nrow(df_clean_donate)
 
   
  

@@ -96,7 +96,7 @@ dat <- arrow::read_parquet(pull_path)
 # dat_pr_rel <- dat |> filter( wave == 2018 & year_measured == 1 & religious ==1) |>  filter(!is.na(religion_prayer))
 # sum(dat_pr_rel$religion_prayer >1, na.rm=TRUE)/nrow(dat_pr_rel)
 # sum(dat_pr_rel$religion_prayer==0, na.rm=TRUE)/nrow(dat_pr_rel)
-# sum(dat_pr_rel$religion_prayer>=7, na.rm=TRUE)/nrow(dat_pr_rel)
+# sum(dat_pr_rel$religion_prayer>=8, na.rm=TRUE)/nrow(dat_pr_rel)
 # 
 # 
 # # ## prop not religious
@@ -4769,13 +4769,16 @@ outcome_vars_donateX1 = c(
 
 
 exposure_varX1
-prep_donateX1 <- margot_wide(
+prep_donateX1 <- margot_wide_impute_baseline(
 dat_long_tX1,
 baseline_vars = baseline_varsX1,
 exposure_var = exposure_varX1,
 outcome_vars = outcome_vars_donateX1
 )
 
+# 
+# imputed_data <- mice(data, method='pmm', m=5)
+# complete_data <- complete(imputed_data, 1)
 
 
 #check must be a dataframe
@@ -4788,6 +4791,9 @@ df_wide_censored_donate<-
   relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
   relocate("t1_not_censored", .before = starts_with("t2_"))
 
+
+# check missingness
+naniar::vis_miss(df_wide_censored_donate, warn_large_data = FALSE)
 
 df_clean_donate <- df_wide_censored_donate %>%
   mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
@@ -4809,7 +4815,7 @@ df_clean_donate <- df_wide_censored_donate %>%
 mean(df_clean_donate$t2_charity_donate, na.rm = TRUE)
 table(df_wide_censored_donate$t1_religion_church_round)
 colnames(df_clean_donate)
-n_unique(df_clean_donate$id)#27022
+n_unique(df_clean_donate$id)#33198
 
 
 naniar::vis_miss(df_clean_donate, warn_large_data = FALSE)
@@ -4819,6 +4825,7 @@ naniar::vis_miss(df_clean_donate, warn_large_data = FALSE)
 push_mods
 here_save(df_clean_donate,"df_clean_donate")
 
+df_clean_donate <-here_read("df_clean_donate")
 
 # get names
 names_base_donate <- df_clean_donate |> select( starts_with("t0"), - t0_sample_weights,-t0_not_censored )|> colnames()
@@ -4861,7 +4868,7 @@ table(df_clean_donate$t1_religion_prayer_round)
 
 # simple shift, everyone goes to church at least 4 times per week
 f <- function(data, trt){
-  ifelse( data[[trt]] < 7, 7,  data[[trt]] )
+  ifelse( data[[trt]] <= 7, 7,  data[[trt]] )
 }
 
 
@@ -4904,11 +4911,10 @@ m_t2_hours_charity <- lmtp_tmle(
   outcome = "t2_hours_charity",
   cens = C,
   shift = f,
-  k = 1,
   mtp = TRUE,
-  folds = 10,
+  folds = 5,
   # ideally use ten
-  .trim = 0.99,
+  #.trim = 0.99,
   # time_vary = NULL,
   outcome_type = "continuous",
   #  id = "id",
@@ -4923,7 +4929,6 @@ m_t2_hours_charity <- here_read("m_t2_hours_charity")
 
 
 
-
 m_t2_hours_charity_null <- lmtp_tmle(
   data = df_clean_donate,
   trt = A,
@@ -4933,15 +4938,15 @@ m_t2_hours_charity_null <- lmtp_tmle(
   shift = NULL,
   k = 1,
   mtp = TRUE,
-  folds = 10,
+  folds = 5,
   # ideally use ten
-  .trim = 0.99,
+  #trim = 0.99,
   # time_vary = NULL,
   outcome_type = "continuous",
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger"
 )
 
 here_save(m_t2_hours_charity_null, "m_t2_hours_charity_null")
@@ -5058,18 +5063,35 @@ m_t2_charity_donate_null <- lmtp_tmle(
 here_save(m_t2_charity_donate_null, "m_t2_charity_donate_null")
 m_t2_charity_donate_null
 
-lmtp_contrast(m_t2_charity_donate,ref = m_t2_charity_donate_null, type = "additive")
+contrast_donate <- lmtp_contrast(m_t2_charity_donate,ref = m_t2_charity_donate_null, type = "additive")
 
-
-  #sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
+#sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
 
 
 # calculate proportion 4 or greater
-proportion = sum(df_clean_donate$t1_religion_church_round >= 4) / nrow(df_clean_donate)
-
-  
+proportion = sum(df_clean_donate$t1_religion_prayer_round >= 8) / nrow(df_clean_donate)
+proportion
  
+theta_donate <- contrast_donate$vals$theta
+theta_donate
+# adult population
+nz_adult_population = 3989000
 
+
+
+# # min wage workers 
+# min_wage_2023 = 22.70
+
+# off the cuff
+dollars_donate_gained = theta_donate * nz_adult_population
+dollars_donate_gained
+# 832193252
+hours_volunteering_gained
+
+# cash value of intervention
+opportunity_hours_donate <- dollars_donate_gained / min_wage_2023
+
+opportunity_hours_donate
 
 mean ( df_clean_donate$t2_charity_donate, na.rm = TRUE)
 

@@ -31,7 +31,7 @@ editor_options:
 
 ```{r, include = FALSE}
 # read general libraries
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+#source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
 # study specific libraries
 # packages
@@ -39,9 +39,10 @@ source(here::here("23-markov-religion", "libs.R"))
 source(here::here("23-markov-religion", "functions.R"))
 
 
+source("/Users/joseph/GIT/templates/functions/libs2.R")
 
-# read  general functions
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+# read functions
+source("/Users/joseph/GIT/templates/functions/funs.R")
 
 
 # for saving models (bulbulia only - use own paths for simulated data)
@@ -88,6 +89,9 @@ dt <- dat |>
   dplyr::mutate(
     religion_religious_1 = as.numeric(religious),
     religion_church_1 = if_else(religion_church2 == 0, 1, 2),
+    religion_church_1n = if_else(religion_church == 0, 1, 2),
+    religion_prayer_1 = if_else(religion_prayer == 0, 1, 2),
+    religion_scripture_1 = if_else(religion_scripture == 0, 1, 2),
     religion_believe_god_1 = as.numeric(religion_believe_god)+1,
     religion_believe_spirit_1 = as.numeric(religion_believe_spirit)+1
   ) |>
@@ -143,8 +147,7 @@ count_waves_participants(dt) # in the full study
 
 ```{r}
 # for markov
-
-
+# religion
 q <- rbind(c(.9, .1),
             c(.1, .9))
 
@@ -266,109 +269,6 @@ pmatrix.msm(msm_church, covariates = list(age = 80), ci = "normal")
 graph_data_church <- msm_graph(msm_church, l_str = "loss", u_str = "gain")
 graph_data_church
 
-# initial state graph
-library(ggplot2)
-library(igraph)
-library(ggraph)
-
-church_mat <- matrix(
-  c(0.997, 0.003,
-    0.016, 0.984),
-  byrow = TRUE,
-  nrow = 2,
-  dimnames = list(
-    c("Not-Attend (85%)", "Attend (15%)"),
-    c("Not-Attend (85%)", "Attend (15%)")
-  )
-)
-
-library(diagram)
-
-# Your transition matrix
-church_mat <- matrix(
-  c(0.997, 0.003,
-    0.016, 0.984),
-  byrow = TRUE,
-  nrow = 2,
-  dimnames = list(
-    c("Not-Attend (85%)", "Attend (15%)"),
-    c("Not-Attend (85%)", "Attend (15%)")
-  )
-)
-
-# Plot the transition diagram
-plotmat(church_mat, pos = c(2, 1), cex.txt = 0.8)
-
-
-
-
-# 
-# # create edges
-# edges <- as.data.frame(as.table(church_mat))
-# 
-# # graph object
-# g <- graph_from_data_frame(edges, directed = TRUE)
-# 
-# g
-# # define node size
-# 
-# # size
-# size_values <- c(0.85, 0.15)
-# 
-# g <- set_vertex_attr(g, "size", value = size_values)
-# 
-# g <- set_vertex_attr(g, "color", value = ifelse(size_values < mean(size_values), "red", "blue"))
-# layout <- create_layout(g, layout = 'linear')
-# edge_data <- layout$edges
-# edge_data$mid_x <- (edge_data$x + edge_data$xend) / 2
-# edge_data$mid_y <- (edge_data$y + edge_data$yend) / 2
-# edge_data_df <- as.data.frame(edge_data)
-# # Extract Freq from the graph object
-# edge_data$Freq <- as.numeric(E(g)$Freq)
-# 
-# edge_data
-# # Convert to edge list
-# edge_data_df <- as.data.frame(get.edgelist(g, names = TRUE))
-# colnames(edge_data_df) <- c("from", "to")
-# 
-# edge_data_df$Freq <- as.numeric(E(g)$Freq)
-# edge_data_df$Freq
-# # Add midpoint coordinates
-# layout <- create_layout(g, layout = 'linear')
-# edge_data_df$mid_x <- (layout$x[edge_data_df$from] + layout$x[edge_data_df$to]) / 2
-# edge_data_df$mid_y <- (layout$y[edge_data_df$from] + layout$y[edge_data_df$to]) / 2
-# 
-# edge_data_df$mid_x 
-# 
-# # Get the edge list
-# edge_list <- get.edgelist(g, names = TRUE)
-# 
-# # Convert vertex names to indices
-# from_indices <- match(edge_list[, 1], V(g)$name)
-# to_indices <- match(edge_list[, 2], V(g)$name)
-# 
-# # Create a data frame for the edge information
-# edge_data_df <- data.frame(
-#   from = from_indices,
-#   to = to_indices,
-#   Freq = E(g)$Freq
-# )
-# 
-# # Get the layout information
-# layout_info <- create_layout(g, layout = 'linear')
-# 
-# # Compute the midpoint coordinates
-# edge_data_df$mid_x <- (layout_info$x[edge_data_df$from] + layout_info$x[edge_data_df$to]) / 2
-# edge_data_df$mid_y <- (layout_info$y[edge_data_df$from] + layout_info$y[edge_data_df$to]) / 2
-# 
-# # Create the plot
-# ggraph(g, layout = 'linear') +
-#   geom_edge_arc(aes(alpha = Freq * 100 ), arrow = arrow(type = "closed"), show.legend = FALSE, colour = 'grey') +
-#   geom_node_point(aes(size = size, color = color), show.legend = FALSE) +
-#   geom_node_text(aes(label = paste0(scales::percent(size))), vjust = 1.5, hjust = 0.5) +
-#   geom_text(data = edge_data_df, aes(x = mid_x, y = mid_y, label = scales::percent(Freq)), vjust = -2) +
-#   scale_color_identity() +
-#   theme_void()
 
 #  graphs -----------------------------------------------------------
 library(ggplot2)
@@ -411,193 +311,107 @@ ggsave(
 
 
 
-
-
 # matrix graph 
+# 
+# church_mat <- matrix(
+#   c(0.997, 0.003,
+#     0.016, 0.984),
+#   byrow = TRUE,
+#   nrow = 2,
+#   dimnames = list(
+#     c("Not-Attend (85%)", "Attend (15%)"),
+#     c("Not-Attend (85%)", "Attend (15%)")
+#   )
+# )
 
-church_mat <- matrix(
-  c(0.997, 0.003,
-    0.016, 0.984),
-  byrow = TRUE,
-  nrow = 2,
-  dimnames = list(
-    c("Not-Attend (85%)", "Attend (15%)"),
-    c("Not-Attend (85%)", "Attend (15%)")
-  )
+
+
+# Models for church no impute
+
+## model for church
+
+# Initialise
+init_church_n <- msm::crudeinits.msm(religion_church_1n ~ year_w, id, # Id = identifier
+                      data = dt,
+                      qmatrix = q)
+# 
+# model
+msm_church_n <- msm(
+  religion_church_1n ~ year_w,
+  id,
+  data = dt,
+  covariates =  ~ age,
+  qmatrix = init_church,
+  ematrix = rbind(c(.1, .1), c(.1, .1)),
+  est.initprobs = TRUE,
+  exacttimes = TRUE,# not running without this assumption.
+  gen.inits = TRUE
 )
 
-# matrix graph
-edges <- data.frame(
-  from = rep(rownames(church_mat), each = ncol(church_mat)),
-  to = rep(colnames(church_mat), times = nrow(church_mat)),
-  label = as.vector(church_mat)
+msm_church_n
+# check path
+push_mods
+
+#save
+here_save(msm_church_n,"msm_church_n")
+#msm_church <- here_read("msm_church")
+
+pmatrix.msm(msm_church_n, covariates = list(age = 80), ci = "normal")
+
+# function to make graph
+graph_data_church_n <- msm_graph(msm_church_n, l_str = "loss", u_str = "gain")
+graph_data_church_n
+
+
+#  graphs -----------------------------------------------------------
+library(ggplot2)
+markov_graph_church_n <-
+  ggplot(
+    aes(
+      x = age,
+      y = conv_probability,
+      ymin = conv_lower,
+      ymax = conv_upper, # Add this line, or provide appropriate values for xmin and xmax
+      colour = Group
+    ),
+    data = graph_data_church_n
+  ) +
+  geom_point(alpha = 2, stroke = 2) +
+  geom_linerange(alpha = 1) +
+  geom_smooth(se = F, span = .5) +
+  scale_y_continuous(limits = c(0, .115)) +
+  labs(x = "Age", y = "Annual Probability of Religious Service w/ 95 CI ") +
+  theme_bw() +
+  labs(title = "Hidden Markov Model: Religious Service Loss/Gain in New Zealand",
+       subtitle= "N = 51470, years 2010-2021") +
+  scale_colour_manual(values=c("red", "dodgerblue")) +
+  theme(legend.position = "bottom")
+
+markov_graph_church_n
+
+
+ggsave(
+  markov_graph_church_n
+  path = here::here(here::here(push_mods, "markov_graph_church_n")),
+  width =16,
+  height = 9,
+  units = "in",
+  filename = "markov_graph_church_n.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
 )
 
 
-edges <- edges[edges$label != 0,]
-
-ggraph(graph_church, layout = 'circle') +
-  geom_edge_fan(aes(alpha = after_stat(index)), arrow = arrow(type = "closed"), show.legend = FALSE) +
-#  geom_node_circle(aes(r = size / 100, fill = colour), colour = 'black') +
-  geom_node_text(aes(label = name), vjust = -1.5, size = 5) +
-  geom_text(data = edges, aes(x = (xend + x)/2, y = (yend + y)/2, label = label), vjust = 2, hjust = 0.5) +
-  labs(title = "Transition Rates Between Religious Service Attendance States",
-       subtitle = "Nodes represent states; edges represent transition rates") +
-  theme_graph(foreground = 'steelblue',
-              fg_text_colour = 'white') +  
-  theme(legend.position = "none")
 
 
 
-graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
-V(graph_church)$size <- c(85, 15) # Assign sizes to vertices based on percentage
-V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue", "red") # Conditionally set colour
-E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984) # Add edge labels as attributes
-edges <- igraph::as_data_frame(igraph::get.edgelist(graph_church, names = TRUE))
-
-edges <- igraph::as_data_frame(get.edgelist(graph_church, names = TRUE))
-edges$label <- c(0.997, 0.003, 0.016, 0.984)
-
-
-
-ggraph(graph_church, layout = 'circle') +
-  geom_edge_fan(aes(alpha = after_stat(index)), show.legend = FALSE) +
-  geom_node_circle(aes(r = size / 100), fill = 'steelblue') + # Map radius to vertex size
-  geom_node_text(aes(label = name)) +# vjust = -1.5, size = 5) +
-  labs(title = "Transition Rates Between Religious Service Attendance States",
-       subtitle = "Nodes represent states; edges represent transition rates") +
-  theme_graph(foreground = 'white',
-              fg_text_colour = 'white') +  
-  theme(legend.position = "none")
-
-
-
-library(igraph)
-library(ggraph)
-
-## USE
-
-
-church_mat <- matrix(
-  c(0.997, 0.003,
-    0.016, 0.984),
-  byrow = TRUE,
-  nrow = 2,
-  dimnames = list(
-    c("Not-Attend (85%)", "Attend (15%)"),
-    c("Not-Attend (85%)", "Attend (15%)")
-  )
-)
-
-church_mat
-
-# Create a layout for the graph
-
-graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
- V(graph_church)$size <- c(85, 15) # Assign sizes to vertices based on percentage
-V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue2", "red")
- E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984) # Add edge labels as attributes
-edgelist <- igraph::get.edgelist(graph_church, names = TRUE)
-edges <- data.frame(from = edgelist[, 1], to = edgelist[, 2])
-
-
-layout <- create_layout(graph_church, layout = 'circle')
-
-# Get coordinates of edge midpoints
-edges <- data.frame(
-  x = (layout$x[get.edgelist(graph_church)[, 1]] + layout$x[get.edgelist(graph_church)[, 2]]) / 2,
-  y = (layout$y[get.edgelist(graph_church)[, 1]] + layout$y[get.edgelist(graph_church)[, 2]]) / 2,
-  label = E(graph_church)$label
-)
-
-# Plot
-ggraph(graph_church, layout = 'circle') +
-  geom_edge_arc(aes(alpha = after_stat(index)), arrow = arrow(ends = "last")) +
-  geom_node_point(aes(size = size, fill = colour), shape = 21) +
- # geom_node_circle(aes(r = size / 100), fill = 'white') + # Map radius to vertex size
-  geom_node_text(aes(label = name))+# vjust = -1.5, size = 5) +
-  geom_text(data = edges, aes(x = x, y = y, label = sprintf("%.3f", label)), vjust = 2, hjust = 0.5) +
-  labs(title = "Transition Rates Between Religious Service Attendance States",
-       subtitle = "Nodes represent states; edges represent transition rates") +
-  theme_graph(foreground = 'white',
-              fg_text_colour = 'white') +
-  theme(legend.position = "none")
-
-library(igraph)
-library(ggraph)
-library(grid)
-
-church_mat <- matrix(
-  c(0.997, 0.003, 0.016, 0.984),
-  byrow = TRUE,
-  nrow = 2
-)
-
-graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
-V(graph_church)$size <- c(85, 15)
-V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue2", "red")
-E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984)
-
-layout <- create_layout(graph_church, layout = 'circle')
-
-ggraph(graph_church, layout = 'circle') +
-  geom_edge_arc(aes(alpha = after_stat(index)), arrow = arrow(ends = "last")) +
-  geom_node_point(aes(size = size, colour = colour), shape = 21) +
-  geom_node_circle(aes(r = size / 100), fill = 'white') +
-  geom_node_text(aes(label = name)) +
-  geom_edge_text(aes(label = sprintf("%.3f", label)), vjust = 2, hjust = 0.5) +
-  labs(title = "Transition Rates Between Religious Service Attendance States",
-       subtitle = "Nodes represent states; edges represent transition rates") +
-  theme_graph(foreground = 'white',
-              fg_text_colour = 'white') +
-  theme(legend.position = "none")
-
-
-
-library(igraph)
-library(ggraph)
-library(grid)
-library(igraph)
-library(ggraph)
-library(grid)
-
-church_mat <- matrix(
-  c(0.997, 0.003, 0.016, 0.984),
-  byrow = TRUE,
-  nrow = 2
-)
-
-graph_church <- graph_from_adjacency_matrix(church_mat, mode = "directed", weighted = TRUE)
-V(graph_church)$size <- c(85, 15)
-V(graph_church)$colour <- ifelse(V(graph_church)$size == 85, "dodgerblue2", "red")
-E(graph_church)$label <- c(0.997, 0.003, 0.016, 0.984)
-
-layout <- create_layout(graph_church, layout = 'circle')
-
-edges <- data.frame(
-  x = (layout$x[get.edgelist(graph_church)[, 1]] + layout$x[get.edgelist(graph_church)[, 2]]) / 2,
-  y = (layout$y[get.edgelist(graph_church)[, 1]] + layout$y[get.edgelist(graph_church)[, 2]]) / 2,
-  label = E(graph_church)$label
-)
-
-V(graph_church)$name <- c("State 1", "State 2") # Add names to vertices
-
-ggraph(graph_church, layout = 'circle') +
-  geom_edge_arc(aes(alpha = after_stat(index)), arrow = arrow(ends = "last")) +
-  geom_node_point(aes(size = size, colour = colour), shape = 21) +
-  geom_node_text(aes(label = name), repel = TRUE) + # Use name attribute for label
-  geom_text(data = edges, aes(x = x, y = y, label = sprintf("%.3f", label)), vjust = 2, hjust = 0.5) +
-  labs(title = "Transition Rates Between Religious Service Attendance States",
-       subtitle = "Nodes represent states; edges represent transition rates") +
-  theme_graph(foreground = 'white',
-              fg_text_colour = 'white') +
-  theme(legend.position = "none")
 
 
 ## GOD
 
 
-## model for church
+## model for god
 # Initialise
 init_god <- msm::crudeinits.msm(religion_believe_god_1 ~ year_w, id, # Id = identifier
                       data = dt,
@@ -632,6 +446,7 @@ pmatrix.msm(msm_god, covariates = list(age = 80), ci = "normal")
 # function to make graph
 graph_data_god <- msm_graph(msm_god, l_str = "loss", u_str = "gain")
 graph_data_god
+
 # 5 year graphs -----------------------------------------------------------
 library(ggplot2)
 markov_graph_god <-
@@ -702,9 +517,6 @@ push_mods
 here_save(msm_spirit,"msm_spirit")
 msm_spirit <- here_read(push_mods,"msm_spirit")
 
-
-
-
 pmatrix.msm(msm_spirit, covariates = list(age = 80), ci = "normal")
 
 # function to make graph
@@ -713,7 +525,9 @@ graph_data_spirit
 
 graph_data_spirit <- msm_graph(graph_data_spirit, l_str = "loss", u_str = "gain")
 graph_data_spirit
-# 5 year graphs -----------------------------------------------------------
+
+
+# graphs spirit  -----------------------------------------------------------
 
 
 library(ggplot2)
@@ -775,7 +589,191 @@ ggsave(
   dpi = 600
 )
 
+## PRAYER
 
+init_prayer <- msm::crudeinits.msm(religion_prayer_1 ~ year_w, id, # Id = identifier
+                      data = dt,
+                      qmatrix = q)
+# 
+# # # model
+msm_prayer <- msm(
+  religion_prayer_1 ~ year_w,
+  id,
+  data = dt,
+  covariates =  ~ age,
+  qmatrix = init_prayer,
+  ematrix = rbind(c(.1, .1), c(.1, .1)),
+  est.initprobs = TRUE,
+  exacttimes = TRUE,# not running without this assumption.
+  gen.inits = TRUE
+)
+
+msm_prayer
+# check path
+push_mods
+
+#save
+here_save(msm_prayer,"msm_prayer")
+msm_prayer <- here_read(push_mods,"msm_prayer")
+
+
+# graphs prayer  -----------------------------------------------------------
+
+# function to make graph
+graph_data_prayer <- msm_graph(msm_prayer, l_str = "loss", u_str = "gain")
+graph_data_prayer
+
+graph_data_prayer <- msm_graph(graph_data_prayer, l_str = "loss", u_str = "gain")
+graph_data_prayer
+
+
+markov_graph_prayer <-
+  ggplot(
+    aes(
+      x = age,
+      y = conv_probability,
+      ymin = conv_lower,
+      ymax = conv_upper, # Add this line, or provide appropriate values for xmin and xmax
+      colour = Group
+    ),
+    data = graph_data_prayer
+  ) +
+  geom_point(alpha = 2, stroke = 2) +
+  geom_linerange(alpha = 1) +
+  geom_smooth(se = F, method = loess) +
+  scale_y_continuous(limits = c(0, .115)) +
+  labs(x = "Age", y = "Annual Probability of Prayer  w/ 95 CI ") +
+  theme_bw() +
+  labs(title = "Hidden Markov Model: Belief in Prayer: Loss/Gain in New Zealand",
+       subtitle= "N = 51470, years 2010-2021") +
+  scale_colour_manual(values=c("violet", "dodgerblue")) +
+  theme(legend.position = "bottom")
+
+markov_graph_prayer
+
+
+ggsave(
+  markov_graph_prayer,
+  path = here::here(here::here(push_mods, "markov_graph_prayer")),
+  width =16,
+  height = 9,
+  units = "in",
+  filename = "markov_graph_prayer.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+## scripture
+
+init_scripture <- msm::crudeinits.msm(religion_scripture_1 ~ year_w, id, # Id = identifier
+                      data = dt,
+                      qmatrix = q)
+# 
+# # # model
+msm_scripture <- msm(
+  religion_scripture_1 ~ year_w,
+  id,
+  data = dt,
+  covariates =  ~ age,
+  qmatrix = init_scripture,
+  ematrix = rbind(c(.1, .1), c(.1, .1)),
+  est.initprobs = TRUE,
+  exacttimes = TRUE,# not running without this assumption.
+  gen.inits = TRUE
+)
+
+msm_scripture
+# check path
+push_mods
+
+#save
+here_save(msm_prayer,"msm_scripture")
+msm_scripture <- here_read(push_mods,"msm_scripture")
+
+
+# graphs prayer  -----------------------------------------------------------
+
+# function to make graph
+graph_data_scripture <- msm_graph(msm_scripture, l_str = "loss", u_str = "gain")
+graph_data_scripture
+
+graph_data_scripture <- msm_graph(graph_data_scripture, l_str = "loss", u_str = "gain")
+graph_data_scripture
+
+
+markov_graph_scripture <-
+  ggplot(
+    aes(
+      x = age,
+      y = conv_probability,
+      ymin = conv_lower,
+      ymax = conv_upper, # Add this line, or provide appropriate values for xmin and xmax
+      colour = Group
+    ),
+    data = graph_data_scripture
+  ) +
+  geom_point(alpha = 2, stroke = 2) +
+  geom_linerange(alpha = 1) +
+  geom_smooth(se = F, method = loess) +
+  scale_y_continuous(limits = c(0, .115)) +
+  labs(x = "Age", y = "Annual Probability of scripture  w/ 95 CI ") +
+  theme_bw() +
+  labs(title = "Hidden Markov Model: Scripture: Loss/Gain in New Zealand",
+       subtitle= "N = 51470, years 2010-2021") +
+  scale_colour_manual(values=c("lightpink", "steelblue")) +
+  theme(legend.position = "bottom")
+
+markov_graph_scripture
+
+
+ggsave(
+  markov_graph_scripture,
+  path = here::here(here::here(push_mods, "markov_graph_scripture")),
+  width =16,
+  height = 9,
+  units = "in",
+  filename = "markov_graph_scripture.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+
+
+
+
+## Combo graph
+
+combo_graph_all <- markov_graph_religion + markov_graph_church + markov_graph_god + markov_graph_spirit + markov_graph_prayer + markov_graph_scripture plot_annotation(tag_levels = "a")
+
+combo_graph_all
+
+ggsave(
+  combo_graph_all,
+  path = here::here(here::here(push_mods, "combo_graph_all")),
+  width =32,
+  height = 18,
+  units = "in",
+  filename = "combo_graph.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+```
+
+
+```{r}
 ## example graphs
 #probability matrix
 
