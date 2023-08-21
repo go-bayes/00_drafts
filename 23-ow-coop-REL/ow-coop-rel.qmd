@@ -108,7 +108,6 @@ push_mods
 # select variables and emulate a target trial according to eligibility criteria
 # you may need to select different confounders. note that the more you include, the less efficient the estimates,
 # particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 
-
 dat_long <- dat |>
   arrange(id, wave) |>
   mutate(urban = factor(
@@ -124,9 +123,11 @@ dat_long <- dat |>
   # select variables
   # mutate(across(where(is.double), as.numeric)) |>
   mutate(male = as.numeric(male) - 1) |>
+  mutate(total_siblings_factor = ordered(round(ifelse(total_siblings > 7, 7, total_siblings), 0))) |> 
   rename(religion_religious = religious) |>  # religious yes/no
+  mutate(religion_prayer_binary = ifelse(religion_prayer > 0, 1, 0)) |>
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
-  mutate(religion_church_binary2 = ifelse(religion_church2 > 0, 1, 0)) |>
+  mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
   mutate(religion_religious = as.numeric(religion_religious) - 1) |>
   dplyr::select(
     "wave",
@@ -134,6 +135,8 @@ dat_long <- dat |>
     "id",
     # "edu",
     "sample_origin_names_combined",
+    "alert_level_combined_lead",
+    "bigger_doms", # not religious, anglican, buddhist, catholic, christian NFD, christian others, hindu, jewish, Muslim, Pres, others
     # Sample origin names combined
     #"alert_level_combined_lead",  not needed because all receive all levels by the point the outcome is measured
     # covid alert levels -> 2019-2020
@@ -168,7 +171,7 @@ dat_long <- dat |>
     "urban",
     # see NZAVS,
     "have_siblings", #Do you have siblings?
-    "total_siblings",# sum siblings
+    "total_siblings_factor",# sum siblings up to seven
     "number_sisters_older", #How many older sisters do you have?   
     "number_sisters_younger", #	How many younger sisters do you have? 
     "number_brothers_older",#	How many older brothers do you have?
@@ -178,7 +181,9 @@ dat_long <- dat |>
     "hours_work",#Hours - Working in paid employment
     "hours_housework", # Hours - Housework/cooking
     "agreeableness",
-    "religion_church_binary2",
+    "religion_church_binary",
+    "religion_prayer_binary",
+    "religion_scripture_binary",
     # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
     # Sympathize with others' feelings.
     # Am not interested in other people's problems.
@@ -226,15 +231,17 @@ dat_long <- dat |>
     # "began_relationship",
     # "religion_religious",
     # Do you identify with a religion and/or spiritual group?
-   # "religion_identification_level",
+    "religion_identification_level",
     #How important is your religion to how you see yourself?"
     "religion_church_binary",
-    "religion_church_binary2",
+    "religion_church",
     "religion_prayer",
+    "religion_prayer_binary",
+    "religion_scripture",
     # How many times did you pray in the last week?
     "religion_scripture",
     # How many times did you read religious scripture in the last week?
-    "religion_church2",
+    "religion_church",
     # How many times did you attend a church or place of worship in the last month?
     "religion_believe_spirit",
     #Do you believe in some form of spirit or lifeforce?
@@ -355,7 +362,8 @@ dat_long_t  <- dat_long %>%
     religion_religious = as.factor(religion_religious), # make factor for impuatation
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
-    education_level_coarsen = as.integer(education_level_coarsen)
+    education_level_coarsen = as.integer(education_level_coarsen),
+    bigger_doms = as.integer(bigger_doms)
   ) |>
   droplevels() |>
   arrange(id, wave) |>
@@ -377,9 +385,10 @@ baseline_vars = c(
     "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
    # "employed", # Are you currently employed? (this includes self-employment or casual work)
     #"gen_cohort", #age
+    "bigger_doms",
     "nz_dep2018",
     "nzsei13",
-    "total_siblings",# added: needed because we are dealing with family giving/receiving
+    "have_siblings",# added: needed because we are dealing with family giving/receiving
     "born_nz",  # added 
     "hlth_disability",  # added 
      "hlth_bmi",
@@ -404,15 +413,18 @@ baseline_vars = c(
     "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
    # "religion_religious", # Do you identify with a religion and/or spiritual group?
    # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-   # "religion_religious", # perfectly colinear
+  # "religion_church_coarsen", # for prediction
+    # "religion_religious", # perfectly colinear
    "religion_spiritual_identification",   
- #  "religion_identification_level",
-   "religion_church_binary2",
-  # "religion_prayer",
-  # "religion_scripture",
+   "religion_identification_level",
+   "religion_church_binary",
+  # "religion_church_binary2",
+    "religion_prayer_binary",
+   "religion_scripture_binary",
    "religion_believe_god",
    "religion_believe_spirit",
-    "sample_weights"
+    "sample_weights",
+  "alert_level_combined_lead" # lead to make it 2019
 )
 
 # check
@@ -563,19 +575,27 @@ row.names(mice_donate_c) <- NULL
 
 mice_donate_mids <- mice_donate_c %>%
   arrange(.imp, id) |> 
-  rename(sample_weights = t0_sample_weights) |> 
-  mutate(t0_eth_cat = as.factor(t0_eth_cat),
-        t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
-        t0_hours_charity_log =   log(t0_hours_charity+1),# to improve model convergence
-        t2_hours_charity_log =   log(t2_hours_charity+1),# to improve model convergence
-        t0_charity_donate_log =  log(t0_charity_donate+1), # to improve model convergence
-        t2_charity_donate_log =   log(t2_charity_donate+1),# to improve model convergence
-        t2_volunteers = as.integer(ifelse(t2_hours_charity > 0,1,0)),
-        t2_hours_charity_ord = as.integer(round(t2_hours_charity,0)), 
-        t2_charity_donate_ord = as.integer(round(t2_charity_donate,0))) |> 
+  
+  rename(sample_weights = t0_sample_weights) |>
+  mutate(
+    t0_eth_cat = as.factor(t0_eth_cat),
+    t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+    t0_bigger_doms = as.factor(t0_bigger_doms),
+    t0_hours_charity_log =   log(t0_hours_charity + 1),
+    # to improve model convergence
+    t2_hours_charity_log =   log(t2_hours_charity + 1),
+    # to improve model convergence
+    t0_charity_donate_log =  log(t0_charity_donate + 1),
+    # to improve model convergence
+    t2_charity_donate_log =   log(t2_charity_donate + 1),
+    # to improve model convergence
+    t2_volunteers = as.integer(ifelse(t2_hours_charity > 0, 1, 0)),
+    t2_hours_charity_ord = as.integer(round(t2_hours_charity, 0)),
+    t2_charity_donate_ord = as.integer(round(t2_charity_donate, 0))
+  ) |>
   select(-t0_hours_charity, -t0_charity_donate) %>%
   dplyr::group_by(.imp) |>
-  rowwise() |>
+  rowwise() |> 
   dplyr::ungroup() |> 
   dplyr::mutate(across(where(is.numeric) & !sample_weights & !t2_volunteers, ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) %>%
@@ -641,14 +661,16 @@ row.names(mice_warmth_c) <- NULL
 
 # post-impute data wrangling
 mice_warmth_mids <- mice_warmth_c %>%
-  arrange(.imp, id) |> 
-  rename(sample_weights = t0_sample_weights) |> 
-mutate(t0_eth_cat = as.factor(t0_eth_cat),
-        t0_education_level_coarsen = as.factor(t0_education_level_coarsen)
-         )|>
+  arrange(.imp, id) |>
+  rename(sample_weights = t0_sample_weights) |>
+  mutate(
+    t0_eth_cat = as.factor(t0_eth_cat),
+    t0_bigger_doms = as.factor(t0_bigger_doms),
+    t0_education_level_coarsen = as.factor(t0_education_level_coarsen)
+  ) |>
   dplyr::group_by(.imp) |>
   rowwise() |>
-  dplyr::ungroup() |> 
+  dplyr::ungroup() |>
   dplyr::mutate(across(where(is.numeric) & !sample_weights, ~ scale(.x), .names = "{col}_z")) |>
   select(-c(.imp_z, .id_z)) %>%
    select(
@@ -694,6 +716,7 @@ push_mods
 # save imputed data
 saveRDS(mice_support,
         here::here(push_mods, "mice_support"))
+mice_support <- here_read('mice_support')
 
 # complete
 mice_support_c  <- mice::complete(mice_support, action = 'long', include = TRUE)
@@ -709,54 +732,84 @@ row.names(mice_support_c) <- NULL
 # we keep the code here for that day
 # poisson models do work for binary data though.
 
+
+
 mice_support_mids <- mice_support_c %>%
-  arrange(.imp, id) |> 
-  rename(sample_weights = t0_sample_weights) |> 
-  mutate(t0_eth_cat = as.factor(t0_eth_cat),
-        t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
-        t0_family_time_log =   log(t0_family_time+1),# to improve model convergence
-        t2_family_time_log =   log(t2_family_time+1),# to improve model convergence
-        t0_friends_time_log =   log(t0_friends_time+1),# to improve model convergence
-        t2_friends_time_log =   log(t2_friends_time+1),# to improve model convergence
-        t0_community_time_log =   log(t0_community_time+1),# to improve model convergence
-        t2_community_time_log =   log(t2_community_time+1),# to improve model convergence
-        t0_family_money_log =   log(t0_family_money+1),# to improve model convergence
-        t2_family_money_log =   log(t2_family_money+1),# to improve model convergence
-        t0_friends_money_log =   log(t0_friends_money+1),# to improve model convergence
-        t2_friends_money_log =   log(t2_friends_money+1),# to improve model convergence
-        t0_community_money_log =   log(t0_community_money+1),# to improve model convergence
-        t2_community_money_log =   log(t2_community_money+1),# to improve model convergence
-        t2_family_time_binary = as.integer(ifelse(t2_family_time > 0, 1, 0)),
-        t2_friends_time_binary = as.integer(ifelse(t2_friends_time > 0, 1, 0)),
-        t2_community_time_binary = as.integer(ifelse(t2_community_time > 0, 1, 0)),
-        t2_family_money_binary = as.integer(ifelse(t2_family_money > 0, 1, 0)),
-        t2_friends_money_binary = as.integer(ifelse(t2_friends_money > 0, 1, 0)),
-        t2_community_money_binary = as.integer(ifelse(t2_community_money > 0, 1, 0)),
-        t2_family_time_ord = as.integer(round(t2_family_time,0)), 
-        t2_family_money_ord = as.integer(round(t2_family_money,0)), 
-        t2_friends_time_ord = as.integer(round(t2_friends_time,0)), 
-        t2_friends_money_ord = as.integer(round(t2_friends_money,0)), 
-        t2_community_time_ord = as.integer(round(t2_community_time,0)), 
-        t2_community_money_ord = as.integer(round(t2_community_money,0)))|>
-  dplyr::select(-t0_family_time, -t0_friends_time, -t0_community_time, -t0_family_money, -t0_friends_money,-t0_community_money) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
+  arrange(.imp, id) |>
+  rename(sample_weights = t0_sample_weights) |>
+  mutate(
+    t0_eth_cat = as.factor(t0_eth_cat),
+    t0_bigger_doms = as.factor(t0_bigger_doms),
+    t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+    t0_family_time_log =   log(t0_family_time + 1),
+    # to improve model convergence
+    t2_family_time_log =   log(t2_family_time + 1),
+    # to improve model convergence
+    t0_friends_time_log =   log(t0_friends_time + 1),
+    # to improve model convergence
+    t2_friends_time_log =   log(t2_friends_time + 1),
+    # to improve model convergence
+    t0_community_time_log =   log(t0_community_time + 1),
+    # to improve model convergence
+    t2_community_time_log =   log(t2_community_time + 1),
+    # to improve model convergence
+    t0_family_money_log =   log(t0_family_money + 1),
+    # to improve model convergence
+    t2_family_money_log =   log(t2_family_money + 1),
+    # to improve model convergence
+    t0_friends_money_log =   log(t0_friends_money + 1),
+    # to improve model convergence
+    t2_friends_money_log =   log(t2_friends_money + 1),
+    # to improve model convergence
+    t0_community_money_log =   log(t0_community_money + 1),
+    # to improve model convergence
+    t2_community_money_log =   log(t2_community_money + 1),
+    # to improve model convergence
+    t2_family_time_binary = as.integer(ifelse(t2_family_time > 0, 1, 0)),
+    t2_friends_time_binary = as.integer(ifelse(t2_friends_time > 0, 1, 0)),
+    t2_community_time_binary = as.integer(ifelse(t2_community_time > 0, 1, 0)),
+    t2_family_money_binary = as.integer(ifelse(t2_family_money > 0, 1, 0)),
+    t2_friends_money_binary = as.integer(ifelse(t2_friends_money > 0, 1, 0)),
+    t2_community_money_binary = as.integer(ifelse(t2_community_money > 0, 1, 0)),
+    t2_family_time_ord = as.integer(round(t2_family_time, 0)),
+    t2_family_money_ord = as.integer(round(t2_family_money, 0)),
+    t2_friends_time_ord = as.integer(round(t2_friends_time, 0)),
+    t2_friends_money_ord = as.integer(round(t2_friends_money, 0)),
+    t2_community_time_ord = as.integer(round(t2_community_time, 0)),
+    t2_community_money_ord = as.integer(round(t2_community_money, 0))
+  ) |>
+  dplyr::select(
+    -t0_family_time,
+    -t0_friends_time,
+    -t0_community_time,
+    -t0_family_money,
+    -t0_friends_money,
+    -t0_community_money
+  ) |>  # we only worry about removing unneccessary baseline measures, because  the outcomes will not be used for prediction
   dplyr::group_by(.imp) |>
   rowwise() |>
+  dplyr::mutate(t2_support = mean(
+    c(t2_support_rnoguidance,
+      t2_support_turnto,
+      t2_support_help),
+    na.rm = TRUE
+  )) |>
   dplyr::ungroup() |>
   dplyr::mutate(
     across(
-      where(is.numeric) & !sample_weights & 
+      where(is.numeric) & !sample_weights &
         !t2_family_time_binary &
         !t2_friends_time_binary &
         !t2_community_time_binary &
         !t2_family_money_binary &
         !t2_friends_money_binary &
         !t2_community_money_binary &
-        !t2_family_time_ord & 
-        !t2_family_money_ord & 
-        !t2_friends_time_ord & 
-        !t2_friends_money_ord & 
-        !t2_community_time_ord & 
-        !t2_community_money_ord, 
+        !t2_family_time_ord &
+        !t2_family_money_ord &
+        !t2_friends_time_ord &
+        !t2_friends_money_ord &
+        !t2_community_time_ord &
+        !t2_community_money_ord,
       ~ scale(.x),
       .names = "{col}_z"
     )
@@ -765,36 +818,38 @@ mice_support_mids <- mice_support_c %>%
   select(
     where(is.factor),
     sample_weights,
-      t2_family_time_binary,
-      t2_friends_time_binary, 
-      t2_community_time_binary, 
-      t2_family_money_binary,
-      t2_friends_money_binary, 
-      t2_community_money_binary,
-       t2_family_time_ord, 
-        t2_family_money_ord, 
-        t2_friends_time_ord, 
-        t2_friends_money_ord, 
-        t2_community_time_ord, 
-        t2_community_money_ord,
+    t2_family_time_binary,
+    t2_friends_time_binary,
+    t2_community_time_binary,
+    t2_family_money_binary,
+    t2_friends_money_binary,
+    t2_community_money_binary,
+    t2_family_time_ord,
+    t2_family_money_ord,
+    t2_friends_time_ord,
+    t2_friends_money_ord,
+    t2_community_time_ord,
+    t2_community_money_ord,
     ends_with("_z"),
     .imp,
     .id
-  ) |> 
+  ) |>
   relocate(id, .before = sample_weights)  %>%
   relocate(sample_weights, .before = starts_with("t1_"))  %>%
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
   mutate_if(is.matrix, as.vector) %>%
-  droplevels() |> 
+  droplevels() |>
   as.mids()
-  
+
 # needed for checks
-mice_support_long <- mice::complete(mice_support_mids, "long", inc = TRUE)
+mice_support_long <-
+  mice::complete(mice_support_mids, "long", inc = TRUE)
+
+
 
 # check
 skim(mice_support_long)
-
 # save
 saveRDS(mice_support_mids, here::here(push_mods, "mice_support_mids"))
 saveRDS(mice_support_long, here::here(push_mods, "mice_support_long"))
@@ -820,7 +875,13 @@ X <- here_read("exposure_vars")
 # check
 X
 baseline_vars_donate = mice_donate_long |> 
-  dplyr::select(starts_with("t0"))|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    -t0_bigger_doms
+  ) |> colnames()
 
 # check
 baseline_vars_donate
@@ -853,7 +914,7 @@ plot(sum_ebal)
 bal.tab(match_donate_ebal)
 
 # # if trim is needed
-match_donate_ebal_trim <- WeightIt::trim(match_donate_ebal, at = .9975)
+match_donate_ebal_trim <- WeightIt::trim(match_donate_ebal, at = .999)
 here_save(match_donate_ebal_trim,"match_donate_ebal_trim")
 sum_ebal_trim <- summary(match_donate_ebal_trim)
 sum_ebal_trim
@@ -1053,12 +1114,19 @@ skim(mice_warmth_long)
 
 # create baseline vars
 baseline_vars_warmth = mice_warmth_long |> 
-  dplyr::select(starts_with("t0"))|> colnames() # strange to include these -- as they  are income by other names
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    -t0_bigger_doms
+  ) |> colnames()
 
 baseline_vars_warmth
 
 # create outcome vars
-outcome_vars_warmth = mice_warmth_long |> dplyr::select(starts_with("t2")) |> colnames()
+outcome_vars_warmth = mice_warmth_long |> 
+  dplyr::select(starts_with("t2")) |> colnames()
 outcome_vars_warmth
 
 # estimand
@@ -1083,7 +1151,7 @@ plot(sum_ebal)
 bal.tab(mice_warmth_ebal)
 
 # if trim (if needed)
-mice_warmth_ebal_trim <- WeightIt::trim(mice_warmth_ebal, at = .9975)
+mice_warmth_ebal_trim <- WeightIt::trim(mice_warmth_ebal, at = .999)
 sum_ebal_trim <- summary(mice_warmth_ebal_trim)
 sum_ebal_trim
 
@@ -1435,13 +1503,19 @@ skim(mice_support_long)
 X
 # create baseline variables
 baseline_vars_support = mice_support_long |> 
-  dplyr::select(starts_with("t0"))|> colnames() # used for imputation -- fully co-linear
-
+  dplyr::select(
+    starts_with("t0"),
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    -t0_bigger_doms
+  ) |> colnames()
 # view
 baseline_vars_support
 
 # look at outcomes
-outcome_vars_support = mice_support_long |> dplyr::select(starts_with("t2")) |> colnames()
+outcome_vars_support = mice_support_long |> 
+  dplyr::select(starts_with("t2")) |> colnames()
 
 # outcomes vars
 outcome_vars_support
@@ -1503,17 +1577,18 @@ love.plot(match_support_ebal_trim, binary = "std", thresholds = c(m = .1))
 # dataframe
 dt_support = match_support_ebal_trim #mice_support_ebal
 
+
 # cores
 cl =  parallel::detectCores () 
 cores =  parallel::detectCores () 
 
 #levels(dat_long_t$religion_church_coarsen)
-nsims 
+nsims = 200
 
 #check
-treat_0
+treat_0 = "0"
 #check
-treat_1
+treat_1 = "1"
 
 X# <-here_read("exposure_vars")
 # view X 
@@ -1592,78 +1667,78 @@ mod_support_community_time_binary_rr  <- double_robust(
 mod_support_community_time_binary_rr
 saveRDS(mod_support_community_time_binary_rr, here::here(push_mods, "mod_support_community_time_binary_rr"))
 
-
-# family money rr
-mod_support_family_money_binary_rr  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_family_money_binary",
-  X = X,
-  baseline_vars = 1,#baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Family money (y/n)"
-)
-
-mod_support_family_money_binary_rr
-saveRDS(mod_support_family_money_binary_rr, here::here(push_mods, "mod_support_family_money_binary_rr"))
-
-
-# friends money rr
-mod_support_friends_money_binary_rr  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_friends_money_binary",
-  X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Friends money (y/n)"
-)
-
-mod_support_friends_money_binary_rr
-saveRDS(mod_support_friends_money_binary_rr, here::here(push_mods, "mod_support_friends_money_binary_rr"))
-
-mod_support_friends_money_binary_rr <- here_read("mod_support_friends_money_binary_rr")
-
-# comunity money rr
-mod_support_community_money_binary_rr  <- double_robust(
-  df = dt_support,  # note change
-  Y = "t2_community_money_binary",
-  X = X,
-  baseline_vars = 1, #baseline_vars_support,  ## always check
-  treat_1 = treat_1,
-  treat_0 = treat_0,
-  estimand = estimand,
-  scale = "RR",
-  nsims = nsims,
-  cores = cores,
-  family = "poisson",
-  weights = TRUE,
-  continuous_X = FALSE,
-  splines = FALSE, 
-  vcov = "HC",
-  new_name = "Community money (y/n)"
-)
-
-mod_support_community_money_binary_rr
-saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
+# 
+# # family money rr
+# mod_support_family_money_binary_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_family_money_binary",
+#   X = X,
+#   baseline_vars = 1,#baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Family money (y/n)"
+# )
+# 
+# mod_support_family_money_binary_rr
+# saveRDS(mod_support_family_money_binary_rr, here::here(push_mods, "mod_support_family_money_binary_rr"))
+# 
+# 
+# # friends money rr
+# mod_support_friends_money_binary_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_friends_money_binary",
+#   X = X,
+#   baseline_vars = 1, #baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Friends money (y/n)"
+# )
+# 
+# mod_support_friends_money_binary_rr
+# saveRDS(mod_support_friends_money_binary_rr, here::here(push_mods, "mod_support_friends_money_binary_rr"))
+# 
+# mod_support_friends_money_binary_rr <- here_read("mod_support_friends_money_binary_rr")
+# 
+# # comunity money rr
+# mod_support_community_money_binary_rr  <- double_robust(
+#   df = dt_support,  # note change
+#   Y = "t2_community_money_binary",
+#   X = X,
+#   baseline_vars = 1, #baseline_vars_support,  ## always check
+#   treat_1 = treat_1,
+#   treat_0 = treat_0,
+#   estimand = estimand,
+#   scale = "RR",
+#   nsims = nsims,
+#   cores = cores,
+#   family = "poisson",
+#   weights = TRUE,
+#   continuous_X = FALSE,
+#   splines = FALSE, 
+#   vcov = "HC",
+#   new_name = "Community money (y/n)"
+# )
+# 
+# mod_support_community_money_binary_rr
+# saveRDS(mod_support_community_money_binary_rr, here::here(push_mods, "mod_support_community_money_binary_rr"))
 
 #'There are people I can depend on to help me if I really need it.
 mod_support_support_help  <- double_robust(
@@ -1708,7 +1783,7 @@ mod_support_support_turnto  <- double_robust(
   new_name = "Support turnto (sd)"
 )
 # save model
-
+mod_support_support_turnto
 saveRDS(mod_support_support_turnto, here::here(push_mods, "mod_support_support_turnto"))
 
 #There is no one I can turn to for guidance in times of stress.
@@ -1733,6 +1808,32 @@ mod_support_support_rnoguidance  <- double_robust(
 # save model
 mod_support_support_rnoguidance
 saveRDS(mod_support_support_rnoguidance, here::here(push_mods, "mod_support_support_rnoguidance"))
+
+
+
+
+mod_support_support_combo  <- double_robust(
+  df = dt_support,  # note change
+  Y = "t2_support_z",
+  X = X,
+  baseline_vars = baseline_vars_support,  ## always check
+  treat_1 = treat_1,
+  treat_0 = treat_0,
+  estimand = estimand,
+  scale = "RD",
+  nsims = nsims,
+  cores = cores,
+  family = "gaussian",
+  weights = TRUE,
+  continuous_X = FALSE,
+  splines = FALSE,
+    vcov = vcov,
+  new_name = "Support Construct (sd)"
+)
+# save model
+mod_support_support_combo
+saveRDS(mod_support_support_combo, here::here(push_mods, "mod_support_support_combo"))
+
 ```
 
 
@@ -1888,7 +1989,7 @@ gr_plot_virtue_rr <- margot_plot(
 )
 gr_plot_virtue_rr
 
-# 
+
 # ggsave(
 #   gr_plot_virtue_rr,
 #   path = here::here(here::here(push_mods, "gr_plot_virtue_rr_REL")),
@@ -2022,14 +2123,16 @@ group_tab_warmth |>
 #| include: true
 #| echo: false
 
-mod_support_support_help <- readRDS( here::here(push_mods, "mod_support_support_help"))
-mod_support_support_turnto <- readRDS( here::here(push_mods, "mod_support_support_turnto"))
+#mod_support_support_help <- readRDS( here::here(push_mods, "mod_support_support_help"))
+#mod_support_support_turnto <- readRDS( here::here(push_mods, "mod_support_support_turnto"))
 mod_support_support_rnoguidance <- readRDS( here::here(push_mods, "mod_support_support_rnoguidance"))
+mod_support_support_combo <- readRDS( here::here(push_mods, "mod_support_support_combo"))
 
 tab_support_rd <- rbind(
-  mod_support_support_help,
-  mod_support_support_turnto,
-  mod_support_support_rnoguidance
+  # mod_support_support_help,
+  # mod_support_support_turnto,
+  # mod_support_support_rnoguidance,
+  mod_support_support_combo
 )
 
 group_tab_support_rd <- group_tab(tab_support_rd, type = "RD")
@@ -2057,17 +2160,17 @@ group_plot_support_rd <- margot_plot(group_tab_support_rd,
 #check
 group_plot_support_rd
 # 
-# ggsave(
-#   group_plot_support_rd,
-#   path = here::here(here::here(push_mods, "group_plot_support_rd")),
-#   width = 8,
-#   height = 4.5,
-#   units = "in",
-#   filename = "group_plot_support_rd.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 600
-#  )
+ggsave(
+  group_plot_support_rd,
+  path = here::here(here::here(push_mods, "group_plot_support_rd")),
+  width = 8,
+  height = 4.5,
+  units = "in",
+  filename = "group_plot_support_rd.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+ )
 
 ```
 

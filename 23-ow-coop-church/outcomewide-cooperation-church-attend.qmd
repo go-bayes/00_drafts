@@ -1,5 +1,5 @@
 ---
-title: "Causal effects of church attendance on cooperation"
+title: "Causal effects of religious service attendance on cooperation"
 subtitle: "An outcomewide approach"
 abstract: |
   Counterfactual Prediction
@@ -76,7 +76,10 @@ push_mods <-  fs::path_expand(
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
-
+# n_unique(dat$id)
+# 
+# now <- dat |> filter(wave == 2021 & year_measured ==1) 
+# n_unique(now$id)
 
 # check
 # table( is.na(dat$religion_church) ) 
@@ -289,6 +292,7 @@ dat_long <- dat |>
     "religion_church_binary",
     "religion_church",
     "religion_prayer",
+    "religion_prayer_binary",
     "religion_scripture",
     # How many times did you pray in the last week?
     "religion_scripture",
@@ -392,7 +396,7 @@ dat_long <- dat |>
 table( dat_long$religion_church_binary )
 
 
-here_save(dat_long, "dat_long")
+#here_save(dat_long, "dat_long")
 # Why we did the conversions -- zero inflation
 ## NOTE we ultimatedly opted for binary variables because the data do not clearly fit a useable distribution
 # table(round( log(dat_long$family_money+1), 0))
@@ -477,7 +481,7 @@ dat_18 <- dat_long_t |>
   dplyr::filter(wave == 2018)
 
 # save data for table
-saveRDS(dat_18, here::here(push_mods, "dat_18"))
+#saveRDS(dat_18, here::here(push_mods, "dat_18"))
 
 # prepare data for modelling
 # get unique identifiers of these individuals (replace `id` with your actual id variable)
@@ -494,7 +498,8 @@ dat_long_t  <- dat_long %>%
       breaks = c(-Inf, 0, 1, 3.99, Inf),
       labels = c("zero", "one", "less_four", "four_up"),
       include.lowest = TRUE,
-      right = TRUE
+      right = TRUE,
+      ordered = TRUE
     )
   ) %>%
   mutate(
@@ -560,7 +565,7 @@ baseline_vars = c(
    "religion_identification_level",
    "religion_church_binary",
   # "religion_church_binary2",
-  # "religion_church",
+    "religion_prayer_binary",
    "religion_scripture_binary",
    "religion_believe_god",
    "religion_believe_spirit",
@@ -694,7 +699,7 @@ saveRDS(mice_donate,
         here::here(push_mods, "mice_donate"))
 
 # read if needed
-mice_donate <- readRDS(here::here(push_mods, "mice_donate"))
+#mice_donate <- readRDS(here::here(push_mods, "mice_donate"))
 
 # complete
 mice_donate_c  <- mice::complete(mice_donate, action = 'long', include = TRUE)
@@ -969,7 +974,7 @@ saveRDS(mice_support_long, here::here(push_mods, "mice_support_long"))
 ```{r}
 #| label: models-donate
 #| eval: false
-
+push_mods
 mice_donate_mids <- readRDS(here::here(push_mods, "mice_donate_mids"))
 
 # long form data if necessary
@@ -990,16 +995,14 @@ baseline_vars_donate = mice_donate_long |>
   dplyr::select(
     starts_with("t0"),
     -t0_religion_church_coarsen,
-    -t0_religion_believe_god_z,
-    -t0_religion_believe_spirit_z,
-    -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z#,
-  #  -t0_bigger_doms
-  )  |> colnames() # strange to include these -- as they  are income by other names
-
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    - t0_bigger_doms
+  ) |> colnames() # strange to include these -- as they  are income by other names
 
 # we have insufficient overlap of religion variables. so we focus on religion
-baseline_vars
+baseline_vars_donate
 
 # keep outcome vars
 outcome_vars_donate = mice_donate_long |> dplyr::select(starts_with("t2")) |> colnames()
@@ -1020,6 +1023,14 @@ match_donate_ebal <- match_mi_general(data = mice_donate_mids,
 saveRDS(match_donate_ebal, here::here(push_mods, "match_donate_ebal"))
 
 
+sum_ebal<- summary(match_donate_ebal)
+sum_ebal
+
+# graphs
+plot(sum_ebal)
+cobalt::bal.tab(match_donate_ebal stats = c("m", "v"), binary = "std", thresholds = c(m = .1))
+plot_love_no_trim <- love.plot(match_donate_ebal, binary = "std", thresholds = c(m = .1),  var.order = "unadjusted") # 
+plot_love_no_trim
 
 
 # match_donate_energy <- match_mi_general(data = mice_donate_mids,
@@ -1071,8 +1082,8 @@ sum_ebal_trim
 # graphs
 plot(sum_ebal_trim)
 cobalt::bal.tab(match_donate_ebal_trim, stats = c("m", "v"), binary = "std", thresholds = c(m = .1))
-love.plot(match_donate_ebal_trim, binary = "std", thresholds = c(m = .1),  var.order = "unadjusted") # 
-
+plot_love <- love.plot(match_donate_ebal_trim, binary = "std", thresholds = c(m = .1),  var.order = "unadjusted") # 
+plot_love
 # set dataframe
 dt_donate = match_donate_ebal_trim
 
@@ -1254,6 +1265,7 @@ saveRDS(mod_donate_gratitude, here::here(push_mods, "mod_donate_gratitude"))
 ```{r}
 #|label: models-warmth
 # read imputations
+push_mods
 mice_warmth_mids <- readRDS(here::here(push_mods, "mice_warmth_mids"))
 mice_warmth_long <- readRDS(here::here(push_mods, "mice_warmth_long"))
 
@@ -1266,10 +1278,10 @@ baseline_vars_warmth = mice_warmth_long |>
   dplyr::select(
     starts_with("t0"),
     -t0_religion_church_coarsen,
-    -t0_religion_believe_god_z,
-    -t0_religion_believe_spirit_z,
-    -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z#,
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    - t0_bigger_doms
   ) |> colnames() # strange to include these -- as they  are income by other names
 
 baseline_vars_warmth
@@ -1660,12 +1672,11 @@ baseline_vars_support = mice_support_long |>
   dplyr::select(
     starts_with("t0"),
     -t0_religion_church_coarsen,
-    -t0_religion_believe_god_z,
-    -t0_religion_believe_spirit_z,
-    -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z#,
-   # -t0_bigger_doms
-  ) |> colnames() # used for imputation -- fully co-linear
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    - t0_bigger_doms
+  ) |> colnames() # strange to include these -- as they  are income by other names
 
 # view
 baseline_vars_support
@@ -1826,7 +1837,7 @@ mod_support_community_time_binary_rr  <- double_robust(
   df = dt_support,  # note change
   Y = "t2_community_time_binary",
   X = X,
-  baseline_vars = 1, #baseline_vars_support, 
+  baseline_vars = 1, 
   treat_1 = treat_1,
   treat_0 = treat_0,
   estimand = estimand,
@@ -2125,7 +2136,7 @@ tab_virtue <- rbind(
 group_tab_virtue <- group_tab(tab_virtue, type = "RD")
 
 
-title = "ATE: +1 year causal effect from gain of church"
+title = "ATE: +1 year causal effect from gain of religious service"
 subtitle_warmth_rd = "Virtues (population)"
 
 group_plot_virtue <- margot_plot(group_tab_virtue,    
@@ -2321,7 +2332,7 @@ mod_warmth_per_rel_discrimination
 group_tab_warmth <- group_tab(tab_warmth, type = "RD")
 
 
-title = "ATE: +1 year causal effect from gain of church"
+title = "ATE: +1 year causal effect from gain of religious service"
 subtitle_warmth_rd = "Warmth/Prejudice (population)"
 
 group_plot_ate_warmth_rd <- margot_plot(group_tab_warmth,    
@@ -2614,7 +2625,8 @@ dat_long_tX  <- dat_long %>%
       breaks = c(-Inf, 0, 1, 3.99, Inf),
       labels = c("zero", "one", "less_four", "four_up"),
       include.lowest = TRUE,
-      right = TRUE
+      right = TRUE,
+      ordered = TRUE
     )
   ) %>%
   mutate(religion_church_coarsen_n = as.numeric(religion_church_coarsen) -
@@ -2651,7 +2663,6 @@ saveRDS(dat_long_tX, here::here(push_mods, "dat_long_tX"))
 ```{r}
 #|label: data-wrangling-for-imputationsX
 # Create wide data frame
-
 baseline_varsX = c(
     "male",
     "age",
@@ -2693,7 +2704,7 @@ baseline_varsX = c(
    "religion_identification_level",
    "religion_church_binary",
   # "religion_church_binary2",
-  # "religion_church",
+    "religion_prayer_binary",
    "religion_scripture_binary",
    "religion_believe_god",
    "religion_believe_spirit",
@@ -2701,7 +2712,9 @@ baseline_varsX = c(
   "alert_level_combined_lead" # lead to make it 2019
 )
 # check
-baseline_vars
+baseline_varsX
+# check
+baseline_varsX
 # check
 baseline_varsX
 
@@ -3125,11 +3138,12 @@ X
 baseline_vars_donateX = mice_donate_longX |>
   dplyr::select(
     starts_with("t0"),
-    -t0_religion_believe_god_z,
-    -t0_religion_believe_spirit_z,
-    -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z
-  )|> colnames() # strange to include these -- as they  are income by other names
+    -t0_religion_church_coarsen,
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    - t0_bigger_doms
+  ) |> colnames() # strange to include these -- as they  are income by other names
 
 # check
 baseline_vars_donateX
@@ -3399,14 +3413,15 @@ skim(mice_warmth_longX)
 #X <- "t1_religion_church_coarsen"
 
 # create baseline vars
-baseline_vars_warmthX = mice_warmth_longX |>  dplyr::select(
+baseline_vars_warmthX = mice_warmth_longX |>  
+  dplyr::select(
     starts_with("t0"),
-    -t0_religion_believe_god_z,
-    -t0_religion_believe_spirit_z,
-    -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z
-  )|> colnames() # strange to include these -- as they  are income by other names
-
+    -t0_religion_church_coarsen,
+  #  -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z,
+    - t0_bigger_doms
+  ) |> colnames() # strange to include these -- as they  are income by other names
 
 baseline_vars_warmthX
 
@@ -3790,17 +3805,15 @@ exposure_varsX
 skim(mice_support_longX)
 
 # create baseline variables
-baseline_vars_supportX = mice_support_longX |>  dplyr::select(
+baseline_vars_supportX = mice_support_longX |>   
+  dplyr::select(
     starts_with("t0"),
-    -t0_religion_believe_god_z,
-    -t0_religion_believe_spirit_z,
-    -t0_religion_identification_level_z,
+    -t0_religion_church_coarsen,
+    -t0_religion_prayer_binary_z,
+    -t0_religion_scripture_binary_z,
     -t0_religion_spiritual_identification_z,
-    -t0_religion_scripture_binary_z
-  )|> colnames() # strange to include these -- as they  are income by other names
-
-
-
+    -t0_bigger_doms
+  ) |> colnames() # strange to include these -- as they  are income by other names
 # view
 baseline_vars_supportX
 
@@ -4592,7 +4605,7 @@ library("lmtp")
 
 #  select data of these individuals from the entire dataset
 #  also create meaningful exposure variable
-
+hist( dat$religion_church, breaks = 15 )
 ## first the general population 
 dat_long_tX1  <- dat %>%
  # filter(id %in% religious_ids) %>%
@@ -4614,6 +4627,7 @@ dat_long_tX1  <- dat %>%
   rename(religion_religious = religious) |>  # religious yes/no
   mutate(religion_prayer_binary = ifelse(religion_prayer > 0, 1, 0)) |>
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
+   mutate(religion_church_f = ifelse(religion_church >= 21, 21, 0)) |>
   mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
   mutate(religion_religious = as.numeric(religion_religious) - 1) |>
   mutate(
@@ -4629,11 +4643,11 @@ dat_long_tX1  <- dat %>%
                   (wave == 2020 )) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                 !is.na(religion_church), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
+                                 !is.na(religion_church_round) & !is.na(eth_cat), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(wave == 2019 &
                                  year_measured == 1 &
-                                 !is.na(religion_church), #  Inclusion criteria
+                                 !is.na(religion_church_round), #  Inclusion criteria
                                1,
                                0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
@@ -4664,22 +4678,23 @@ dat_long_tX1  <- dat %>%
   data.frame() |> 
   droplevels() |>
   arrange(id, wave) |>
-    mutate(
-    religion_church_coarsen = cut(
-      religion_church,
-      breaks = c(-Inf, 0, 1, 3.99, Inf),
-      labels = c("zero", "one", "less_four", "four_up"),
-      include.lowest = TRUE,
-      right = TRUE
-    )
-  ) %>%
+  #   mutate(
+  #   religion_church_coarsen = cut(
+  #     religion_church,
+  #     breaks = c(-Inf, 0, 1, 3.99, Inf),
+  #     labels = c("zero", "one", "less_four", "four_up"),
+  #     include.lowest = TRUE,
+  #     right = TRUE,
+  #     ordered = TRUE
+  #   )
+  # ) %>%
+  # mutate(
+  #   religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
+  #   religion_church_binary_n = as.numeric(religion_church_binary)
+  # ) |>
   mutate(
-    religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
-    religion_church_binary_n = as.numeric(religion_church_binary)
-  ) |>
-  mutate(
-    religion_church_binary = as.factor(religion_church_binary),
-    eth_cat = as.integer(eth_cat),
+    # religion_church_binary = as.factor(religion_church_binary),
+    # eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
@@ -4688,9 +4703,9 @@ dat_long_tX1  <- dat %>%
   data.frame()
 
 
-
+# 33198
 # check n again
-n_unique(dat_long_tX1$id)
+n_unique(dat_long_tX1$id) #32964
 
 # double check path
 push_mods
@@ -4708,13 +4723,13 @@ baseline_varsX1 = c(
     "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
    # "employed", # Are you currently employed? (this includes self-employment or casual work)
     #"gen_cohort", #age
-    "bigger_doms",
+   # "bigger_doms",
     "nz_dep2018",
     "nzsei13",
     "have_siblings",# added: needed because we are dealing with family giving/receiving
     "born_nz",  # added 
     "hlth_disability",  # added 
-     "hlth_bmi",
+    "hlth_bmi",
     "household_inc_log", # added: measured with error but OK for imputations
     "partner",
    # "parent",  # newly changed - have information in child number
@@ -4736,19 +4751,19 @@ baseline_varsX1 = c(
     "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
    # "religion_religious", # Do you identify with a religion and/or spiritual group?
    # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-   "religion_church_coarsen", # for prediction
+  "religion_church_round", 
     # "religion_religious", # perfectly colinear
-   "religion_spiritual_identification",   
+  # "religion_spiritual_identification",   
    "religion_identification_level",
-   "religion_church_binary",
-  # "religion_church_binary2",
-  # "religion_church",
-   "religion_scripture_binary",
+    "religion_prayer_binary",
+  # "religion_scripture_binary",
    "religion_believe_god",
    "religion_believe_spirit",
     "sample_weights",
   "alert_level_combined_lead" # lead to make it 2019
 )
+# check
+baseline_varsX1
 # check
 baseline_varsX1
 
@@ -4768,6 +4783,8 @@ outcome_vars_donateX1 = c(
 
 
 exposure_varX1
+
+# impute baseline data (we use censoring for the outcomes)
 prep_donateX1 <- margot_wide_impute_baseline(
 dat_long_tX1,
 baseline_vars = baseline_varsX1,
@@ -4783,10 +4800,11 @@ outcome_vars = outcome_vars_donateX1
 #check must be a dataframe
 str(prep_donateX1)
 nrow(prep_donateX1)
-
+# 33198
 
 df_wide_censored_donate<- 
   prep_donateX1 |> 
+  mutate(t0_eth_cat = as.factor(t0_eth_cat)) |> 
   relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
   relocate("t1_not_censored", .before = starts_with("t2_"))
 
@@ -4814,7 +4832,7 @@ df_clean_donate <- df_wide_censored_donate %>%
 mean(df_clean_donate$t2_charity_donate, na.rm = TRUE)
 table(df_wide_censored_donate$t1_religion_church_round)
 colnames(df_clean_donate)
-n_unique(df_clean_donate$id)#33198
+n_unique(df_clean_donate$id)#32964
 
 
 naniar::vis_miss(df_clean_donate, warn_large_data = FALSE)
@@ -4835,7 +4853,7 @@ names_base_donate
 names_base_donate2
 
 # check: 
-df_clean_donate$t1_religion_church_round
+table( df_clean_donate$t1_religion_church_round )
 
 
 # exposure_varX1
@@ -4867,7 +4885,7 @@ table(df_clean_donate$t1_religion_church_round)
 
 # simple shift, everyone goes to church at least 4 times per week
 f <- function(data, trt){
-  ifelse( data[[trt]] <= 7, 7,  data[[trt]] )
+  ifelse( data[[trt]] <= 4, 4,  data[[trt]] )
 }
 
 
@@ -4921,7 +4939,7 @@ m_t2_hours_charity <- lmtp_tmle(
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger"
 )
-
+m_t2_hours_charity
 here_save(m_t2_hours_charity, "m_t2_hours_charity")
 m_t2_hours_charity <- here_read("m_t2_hours_charity")
 
@@ -4964,40 +4982,41 @@ contrast_hours_full
 
 
 # not right
+church_four <- format_tab_tmle(church_four, scale = "RD", new_name = "church_four")
+church_four
 
+# 
+# margot_tab_lmtp <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
+# 
+#   scale <- match.arg(scale)
+# 
+#   require(dplyr)
+# 
+#   tab_tmle <- cbind.data.frame(
+#     tmtp_output$vals$theta,
+#     tmtp_output$vals$std.error,
+#     tmtp_output$vals$conf.low,
+#     tmtp_output$vals$conf.high
+#   )
+# 
+#   if (scale == "RD") {
+#     colnames(tab_tmle) <- c("E[Y(1)]-E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
+#   } else if (scale == "RR") {
+#     colnames(tab_tmle) <- c("E[Y(1)]/E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
+#   }
+# 
+#   tab_tmle_round <- tab_tmle |>
+#     dplyr::mutate(across(where(is.numeric), round, digits = 4))
+# 
+#   rownames(tab_tmle_round)[1] <- paste0(new_name)
+# 
+#   return(tab_tmle_round)
+# }
 
-margot_tab_lmtp <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
-
-  scale <- match.arg(scale)
-
-  require(dplyr)
-
-  tab_tmle <- cbind.data.frame(
-    tmtp_output$vals$theta,
-    tmtp_output$vals$std.error,
-    tmtp_output$vals$conf.low,
-    tmtp_output$vals$conf.high
-  )
-
-  if (scale == "RD") {
-    colnames(tab_tmle) <- c("E[Y(1)]-E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-  } else if (scale == "RR") {
-    colnames(tab_tmle) <- c("E[Y(1)]/E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-  }
-
-  tab_tmle_round <- tab_tmle |>
-    dplyr::mutate(across(where(is.numeric), round, digits = 4))
-
-  rownames(tab_tmle_round)[1] <- paste0(new_name)
-
-  return(tab_tmle_round)
-}
-
-contrast_hours_full
 church_four_hours <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "LMTP + 4")
-church_four_hours
+grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full,  scale = "RD") 
 
-push_mods
+
 
 theta <- contrast_hours_full$vals$theta
 # adult population
@@ -5012,6 +5031,12 @@ hours_volunteering_gained
 
 # cash value of intervention
 hours_volunteering_gained * min_wage_2023
+
+
+push_mods <-  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-coop-church"
+  )
+
 
 
 ## donation model 
@@ -5032,30 +5057,17 @@ m_t2_charity_donate <- lmtp_tmle(
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
   learners_trt = "SL.ranger",
-  learners_outcome ="SL.ranger",
+  learners_outcome = "SL.ranger"
 )
 
-m_t2_charity_donate
 
 here_save(m_t2_charity_donate, "m_t2_charity_donate")
 m_t2_charity_donate
 
+m_t2_charity_donate <- here_read("m_t2_charity_donate")
 
-# Population intervention estimate
-#       Estimate: 1318.0003
-#     Std. error: 34.2481
-#         95% CI: (1250.8752, 1385.1254)
-# # under null
 
-# LMTP Estimator: TMLE
-#    Trt. Policy: (f)
-# 
-# Population intervention estimate
-#       Estimate: 1312.0819
-#     Std. error: 40.1903
-#         95% CI: (1233.3103, 1390.8535)
-#         
-#         
+# under null
 m_t2_charity_donate_null <- lmtp_tmle(
   data = df_clean_donate,
   trt = A,
@@ -5072,24 +5084,42 @@ m_t2_charity_donate_null <- lmtp_tmle(
   outcome_type = "continuous",
   #  id = "id",
   weights = df_clean_donate$t0_sample_weights,
-  learners_trt = "SL.ranger",
+  learners_trt ="SL.ranger",
   learners_outcome =  "SL.ranger"
 )
 here_save(m_t2_charity_donate_null, "m_t2_charity_donate_null")
 m_t2_charity_donate_null
 
-lmtp_contrast(m_t2_charity_donate,ref = m_t2_charity_donate_null, type = "additive")
+contrast_donate <- lmtp_contrast(m_t2_charity_donate,ref = m_t2_charity_donate_null, type = "additive")
 
-
-  #sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
+contrast_donate
+#sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
 
 
 # calculate proportion 4 or greater
-proportion = sum(df_clean_donate$t1_religion_church_round >=  8) / nrow(df_clean_donate)
-
-  
+proportion = sum(df_clean_donate$t1_religion_church_round >= 8) / nrow(df_clean_donate)
+proportion
  
+theta_donate <- contrast_donate$vals$theta
+theta_donate
+# adult population
+nz_adult_population = 3989000
 
+
+
+# # min wage workers 
+# min_wage_2023 = 22.70
+
+# off the cuff
+dollars_donate_gained = theta_donate * nz_adult_population
+dollars_donate_gained
+# 832193252
+hours_volunteering_gained
+
+# cash value of intervention
+opportunity_hours_donate <- dollars_donate_gained / min_wage_2023
+
+opportunity_hours_donate
 
 mean ( df_clean_donate$t2_charity_donate, na.rm = TRUE)
 

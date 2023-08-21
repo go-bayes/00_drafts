@@ -991,12 +991,10 @@ baseline_vars_donate = mice_donate_long |>
   dplyr::select(
     starts_with("t0"),
     -t0_religion_prayer_coarsen,
-    -t0_religion_believe_god_z,
-    -t0_religion_believe_spirit_z,
-    -t0_religion_identification_level_z,
-    -t0_religion_spiritual_identification_z#,
-  #  -t0_bigger_doms
-  )  |> colnames() # strange to include these -- as they  are income by other names
+    -t0_religion_scripture_binary_z,
+    -t0_religion_spiritual_identification_z
+    -t0_bigger_doms
+    -t0_religion|> colnames() # strange to include these -- as they  are income by other names
 
 
 # we have insufficient overlap of religion variables. so we focus on religion
@@ -4696,11 +4694,13 @@ n_unique(dat_long_tX1$id)
 # double check path
 push_mods
 
-
+sd( dat_long_tX1$charity_donate, na.rm = TRUE)
+mean(dat_long_tX1$charity_donate, na.rm = TRUE)
 
 
 # save
 saveRDS(dat_long_tX1, here::here(push_mods, "dat_long_tX1"))
+dat_long_tX1<- here_read("dat_long_tX1")
 
 baseline_varsX1 = c(
     "male",
@@ -5017,57 +5017,65 @@ hours_volunteering_gained * min_wage_2023
 
 
 ## donation model 
-m_t2_charity_donate <- lmtp_tmle(
-  data = df_clean_donate,
-  trt = A,
-  baseline = names_base_donate,
-  outcome = "t2_charity_donate",
-  cens = C,
-  shift = f,
-  k = 1,
-  mtp = TRUE,
-  folds = 5,
-  # ideally use ten
-  .trim = 0.99,
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  #  id = "id",
-  weights = df_clean_donate$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
-)
+# m_t2_charity_donate <- lmtp_tmle(
+#   data = df_clean_donate,
+#   trt = A,
+#   baseline = names_base_donate,
+#   outcome = "t2_charity_donate",
+#   cens = C,
+#   shift = f,
+#   k = 1,
+#   mtp = TRUE,
+#   folds = 5,
+#   # ideally use ten
+#   .trim = 0.99,
+#   # time_vary = NULL,
+#   outcome_type = "continuous",
+#   #  id = "id",
+#   weights = df_clean_donate$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib
+# )
 here_save(m_t2_charity_donate, "m_t2_charity_donate")
+
+m_t2_charity_donate <- here_read("m_t2_charity_donate")
+
 m_t2_charity_donate
 
-
-# under null
-m_t2_charity_donate_null <- lmtp_tmle(
-  data = df_clean_donate,
-  trt = A,
-  baseline = names_base_donate,
-  outcome = "t2_charity_donate",
-  cens = C,
-  shift = NULL,
-  k = 1,
-#  mtp = TRUE,
-  folds = 5,
-  # ideally use ten
-  .trim = 0.99,
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  #  id = "id",
-  weights = df_clean_donate$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome =  sl_lib
-)
+# 
+# # under null
+# m_t2_charity_donate_null <- lmtp_tmle(
+#   data = df_clean_donate,
+#   trt = A,
+#   baseline = names_base_donate,
+#   outcome = "t2_charity_donate",
+#   cens = C,
+#   shift = NULL,
+#   k = 1,
+# #  mtp = TRUE,
+#   folds = 5,
+#   # ideally use ten
+#   .trim = 0.99,
+#   # time_vary = NULL,
+#   outcome_type = "continuous",
+#   #  id = "id",
+#   weights = df_clean_donate$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome =  sl_lib
+# )
 here_save(m_t2_charity_donate_null, "m_t2_charity_donate_null")
+m_t2_charity_donate_null <- here_read("m_t2_charity_donate_null")
+
 m_t2_charity_donate_null
 
 contrast_donate <- lmtp_contrast(m_t2_charity_donate,ref = m_t2_charity_donate_null, type = "additive")
-
+contrast_donate
 #sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
 
 
+
+#  theta shift  ref std.error conf.low conf.high p.value
+# 1   209  1312 1103      35.1      140       277  <0.001
 # calculate proportion 4 or greater
 proportion = sum(df_clean_donate$t1_religion_prayer_round >= 8) / nrow(df_clean_donate)
 proportion
