@@ -127,6 +127,7 @@ dat_long <- dat |>
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
   mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
   mutate(religion_religious = as.numeric(religion_religious) - 1) |>
+  mutate(education_level_coarsen = as.integer(education_level_coarsen)) |>
   dplyr::select(
     "wave",
     "year_measured",
@@ -310,8 +311,15 @@ dat_long <- dat |>
                      year_measured  == 1) |
                   (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
-  dplyr::mutate(k_18 =  ifelse(wave == 2018 &
-                                 !is.na(religion_believe_god), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
+  dplyr::mutate(k_18 =  ifelse(
+    wave == 2018 &
+      !is.na(religion_believe_god) &
+      !is.na(eth_cat) &
+      !is.na(bigger_doms) &
+      !is.na(education_level_coarsen),
+    1,
+    0
+  )) |> # creating an indicator for the first wave. Inclusion criteria
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(
     wave == 2019 &
@@ -378,51 +386,51 @@ saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
 #|label: data-wrangling-for-imputations
 # Create wide data frame
 baseline_vars = c(
-    "male",
-    "age",
-    "education_level_coarsen", # factors
-    "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-   # "employed", # Are you currently employed? (this includes self-employment or casual work)
-    #"gen_cohort", #age
-    "bigger_doms",
-    "nz_dep2018",
-    "nzsei13",
-    "have_siblings",# added: needed because we are dealing with family giving/receiving
-    "born_nz",  # added 
-    "hlth_disability",  # added 
-     "hlth_bmi",
-    "household_inc_log", # added: measured with error but OK for imputations
-    "partner",
-   # "parent",  # newly changed - have information in child number
-    "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
-    "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
-    "sample_origin",    # Sample origin names combined
-    "urban",
-    "children_num",
-    "household_inc_log", # new from previous study. needed because we are dealing with family giving/receiving
-    "hours_children_log", # new
-    "hours_work_log", # new
-    "hours_housework_log", #new
-    "agreeableness", 
-    "conscientiousness",
-    "extraversion",
-    "honesty_humility",
-    "openness",
-    "neuroticism",
-    "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
-   # "religion_religious", # Do you identify with a religion and/or spiritual group?
-   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
- #  "religion_church_coarsen", # for prediction
-    # "religion_religious", # perfectly colinear
-   "religion_spiritual_identification",   
-   "religion_identification_level",
-   "religion_church_binary",
-  # "religion_church_binary2",
-    "religion_prayer_binary",
-   "religion_scripture_binary",
-   "religion_believe_god",
-   "religion_believe_spirit",
-    "sample_weights",
+   "male",
+  "age",
+  "education_level_coarsen", # factors
+  "eth_cat", #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+  # "employed", # Are you currently employed? (this includes self-employment or casual work)
+  #"gen_cohort", #age
+  "bigger_doms",
+  "nz_dep2018",
+  "nzsei13",
+  "have_siblings", # added: needed because we are dealing with family giving/receiving
+  "born_nz",  # added
+  "hlth_disability",  # added
+  "hlth_bmi",
+  "household_inc_log", # added: measured with error but OK for imputations
+  "partner",
+  # "parent",  # newly changed - have information in child number
+  "pol_orient", #Please rate how politically liberal versus conservative you see yourself as being.
+  "pol_wing", # Please rate how politically left-wing versus right-wing you see yourself as being.
+  "sample_origin",    # Sample origin names combined
+  "urban",
+  "children_num",
+  "household_inc_log", # new from previous study. needed because we are dealing with family giving/receiving
+  "hours_children_log", # new
+  "hours_work_log", # new
+  "hours_housework_log", #new
+  "agreeableness",
+  "conscientiousness",
+  "extraversion",
+  "honesty_humility",
+  "openness",
+  "neuroticism",
+  "modesty", # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
+  # "religion_religious", # Do you identify with a religion and/or spiritual group?
+  # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
+ # "religion_church_coarsen", # for prediction
+  # "religion_religious", # perfectly colinear
+  "religion_spiritual_identification",
+  "religion_identification_level",
+  "religion_religious",
+  "religion_church_binary",
+  "religion_prayer_binary",
+  "religion_scripture_binary",
+  "religion_believe_god",
+  "religion_believe_spirit",
+  "sample_weights",
   "alert_level_combined_lead" # lead to make it 2019
 )
 
@@ -572,7 +580,7 @@ mice_donate_mids <- mice_donate_c %>%
   rename(sample_weights = t0_sample_weights) |> 
   mutate(
     t0_eth_cat = as.factor(t0_eth_cat),
-    t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+  #  t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
     t0_bigger_doms = as.factor(t0_bigger_doms),
     t0_hours_charity_log =   log(t0_hours_charity + 1),
     # to improve model convergence
@@ -658,7 +666,7 @@ mice_warmth_mids <- mice_warmth_c %>%
   rename(sample_weights = t0_sample_weights) |>
   mutate(
     t0_eth_cat = as.factor(t0_eth_cat),
-    t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+   # t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
     t0_bigger_doms = as.factor(t0_bigger_doms)
   ) |>
   dplyr::group_by(.imp) |>
@@ -729,7 +737,7 @@ mice_support_mids <- mice_support_c %>%
   arrange(.imp, id) |> 
   rename(sample_weights = t0_sample_weights) |> 
   mutate(t0_eth_cat = as.factor(t0_eth_cat),
-        t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+      #  t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
         t0_bigger_doms = as.factor(t0_bigger_doms),
         t0_family_time_log =   log(t0_family_time+1),# to improve model convergence
         t2_family_time_log =   log(t2_family_time+1),# to improve model convergence
@@ -843,6 +851,10 @@ X
 baseline_vars_donate = mice_donate_long |> 
   dplyr::select(
     starts_with("t0"),
+    -t0_religion_identification_level_z,
+   # -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+   # -t0_religion_church_coarsen,
     -t0_religion_prayer_binary_z,
     -t0_religion_scripture_binary_z,
     -t0_religion_spiritual_identification_z,
@@ -1083,6 +1095,10 @@ skim(mice_warmth_long)
 baseline_vars_warmth = mice_warmth_long |> 
   dplyr::select(
     starts_with("t0"),
+    -t0_religion_identification_level_z,
+   # -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+   # -t0_religion_church_coarsen,
     -t0_religion_prayer_binary_z,
     -t0_religion_scripture_binary_z,
     -t0_religion_spiritual_identification_z,
@@ -1470,6 +1486,10 @@ X
 baseline_vars_support = mice_support_long |> 
   dplyr::select(
     starts_with("t0"),
+    -t0_religion_identification_level_z,
+   # -t0_religion_believe_god_z,
+    -t0_religion_believe_spirit_z,
+   # -t0_religion_church_coarsen,
     -t0_religion_prayer_binary_z,
     -t0_religion_scripture_binary_z,
     -t0_religion_spiritual_identification_z,

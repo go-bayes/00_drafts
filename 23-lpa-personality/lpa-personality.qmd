@@ -1,0 +1,1063 @@
+---
+title: "LPA Personality Religion"
+subtitle: "NZAVS"
+abstract: |
+  XXXX
+author: 
+  - name: VS
+    affiliation: XXX
+    orcid_id: XXXXX
+    corresponding: yes
+  - name: Don E Davis
+    affiliation: Georgia State University
+    orcid_id: 0000-0003-3169-6576 
+  - name: Ken Rice
+    affiliation: Georgia State University 
+  - name: Geoffrey Troughton
+    affiliation: Victoria University of Wellington
+  - name: Chris G. Sibley
+    affiliation: School of Psychology, University of Auckland
+    orcid_id: 0000-0002-4064-8800
+  - name: Daryl Van Tongeren
+    affiliation: Hope College
+  - name: Joseph A. Bulbulia
+    affiliation: Victoria University of Wellington, New Zealand
+    orcid_id: 0000-0002-5861-2056
+    email: joseph.bulbulia@vuw.ac.nz
+keywords:
+  - Author order TBA.
+execute:
+  warning: false
+  eval: false
+  echo: false
+  include: false
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library("tidyverse") # data wrangling
+library("tidyLPA") # latent profile analysis
+library("patchwork") # making useful graphs 
+library("table1") # tables
+library("ggraph") # graphs
+library("correlation")
+library("report")
+library("here") # file organisation
+library("parameters") # data dimension reduction
+library("DRR") # data dimension reduct
+library("nFactors")
+
+
+# read libraries
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+# read functions
+source("/Users/joseph/GIT/templates/functions/funs.R")
+
+# experimental functions (more functions)
+source(
+  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+)
+
+
+# read data/ set to path in your computer
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
+  )
+
+# for saving models. # set path fo your computer
+push_mods <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lpa-personality"
+  )
+
+# for sourcing functions mid-script (for experimental scripts only)
+path_funs<- 
+  fs::path_expand(
+    "/Users/joseph/GIT/templates/functions/funs.R"
+  )
+
+# read data: note that you need use the arrow package in R
+dat <- arrow::read_parquet(pull_path)
+
+
+# check path:is this correct?  check so you know you are not overwriting other directors
+push_mods
+
+
+```
+
+## Data processing
+
+Here, we perform a Latent Profile Analysis on a NZAVS 2018-2019 (Wave 10) which is the largest sample frame.
+
+
+Data wrangling
+
+```{r}
+
+dat
+
+dat$religion_believe_cats
+# value              label
+# 1       God-Spirit
+# 2    God-No_Spirit
+# 3    Spirit-No_God
+# 4 No_God-No_Spirit
+
+dat$religion_believe_cats
+
+dat_18 <- dat |>
+ arrange(id, wave) |>
+  mutate(religion_believe_cats = factor(religion_believe_cats,
+                                        levels = c(1, 2, 3, 4),
+                                        labels = c("God-Spirit", "God-No_Spirit", "Spirit-No_God", "No_God-No_Spirit"))) |> 
+# dplyr::filter(id != 9630) %>% # problematic reports no income but works full time and owns home.
+  mutate(urban = factor(
+    ifelse(
+      rural_gch2018 == "Medium Urban Accessibility" |
+        # Define urban condition
+        rural_gch2018 == "High Urban Accessibility",
+      "urban",
+      # Label 'urban' if condition is met
+      "rural"  # Label 'rural' if condition is not met
+    )
+  )) |>
+  # select variables
+  # mutate(across(where(is.double), as.numeric)) |>
+  mutate(male = as.numeric(male) - 1) |>
+  rename(religion_religious = religious) |>  # religious yes/no
+  mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
+  mutate(religion_religious = as.integer(as.numeric(as.character(religion_religious)))) |> 
+  mutate(religion_believe_god_not = abs(religion_believe_god - 1)) |> 
+  mutate(
+    believe_god_not_spirit = ifelse(religion_believe_god == 1 &
+                                      religion_believe_spirit == 0, 1, 0),
+    believe_god_and_spirit =  ifelse(religion_believe_god == 1 &
+                                       religion_believe_spirit == 1, 1, 0),
+    not_believe_god_not_spirit =  ifelse(religion_believe_god == 0 &
+                                           religion_believe_spirit == 0, 1, 0),
+    not_believe_god_believe_spirit =  ifelse(religion_believe_god == 0 &
+                                               religion_believe_spirit == 1, 1, 0)) |>
+  mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
+  dplyr::select(
+    "wave",
+    "year_measured",
+    "id",
+    # "edu",
+    "sample_origin_names_combined",
+    # Sample origin names combined
+    #"alert_level_combined_lead",  not needed because all receive all levels by the point the outcome is measured
+    # covid alert levels -> 2019-2020
+    "education_level_coarsen",
+    # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing)  Combined highschool levels See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
+    "male",
+    # 0 = female, 0.5 = neither female nor male, 1 = male.
+    "age",
+    "born_nz",
+    "hlth_disability",
+    "religion_believe_cats",
+    
+    # value label 0    No 1   Yes
+    "eth_cat",
+    #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+    "employed",
+    # Are you currently employed? (this includes self-employment or casual work)
+    # "gen_cohort",
+    "household_inc",
+    # Please estimate your total household income (before tax) for the last year.
+    "nz_dep2018",
+    # see nzavs materials
+    "nzsei13",
+    # see nzavs materials
+    "partner",
+    # 0 = no, 1 = yes
+    "parent",
+    # 0 = no, 1 = yes
+    "pol_orient",
+    #Please rate how politically liberal versus conservative you see yourself as being.
+    "pol_wing",
+    # Please rate how politically left-wing versus right-wing you see yourself as being.
+    "urban",
+    # see NZAVS,
+    "have_siblings", #Do you have siblings?
+    "total_siblings",# sum siblings
+    "number_sisters_older", #How many older sisters do you have?   
+    "number_sisters_younger", #	How many younger sisters do you have? 
+    "number_brothers_older",#	How many older brothers do you have?
+    "number_brothers_younger", #	How many older brothers do you have?
+    "children_num", # How many children have you given birth to, fathered, or adopted?
+    "hours_children", #Hours - Looking after children
+    "hours_work",#Hours - Working in paid employment
+    "hours_housework", # Hours - Housework/cooking
+    "agreeableness",
+    # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
+    # Sympathize with others' feelings.
+    # Am not interested in other people's problems.
+    # Feel others' emotions.
+    # Am not really interested in others.
+    "conscientiousness",
+    # see mini ipip6
+    # Get chores done right away.
+    # Like order.
+    # Make a mess of things.
+    # Often forget to put things back in their proper place.
+    "extraversion",
+    # Mini-IPIP6 Extraversion
+    # Am the life of the party.
+    # Don't talk a lot.
+    # Keep in the background.
+    # Talk to a lot of different people at parties.
+    "honesty_humility",
+    # see mini ipip6
+    # Would like to be seen driving around in a very expensive car.
+    # Would get a lot of pleasure from owning expensive luxury goods.
+    # Feel entitled to more of everything.
+    # Deserve more things in life.
+    "openness",
+    # see mini ipip6
+    # Have a vivid imagination.
+    # Have difficulty understanding abstract ideas.
+    # Do not have a good imagination.
+    # Am not interested in abstract ideas.
+    "neuroticism",
+    # see mini ipip6
+    # Have frequent mood swings.
+    # Am relaxed most of the time.
+    # Get upset easily.
+    # Seldom feel blue.
+    "modesty",
+    # see mini ipip6
+    # I want people to know that I am an important person of high status,
+    # I am an ordinary person who is no better than others.
+    # I wouldn’t want people to treat me as though I were superior to them.
+    # I think that I am entitled to more respect than the average person is
+    # "sdo",
+    # "rwa",
+    # "brk_relationship",
+    # "began_relationship",
+    "religion_religious",
+    # Do you identify with a religion and/or spiritual group?
+   # "religion_religious_not",  # reverse this indicator
+    "religion_identification_level",
+    #How important is your religion to how you see yourself?"
+    "religion_church_binary",
+  #  "religion_church_binary2",
+    "religion_prayer",
+    # How many times did you pray in the last week?
+    "religion_scripture",
+    # How many times did you read religious scripture in the last week?
+    "religion_church2",
+  #  # How many times did you attend a church or place of worship in the last month?
+    "religion_believe_spirit",
+    #Do you believe in some form of spirit or lifeforce?
+    "religion_believe_spirit",  #inverse believe in god
+    "religion_believe_god",
+    #Do you believe in a God
+    "religion_believe_god_not",  #inverse believe in god
+    "religion_spiritual_identification",
+    #w8,w10,w12-13 "I identify as a spiritual person."
+    "religion_perceive_religious_discrim",
+    #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
+    # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
+    "w_gend_age_euro",
+    # sample_weights.
+    # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+    "gratitude",
+    ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of peopl
+    "modesty",
+    # see above
+    "vengeful_rumin",
+    "charity_donate",
+    #How much money have you donated to charity in the last year?
+    "hours_charity",
+    #,#Hours spent in activities/Hours spent … voluntary/charitable work
+    "warm_asians",
+    "warm_chinese",
+    #"warm_disabled" ,  missing at time 0
+    # begins w9
+    "warm_immigrants",
+    "warm_indians",
+    "warm_elderly",
+    # warm_lgbtq starts w12
+    "warm_maori",
+    "warm_mental_illness",
+    "warm_muslims",
+    "warm_nz_euro",
+    "warm_overweight",
+    "warm_pacific",
+    "warm_refugees",
+    "religion_perceive_religious_discrim",
+    # "issue_same_sex_marriage", not in range
+     "support", # three items as below
+    # "support_help",
+    # # 'There are people I can depend on to help me if I really need it.
+    # "support_turnto",
+    # # There is no one I can turn to for guidance in times of stress.
+    # "support_rnoguidance",
+    #There is no one I can turn to for guidance in times of stress.
+    "family_time",
+    "friends_time",
+    "community_time",
+    "family_money",
+    "friends_money",
+    "community_money",
+     #Please estimate how much help you have received from the following sources in the last week?
+    # Received help and support - hours
+    # family
+    # friends
+    # others in my community
+    # Received help and support - money
+    # family
+    # friends
+    # others in my community
+    # outcomewide, 
+     "religion_religious",
+    # Do you identify with a religion and/or spiritual group?
+    "religion_identification_level",
+    #How important is your religion to how you see yourself?"
+    "religion_church_binary",
+    "religion_prayer",
+    # How many times did you pray in the last week?
+    "religion_scripture",
+    # How many times did you read religious scripture in the last week?
+    "religion_church2",
+    # How many times did you attend a church or place of worship in the last month?
+    "religion_believe_spirit",
+    #Do you believe in some form of spirit or lifeforce?
+    "religion_believe_god",
+    #Do you believe in a God
+    "religion_spiritual_identification",
+    #w8,w10,w12-13 "I identify as a spiritual person."
+    "religion_perceive_religious_discrim",
+    #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
+    # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
+    # sample_weights
+    "alcohol_frequency",
+    #"How often do you have a drink containing alcohol?"
+    "alcohol_intensity",
+    # How many drinks containing alcohol do you have on a typical day when drinking?
+    "hlth_bmi",
+    # " What is your height? (metres)\nWhat is your weight? (kg)\nKg
+    "hours_exercise",
+    # Hours spent … exercising/physical activity
+    # "sfhealth",
+    "sfhealth_your_health",
+    # "In general, would you say your health is...
+    "sfhealth_get_sick_easier",
+    #\nI seem to get sick a little easier than other people.
+    "sfhealth_expect_worse_health",
+    #\nI expect my health to get worse." ****
+    "hlth_sleep_hours",
+    #During the past month, on average, how many hours of actual sleep did you get per night?
+    "smoker",
+    #Do you currently smoke?
+    "hlth_fatigue",
+    #During the last 30 days, how often did.... you feel exhausted?
+    "rumination",
+    # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
+    "kessler_depressed",
+    #During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
+    "kessler_effort",
+    #During the last 30 days, how often did.... you feel that everything was an effort?
+    "kessler_hopeless",
+    # During the last 30 days, how often did.... you feel hopeless?
+    "kessler_nervous",
+    #During the last 30 days, how often did.... you feel nervous?
+    "kessler_restless",
+    #During the last 30 days, how often did.... you feel restless or fidgety?
+    "kessler_worthless",
+    # During the last 30 days, how often did.... you feel worthless?
+    "sexual_satisfaction",
+    #  How satisfied are you with your sex life?
+    "bodysat",
+    ## Am satisfied with the appearance, size and shape of my body.
+    "vengeful_rumin",
+    # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+    "perfectionism",
+    # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+    # I am hardly ever satisfied with my performance.
+    "power_self_nocontrol",
+    # I do not have enough power or control over\nimportant parts of my life.
+    "power_others_control",
+    # Other people have too much power or control over\nimportant parts of my life
+    "self_esteem",
+    "selfesteem_satself",
+    #  On the whole am satisfied with myself.
+    "selfesteem_postiveself",
+    # Take a positive attitude toward myself
+    "selfesteem_rfailure",
+    # Am inclined to feel that I am a failure.
+  #  "self_control",
+    "self_control_have_lots",
+    #In general, I have a lot of self-control.
+    "self_control_wish_more_r",
+    #I wish I had more self-discipline.(r)
+    "emotion_regulation_out_control",
+    # When I feel negative emotions, my emotions feel out of control. w10 - w13
+    "emotion_regulation_hide_neg_emotions",
+    # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
+    "emotion_regulation_change_thinking_to_calm",
+    # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
+    # "emp_work_life_balance",# I have a good balance between work and other important things in my life. # not measured at baseline
+   # "respect_self",  #If they knew me, most NZers would respect what I have accomplished in life. Missing at T12
+    "gratitude",
+    ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+    "pwi_health",
+    #Your health.
+    "pwi_relationships",
+    #Your personal relationships.
+    "pwi_security",
+    #Your future security.
+    "pwi_standardliving",
+    #Your standard of living.
+    "lifesat",
+    "lifesat_satlife",
+    # I am satisfied with my life.
+    "lifesat_ideal",
+    # In most ways my life is close to ideal.
+    "lifemeaning", # average meaning_purpose, meaning_sense
+    "meaning_purpose",
+    # My life has a clear sense of purpose.
+    "meaning_sense",
+    # I have a good sense of what makes my life meaningful.
+    "permeability_individual",
+    #I believe I am capable, as an individual\nof improving my status in society.
+    "impermeability_group",
+    #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
+    "neighbourhood_community",
+    #I feel a sense of community with others in my local neighbourhood.
+    "support",
+    "support_help",
+    # 'There are people I can depend on to help me if I really need it.
+    "support_turnto",
+    # There is no one I can turn to for guidance in times of stress.
+    "support_rnoguidance",
+    #There is no one I can turn to for guidance in times of stress.
+    "belong",
+    "belong_accept",
+    #Know that people in my life accept and value me.
+    "belong_routsider",
+    # Feel like an outsider.
+    "belong_beliefs",
+    # Know that people around me share my attitudes and beliefs.
+    "charity_donate",
+    #How much money have you donated to charity in the last year?
+    "hours_charity",#,#Hours spent in activities/Hours spent … voluntary/charitable work
+    # "nwi", # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
+    "emp_job_sat", # How satisfied are you with your current job? #Eisenbarth, H., Hart, C. M., Zubielevitch, E., Keilor, T., Wilson, M. S., Bulbulia, J. A., Sibley, C. G., & Sedikides, C. (in press). Aspects of psychopathic personality relate to lower subjective and objective professional success. Personality and Individual Differences, 186, 111340.
+    "emp_job_secure",  #only for employed people
+    "emp_job_valued"
+  )|> 
+  dplyr::rename(sample_weights = w_gend_age_euro) |> 
+  filter(year_measured ==1 & wave ==2018) |> 
+  droplevels()
+
+n_unique(dat_18$id) # 47948
+
+
+df <- dat_18 |> 
+  mutate(believe_god_not_spirit = ifelse(religion_believe_god == 1 &
+                                      religion_believe_spirit == 0, 1, 0),
+    believe_god_and_spirit =  ifelse(religion_believe_god == 1 &
+                                       religion_believe_spirit == 1, 1, 0),
+    not_believe_god_not_spirit =  ifelse(religion_believe_god == 0 &
+                                           religion_believe_spirit == 0, 1, 0),
+    not_believe_god_believe_spirit =   ifelse(religion_believe_god == 0 &
+                                               religion_believe_spirit == 1, 1, 0)) |> 
+  select(
+    id,
+    religion_believe_cats,
+    believe_god_and_spirit,
+    believe_god_not_spirit,
+    not_believe_god_believe_spirit,
+    not_believe_god_not_spirit,
+    "agreeableness",
+    # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
+    # Sympathize with others' feelings.
+    # Am not interested in other people's problems.
+    # Feel others' emotions.
+    # Am not really interested in others.
+    "conscientiousness",
+    # see mini ipip6
+    # Get chores done right away.
+    # Like order.
+    # Make a mess of things.
+    # Often forget to put things back in their proper place.
+    "extraversion",
+    # Mini-IPIP6 Extraversion
+    # Am the life of the party.
+    # Don't talk a lot.
+    # Keep in the background.
+    # Talk to a lot of different people at parties.
+    "honesty_humility",
+    # see mini ipip6
+    # Would like to be seen driving around in a very expensive car.
+    # Would get a lot of pleasure from owning expensive luxury goods.
+    # Feel entitled to more of everything.
+    # Deserve more things in life.
+    "openness",
+    # see mini ipip6
+    # Have a vivid imagination.
+    # Have difficulty understanding abstract ideas.
+    # Do not have a good imagination.
+    # Am not interested in abstract ideas.
+    "neuroticism",
+    # see mini ipip6
+    # Have frequent mood swings.
+    # Am relaxed most of the time.
+    # Get upset easily.
+    # Seldom feel blue.
+    "modesty"
+    # see mini ipip6
+    # I want people to know that I am an important person of high status,
+    # I am an ordinary person who is no better than others.
+    # I wouldn’t want people to treat me as though I were superior to them.
+    # I think that I am entitled to more respect than the average person is
+  ) |> 
+  mutate(agreeableness_s = scale(agreeableness),
+         conscientiousness_s = scale(conscientiousness),
+         extraversion_s = scale(extraversion),
+         honesty_humility_s = scale(honesty_humility),
+         openness_s = scale(openness),
+         neuroticism_s = scale(neuroticism),
+         modesty_s = scale(modesty))
+           
+
+table(df$believe_god_and_spirit)
+table(df$believe_god_not_spirit)
+table(df$not_believe_god_believe_spirit)
+table(df$not_believe_god_not_spirit)
+
+
+## regressions:
+
+parameters::parameters( glm(believe_god_and_spirit ~ agreeableness_s, family = binomial, data = df) )
+parameters::parameters( glm(believe_god_and_spirit ~ conscientiousness_s, family = binomial, data = df) )
+parameters::parameters( glm(believe_god_and_spirit ~ honesty_humility_s, family = binomial, data = df) )
+parameters::parameters( glm(believe_god_and_spirit ~ openness_s, family = binomial, data = df) )
+parameters::parameters( glm(believe_god_and_spirit ~ neuroticism_s, family = binomial, data = df) )
+parameters::parameters( glm(believe_god_and_spirit ~ modesty_s, family = binomial, data = df) )
+
+parameters::parameters( glm(not_believe_god_not_spirit ~ agreeableness_s, family = binomial, data = df) )
+parameters::parameters( glm(not_believe_god_not_spirit ~ conscientiousness_s, family = binomial, data = df) )
+parameters::parameters( glm(not_believe_god_not_spirit ~ honesty_humility_s, family = binomial, data = df) )
+parameters::parameters( glm(not_believe_god_not_spirit ~ openness_s, family = binomial, data = df) )
+parameters::parameters( glm(not_believe_god_not_spirit ~ neuroticism_s, family = binomial, data = df) )
+parameters::parameters( glm(not_believe_god_not_spirit ~ modesty_s, family = binomial, data = df) )
+
+
+
+df_believe_god_and_spirit <- df |> filter(believe_god_and_spirit == 1) |>
+  select(
+    agreeableness,
+    conscientiousness,
+    extraversion,
+    honesty_humility,
+    openness,
+    neuroticism,
+    modesty
+  ) |>
+  droplevels()
+
+nrow(df_god_spirit)
+
+df_believe_god_not_spirit <-  df |> filter(believe_god_not_spirit == 1) |>
+  select(
+    agreeableness,
+    conscientiousness,
+    extraversion,
+    honesty_humility,
+    openness,
+    neuroticism,
+    modesty
+  ) |>
+  droplevels()
+
+nrow(df_believe_god_not_spirit)
+
+df_not_believe_god_believe_spirit <-
+  df |>  filter(not_believe_god_believe_spirit == 1) |>
+  select(
+    agreeableness,
+    conscientiousness,
+    extraversion,
+    honesty_humility,
+    openness,
+    neuroticism,
+    modesty
+  ) |>
+  droplevels()
+
+nrow(df_not_believe_god_believe_spirit)
+
+df_not_believe_god_not_spirit <-
+  df |>  filter(not_believe_god_not_spirit == 1) |>
+  select(
+    agreeableness,
+    conscientiousness,
+    extraversion,
+    honesty_humility,
+    openness,
+    neuroticism,
+    modesty
+  ) |>
+  droplevels()
+droplevels()
+
+
+  nrow(df_not_believe_god_not_spirit)
+
+```
+
+Plot relationship of variables
+
+```{r  cache = TRUE, layout="l-body-outset",  fig.height=8, fig.width=12}
+colnames(df_god_spirit)
+
+df_believe_god_not_spirit %>%
+  dplyr::select(-id)%>%
+  correlation::correlation(partial = FALSE, multilevel = FALSE ) %>%
+  plot()
+```
+
+We create a simple data summary to ensure that all variables look OK. We can see that rats and wb are strongly anti-correlated, which provides a sanity check. 
+
+```{r}
+library(skimr)
+table1::table1(~ agreeableness+
+    conscientiousness+
+    extraversion+
+    honesty_humility+
+    openness+
+    neuroticism, data = df)
+```
+
+I find it easier to see what is going on in the data by inspecting histograms of the variables:
+
+```{r layout="l-body-outset",  fig.height=8, fig.width=12}
+skimr::skim(df, -id)
+```
+
+
+
+<!-- ```{r  cache = TRUE, layout="l-body-outset",  fig.height=8, fig.width=12} -->
+<!-- sh_hist <- ggplot2::qplot(data = df, sh, geom = "histogram") + theme_classic() +  -->
+<!--   labs(title = "Histogram of sh") -->
+<!-- stht_hist <- ggplot2::qplot(data = df, stht, geom = "histogram") + theme_classic() +  -->
+<!--   labs(title = "Histogram of stht") -->
+<!-- satt_hist <- ggplot2::qplot(data = df, satt, geom = "histogram") + theme_classic() +  -->
+<!--   labs(title = "Histogram of satt") -->
+
+<!-- sh_hist/stht_hist/satt_hist + plot_annotation(title= "We might want to condsider whether stht is given sufficient variation", tag_levels = "a") -->
+<!-- ``` -->
+
+<!-- Here a table is more informative: -->
+
+<!-- # ```{r   cache = TRUE} -->
+<!-- # table1::table1(~ -->
+<!-- #                  factor(sh) + -->
+<!-- #                  factor(stht) + -->
+<!-- #                  factor(satt), -->
+<!-- #                data = df -->
+<!-- #                ) -->
+<!-- # ``` -->
+
+
+
+## lpa_believe_god_not_spirit
+
+```{r  cache = TRUE}
+library(arm)
+lpa_believe_god_not_spirit <- df_believe_god_not_spirit %>%
+  # dplyr::mutate(
+  #   anx_s = as.numeric(scale(anx)),
+  #   cdct_s = as.numeric(scale(cdct))  ,
+  #   sh_s = as.numeric(scale(sh)),
+  #   stht_s = as.numeric(scale(stht)),
+  #   wb_s = as.numeric(scale(wb)),
+  #   satt_s = as.numeric(scale(satt)),
+  #   rads_s = as.numeric(scale(rads))
+  # ) |> 
+  tidyLPA::single_imputation() %>%
+  tidyLPA::estimate_profiles(2:4) # best = 2
+
+#model
+lpa_believe_god_not_spirit
+plot_lpa_believe_god_not_spirit <- tidyLPA::plot_profiles( lpa_believe_god_not_spirit[[1]], add_line = TRUE) + ggtitle( "Believe God Not believe Spirit", subtitle = "type 1 = 30%; type 2: 70%")
+plot_lpa_believe_god_not_spirit
+```
+
+```{r}
+lpa_believe_god_not_spirit_2 <- tidyLPA::get_data(lpa_believe_god_not_spirit[[1]]) ## note we are counting up from three, hence `[[2]]`
+lpa_believe_god_not_spirit_2 %>%
+  dplyr::select(Class) %>%
+  dplyr::mutate(class = as.factor(Class)) %>%
+  dplyr::group_by(class) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(freq = n / sum(n))
+```
+
+
+
+
+## df_believe_god_and_spirit
+
+
+```{r  cache = TRUE}
+library(arm)
+lpa_believe_god_and_spirit <- df_believe_god_and_spirit %>%
+  # dplyr::mutate(
+  #   anx_s = as.numeric(scale(anx)),
+  #   cdct_s = as.numeric(scale(cdct))  ,
+  #   sh_s = as.numeric(scale(sh)),
+  #   stht_s = as.numeric(scale(stht)),
+  #   wb_s = as.numeric(scale(wb)),
+  #   satt_s = as.numeric(scale(satt)),
+  #   rads_s = as.numeric(scale(rads))
+  # ) |> 
+  tidyLPA::single_imputation() %>%
+  tidyLPA::estimate_profiles(2:4) # best = 2
+
+#model
+
+plot_lpa_believe_god_and_spirit<- tidyLPA::plot_profiles( lpa_believe_god_and_spirit[[1]], add_line = TRUE)+ ggtitle( "Believe God And Believe Spirit", subtitle = "type 1 = 24%; type 2: 76%")
+plot_lpa_believe_god_and_spirit
+
+```
+
+```{r}
+lpa_believe_god_and_spirit_2 <- tidyLPA::get_data(lpa_believe_god_and_spirit[[1]]) ## note we are counting up from three, hence `[[2]]`
+lpa_believe_god_and_spirit_2 %>%
+  dplyr::select(Class) %>%
+  dplyr::mutate(class = as.factor(Class)) %>%
+  dplyr::group_by(class) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(freq = n / sum(n))
+```
+
+
+### df_not_believe_god_believe_spirit
+
+
+```{r  cache = TRUE}
+library(arm)
+lpa_not_believe_god_believe_spirit <- df_not_believe_god_believe_spirit %>%
+  # dplyr::mutate(
+  #   anx_s = as.numeric(scale(anx)),
+  #   cdct_s = as.numeric(scale(cdct))  ,
+  #   sh_s = as.numeric(scale(sh)),
+  #   stht_s = as.numeric(scale(stht)),
+  #   wb_s = as.numeric(scale(wb)),
+  #   satt_s = as.numeric(scale(satt)),
+  #   rads_s = as.numeric(scale(rads))
+  # ) |> 
+  tidyLPA::single_imputation() %>%
+  tidyLPA::estimate_profiles(2:4) # best = 2
+
+#model
+
+plot_lpa_not_believe_god_believe_spirit<- tidyLPA::plot_profiles( lpa_not_believe_god_believe_spirit[[1]], add_line = TRUE)
+
+plot_lpa_not_believe_god_believe_spirit
+
+```
+
+```{r}
+lpa_believe_god_and_spirit_2 <- tidyLPA::get_data(lpa_believe_god_and_spirit[[1]]) ## note we are counting up from three, hence `[[2]]`
+lpa_believe_god_and_spirit_2 %>%
+  dplyr::select(Class) %>%
+  dplyr::mutate(class = as.factor(Class)) %>%
+  dplyr::group_by(class) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(freq = n / sum(n))
+```
+
+
+
+##     df_not_believe_god_not_spirit
+
+
+```{r  cache = TRUE}
+library(arm)
+lpa_not_believe_god_not_believe_spirit <- df_not_believe_god_not_spirit %>%
+  # dplyr::mutate(
+  #   anx_s = as.numeric(scale(anx)),
+  #   cdct_s = as.numeric(scale(cdct))  ,
+  #   sh_s = as.numeric(scale(sh)),
+  #   stht_s = as.numeric(scale(stht)),
+  #   wb_s = as.numeric(scale(wb)),
+  #   satt_s = as.numeric(scale(satt)),
+  #   rads_s = as.numeric(scale(rads))
+  # ) |> 
+  tidyLPA::single_imputation() %>%
+  tidyLPA::estimate_profiles(2:4) # best = 2
+
+#model
+lpa_not_believe_god_not_believe_spirit
+
+plot_lpa_not_believe_god_not_believe_spirit<- tidyLPA::plot_profiles( lpa_not_believe_god_not_believe_spirit[[1]], add_line = TRUE) + ggtitle( "Not Believe God But Believe Spirit", subtitle = "type 1 = 23%; type 2: 77%")
+
+plot_lpa_not_believe_god_not_believe_spirit
+
+```
+
+```{r}
+lpa_not_believe_god_believe_spirit_2 <- tidyLPA::get_data(lpa_not_believe_god_believe_spirit[[1]])
+lpa_not_believe_god_believe_spirit_2 %>%
+  dplyr::select(Class) %>%
+  dplyr::mutate(class = as.factor(Class)) %>%
+  dplyr::group_by(class) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(freq = n / sum(n))
+```
+
+
+
+
+```{r}
+plot_lpa_believe_god_not_spirit / plot_lpa_believe_god_and_spirit /plot_lpa_not_believe_god_believe_spirit/plot_lpa_not_believe_god_not_believe_spirit
+```
+
+
+
+
+## An "experimental" approach
+
+An alternative approach might be to understand whether we can reduce features of the data and *then* apply LPA.`r knitr::asis_output("\U1F923")`
+
+
+### Try a PCA
+
+```{r}
+ddf <- df %>%
+  dplyr::select(-id)
+
+# PCA
+set.seed(12)
+out <-parameters::reduce_parameters(ddf, method = "PCA", n = "max", distance = "euclidean")
+head(out)
+```
+
+WARNING: I'm not sure it makes sense to perform an LPA on a PCA dataset, but here it goes
+
+### Prepare the data 
+
+```{r cache = TRUE}
+# rename the columns
+out1 <-  out %>%
+  dplyr::rename(
+    wbPCA =  "rads_-0.87/stht_-0.74/sh_-0.73/wb_0.72",
+    sattPCA = "satt_0.65",
+    cdctPCA = "cdct_-0.84",
+    anxPCA = "anx_0.66"
+  )
+```
+
+### LPA
+
+```{r cache = TRUE}
+## fit an LPA on the Principle Components
+fit4 <- out1 %>%
+ dplyr::select(wbPCA,
+         sattPCA,
+         cdctPCA,
+         anxPCA) %>%
+  tidyLPA::single_imputation() %>%
+  tidyLPA::estimate_profiles(3:6)
+```
+
+
+```{r cache = TRUE, layout="l-body-outset",  fig.height=12, fig.width=12}
+# Table of fits
+tidyLPA::get_fit( fit4 )
+```
+
+### Results
+
+A three class solution seems OK.  let's graph this one:
+
+
+```{r  cache = TRUE, layout="l-body-outset",  fig.height=8, fig.width=12}
+tidyLPA::plot_profiles( fit4, add_line = TRUE ) + 
+  ylab("PCA units") + labs(title = "LPA of PCA: no warrenties")
+```
+
+
+
+Let's graph the four class solution on its own
+
+
+```{r  cache = TRUE, layout="l-body-outset",  fig.height=8, fig.width=12}
+
+tidyLPA::plot_profiles( fit4[[2]], add_line = TRUE ) + 
+  ylab("PCA units") + labs(title = "LPA of PCA: no warrenties")
+```
+
+
+
+Calculate frequencies:
+
+
+
+
+```{r cache = TRUE}
+d5 <- tidyLPA::get_data( fit4[[2]] )
+d5%>%
+  dplyr::select(Class) %>%
+  dplyr::mutate(class = as.factor(Class))%>%
+  dplyr::group_by(class)%>%
+   dplyr::summarise(n = n()) %>%
+   dplyr::mutate(freq = n / sum(n))
+```
+
+About 6-7 % are in the low wpPCA -> high sattPCA class. This is the same proportion as in the 3 class solution  
+
+
+However, I'm not sure I would trust this approach to modelling an LPA.  This is because it relies on a latent profile of a latent variable. I don't have enough background in LPA to assess whether that isn't bat-shit crazy. 
+
+
+
+## Just the code
+
+
+```{r code_folding = FALSE, eval=FALSE}
+
+# libraries
+library("tidyLPA") # latent profile analysis
+library("here") # file organisation
+library("tidyverse") # data wrangling
+
+# import data: note -- you'd need to designate the paths by folders in your library
+# my path is : /Users/jbul176/GIT/notes/colleagues/marc/"KDat2403.csv
+# here::here() will take you to the root directory and then you specify a location from there
+
+dat<-as_tibble(readr::read_csv(here::here("colleagues", "marc", "KDat2403.csv"), col_names = FALSE))
+
+
+# Rename colums  
+df <- dat %>%
+dplyr::rename( "id" = "X1",
+       "anx" = "X2",
+        "cdct" = "X3", 
+       "sh"= "X4",
+       "stht" = "X5",
+       "satt" = "X6",
+       "wb"= "X7",
+       "rads"= "X8" )
+
+
+# LPA without the binary variables
+
+
+p <- 7 # max number of classes
+fit <-  df2 %>%
+  dplyr::select(anx_s,
+                cdct_s,
+                wb_s,
+                rads_s) %>%
+  tidyLPA::single_imputation() %>%
+  tidyLPA::estimate_profiles(3:p)
+
+
+# Get fit statistics
+
+tidyLPA::get_fit( fit )
+
+
+# Graph all results and create labels for the graph 
+
+tidyLPA::plot_profiles( fit4, add_line = TRUE ) + 
+  ylab("PCA units") + labs(title = "LPA of PCA: no warrenties")
+
+
+# Plot only the 4-class solution
+tidyLPA::plot_profiles( fit [[2]] , add_line = TRUE) ## note we are counting up from three, hence `[[2]]`
+
+# Create table for proportion of sample in classes
+df_2 <- tidyLPA::get_data(fit[[2]]) ## note we are counting up from three, hence `[[2]]`
+df_2 %>%
+  dplyr::select(Class) %>%
+  dplyr::mutate(class = as.factor(Class)) %>%
+  dplyr::group_by(class) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(freq = n / sum(n))
+
+
+# notes: the PCA approach above is "experimental" and possibly flawed. However, it suggest an alternative approach to the problem, involving data-dimension reduction. 
+
+# To do: create better tables 
+
+```
+
+
+
+## What predicts suicide attempt?
+
+
+#### Paradoxically, 1  x SD increase in well being predicts suicide .41 greater odds of suicidal attempt.
+
+```{r}
+sjPlot::tab_model(
+  glm(as.integer(satt) ~ wb_s, data = df2, family = "binomial")
+  )
+```
+
+
+####  Suicidal thought predicts 52.17 x greater odds for suicide attempt
+
+```{r}
+sjPlot::tab_model(
+  glm(as.integer(satt) ~ stht, data = df2, family = "binomial")
+  )
+```
+
+####  1 x SD of anxiety predicts 2 x greater odds of suicide attempt
+
+
+```{r}
+sjPlot::tab_model(
+  glm(as.integer(satt) ~ anx_s, data = df2, family = "binomial")
+  )
+```
+
+
+#### Self harm predicts 28.11 times higher chance of suicide attempt!
+
+```{r}
+sjPlot::tab_model(
+  glm(as.integer(satt) ~ sh, data = df2, family = "binomial")
+  )
+```
+
+
+#### 1 sd increase in conduct problem predicts 2 x greater odds of suicide attempt
+
+```{r}
+sjPlot::tab_model(
+  glm(as.integer(satt) ~ cdct_s, data = df2, family = "binomial")
+  )
+```
+
+
+### Depression  4.78 x greater odds of suicide attempt
+
+```{r}
+sjPlot::tab_model(
+  glm(as.integer(satt) ~ rads_s, data = df2, family = "binomial")
+  )
+```
+
+
+#### To do: need a DAG and causal analysis
+
+
+
+

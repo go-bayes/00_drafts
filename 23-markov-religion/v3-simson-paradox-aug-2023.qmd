@@ -38,7 +38,7 @@ editor_options:
 source(here::here("23-markov-religion", "libs.R"))
 source(here::here("23-markov-religion", "functions.R"))
 
-
+here::here()
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
 # read functions
@@ -85,7 +85,6 @@ dt <- dat |>
  # # dplyr::filter(year_measured != -1)%>% # remove people who passed away
  #  ungroup(id) %>%
   arrange(id,wave) %>%
-  group_by(id) %>%
   dplyr::mutate(
     religion_religious_1 = as.numeric(religious),
     religion_church_1 = if_else(religion_church2 == 0, 1, 2),
@@ -104,7 +103,8 @@ dt <- dat |>
     religion_church_1,
     religion_believe_god_1,
     religion_believe_spirit_1,
-    year_measured
+    year_measured,
+    religion_church_1n
   ) %>%
   dplyr::filter(wave != 2009 &
                   wave != 2021 &
@@ -134,10 +134,9 @@ dt <- dat |>
 
 
 # number participants
-n_unique(dt$)
+n_unique(dt$id)
 
 
-table(dt$cohort)
 
 #count repeats
 count_waves_participants(dt) # in the full study
@@ -178,9 +177,14 @@ push_mods
 
 #save
 here_save(msm_rel,"msm_rel")
+
 msm_rel <- here_read("msm_rel")
 
-pmatrix.msm(msm_rel, covariates = list(age = 30 ), ci = "normal")
+pmatrix.msm(msm_rel, ci = "normal")
+
+msm_rel <- here_read("msm_rel")
+msm_rel
+pmatrix.msm(msm_rel, ci = "normal")
 
 # function to make graph
 graph_data_rel <- msm_graph(msm_rel, l_str = "dissaffiliate", u_str = "affiliate")
@@ -235,7 +239,7 @@ ggsave(
 ## model for church
 
 # Initialise
-init_church <- msm::crudeinits.msm(religion_church_1 ~ year_w, id, # Id = identifier
+init_church <- msm::crudeinits.msm(religion_church_1n ~ year_w, id, # Id = identifier
                       data = dt,
                       qmatrix = q)
 # 
@@ -341,22 +345,24 @@ msm_church_n <- msm(
   id,
   data = dt,
   covariates =  ~ age,
-  qmatrix = init_church,
+  qmatrix = init_church_n,
   ematrix = rbind(c(.1, .1), c(.1, .1)),
   est.initprobs = TRUE,
   exacttimes = TRUE,# not running without this assumption.
   gen.inits = TRUE
 )
 
-msm_church_n
+
 # check path
 push_mods
 
 #save
 here_save(msm_church_n,"msm_church_n")
-#msm_church <- here_read("msm_church")
+msm_church_n <- here_read("msm_church_n")
 
 pmatrix.msm(msm_church_n, covariates = list(age = 80), ci = "normal")
+pmatrix.msm(msm_church_n, ci = "normal")
+
 
 # function to make graph
 graph_data_church_n <- msm_graph(msm_church_n, l_str = "loss", u_str = "gain")
@@ -389,9 +395,12 @@ markov_graph_church_n <-
 
 markov_graph_church_n
 
+push_mods
+
+
 
 ggsave(
-  markov_graph_church_n
+  markov_graph_church_n,
   path = here::here(here::here(push_mods, "markov_graph_church_n")),
   width =16,
   height = 9,
@@ -401,7 +410,6 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
-
 
 
 
@@ -442,6 +450,7 @@ msm_god
 
 
 pmatrix.msm(msm_god, covariates = list(age = 80), ci = "normal")
+pmatrix.msm(msm_god,  ci = "normal")
 
 # function to make graph
 graph_data_god <- msm_graph(msm_god, l_str = "loss", u_str = "gain")
@@ -518,6 +527,7 @@ here_save(msm_spirit,"msm_spirit")
 msm_spirit <- here_read(push_mods,"msm_spirit")
 
 pmatrix.msm(msm_spirit, covariates = list(age = 80), ci = "normal")
+pmatrix.msm(msm_spirit,  ci = "normal")
 
 # function to make graph
 graph_data_spirit <- msm_graph(msm_spirit, l_str = "loss", u_str = "gain")
