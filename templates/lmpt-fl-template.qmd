@@ -1,17 +1,26 @@
 ---
-title: "LMPT Outcomewide Flourishing Template"
-subtitle: "Settings"
+title: "Causal effects of meaning of XXXX on multi-dimensional well-being"
+subtitle: "An outcome-wide study"
 abstract: |
-  Abstract here
+  XXXX
 author: 
-  - name: Some B O'Dee
-    affiliation: University X
-    orcid_id: 0000-0000-0000-0000 
-    corresponding: yes
   - name: Joseph A. Bulbulia
     affiliation: Victoria University of Wellington, New Zealand
     orcid_id: 0000-0002-5861-2056
     email: joseph.bulbulia@vuw.ac.nz
+    corresponding: yes
+  - name: Don E Davis
+    affiliation: Georgia State University
+    orcid_id: 0000-0003-3169-6576 
+  - name: Ken Rice
+    affiliation: Georgia State University 
+  - name: Geoffrey Troughton
+    affiliation: Victoria University of Wellington
+  - name: Chris G. Sibley
+    affiliation: School of Psychology, University of Auckland
+    orcid_id: 0000-0002-4064-8800
+  - name: Daryl Van Tongeren
+    affiliation: Hope College
 keywords:
   - Author order TBA.
 execute:
@@ -22,7 +31,6 @@ execute:
 editor_options: 
   chunk_output_type: console
 ---
-
 ```{r}
 #| label: load-libraries
 #| echo: false
@@ -473,8 +481,37 @@ dat_long <- dat |>
          urban = as.numeric(urban)) |>
   as.data.frame()
 
+
+head(dat_long)
+
 # check unique n
 n_unique(dat_long$id) # 34761 # sample size
+
+table1(~ religion_church_binary|wave, data = dat_long)
+
+# checks
+table(dat_long$wave, dat_long$lifemeaning)
+
+dt_test <- dat_long |> 
+  filter(wave == 2019) 
+
+source(path_funs)
+
+table( dt_test$lifemeaning) 
+table(dt_test$meaning_sense)
+
+result_table <- dat_long %>%
+  count(wave, get(nzavs_exposure)) %>%
+  pivot_wider(names_from = get(nzavs_exposure), values_from = n, values_fill = 0) %>%
+  as.table()
+
+
+## create ordered variable
+dat_long_t <- create_ordered_variable_custom(dat_long, "lifemeaning", c(1, 5, 5.5, 6.5,  7), lifemeaning_labels)
+
+
+# check unique n
+n_unique(dat_long$id) # 34745 # sample size
 
 table1(~ religion_church_binary|wave, data = dat_long)
 
@@ -559,6 +596,8 @@ n_unique(dat_long$id)
 #     "modesty",
 #     "sample_weights"
 # )
+
+
 baseline_vars = c(
     "male",
     "age",
