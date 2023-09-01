@@ -124,61 +124,70 @@ dat <- arrow::read_parquet(pull_path)
 
 ### Purpose
 
-This article describes how to address causal questions in psychology using panel data. I primarily focus on the simple case of estimating total effects in three-wave panel designs.
+This article describes how to address causal questions in psychology using panel data. I primarily focus on the simple case of estimating total effects in three-wave panel designs. A secondary purpose of this article is to guide applied researchers for the New Zealand Attitudes and Values Study in developing studies that address causal questions.
 
-**Part 1** introduces definitions and notation, and outlines how causal inference works.  The purpose of this section is to introduce readers who are not familiar with causal inference to its conceptual and mathematical basi.   
+**Part 1** introduces definitions and notation, and outlines how causal inference works. The purpose of this section is to introduce readers who are not familiar with causal inference to its conceptual and mathematical basis.
 
-**Part 2** outlines the three-wave panel, and its motivations. Here I introduce the concept of an "outcome-wide study," an concept introduced by Tyler Vanderweele.  I clarify the theoretical motivations for an outcome-wide study, describe pitfalls, and discuss methods addressing such limitations. To foreshadow, and outcome-wide study quantifies the total effects of a single intervention on multiple outcomes.  This approach affords more rapid scientific progress than would be possible were researchers to focus on single outcomes. This approach also avoids selection bias arising from cherry-picking outcomes in the service of a publishable story. 
+**Part 2** outlines the three-wave panel, and its motivations. Here I introduce the concept of an "outcome-wide study," an concept introduced by Tyler VanderWeele [@vanderweele2017a; @vanderweele2020a]. I review important theoretical motivations for outcome-wide studies, describe pitfalls, and discuss methods for addressing their limitations. To foreshadow, and outcome-wide study quantifies the total effects of a single intervention on multiple outcomes. This approach affords more rapid scientific progress than would be possible were researchers to focus on single outcomes. This approach also avoids selection bias arising from cherry-picking outcomes in the service of a publishable story.
 
-**Part 3** develops a the step-by-step guide for conducting causal inference within a three-wave panel design. Here, our focus shifts from theoretical to applied interests. To make theory concrete, we use the New Zealand Attitudes and Values Study (NZAVS). The NZAVS is a national probability study that has been repeatedly measuring individuals since 2009.  In 2018-2019 (NZAVS wave 10), the NZAVS conducted a massive booster that enrolled 1.5% of the adult population of New Zealand.  Our focus here will be on describing causal inference methods as they apply to NZAVS waves 10-13.  Part of the purpose of this guide is to assist NZAVS researchers in developing causal inferential studies using NZAVS data.  Again, we will focus on outcome-wide approaches. 
+**Part 3** develops a the step-by-step guide for conducting causal inference within a three-wave panel design. Here, our focus shifts from theoretical to applied interests. To make theory concrete, we use the New Zealand Attitudes and Values Study (NZAVS). The NZAVS is a national probability study that has been repeatedly measuring individuals since 2009. In 2018-2019 (NZAVS wave 10), the NZAVS conducted a large booster that enrolled 1.5% of the adult population of New Zealand. Our focus here will be on describing causal inference methods as they apply to NZAVS waves 10-13. Part of the purpose of this guide is to assist NZAVS researchers in developing causal inferential studies using NZAVS data. Again, we will focus on outcome-wide approaches.
 
-**Part 4** describes common estimators, and options. The material in this section may appear somewhat technical. However, we encourage readers to worth through the technical details, which have been limited to the essentials required for understanding the move from stating causal questions to answering them using time-series data. 
+**Part 4** describes common estimators, and options. The material in this section may appear somewhat technical. However, we encourage readers to worth through the technical details, which have been limited to the essentials required for understanding the move from stating causal questions to answering them using time-series data.
 
-**Part 5** discusses more complex designs where there is scope for treatment-confounder feedback. 
+**Part 5** discusses more complex designs where there is scope for treatment-confounder feedback.
 
-
-An Appendix describes custom functions written for executing the workflows in the NZAVS, again with a focus on three-wave panel designs. 
-
+An Appendix describes custom functions written for executing the workflows in the NZAVS, again with a focus on three-wave panel designs.
 
 ## **Part 1** Definitions and notation
 
-#### **Treatment or Exposure**
+#### Treatment or Exposure
 
-A treatment or exposure is denoted by $A$. In plain terms, the treatment is the *cause.*  We say "the" cause because we will be interested in isolating causal effects of single treatments. We assume that the treatment can take different levels such that $(A = a) \neq (A = a')$, which correspond to different states or intensities of the intervention.
+We will denote the treatment or exposure by $A$. Here, $A$ represents the specific cause we will examine. We use the terms "treatment" and "exposure" synonomously. 
 
+We assume that different gradations of $A$ are possible; that is, $A = a$ and $A = a'$ symbolise diverse treatment levels. 
 
-#### **Outcomes**
+#### Counterfactual Outcome
 
-We denote an outcome using the symbol $Y$. In plain terms, an outcome is an *effect.*  There may be many effects that a researcher may wish to identify from a single cause.  $Y$ represent the values that an outcome would take on if a treatment or exposure were, perhaps contrary to fact, set to a specific level [@ogburn2021]. When we speak of outcomes, we speak of potential states of the world. This will naturally invite counterfactual language. 
+Imagine a world where a unit subjected to $ A = a $ could also be observed under $ A = a'$. In reality, this is impossible; a unit experiences only one treatment level at a time. The outcomes under the treatments not received are called "counterfactual outcomes" or equivalently "potential outcomes." 
 
-Througout we use the terms "potential outcomes" and "counterfactual outcomes" synonymously.
+A counterfactual outcome is unobservable in practice, as a unit can only experience one treatment level at a time, $Y|A=a$ or $Y|A=a'$, but not both.  However, when certain assumptions are satisfied it may be possible to recover counterfactual outcomes from the data, a point we will elaborate on later.
 
-We denote a potential outcome using the notation $Y(A = a)$ or simply $Y(a)$.
+In the context of causal inference, counterfactuals are critical for establishing a causal effect. Without counterfactual outcomes, any inferred causal relationship remains speculative. We may think of causal inference as the practice (or art) of obtaining contrasts between counterfactual outcomes from observed data. 
 
-#### **Causal Contrast**
+#### Causal Contrast
 
-A causal contrast is a function that quantifies a difference, at some scale, in potential outcomes under different treatment levels.
-
-Formally, a causal contrast is a function of potential outcomes:
-
-$$f_{\text{causal contrast}}(Y(a), Y(a'))$$
-
-where $Y(a)$ and $Y(a')$ represent the potential outcomes under the specific treatment levels $A = a$ and $A = a'$, respectively.
-
-Where $ATE$ denotes the average treatment effect, a causal contrast on the difference scale may be expressed:
-
-$$ATE_{A,A'} = E[Y(a)] - E[Y(a')]$$
-
-This essentially denotes an average treatment effect comparing the outcome under treatment level $A$ to the outcome under treatment level $A'$. For all exposures, including continuous exposures, we must stipulate the level of contrast for the treatment.
+What's the point of counterfactuals? They allow us to define causal contrasts:
 
 
-Likewise we may state the average treatment effect on the ratio scale
+$$
+f_{\text{causal contrast}}(Y(a), Y(a'))
+$$
 
-$$ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}$$
+In words, this function quantifies how different the outcomes are under different treatment states.  $Y(a)$ and $Y(a')$ denote potential outcomes when the treatment levels are $A = a$ and$A = a'$, respectively. 
+
+
+#### Scales of Causal Contrast: Difference and Ratio
+
+We cannot generally obtain causal contrasts for individual units. By definition, treatments are exclusive.  However, when assumptions are satisfied, we may obtain average treatment effect.  For example, when focusing on the average treatment effect (ATE), the causal contrast on the difference scale can be defined as:
+
+$$
+ATE_{A,A'} = E[Y(a)] - E[Y(a')]
+$$
+
+This function computes the average effect by contrasting the expected outcomes under two specific treatment levels $A$ and$A'$.
+
+Similarly, a causal contrast between the averages of two treatment effects can also be expressed on the ratio scale:
+
+$$
+ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}
+$$
+
+Regardless of the scale or type of treatment, specifying the level of contrast is essential for interpretation.
+
 
 #### **Causal Effect**
 
-We say there is a causal effect on the difference scale when a causal estimand does not equal zero, indicating that the exposure influences the outcome. For example:
+A causal effect is a contrast in average treatments at some scale.  We say there is a causal effect on the difference scale when a causal contrasts does not equal zero:
 
 $$E[Y(a)] - E[Y(a')] \neq 0$$
 
@@ -194,25 +203,26 @@ The observed association is the measurable link between a treatment or exposure 
 
 $$f_{\text{observed}}(Y, A)$$
 
-For example, we may quantify an association between a treatment and outcome using linear regression:
+For example, we may use a linear regression model to quantify the association between treatment $A$ and outcome $Y$:
 
-$$Y = \beta_0 + \beta_1 A + \epsilon$$
+$$
+Y = \beta_0 + \beta_1 A + \epsilon
+$$
 
-Where:
+Here:
 
--   $Y$ is the outcome
--   $A$ is the treatment or exposure
--   $\beta_0$ and $\beta_1$ are coefficients estimating the relationship
--   $\epsilon$ is the error term
+-   $Y$ is the outcome variable.
+-   $A$ signifies treatment or exposure.
+-   $\beta_0$ is the intercept, $\beta_1$ the slope.
+-   $\epsilon$ represents the error term.
 
-The slope ($\beta_1$) and intercept ($\beta_0$) estimates, obtained using ordinary least squares (OLS), describe a relationship modelled as linear.
+Slope $\beta_1$ and intercept $\beta_0$ are estimated via ordinary least squares (OLS), assuming a linear relationship. It reflects observed data, not full data that includes counterfactual outcomes. Hence, drawing causal conclusions based solely on $\beta_1$ is problematic.
 
 #### **Full Data and Observed Data**
 
-The full data is the random vector $(Y(1), Y(0), X, L)$ for covariates $L$, while the observed data $(Y, X, C)$ is a coarsening of the full data with $Y = X \cdot Y(1) + (1-X) \cdot Y(0)$ [@ogburn2021].
+The full data is the random vector $(Y(1), Y(0), A, L)$ for covariates $L$, while the observed data $(Y, A, L)$ is a coarsening of the full data with $Y = A \cdot Y(1) + (1-A) \cdot Y(0)$ [@ogburn2021].
 
-Absent assumptions, we cannot learn about causal estimands from the observed data, because they are functionals of (partially) unobserved potential outcomes.
-
+Absent assumptions, we cannot learn about contrasts from the observed data, because they are functionals of (partially) unobserved potential outcomes.
 
 #### **Confounding**
 
@@ -226,8 +236,6 @@ Any variable that when conditioned upon, perhaps in conjunction with other confo
 
 -   **Unmeasured Confounder** ($U$): Represented by the symbol $U$, an unmeasured confounder is a variable that is influential on both the treatment and the outcome but, regrettably, has not been captured in the study's data. The inability to control for $U$ can potentially introduce an erroneous bias in the estimation of the causal relationship, a situation that can complicate the understanding of true causal effects. This scenario is a subject of considerable concern, especially in observational studies where information on all confounders might not be attainable.
 
-
-
 #### **Causal Estimand**
 
 A causal estimand names the causal contrast of interest, specifying the levels of exposure to be contrasted, potential outcomes of interest, the scale of the causal contrast, and the target population for whom the causal contrast applies.
@@ -239,7 +247,6 @@ A statistical estimand is a functional of the observed data that corresponds to 
 #### **Estimator**
 
 An estimator is a statistical function of the observed data, denoted as $\hat{\theta}(Y, A, L)$, that provides an estimate of the statistical estimand. It translates the observed data into a single value, approximating the unknown parameter. In the context of causal inference, an estimator is used to estimate the statistical estimand, thereby providing information about the corresponding causal estimand.
-
 
 #### **Source Population**
 
@@ -267,10 +274,9 @@ where $f$ is a function and $T$ is a function that maps the results from our sou
 
 To achieve transportability, we need information about the source and target populations and an understanding of how the relationships between treatment, outcome, and covariates differ between the populations. That is assessing transportability requires scientific knowledge.
 
-
 #### **Elicitation**
 
-Elicitation refers to the process of gathering expert opinion or knowledge to inform a model or analysis. We shall see the importance of elicitation throughout. 
+Elicitation refers to the process of gathering expert opinion or knowledge to inform a model or analysis. We shall see the importance of elicitation throughout.
 
 ### Experiments
 
@@ -298,7 +304,7 @@ Randomisation is essential here, too. Because we put people into groups randomly
 
 Experiments are the best method for estimating causal effects. They use randomisation and control to identify causation. However, experiments are not always possible or ethical. In those cases, researchers turn to observational studies. These studies are more complex. They do not have random assignment to treatment conditions, and the conditions may vary widely. Some individuals might not even have a chance to receive one or both levels of the treatment being studied.
 
-Therefore, to estimate causal effects in observational settings, certain assumptions must be met \[citations\]. These assumptions are crucial. Without them, it is risky to draw conclusions about causation outside of experimental settings \[cite\].
+Therefore, to estimate causal effects in observational settings, certain assumptions must be met $$citations$$. These assumptions are crucial. Without them, it is risky to draw conclusions about causation outside of experimental settings $$cite$$.
 
 The three fundamental assumptions are the exchangeability assumption, the causal consistency assumption, and the positivity assumption. Each one serves a unique role in ensuring that the causal effects identified in observational studies are valid and reliable.
 
@@ -334,11 +340,11 @@ The protocols we describe below are aimed to help researchers obtain sensible in
 
 #### **The Positivity Assumption**
 
-There is a non-zero probability of receiving every exposure value within all strata of covariates [@hernán2023]. 
+There is a non-zero probability of receiving every exposure value within all strata of covariates [@hernán2023].
 
-In simpler terms, it means that every subject in the study has some chance of receiving each level of the exposure or treatment. 
+In simpler terms, it means that every subject in the study has some chance of receiving each level of the exposure or treatment.
 
-If this assumption is not met, it becomes impossible to make meaningful comparisons between different levels of exposure, as some of the comparisons would be based on groups where the exposure was never applied. 
+If this assumption is not met, it becomes impossible to make meaningful comparisons between different levels of exposure, as some of the comparisons would be based on groups where the exposure was never applied.
 
 Unlike the exchangeability and causal consistency assumptions, we can sometimes verify whether the positivity assumption is satisfied by inspecting the data.
 
@@ -1024,87 +1030,66 @@ $$\hat{\gamma} = \overbrace{\big( \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^{\prime})|G=g]
 
 We again use simulation-based inference methods to compute standard errors and confidence intervals [@greifer2023].
 
-
-
-
 ## Inverse Probability of Treatment Weighting (IPTW) Protocolos
 
 We assess balance using **standardised mean differences**, **Mean and Max Difference Adjusted**
 
-
 ### Standardised means difference in the context of Inverse Probability of Treatment Weighting (IPTW)
 
-Standardised means difference is a measure used to compare the difference between two groups. 
+Standardised means difference is a measure used to compare the difference between two groups.
 
 ### Definition:
 
-1. **Standardised Means Difference (SMD)**: SMD is used to express the size of the intervention effect in each study relative to the variability observed in that study. It is computed as the difference between means divided by a standard deviation of the data. Formula for SMD is:
-   $$
-   \text{SMD} = \frac{{\bar{X}_1 - \bar{X}_2}}{{s}}
-   $$
-   where $\bar{X}_1$ and $\bar{X}_2$ are the means of the two groups, and $s$ is the pooled standard deviation.
+1.  **Standardised Means Difference (SMD)**: SMD is used to express the size of the intervention effect in each study relative to the variability observed in that study. It is computed as the difference between means divided by a standard deviation of the data. Formula for SMD is: $$
+    \text{SMD} = \frac{{\bar{X}_1 - \bar{X}_2}}{{s}}
+    $$ where $\bar{X}_1$ and $\bar{X}_2$ are the means of the two groups, and $s$ is the pooled standard deviation.
 
-2. **Inverse Probability of Treatment Weighting (IPTW)**: IPTW uses propensity scores to create a synthetic sample in which the distribution of measured baseline covariates is independent of treatment assignment. It aims to mimic a randomised experiment by creating a balanced comparison.
+2.  **Inverse Probability of Treatment Weighting (IPTW)**: IPTW uses propensity scores to create a synthetic sample in which the distribution of measured baseline covariates is independent of treatment assignment. It aims to mimic a randomised experiment by creating a balanced comparison.
 
-3. **Weighting IPTW with SMD**: Weighting using IPTW can adjust the SMD between the treated and untreated groups. The balance in covariates is often assessed by checking whether the absolute value of the SMD is close to 0.
+3.  **Weighting IPTW with SMD**: Weighting using IPTW can adjust the SMD between the treated and untreated groups. The balance in covariates is often assessed by checking whether the absolute value of the SMD is close to 0.
 
 ### Step-by-step:
 
-1. **Estimate Propensity Score**: Use logistic regression, or other methods, to estimate the propensity score for each subject.
+1.  **Estimate Propensity Score**: Use logistic regression, or other methods, to estimate the propensity score for each subject.
 
-2. **Calculate IPTW**: The weight for each subject is the inverse of the probability of receiving the treatment that was actually received. For treated subjects:
-   $$
-   w = \frac{1}{{\text{propensity score}}}
-   $$
-   For untreated subjects:
-   $$
-   w = \frac{1}{{1 - \text{propensity score}}}
-   $$
+2.  **Calculate IPTW**: The weight for each subject is the inverse of the probability of receiving the treatment that was actually received. For treated subjects: $$
+    w = \frac{1}{{\text{propensity score}}}
+    $$ For untreated subjects: $$
+    w = \frac{1}{{1 - \text{propensity score}}}
+    $$
 
-3. **Compute Standardised Means Difference**: Calculate the SMD for each covariate using the IPTW, comparing the treated and untreated groups.
+3.  **Compute Standardised Means Difference**: Calculate the SMD for each covariate using the IPTW, comparing the treated and untreated groups.
 
-4. **Assess Balance**: If the absolute value of the SMD for a covariate is close to 0, the groups are considered balanced for that covariate.
+4.  **Assess Balance**: If the absolute value of the SMD for a covariate is close to 0, the groups are considered balanced for that covariate.
 
 This approach allows for causal inference in observational studies, making the comparison of treated and untreated groups as if randomisation had occurred. It is crucial in causal inference, to minimise bias due to confounding variables.
 
-
-### Min and Max adjusted average difference in means 
-
+### Min and Max adjusted average difference in means
 
 When achieving balance using Inverse Probability of Treatment Weighting (IPTW), "Mean.Diff.Adj" and "Max.Diff.Adj" are specific statistics often used to assess the balance of covariates between the treatment and control groups after weighting. Definitions:
 
-1. **Mean.Diff.Adj**:
-   - Refers to the average difference in means of covariates between the treated and untreated groups after applying IPTW.
-   - Formula: 
-   $$
-   \text{Mean.Diff.Adj} = \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}}
-   $$
-   where $w_i$ is the weight for subject $i$, and $X_{1i}$ and $X_{0i}$ are the values of the covariate for the treated and untreated subjects, respectively.
-   - Close to 0 indicates good balance.
-
-2. **Max.Diff.Adj**:
-   - Refers to the maximum absolute difference in means of covariates between the treated and untreated groups after applying IPTW.
-   - Formula:
-   $$
-   \text{Max.Diff.Adj} = \max \left| \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}} \right|
-   $$
-   - Close to 0 indicates good balance, and it focuses on the worst-balanced covariate, which could be a point of concern even if the overall mean difference is small.
+1.  **Mean.Diff.Adj**:
+    -   Refers to the average difference in means of covariates between the treated and untreated groups after applying IPTW.
+    -   Formula: $$
+        \text{Mean.Diff.Adj} = \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}}
+        $$ where $w_i$ is the weight for subject $i$, and $X_{1i}$ and $X_{0i}$ are the values of the covariate for the treated and untreated subjects, respectively.
+    -   Close to 0 indicates good balance.
+2.  **Max.Diff.Adj**:
+    -   Refers to the maximum absolute difference in means of covariates between the treated and untreated groups after applying IPTW.
+    -   Formula: $$
+        \text{Max.Diff.Adj} = \max \left| \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}} \right|
+        $$
+    -   Close to 0 indicates good balance, and it focuses on the worst-balanced covariate, which could be a point of concern even if the overall mean difference is small.
 
 The difference between "Mean.Diff.Adj" and "Max.Diff.Adj" in the context of Inverse Probability of Treatment Weighting (IPTW) lies in what they measure regarding the balance of covariates:
 
-1. **Mean.Diff.Adj**:
-   - Measures the **average** difference in means of covariates between the treated and untreated groups after applying IPTW.
-   - Reflects the overall balance across all covariates.
-   - A value close to 0 indicates good overall balance.
-
-2. **Max.Diff.Adj**:
-   - Measures the **maximum absolute** difference in means of covariates between the treated and untreated groups after applying IPTW.
-   - Focuses on the worst-balanced covariate, regardless of the overall balance.
-   - A value close to 0 indicates that even the most imbalanced covariate is well-balanced, but a high value could be a concern even if the mean difference is small.
+1.  **Mean.Diff.Adj**:
+    -   Measures the **average** difference in means of covariates between the treated and untreated groups after applying IPTW.
+    -   Reflects the overall balance across all covariates.
+    -   A value close to 0 indicates good overall balance.
+2.  **Max.Diff.Adj**:
+    -   Measures the **maximum absolute** difference in means of covariates between the treated and untreated groups after applying IPTW.
+    -   Focuses on the worst-balanced covariate, regardless of the overall balance.
+    -   A value close to 0 indicates that even the most imbalanced covariate is well-balanced, but a high value could be a concern even if the mean difference is small.
 
 In summary, while "Mean.Diff.Adj" provides a sense of the general balance achieved across all covariates, "Max.Diff.Adj" zeroes in on the single most imbalanced covariate. The former gives a global view, while the latter highlights the potentially problematic area, both crucial for understanding the balance achieved by IPTW.
-
-
-
-
-

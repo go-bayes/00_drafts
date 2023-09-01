@@ -206,35 +206,40 @@ I descibe how to address causal questions using panel data\ldots{}
 
 This article describes how to address causal questions in psychology
 using panel data. I primarily focus on the simple case of estimating
-total effects in three-wave panel designs.
+total effects in three-wave panel designs. A secondary purpose of this
+article is to guide applied researchers for the New Zealand Attitudes
+and Values Study in developing studies that address causal questions.
 
 \textbf{Part 1} introduces definitions and notation, and outlines how
 causal inference works. The purpose of this section is to introduce
 readers who are not familiar with causal inference to its conceptual and
-mathematical basi.
+mathematical basis.
 
 \textbf{Part 2} outlines the three-wave panel, and its motivations. Here
 I introduce the concept of an ``outcome-wide study,'' an concept
-introduced by Tyler Vanderweele. I clarify the theoretical motivations
-for an outcome-wide study, describe pitfalls, and discuss methods
-addressing such limitations. To foreshadow, and outcome-wide study
-quantifies the total effects of a single intervention on multiple
-outcomes. This approach affords more rapid scientific progress than
-would be possible were researchers to focus on single outcomes. This
-approach also avoids selection bias arising from cherry-picking outcomes
-in the service of a publishable story.
+introduced by Tyler VanderWeele
+(\hyperref[ref-vanderweele2017a]{VanderWeele 2017};
+\hyperref[ref-vanderweele2020a]{VanderWeele \emph{et al.} 2020a}). I
+review important theoretical motivations for outcome-wide studies,
+describe pitfalls, and discuss methods for addressing their limitations.
+To foreshadow, and outcome-wide study quantifies the total effects of a
+single intervention on multiple outcomes. This approach affords more
+rapid scientific progress than would be possible were researchers to
+focus on single outcomes. This approach also avoids selection bias
+arising from cherry-picking outcomes in the service of a publishable
+story.
 
 \textbf{Part 3} develops a the step-by-step guide for conducting causal
 inference within a three-wave panel design. Here, our focus shifts from
 theoretical to applied interests. To make theory concrete, we use the
 New Zealand Attitudes and Values Study (NZAVS). The NZAVS is a national
 probability study that has been repeatedly measuring individuals since
-2009. In 2018-2019 (NZAVS wave 10), the NZAVS conducted a massive
-booster that enrolled 1.5\% of the adult population of New Zealand. Our
-focus here will be on describing causal inference methods as they apply
-to NZAVS waves 10-13. Part of the purpose of this guide is to assist
-NZAVS researchers in developing causal inferential studies using NZAVS
-data. Again, we will focus on outcome-wide approaches.
+2009. In 2018-2019 (NZAVS wave 10), the NZAVS conducted a large booster
+that enrolled 1.5\% of the adult population of New Zealand. Our focus
+here will be on describing causal inference methods as they apply to
+NZAVS waves 10-13. Part of the purpose of this guide is to assist NZAVS
+researchers in developing causal inferential studies using NZAVS data.
+Again, we will focus on outcome-wide approaches.
 
 \textbf{Part 4} describes common estimators, and options. The material
 in this section may appear somewhat technical. However, we encourage
@@ -251,65 +256,81 @@ workflows in the NZAVS, again with a focus on three-wave panel designs.
 \subsection{\texorpdfstring{\textbf{Part 1} Definitions and
 notation}{Part 1 Definitions and notation}}\label{part-1-definitions-and-notation}
 
-\paragraph{\texorpdfstring{\textbf{Treatment or
-Exposure}}{Treatment or Exposure}}\label{treatment-or-exposure}
+\paragraph{Treatment or Exposure}\label{treatment-or-exposure}
 
-A treatment or exposure is denoted by \(A\). In plain terms, the
-treatment is the \emph{cause.} We say ``the'' cause because we will be
-interested in isolating causal effects of single treatments. We assume
-that the treatment can take different levels such that
-\((A = a) \neq (A = a')\), which correspond to different states or
-intensities of the intervention.
+We will denote the treatment or exposure by \(A\). Here, \(A\)
+represents the specific cause we will examine. We use the terms
+``treatment'' and ``exposure'' synonomously.
 
-\paragraph{\texorpdfstring{\textbf{Outcomes}}{Outcomes}}\label{outcomes}
+We assume that different gradations of \(A\) are possible; that is,
+\(A = a\) and \(A = a'\) symbolise diverse treatment levels.
 
-We denote an outcome using the symbol \(Y\). In plain terms, an outcome
-is an \emph{effect.} There may be many effects that a researcher may
-wish to identify from a single cause. \(Y\) represent the values that an
-outcome would take on if a treatment or exposure were, perhaps contrary
-to fact, set to a specific level (\hyperref[ref-ogburn2021]{Ogburn and
-Shpitser 2021}). When we speak of outcomes, we speak of potential states
-of the world. This will naturally invite counterfactual language.
+\paragraph{Counterfactual Outcome}\label{counterfactual-outcome}
 
-Througout we use the terms ``potential outcomes'' and ``counterfactual
-outcomes'' synonymously.
+Imagine a world where a unit subjected to \$ A = a \$ could also be
+observed under \$ A = a'\$. In reality, this is impossible; a unit
+experiences only one treatment level at a time. The outcomes under the
+treatments not received are called ``counterfactual outcomes'' or
+equivalently ``potential outcomes.''
 
-We denote a potential outcome using the notation \(Y(A = a)\) or simply
-\(Y(a)\).
+A counterfactual outcome is unobservable in practice, as a unit can only
+experience one treatment level at a time, \(Y|A=a\) or \(Y|A=a'\), but
+not both. However, when certain assumptions are satisfied it may be
+possible to recover counterfactual outcomes from the data, a point we
+will elaborate on later.
 
-\paragraph{\texorpdfstring{\textbf{Causal
-Contrast}}{Causal Contrast}}\label{causal-contrast}
+In the context of causal inference, counterfactuals are critical for
+establishing a causal effect. Without counterfactual outcomes, any
+inferred causal relationship remains speculative. We may think of causal
+inference as the practice (or art) of obtaining contrasts between
+counterfactual outcomes from observed data.
 
-A causal contrast is a function that quantifies a difference, at some
-scale, in potential outcomes under different treatment levels.
+\paragraph{Causal Contrast}\label{causal-contrast}
 
-Formally, a causal contrast is a function of potential outcomes:
+What's the point of counterfactuals? They allow us to define causal
+contrasts:
 
-\[f_{\text{causal contrast}}(Y(a), Y(a'))\]
+\[
+f_{\text{causal contrast}}(Y(a), Y(a'))
+\]
 
-where \(Y(a)\) and \(Y(a')\) represent the potential outcomes under the
-specific treatment levels \(A = a\) and \(A = a'\), respectively.
+In words, this function quantifies how different the outcomes are under
+different treatment states. \(Y(a)\) and \(Y(a')\) denote potential
+outcomes when the treatment levels are \(A = a\) and\(A = a'\),
+respectively.
 
-Where \(ATE\) denotes the average treatment effect, a causal contrast on
-the difference scale may be expressed:
+\paragraph{Scales of Causal Contrast: Difference and
+Ratio}\label{scales-of-causal-contrast-difference-and-ratio}
 
-\[ATE_{A,A'} = E[Y(a)] - E[Y(a')]\]
+We cannot generally obtain causal contrasts for individual units. By
+definition, treatments are exclusive. However, when assumptions are
+satisfied, we may obtain average treatment effect. For example, when
+focusing on the average treatment effect (ATE), the causal contrast on
+the difference scale can be defined as:
 
-This essentially denotes an average treatment effect comparing the
-outcome under treatment level \(A\) to the outcome under treatment level
-\(A'\). For all exposures, including continuous exposures, we must
-stipulate the level of contrast for the treatment.
+\[
+ATE_{A,A'} = E[Y(a)] - E[Y(a')]
+\]
 
-Likewise we may state the average treatment effect on the ratio scale
+This function computes the average effect by contrasting the expected
+outcomes under two specific treatment levels \(A\) and\(A'\).
 
-\[ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}\]
+Similarly, a causal contrast between the averages of two treatment
+effects can also be expressed on the ratio scale:
+
+\[
+ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}
+\]
+
+Regardless of the scale or type of treatment, specifying the level of
+contrast is essential for interpretation.
 
 \paragraph{\texorpdfstring{\textbf{Causal
 Effect}}{Causal Effect}}\label{causal-effect}
 
-We say there is a causal effect on the difference scale when a causal
-estimand does not equal zero, indicating that the exposure influences
-the outcome. For example:
+A causal effect is a contrast in average treatments at some scale. We
+say there is a causal effect on the difference scale when a causal
+contrasts does not equal zero:
 
 \[E[Y(a)] - E[Y(a')] \neq 0\]
 
@@ -329,41 +350,44 @@ it as:
 
 \[f_{\text{observed}}(Y, A)\]
 
-For example, we may quantify an association between a treatment and
-outcome using linear regression:
+For example, we may use a linear regression model to quantify the
+association between treatment \(A\) and outcome \(Y\):
 
-\[Y = \beta_0 + \beta_1 A + \epsilon\]
+\[
+Y = \beta_0 + \beta_1 A + \epsilon
+\]
 
-Where:
+Here:
 
 \begin{itemize}
 \tightlist
 \item
-  \(Y\) is the outcome
+  \(Y\) is the outcome variable.
 \item
-  \(A\) is the treatment or exposure
+  \(A\) signifies treatment or exposure.
 \item
-  \(\beta_0\) and \(\beta_1\) are coefficients estimating the
-  relationship
+  \(\beta_0\) is the intercept, \(\beta_1\) the slope.
 \item
-  \(\epsilon\) is the error term
+  \(\epsilon\) represents the error term.
 \end{itemize}
 
-The slope (\(\beta_1\)) and intercept (\(\beta_0\)) estimates, obtained
-using ordinary least squares (OLS), describe a relationship modelled as
-linear.
+Slope \(\beta_1\) and intercept \(\beta_0\) are estimated via ordinary
+least squares (OLS), assuming a linear relationship. It reflects
+observed data, not full data that includes counterfactual outcomes.
+Hence, drawing causal conclusions based solely on \(\beta_1\) is
+problematic.
 
 \paragraph{\texorpdfstring{\textbf{Full Data and Observed
 Data}}{Full Data and Observed Data}}\label{full-data-and-observed-data}
 
-The full data is the random vector \((Y(1), Y(0), X, L)\) for covariates
-\(L\), while the observed data \((Y, X, C)\) is a coarsening of the full
-data with \(Y = X \cdot Y(1) + (1-X) \cdot Y(0)\)
+The full data is the random vector \((Y(1), Y(0), A, L)\) for covariates
+\(L\), while the observed data \((Y, A, L)\) is a coarsening of the full
+data with \(Y = A \cdot Y(1) + (1-A) \cdot Y(0)\)
 (\hyperref[ref-ogburn2021]{Ogburn and Shpitser 2021}).
 
-Absent assumptions, we cannot learn about causal estimands from the
-observed data, because they are functionals of (partially) unobserved
-potential outcomes.
+Absent assumptions, we cannot learn about contrasts from the observed
+data, because they are functionals of (partially) unobserved potential
+outcomes.
 
 \paragraph{\texorpdfstring{\textbf{Confounding}}{Confounding}}\label{confounding}
 
@@ -529,9 +553,9 @@ widely. Some individuals might not even have a chance to receive one or
 both levels of the treatment being studied.
 
 Therefore, to estimate causal effects in observational settings, certain
-assumptions must be met {[}citations{]}. These assumptions are crucial.
+assumptions must be met \[citations\]. These assumptions are crucial.
 Without them, it is risky to draw conclusions about causation outside of
-experimental settings {[}cite{]}.
+experimental settings \[cite\].
 
 The three fundamental assumptions are the exchangeability assumption,
 the causal consistency assumption, and the positivity assumption. Each
@@ -780,8 +804,8 @@ baseline carries three critical advantages:
   \textbf{Incidence effect interpretation}: incorporating the baseline
   exposure allows us to interpret the effect of exposure measured
   post-baseline as an incidence effect, not a prevalence effect
-  (\hyperref[ref-vanderweele2020]{VanderWeele \emph{et al.} 2020}). This
-  means we can interpret the effect as the change due to a new
+  (\hyperref[ref-vanderweele2020]{VanderWeele \emph{et al.} 2020b}).
+  This means we can interpret the effect as the change due to a new
   occurrence (incidence) of the exposure, rather than the overall
   presence (prevalence) of the exposure. For example, in a study
   investigating the impact of weekly religious service attendance,
@@ -2215,8 +2239,18 @@ Van Tongeren, DR, DeWall, CN, Chen, Z, Sibley, CG, and Bulbulia, J
 psychology and behavior persist following deidentification.
 \emph{Journal of Personality and Social Psychology}.
 
+\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2017a}{}}%
+VanderWeele, TJ (2017) Outcome-wide epidemiology. \emph{Epidemiology
+(Cambridge, Mass.)}, \textbf{28}(3), 399--402.
+doi:\href{https://doi.org/10.1097/EDE.0000000000000641}{10.1097/EDE.0000000000000641}.
+
 \leavevmode\vadjust pre{\hypertarget{ref-vanderweele2020}{}}%
-VanderWeele, TJ, Mathur, MB, and Chen, Y (2020) Outcome-wide
+VanderWeele, TJ, Mathur, MB, and Chen, Y (2020b) Outcome-wide
+longitudinal designs for causal inference: A new template for empirical
+studies. \emph{Statistical Science}, \textbf{35}(3), 437466.
+
+\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2020a}{}}%
+VanderWeele, TJ, Mathur, MB, and Chen, Y (2020a) Outcome-wide
 longitudinal designs for causal inference: A new template for empirical
 studies. \emph{Statistical Science}, \textbf{35}(3), 437466.
 
