@@ -1,7 +1,7 @@
 ---
 title: "Causal inference in three wave panels: a step-by-step guide"
 abstract: | 
-  How to estimate causal effects in three wave panel designs
+  I descibe how to address causal questions using panel data...
 author: 
   - name: Joseph A. Bulbulia
     orcid: 0000-0002-5861-2056
@@ -124,35 +124,34 @@ dat <- arrow::read_parquet(pull_path)
 
 ### Purpose
 
-I describe how to calculate causal effects in three-wave panel designs.
+This article describes how to address causal questions in psychology using panel data. I primarily focus on the simple case of estimating total effects in three-wave panel designs.
 
-**Part 1** introduces definitions and notation.
+**Part 1** introduces definitions and notation, and outlines how causal inference works.  The purpose of this section is to introduce readers who are not familiar with causal inference to its conceptual and mathematical basi.   
 
-**Part 2** describes the three-wave panel, and its motivations.
+**Part 2** outlines the three-wave panel, and its motivations. Here I introduce the concept of an "outcome-wide study," an concept introduced by Tyler Vanderweele.  I clarify the theoretical motivations for an outcome-wide study, describe pitfalls, and discuss methods addressing such limitations. To foreshadow, and outcome-wide study quantifies the total effects of a single intervention on multiple outcomes.  This approach affords more rapid scientific progress than would be possible were researchers to focus on single outcomes. This approach also avoids selection bias arising from cherry-picking outcomes in the service of a publishable story. 
 
-**Part 3** develops a the step-by-step guide for conducting causal inference within the three-wave panel design
+**Part 3** develops a the step-by-step guide for conducting causal inference within a three-wave panel design. Here, our focus shifts from theoretical to applied interests. To make theory concrete, we use the New Zealand Attitudes and Values Study (NZAVS). The NZAVS is a national probability study that has been repeatedly measuring individuals since 2009.  In 2018-2019 (NZAVS wave 10), the NZAVS conducted a massive booster that enrolled 1.5% of the adult population of New Zealand.  Our focus here will be on describing causal inference methods as they apply to NZAVS waves 10-13.  Part of the purpose of this guide is to assist NZAVS researchers in developing causal inferential studies using NZAVS data.  Again, we will focus on outcome-wide approaches. 
 
-**Part 4** describes common estimators
+**Part 4** describes common estimators, and options. The material in this section may appear somewhat technical. However, we encourage readers to worth through the technical details, which have been limited to the essentials required for understanding the move from stating causal questions to answering them using time-series data. 
 
-**Part 5** discusses more complex designs where there is scope for confounder treatment feedback. 
+**Part 5** discusses more complex designs where there is scope for treatment-confounder feedback. 
 
 
-An Appendix describes custom functions I have written for executing the workflows.
+An Appendix describes custom functions written for executing the workflows in the NZAVS, again with a focus on three-wave panel designs. 
 
 
 ## **Part 1** Definitions and notation
 
 #### **Treatment or Exposure**
 
-A treatment or exposure, denoted by $A$, represents an intervention or condition in a study. We assume that it can take different levels such that $(A = a) \neq (A = a')$, which correspond to different states or intensities of the intervention.
+A treatment or exposure is denoted by $A$. In plain terms, the treatment is the *cause.*  We say "the" cause because we will be interested in isolating causal effects of single treatments. We assume that the treatment can take different levels such that $(A = a) \neq (A = a')$, which correspond to different states or intensities of the intervention.
 
-In plain terms, the treatment is the "cause."
 
-#### **Potential or Counterfactual Outcomes**
+#### **Outcomes**
 
-Potential or counterfactual outcomes, denoted by $Y$, represent the values that an outcome would take on if a treatment or exposure were, perhaps contrary to fact, set to a specific level [@ogburn2021].
+We denote an outcome using the symbol $Y$. In plain terms, an outcome is an *effect.*  There may be many effects that a researcher may wish to identify from a single cause.  $Y$ represent the values that an outcome would take on if a treatment or exposure were, perhaps contrary to fact, set to a specific level [@ogburn2021]. When we speak of outcomes, we speak of potential states of the world. This will naturally invite counterfactual language. 
 
-We use the terms "potential outcomes" and "counterfactual outcomes" synonymously.
+Througout we use the terms "potential outcomes" and "counterfactual outcomes" synonymously.
 
 We denote a potential outcome using the notation $Y(A = a)$ or simply $Y(a)$.
 
@@ -347,8 +346,6 @@ Unlike the exchangeability and causal consistency assumptions, we can sometimes 
 
 An identification strategy refers to the set of assumptions and methodologies employed to ensure that a causal estimand (recall -- a quantity representing a causal effect) can be determined uniquely from the observed data. It is the process through which researchers make a bridge from the statistical estimand, derived from the observed data, to the causal estimand that represents the actual causal effect of interest. Identifiability relies on assumptions such as exchangeability, positivity, and consistent measurement. The validity of these assumptions enables a unique mapping of the causal estimand from the statistical estimand, facilitating causal inference from observational data.
 
-Ide
-
 <!-- ### Scale of effect -->
 
 <!-- Average causal effects can be inferred by contrasting the expected outcome when a population is exposed to an exposure level, $E[Y(A = a)]$, with the expected outcome under a different exposure level, $E[Y(A=a')]$. -->
@@ -384,7 +381,7 @@ Ide
 #### Considerations
 
 -   In the causal inference literature, the concept we use to make sense of stratum specific comparisons is called "effect modification."
--   By inferring effects within stratums, we may evaluate whether the effects of different exposures or treatments on some well-defined outcome (measured in some well-defined time-period after the exposure) differ depending on group measurement.
+-   By inferring effects within strata, we may evaluate whether the effects of different exposures or treatments on some well-defined outcome (measured in some well-defined time-period after the exposure) differ depending on group measurement.
 -   The logic of effect modification differs slightly from that of interaction.
 
 #### Aside: extensions
@@ -405,13 +402,13 @@ This defines the contrast of $A$ and $A'$ on a ratio scale.
 
 Consider the following concepts:
 
-## Part 2`: Three-Wave Panel Designs
+## Part 2: Three-Wave Panel Designs
 
 Our goal is to explain how researchers can use three waves of data to satisfy the assumptions needed for causal inference.
 
-Put differently, we aim to demonstrate how, with three waves of data, researchers can emulate the conditions found in a randomised experiment so that they may address causal questions outsider of experiments.
+Put differently, we aim to demonstrate how, with three waves of data, researchers can emulate the conditions found in a randomised experiment so that they may address causal questions out of experiments.
 
-To begin, let us clarify some definitions:
+To begin, some definitions:
 
 -   **Wave**: a wave is a time interval where measurements are taken. It is placed on a timeline, so there are earlier and later intervals. The length can vary, but the order is specific.
 
@@ -485,8 +482,6 @@ b.  **Confounding Control**: when we also control for the exposure at baseline, 
 \draw [-latex, bend left=50, draw =black] (L) to (Y);
 \draw [-latex, bend right=50, draw =black, dotted] (U) to (Y);
 \draw [-latex, bend left=50, draw =black, dotted] (U) to (A);
-
-
 
 
 \end{tikzpicture}

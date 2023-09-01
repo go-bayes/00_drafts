@@ -165,14 +165,6 @@
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
 \makeatother
 \makeatletter
-\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
-\makeatother
-\makeatletter
-\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
-\makeatother
-\makeatletter
-\makeatother
-\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
@@ -202,70 +194,91 @@ Inference, Confounding, History, Psychology, Panel},
                   Research
               }
       
-\date{2023-08-11}
+\date{2023-09-01}
 \begin{document}
 \maketitle
 \begin{abstract}
-How to estimate causal effects in three wave panel designs
+I descibe how to address causal questions using panel data\ldots{}
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, interior hidden, enhanced, sharp corners, borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, frame hidden]}{\end{tcolorbox}}\fi
+\subsection{Introduction}\label{introduction}
 
-\hypertarget{introduction}{%
-\subsection{Introduction}\label{introduction}}
+\subsubsection{Purpose}\label{purpose}
 
-\hypertarget{purpose}{%
-\subsubsection{Purpose}\label{purpose}}
+This article describes how to address causal questions in psychology
+using panel data. I primarily focus on the simple case of estimating
+total effects in three-wave panel designs.
 
-I describe how to calculate causal effects in three-wave panel designs.
+\textbf{Part 1} introduces definitions and notation, and outlines how
+causal inference works. The purpose of this section is to introduce
+readers who are not familiar with causal inference to its conceptual and
+mathematical basi.
 
-\textbf{Part 1} introduces definitions and notation.
-
-\textbf{Part 2} describes the three-wave panel, and its motivations.
+\textbf{Part 2} outlines the three-wave panel, and its motivations. Here
+I introduce the concept of an ``outcome-wide study,'' an concept
+introduced by Tyler Vanderweele. I clarify the theoretical motivations
+for an outcome-wide study, describe pitfalls, and discuss methods
+addressing such limitations. To foreshadow, and outcome-wide study
+quantifies the total effects of a single intervention on multiple
+outcomes. This approach affords more rapid scientific progress than
+would be possible were researchers to focus on single outcomes. This
+approach also avoids selection bias arising from cherry-picking outcomes
+in the service of a publishable story.
 
 \textbf{Part 3} develops a the step-by-step guide for conducting causal
-inference within the three-wave panel design
+inference within a three-wave panel design. Here, our focus shifts from
+theoretical to applied interests. To make theory concrete, we use the
+New Zealand Attitudes and Values Study (NZAVS). The NZAVS is a national
+probability study that has been repeatedly measuring individuals since
+2009. In 2018-2019 (NZAVS wave 10), the NZAVS conducted a massive
+booster that enrolled 1.5\% of the adult population of New Zealand. Our
+focus here will be on describing causal inference methods as they apply
+to NZAVS waves 10-13. Part of the purpose of this guide is to assist
+NZAVS researchers in developing causal inferential studies using NZAVS
+data. Again, we will focus on outcome-wide approaches.
 
-\textbf{Part 4} describes common estimators
+\textbf{Part 4} describes common estimators, and options. The material
+in this section may appear somewhat technical. However, we encourage
+readers to worth through the technical details, which have been limited
+to the essentials required for understanding the move from stating
+causal questions to answering them using time-series data.
 
 \textbf{Part 5} discusses more complex designs where there is scope for
-confounder treatment feedback.
+treatment-confounder feedback.
 
-An Appendix describes custom functions I have written for executing the
-workflows.
+An Appendix describes custom functions written for executing the
+workflows in the NZAVS, again with a focus on three-wave panel designs.
 
-\hypertarget{part-1-definitions-and-notation}{%
 \subsection{\texorpdfstring{\textbf{Part 1} Definitions and
-notation}{Part 1 Definitions and notation}}\label{part-1-definitions-and-notation}}
+notation}{Part 1 Definitions and notation}}\label{part-1-definitions-and-notation}
 
-\hypertarget{treatment-or-exposure}{%
 \paragraph{\texorpdfstring{\textbf{Treatment or
-Exposure}}{Treatment or Exposure}}\label{treatment-or-exposure}}
+Exposure}}{Treatment or Exposure}}\label{treatment-or-exposure}
 
-A treatment or exposure, denoted by \(A\), represents an intervention or
-condition in a study. We assume that it can take different levels such
-that \((A = a) \neq (A = a')\), which correspond to different states or
+A treatment or exposure is denoted by \(A\). In plain terms, the
+treatment is the \emph{cause.} We say ``the'' cause because we will be
+interested in isolating causal effects of single treatments. We assume
+that the treatment can take different levels such that
+\((A = a) \neq (A = a')\), which correspond to different states or
 intensities of the intervention.
 
-In plain terms, the treatment is the ``cause.''
+\paragraph{\texorpdfstring{\textbf{Outcomes}}{Outcomes}}\label{outcomes}
 
-\hypertarget{potential-or-counterfactual-outcomes}{%
-\paragraph{\texorpdfstring{\textbf{Potential or Counterfactual
-Outcomes}}{Potential or Counterfactual Outcomes}}\label{potential-or-counterfactual-outcomes}}
+We denote an outcome using the symbol \(Y\). In plain terms, an outcome
+is an \emph{effect.} There may be many effects that a researcher may
+wish to identify from a single cause. \(Y\) represent the values that an
+outcome would take on if a treatment or exposure were, perhaps contrary
+to fact, set to a specific level (\hyperref[ref-ogburn2021]{Ogburn and
+Shpitser 2021}). When we speak of outcomes, we speak of potential states
+of the world. This will naturally invite counterfactual language.
 
-Potential or counterfactual outcomes, denoted by \(Y\), represent the
-values that an outcome would take on if a treatment or exposure were,
-perhaps contrary to fact, set to a specific level
-(\protect\hyperlink{ref-ogburn2021}{Ogburn and Shpitser 2021}).
-
-We use the terms ``potential outcomes'' and ``counterfactual outcomes''
-synonymously.
+Througout we use the terms ``potential outcomes'' and ``counterfactual
+outcomes'' synonymously.
 
 We denote a potential outcome using the notation \(Y(A = a)\) or simply
 \(Y(a)\).
 
-\hypertarget{causal-contrast}{%
 \paragraph{\texorpdfstring{\textbf{Causal
-Contrast}}{Causal Contrast}}\label{causal-contrast}}
+Contrast}}{Causal Contrast}}\label{causal-contrast}
 
 A causal contrast is a function that quantifies a difference, at some
 scale, in potential outcomes under different treatment levels.
@@ -291,9 +304,8 @@ Likewise we may state the average treatment effect on the ratio scale
 
 \[ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}\]
 
-\hypertarget{causal-effect}{%
 \paragraph{\texorpdfstring{\textbf{Causal
-Effect}}{Causal Effect}}\label{causal-effect}}
+Effect}}{Causal Effect}}\label{causal-effect}
 
 We say there is a causal effect on the difference scale when a causal
 estimand does not equal zero, indicating that the exposure influences
@@ -308,9 +320,8 @@ estimand does not equal one. For example:
 
 where 1 and 0 represent specific levels of a binary exposure.
 
-\hypertarget{observed-association}{%
 \paragraph{\texorpdfstring{\textbf{Observed
-Association}}{Observed Association}}\label{observed-association}}
+Association}}{Observed Association}}\label{observed-association}
 
 The observed association is the measurable link between a treatment or
 exposure \(A\) and an outcome \(Y\) in the sample data. We can represent
@@ -342,27 +353,24 @@ The slope (\(\beta_1\)) and intercept (\(\beta_0\)) estimates, obtained
 using ordinary least squares (OLS), describe a relationship modelled as
 linear.
 
-\hypertarget{full-data-and-observed-data}{%
 \paragraph{\texorpdfstring{\textbf{Full Data and Observed
-Data}}{Full Data and Observed Data}}\label{full-data-and-observed-data}}
+Data}}{Full Data and Observed Data}}\label{full-data-and-observed-data}
 
 The full data is the random vector \((Y(1), Y(0), X, L)\) for covariates
 \(L\), while the observed data \((Y, X, C)\) is a coarsening of the full
 data with \(Y = X \cdot Y(1) + (1-X) \cdot Y(0)\)
-(\protect\hyperlink{ref-ogburn2021}{Ogburn and Shpitser 2021}).
+(\hyperref[ref-ogburn2021]{Ogburn and Shpitser 2021}).
 
 Absent assumptions, we cannot learn about causal estimands from the
 observed data, because they are functionals of (partially) unobserved
 potential outcomes.
 
-\hypertarget{confounding}{%
-\paragraph{\texorpdfstring{\textbf{Confounding}}{Confounding}}\label{confounding}}
+\paragraph{\texorpdfstring{\textbf{Confounding}}{Confounding}}\label{confounding}
 
 A condition in which the observed association between the treatment and
 the outcome in the data does not reflect a causal association.
 
-\hypertarget{confounder}{%
-\paragraph{\texorpdfstring{\textbf{Confounder}}{Confounder}}\label{confounder}}
+\paragraph{\texorpdfstring{\textbf{Confounder}}{Confounder}}\label{confounder}
 
 Any variable that when conditioned upon, perhaps in conjunction with
 other confounders, reduces or minimises confounding. In the scientific
@@ -389,26 +397,23 @@ These may be categorised into two distinct types:
   confounders might not be attainable.
 \end{itemize}
 
-\hypertarget{causal-estimand}{%
 \paragraph{\texorpdfstring{\textbf{Causal
-Estimand}}{Causal Estimand}}\label{causal-estimand}}
+Estimand}}{Causal Estimand}}\label{causal-estimand}
 
 A causal estimand names the causal contrast of interest, specifying the
 levels of exposure to be contrasted, potential outcomes of interest, the
 scale of the causal contrast, and the target population for whom the
 causal contrast applies.
 
-\hypertarget{statistical-estimand}{%
 \paragraph{\texorpdfstring{\textbf{Statistical
-Estimand}}{Statistical Estimand}}\label{statistical-estimand}}
+Estimand}}{Statistical Estimand}}\label{statistical-estimand}
 
 A statistical estimand is a functional of the observed data that
 corresponds to the causal estimand of interest. It reduces the causal
 question to a statistical one, identifying a quantity in the observed
 data that will provide information about the causal estimand.
 
-\hypertarget{estimator}{%
-\paragraph{\texorpdfstring{\textbf{Estimator}}{Estimator}}\label{estimator}}
+\paragraph{\texorpdfstring{\textbf{Estimator}}{Estimator}}\label{estimator}
 
 An estimator is a statistical function of the observed data, denoted as
 \(\hat{\theta}(Y, A, L)\), that provides an estimate of the statistical
@@ -417,15 +422,13 @@ approximating the unknown parameter. In the context of causal inference,
 an estimator is used to estimate the statistical estimand, thereby
 providing information about the corresponding causal estimand.
 
-\hypertarget{source-population}{%
 \paragraph{\texorpdfstring{\textbf{Source
-Population}}{Source Population}}\label{source-population}}
+Population}}{Source Population}}\label{source-population}
 
 A source population is the population from who a study sample is drawn.
 
-\hypertarget{target-population}{%
 \paragraph{\texorpdfstring{\textbf{Target
-Population}}{Target Population}}\label{target-population}}
+Population}}{Target Population}}\label{target-population}
 
 A target population is the larger group we aim to apply our study's
 results to. It could be defined by location, demographics, or specific
@@ -435,8 +438,7 @@ The closer the source matches the target in ways that are relevant to
 our causal questions, the stronger our causal inferences about the
 target population will be.
 
-\hypertarget{generalisability}{%
-\paragraph{\texorpdfstring{\textbf{Generalisability}}{Generalisability}}\label{generalisability}}
+\paragraph{\texorpdfstring{\textbf{Generalisability}}{Generalisability}}\label{generalisability}
 
 We say our results generalise when the causal effect estimated from a
 sample apply to the wider population from was drawn from the sample
@@ -445,8 +447,7 @@ population average treatement effect:
 
 \[\text{Generalisability} = PATE \approx f(ATE_{\text{sample}}, W)\]
 
-\hypertarget{transportability}{%
-\paragraph{\texorpdfstring{\textbf{Transportability}}{Transportability}}\label{transportability}}
+\paragraph{\texorpdfstring{\textbf{Transportability}}{Transportability}}\label{transportability}
 
 We say our results are transportable when the causal effect estimated
 from a sample apply to a population other than that from which the
@@ -462,19 +463,16 @@ target populations and an understanding of how the relationships between
 treatment, outcome, and covariates differ between the populations. That
 is assessing transportability requires scientific knowledge.
 
-\hypertarget{elicitation}{%
-\paragraph{\texorpdfstring{\textbf{Elicitation}}{Elicitation}}\label{elicitation}}
+\paragraph{\texorpdfstring{\textbf{Elicitation}}{Elicitation}}\label{elicitation}
 
 Elicitation refers to the process of gathering expert opinion or
 knowledge to inform a model or analysis. We shall see the importance of
 elicitation throughout.
 
-\hypertarget{experiments}{%
-\subsubsection{Experiments}\label{experiments}}
+\subsubsection{Experiments}\label{experiments}
 
-\hypertarget{average-causal-effects-in-experiments}{%
 \subsubsection{\texorpdfstring{\textbf{Average Causal Effects in
-Experiments}}{Average Causal Effects in Experiments}}\label{average-causal-effects-in-experiments}}
+Experiments}}{Average Causal Effects in Experiments}}\label{average-causal-effects-in-experiments}
 
 Estimating a causal effect means comparing what actually happened to
 what would have happened if things had been different.
@@ -495,9 +493,8 @@ in one group could have been in the other. So, we can work out the
 average effect without having to know exactly what would have happened
 to each individual in both groups.
 
-\hypertarget{conditional-causal-effects-in-experiments}{%
 \paragraph{\texorpdfstring{\textbf{Conditional Causal Effects in
-Experiments}}{Conditional Causal Effects in Experiments}}\label{conditional-causal-effects-in-experiments}}
+Experiments}}{Conditional Causal Effects in Experiments}}\label{conditional-causal-effects-in-experiments}
 
 The effect of a treatment might change based on factors such as age or
 education.
@@ -519,10 +516,9 @@ compute group-level responses within conditions, bypassing the need to
 observe what cannot, in reality, ever be observed -- individual-level
 contrasts.
 
-\hypertarget{estimating-causal-effects-outside-of-experiments-requires-assumptions}{%
 \paragraph{\texorpdfstring{\textbf{Estimating Causal Effects outside of
 Experiments Requires
-Assumptions}}{Estimating Causal Effects outside of Experiments Requires Assumptions}}\label{estimating-causal-effects-outside-of-experiments-requires-assumptions}}
+Assumptions}}{Estimating Causal Effects outside of Experiments Requires Assumptions}}\label{estimating-causal-effects-outside-of-experiments-requires-assumptions}
 
 Experiments are the best method for estimating causal effects. They use
 randomisation and control to identify causation. However, experiments
@@ -542,9 +538,8 @@ the causal consistency assumption, and the positivity assumption. Each
 one serves a unique role in ensuring that the causal effects identified
 in observational studies are valid and reliable.
 
-\hypertarget{the-exchangeability-assumption}{%
 \paragraph{\texorpdfstring{\textbf{The Exchangeability
-Assumption}}{The Exchangeability Assumption}}\label{the-exchangeability-assumption}}
+Assumption}}{The Exchangeability Assumption}}\label{the-exchangeability-assumption}
 
 In observational studies, the lack of randomisation can lead to
 challenges in identifying causal effects.
@@ -552,7 +547,7 @@ challenges in identifying causal effects.
 Specifically, the assumption requires that, after controlling for
 measured variables, the potential outcomes under various exposure levels
 must be independent of the actual exposure level experienced
-(\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Monge 2023}).
+(\hyperref[ref-hernuxe1n2023]{Hernán and Monge 2023}).
 
 The exchangeability assumption addresses this issue. It requires balance
 in the treatment conditions, considering factors that might influence
@@ -568,9 +563,8 @@ analysis. Such analyses describe how much unmeasured confounding would
 be required to explain away the observed association between the
 exposure and the outcome.
 
-\hypertarget{the-causal-consistency-assumption}{%
 \paragraph{\texorpdfstring{\textbf{The Causal Consistency
-Assumption}}{The Causal Consistency Assumption}}\label{the-causal-consistency-assumption}}
+Assumption}}{The Causal Consistency Assumption}}\label{the-causal-consistency-assumption}
 
 In observational studies, researchers lack control over the treatment,
 creating complexity in discerning causal effects.
@@ -578,12 +572,12 @@ creating complexity in discerning causal effects.
 The causal consistency assumption helps navigate this complexity. It
 mandates that the exposures being compared align with specific,
 well-defined interventions in the data
-(\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Monge 2023}).
+(\hyperref[ref-hernuxe1n2023]{Hernán and Monge 2023}).
 
 This means that the exposure or treatment must be consistent across the
 study, and it should not change over time or vary among subjects in ways
 that might alter the outcome (see also: Chatton \emph{et al.}
-(\protect\hyperlink{ref-chatton2020}{2020})).
+(\hyperref[ref-chatton2020]{2020})).
 
 Consider a multifaceted ``treatment'' such as weight loss. In real-world
 weight loss, various means may be employed: dieting, exercise, stress,
@@ -599,10 +593,10 @@ intervention does not vary in ways that would affect the result.
 In observational studies, ensuring causal consistency becomes more
 challenging. Studies might include individuals losing weight through
 various means, with differing motivations, methods, and individual
-characteristics (\protect\hyperlink{ref-tyler}{\textbf{tyler?}}).
-Without control over these factors, the causal consistency assumption
-may be violated, complicating the isolation of a specific intervention's
-effect like dieting.
+characteristics (\hyperref[ref-tyler]{\textbf{tyler?}}). Without control
+over these factors, the causal consistency assumption may be violated,
+complicating the isolation of a specific intervention's effect like
+dieting.
 
 Though estimating causal effects in heterogeneous treatment settings is
 complex, it is not incoherent. A mathematical framework, known as causal
@@ -631,13 +625,12 @@ The protocols we describe below are aimed to help researchers obtain
 sensible inference by focussing their attention these demands for
 contextual attention informed by expert advice.
 
-\hypertarget{the-positivity-assumption}{%
 \paragraph{\texorpdfstring{\textbf{The Positivity
-Assumption}}{The Positivity Assumption}}\label{the-positivity-assumption}}
+Assumption}}{The Positivity Assumption}}\label{the-positivity-assumption}
 
 There is a non-zero probability of receiving every exposure value within
-all strata of covariates (\protect\hyperlink{ref-hernuxe1n2023}{Hernán
-and Monge 2023}).
+all strata of covariates (\hyperref[ref-hernuxe1n2023]{Hernán and Monge
+2023}).
 
 In simpler terms, it means that every subject in the study has some
 chance of receiving each level of the exposure or treatment.
@@ -651,9 +644,8 @@ Unlike the exchangeability and causal consistency assumptions, we can
 sometimes verify whether the positivity assumption is satisfied by
 inspecting the data.
 
-\hypertarget{identification-strategy}{%
 \paragraph{\texorpdfstring{\textbf{Identification
-Strategy}}{Identification Strategy}}\label{identification-strategy}}
+Strategy}}{Identification Strategy}}\label{identification-strategy}
 
 An identification strategy refers to the set of assumptions and
 methodologies employed to ensure that a causal estimand (recall -- a
@@ -667,10 +659,7 @@ assumptions enables a unique mapping of the causal estimand from the
 statistical estimand, facilitating causal inference from observational
 data.
 
-Ide
-
-\hypertarget{considerations}{%
-\paragraph{Considerations}\label{considerations}}
+\paragraph{Considerations}\label{considerations}
 
 \begin{itemize}
 \tightlist
@@ -678,7 +667,7 @@ Ide
   In the causal inference literature, the concept we use to make sense
   of stratum specific comparisons is called ``effect modification.''
 \item
-  By inferring effects within stratums, we may evaluate whether the
+  By inferring effects within strata, we may evaluate whether the
   effects of different exposures or treatments on some well-defined
   outcome (measured in some well-defined time-period after the exposure)
   differ depending on group measurement.
@@ -687,8 +676,7 @@ Ide
   interaction.
 \end{itemize}
 
-\hypertarget{aside-extensions}{%
-\paragraph{Aside: extensions}\label{aside-extensions}}
+\paragraph{Aside: extensions}\label{aside-extensions}
 
 For continuous exposures, we must stipulate the level of contrast for
 the exposure (e.g.~weekly versus monthly church attendance):
@@ -705,25 +693,23 @@ Likewise:
 
 This defines the contrast of \(A\) and \(A'\) on a ratio scale.
 
-\hypertarget{f.-describe-the-populations-for-whom-the-intended-study-is-meant-to-generalise-by-distinguishing-between-source-and-target-populations.}{%
 \paragraph{f.~Describe the population(s) for whom the intended study is
 meant to generalise by distinguishing between source and target
-populations.}\label{f.-describe-the-populations-for-whom-the-intended-study-is-meant-to-generalise-by-distinguishing-between-source-and-target-populations.}}
+populations.}\label{f.-describe-the-populations-for-whom-the-intended-study-is-meant-to-generalise-by-distinguishing-between-source-and-target-populations.}
 
 Consider the following concepts:
 
-\hypertarget{part-2-three-wave-panel-designs}{%
-\subsection{Part 2`: Three-Wave Panel
-Designs}\label{part-2-three-wave-panel-designs}}
+\subsection{Part 2: Three-Wave Panel
+Designs}\label{part-2-three-wave-panel-designs}
 
 Our goal is to explain how researchers can use three waves of data to
 satisfy the assumptions needed for causal inference.
 
 Put differently, we aim to demonstrate how, with three waves of data,
 researchers can emulate the conditions found in a randomised experiment
-so that they may address causal questions outsider of experiments.
+so that they may address causal questions out of experiments.
 
-To begin, let us clarify some definitions:
+To begin, some definitions:
 
 \begin{itemize}
 \item
@@ -766,10 +752,9 @@ To begin, let us clarify some definitions:
   outcome measured.
 \end{itemize}
 
-\hypertarget{step-1.-defining-the-exposure-measure-it-at-wave-0-and-wave-1}{%
 \subsubsection{Step 1. Defining the exposure: measure it at wave 0 and
 wave
-1}\label{step-1.-defining-the-exposure-measure-it-at-wave-0-and-wave-1}}
+1}\label{step-1.-defining-the-exposure-measure-it-at-wave-0-and-wave-1}
 
 We begin with a well-defined exposure.
 
@@ -780,9 +765,9 @@ comparison of attendance versus non-attendance? Are we distinguishing
 between weekly and monthly attendees? Perhaps, we are interested in a
 different facet altogether? Visualising a hypothetical experiment - even
 when it is not feasible - reveals the need for a precise intervention
-specification (\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022};
-\protect\hyperlink{ref-hernuxe1n2016a}{Hernán \emph{et al.} 2016};
-\protect\hyperlink{ref-hernuxe1n2022}{Hernán \emph{et al.} 2022}).
+specification (\hyperref[ref-bulbulia2022]{Bulbulia 2022};
+\hyperref[ref-hernuxe1n2016a]{Hernán \emph{et al.} 2016};
+\hyperref[ref-hernuxe1n2022]{Hernán \emph{et al.} 2022}).
 
 The exposure is measured at wave 1 (i.e.~+1 interval from baseline, wave
 0). When estimating causal effects, the inclusion of exposure at the
@@ -795,9 +780,9 @@ baseline carries three critical advantages:
   \textbf{Incidence effect interpretation}: incorporating the baseline
   exposure allows us to interpret the effect of exposure measured
   post-baseline as an incidence effect, not a prevalence effect
-  (\protect\hyperlink{ref-vanderweele2020}{VanderWeele \emph{et al.}
-  2020}). This means we can interpret the effect as the change due to a
-  new occurrence (incidence) of the exposure, rather than the overall
+  (\hyperref[ref-vanderweele2020]{VanderWeele \emph{et al.} 2020}). This
+  means we can interpret the effect as the change due to a new
+  occurrence (incidence) of the exposure, rather than the overall
   presence (prevalence) of the exposure. For example, in a study
   investigating the impact of weekly religious service attendance,
   including the baseline measure of attendance enables us to understand
@@ -816,8 +801,7 @@ baseline carries three critical advantages:
   not properly accounted for. For instance, personal attributes such as
   unmeasured childhood religiosity could confound the association
   between religious service attendance and outcomes if not considered
-  (\protect\hyperlink{ref-vantongeren2020}{Van Tongeren \emph{et al.}
-  2020}).
+  (\hyperref[ref-vantongeren2020]{Van Tongeren \emph{et al.} 2020}).
 \item
   \textbf{Better evaluation of sample adequacy for rare exposures}:
   Particularly when the exposure is uncommon, such as switching from no
@@ -841,10 +825,9 @@ baseline carries three critical advantages:
   changes within the population studied.
 \end{enumerate}
 
-\hypertarget{step-2.-specify-the-outcomes-measure-them-at-wave-0-and-wave-2}{%
 \subsubsection{Step 2. Specify the Outcome(s) measure them at wave 0 and
 wave
-2}\label{step-2.-specify-the-outcomes-measure-them-at-wave-0-and-wave-2}}
+2}\label{step-2.-specify-the-outcomes-measure-them-at-wave-0-and-wave-2}
 
 After defining the exposure, we need to determine a well-defined outcome
 (or potentially several outcomes). For instance, we might be interested
@@ -883,7 +866,7 @@ Measuring the outcome at baseline offers several advantages:
   collected.\footnote{Given the typical uncertainty about having
     accounted for all unmeasured confounding, it is prudent for
     researchers to conduct sensitivity analyses
-    (\protect\hyperlink{ref-shi2021}{Shi \emph{et al.} 2021}).}
+    (\hyperref[ref-shi2021]{Shi \emph{et al.} 2021}).}
 \end{enumerate}
 
 \begin{figure}
@@ -904,10 +887,9 @@ mediator biases.}
 
 \end{figure}
 
-\hypertarget{step-3.-identify-observable-common-causes-of-the-exposure-and-the-outcome}{%
 \subsubsection{Step 3. Identify observable common causes of the exposure
 and the
-outcome}\label{step-3.-identify-observable-common-causes-of-the-exposure-and-the-outcome}}
+outcome}\label{step-3.-identify-observable-common-causes-of-the-exposure-and-the-outcome}
 
 Next, we should identify all the potential confounders that, when
 adjusted for, can eliminate any non-causal association between the
@@ -923,10 +905,9 @@ causal diagrams are meant to be human read. We should not include these
 additional nodes when including a single node will suffice for clarity
 and thoroughness.
 
-\hypertarget{step-4.-gather-data-for-proxy-variables-of-unmeasured-common-causes-at-the-baseline-wave}{%
 \subsubsection{Step 4. Gather data for proxy variables of unmeasured
 common causes at the baseline
-wave}\label{step-4.-gather-data-for-proxy-variables-of-unmeasured-common-causes-at-the-baseline-wave}}
+wave}\label{step-4.-gather-data-for-proxy-variables-of-unmeasured-common-causes-at-the-baseline-wave}
 
 Recall \textbf{?@fig-dag-descendent-solution-2}: if any unmeasured
 confounders influence both the exposure and outcome, but we lack direct
@@ -934,10 +915,9 @@ measurements, we should make efforts to include proxies for them. Again,
 even if this strategy cannot eliminate all bias from unmeasured
 confounding, it will generally reduce bias.
 
-\hypertarget{step-5.-state-the-target-population-for-whom-the-causal-question-applies}{%
 \subsubsection{Step 5. State the target population for whom the causal
 question
-applies}\label{step-5.-state-the-target-population-for-whom-the-causal-question-applies}}
+applies}\label{step-5.-state-the-target-population-for-whom-the-causal-question-applies}
 
 We need to define for whom our causal inference applies. For this
 purpose, it is helpful to distinguish the concepts of source population
@@ -995,9 +975,8 @@ specialist understanding. In Section 4, we will return to the concepts
 of generalisability and transportability as they pertain to sample
 selection.
 
-\hypertarget{step-6.-retention-is-a-mission-critical-imperative}{%
 \subsubsection{Step 6. Retention is a mission-critical
-imperative}\label{step-6.-retention-is-a-mission-critical-imperative}}
+imperative}\label{step-6.-retention-is-a-mission-critical-imperative}
 
 for reasons we clarify in Part 4, sample retention is a mission-critical
 imperative because panel attrition opens novel pathways for bias.
@@ -1009,12 +988,10 @@ science) is critical for causal human science. These strategies must be
 developed with specialist knowledge of the population under study and
 the participation and insights of the people being studied.
 
-\hypertarget{part-2.-the-steps}{%
-\subsection{Part 2. The Steps}\label{part-2.-the-steps}}
+\subsection{Part 2. The Steps}\label{part-2.-the-steps}
 
-\hypertarget{step-1-formulate-the-research-question}{%
 \subsubsection{STEP 1 Formulate the Research
-Question}\label{step-1-formulate-the-research-question}}
+Question}\label{step-1-formulate-the-research-question}
 
 \begin{itemize}
 \tightlist
@@ -1041,8 +1018,7 @@ Question}\label{step-1-formulate-the-research-question}}
   observational data? If not, review course materials.
 \end{itemize}
 
-\hypertarget{data-requirements}{%
-\subsubsection{Data Requirements}\label{data-requirements}}
+\subsubsection{Data Requirements}\label{data-requirements}
 
 \begin{itemize}
 \tightlist
@@ -1060,8 +1036,7 @@ Question}\label{step-1-formulate-the-research-question}}
   If not, consult with me.
 \end{itemize}
 
-\hypertarget{defining-the-outcome}{%
-\subsubsection{Defining the Outcome}\label{defining-the-outcome}}
+\subsubsection{Defining the Outcome}\label{defining-the-outcome}
 
 \begin{itemize}
 \tightlist
@@ -1083,9 +1058,7 @@ Question}\label{step-1-formulate-the-research-question}}
   It should.
 \end{itemize}
 
-\hypertarget{determining-the-exposure}{%
-\subsubsection{Determining the
-Exposure}\label{determining-the-exposure}}
+\subsubsection{Determining the Exposure}\label{determining-the-exposure}
 
 \begin{itemize}
 \tightlist
@@ -1117,9 +1090,8 @@ Exposure}\label{determining-the-exposure}}
   It should.
 \end{itemize}
 
-\hypertarget{accounting-for-confounders}{%
 \subsubsection{Accounting for
-Confounders}\label{accounting-for-confounders}}
+Confounders}\label{accounting-for-confounders}
 
 \begin{itemize}
 \tightlist
@@ -1146,9 +1118,8 @@ Confounders}\label{accounting-for-confounders}}
   three or more levels, do not convert them to z-scores.
 \end{itemize}
 
-\hypertarget{drawing-a-causal-diagram-with-unmeasured-confounders}{%
 \subsubsection{Drawing a Causal Diagram with Unmeasured
-Confounders}\label{drawing-a-causal-diagram-with-unmeasured-confounders}}
+Confounders}\label{drawing-a-causal-diagram-with-unmeasured-confounders}
 
 \begin{itemize}
 \tightlist
@@ -1173,9 +1144,7 @@ Confounders}\label{drawing-a-causal-diagram-with-unmeasured-confounders}}
   a consistent direction? It should.
 \end{itemize}
 
-\hypertarget{identifying-the-estimand}{%
-\subsubsection{Identifying the
-Estimand}\label{identifying-the-estimand}}
+\subsubsection{Identifying the Estimand}\label{identifying-the-estimand}
 
 \begin{itemize}
 \tightlist
@@ -1189,9 +1158,8 @@ Estimand}\label{identifying-the-estimand}}
 
 If yes, you're on the right track.
 
-\hypertarget{understanding-source-and-target-populations}{%
 \subsubsection{Understanding Source and Target
-Populations}\label{understanding-source-and-target-populations}}
+Populations}\label{understanding-source-and-target-populations}
 
 \begin{itemize}
 \tightlist
@@ -1204,9 +1172,8 @@ Populations}\label{understanding-source-and-target-populations}}
   to a different population? I should have.
 \end{itemize}
 
-\hypertarget{setting-eligibility-criteria}{%
 \subsubsection{Setting Eligibility
-Criteria}\label{setting-eligibility-criteria}}
+Criteria}\label{setting-eligibility-criteria}
 
 \begin{itemize}
 \tightlist
@@ -1215,9 +1182,8 @@ Criteria}\label{setting-eligibility-criteria}}
   the study? I should have.
 \end{itemize}
 
-\hypertarget{describing-sample-characteristics}{%
 \subsubsection{Describing Sample
-Characteristics}\label{describing-sample-characteristics}}
+Characteristics}\label{describing-sample-characteristics}
 
 \begin{itemize}
 \tightlist
@@ -1233,8 +1199,7 @@ Characteristics}\label{describing-sample-characteristics}}
   about the sample? I should have.
 \end{itemize}
 
-\hypertarget{addressing-missing-data}{%
-\subsubsection{Addressing Missing Data}\label{addressing-missing-data}}
+\subsubsection{Addressing Missing Data}\label{addressing-missing-data}
 
 \begin{itemize}
 \tightlist
@@ -1246,9 +1211,8 @@ Characteristics}\label{describing-sample-characteristics}}
   how I will address it? I should have.
 \end{itemize}
 
-\hypertarget{selecting-the-model-approach}{%
 \subsubsection{Selecting the Model
-Approach}\label{selecting-the-model-approach}}
+Approach}\label{selecting-the-model-approach}
 
 \begin{itemize}
 \tightlist
@@ -1274,16 +1238,14 @@ Approach}\label{selecting-the-model-approach}}
   using simulation? If yes, describe it (e.g.~E-values.)
 \end{itemize}
 
-\hypertarget{d.-highlight-unmeasured-pre-treatment-covariates}{%
 \subsubsection{d.~Highlight unmeasured pre-treatment
-covariates}\label{d.-highlight-unmeasured-pre-treatment-covariates}}
+covariates}\label{d.-highlight-unmeasured-pre-treatment-covariates}
 
 Let \textbf{U} denoted unmeasured pre-treatment covariates that may
 potentially bias the statistical association between \emph{A} and
 \emph{Y} independently of the measured covariates.
 
-\hypertarget{consider}{%
-\subsubsection{Consider:}\label{consider}}
+\subsubsection{Consider:}\label{consider}
 
 \begin{itemize}
 \tightlist
@@ -1317,10 +1279,9 @@ design.}
 
 \end{figure}
 
-\hypertarget{summary-step-1-consider-how-much-we-need-to-do-when-asking-a-causal-question}{%
 \subsubsection{Summary Step 1: Consider how much we need to do when
 asking a causal
-question!}\label{summary-step-1-consider-how-much-we-need-to-do-when-asking-a-causal-question}}
+question!}\label{summary-step-1-consider-how-much-we-need-to-do-when-asking-a-causal-question}
 
 We discover that asking a causal question is a multifaceted task. It
 demands careful definition of the outcome, including its timing, the
@@ -1331,12 +1292,10 @@ causal question, we must consider for whom the results apply. Only after
 following these steps can we then ask: ``How may we answer this causal
 question?''
 
-\hypertarget{step-2-answer-a-causal-question}{%
 \subsection{STEP 2: ANSWER A CAUSAL
-QUESTION}\label{step-2-answer-a-causal-question}}
+QUESTION}\label{step-2-answer-a-causal-question}
 
-\hypertarget{obtain-longitudinal-data}{%
-\paragraph{Obtain longitudinal data}\label{obtain-longitudinal-data}}
+\paragraph{Obtain longitudinal data}\label{obtain-longitudinal-data}
 
 Note that causal inference from observational data turns on the
 appropriate temporal ordering of the key variables involved in the
@@ -1391,33 +1350,30 @@ incidence exposure, rather than the prevelance of the exposure. This
 helps us to assess the expected change in the outcome were we to initate
 a change in the exposure.
 
-\hypertarget{include-the-measured-exposure-with-baseline-covariates}{%
 \subsubsection{Include the measured exposure with baseline
-covariates}\label{include-the-measured-exposure-with-baseline-covariates}}
+covariates}\label{include-the-measured-exposure-with-baseline-covariates}
 
 Controlling for prior exposure enables the interpretation of the effect
 estimate as a change in the exposure in a manner akin to a randomised
 trial. We propose that the effect estimate with prior control for the
 exposure estimates the ``incidence exposure'' rather than the
-``prevalence exposure'' (\protect\hyperlink{ref-danaei2012}{Danaei
-\emph{et al.} 2012}). It is crucial to estimate the incidence exposure
-because if the effects of an exposure are harmful in the short term such
-that these effects are not subsequently measured, a failure to adjust
-for prior exposure will yield the illusion that the exposure is
-beneficial. Furthermore, this approach aids in controlling for
-unmeasured confounding. For such a confounder to explain away the
-observed exposure-outcome association, it would need to do so
-independently of the prior level of the exposure and outcome.
+``prevalence exposure'' (\hyperref[ref-danaei2012]{Danaei \emph{et al.}
+2012}). It is crucial to estimate the incidence exposure because if the
+effects of an exposure are harmful in the short term such that these
+effects are not subsequently measured, a failure to adjust for prior
+exposure will yield the illusion that the exposure is beneficial.
+Furthermore, this approach aids in controlling for unmeasured
+confounding. For such a confounder to explain away the observed
+exposure-outcome association, it would need to do so independently of
+the prior level of the exposure and outcome.
 
-\hypertarget{state-the-eligibility-criteria-for-participation}{%
 \subsubsection{State the eligibility criteria for
-participation}\label{state-the-eligibility-criteria-for-participation}}
+participation}\label{state-the-eligibility-criteria-for-participation}
 
 This step is invaluable for assessing whether we are answering the
 causal question that we have asked.
 
-\hypertarget{consider-1}{%
-\paragraph{Consider:}\label{consider-1}}
+\paragraph{Consider:}\label{consider-1}
 
 \begin{itemize}
 \tightlist
@@ -1442,9 +1398,8 @@ recruitment affect generalisability and transportability of our results?
   Aside: discuss per protocol effects/ intention to treat effects
 \end{itemize}
 
-\hypertarget{determine-how-missing-data-will-be-handled}{%
 \subsubsection{Determine how missing data will be
-handled}\label{determine-how-missing-data-will-be-handled}}
+handled}\label{determine-how-missing-data-will-be-handled}
 
 \begin{itemize}
 \tightlist
@@ -1454,15 +1409,13 @@ handled}\label{determine-how-missing-data-will-be-handled}}
   handling missing data.
 \end{itemize}
 
-\hypertarget{state-a-statistical-model}{%
 \subsubsection{State a statistical
-model}\label{state-a-statistical-model}}
+model}\label{state-a-statistical-model}
 
 The models we have considered in this course are G-computation, Inverse
 Probability of Treatement Weighting, and Doubly-Robust estimation.
 
-\hypertarget{reporting}{%
-\subsubsection{Reporting}\label{reporting}}
+\subsubsection{Reporting}\label{reporting}
 
 Consider the following ideas about how to report one's model:
 
@@ -1517,9 +1470,8 @@ Consider the following ideas about how to report one's model:
   inference.
 \end{itemize}
 
-\hypertarget{example-of-how-to-report-a-doubly-robust-method-in-your-report}{%
 \subsubsection{Example of how to report a doubly robust method in your
-report}\label{example-of-how-to-report-a-doubly-robust-method-in-your-report}}
+report}\label{example-of-how-to-report-a-doubly-robust-method-in-your-report}
 
 The Doubly Robust Estimation method for Subgroup Analysis Estimator is a
 sophisticated tool combining features of both IPTW and G-computation
@@ -1565,13 +1517,11 @@ each subgroup.
 groups by calculating the differences in the estimated causal effects
 between different subgroups. Confidence intervals and standard errors
 for these calculations are determined using simulation-based inference
-methods (\protect\hyperlink{ref-greifer2023}{Greifer \emph{et al.}
-2023}). This step allows for a comprehensive comparison of the impact of
-different interventions across various subgroups, while encorporating
-uncertainty.
+methods (\hyperref[ref-greifer2023]{Greifer \emph{et al.} 2023}). This
+step allows for a comprehensive comparison of the impact of different
+interventions across various subgroups, while encorporating uncertainty.
 
-\hypertarget{inference}{%
-\subsubsection{Inference}\label{inference}}
+\subsubsection{Inference}\label{inference}
 
 Consider the following ideas about what to discuss in one's findings.
 The order of exposition might be different.
@@ -1622,16 +1572,13 @@ The order of exposition might be different.
   further research.
 \end{enumerate}
 
-\hypertarget{part-x-estimators}{%
-\subsection{Part X Estimators}\label{part-x-estimators}}
+\subsection{Part X Estimators}\label{part-x-estimators}
 
-\hypertarget{average-treatment-effects-difference-scale}{%
 \subsubsection{Average Treatment Effects (Difference
-Scale)}\label{average-treatment-effects-difference-scale}}
+Scale)}\label{average-treatment-effects-difference-scale}
 
-\hypertarget{g-computation-estimator}{%
 \subsubsection{\texorpdfstring{\textbf{G-computation
-Estimator}}{G-computation Estimator}}\label{g-computation-estimator}}
+Estimator}}{G-computation Estimator}}\label{g-computation-estimator}
 
 \textbf{Step 1} Estimate the outcome model. Fit a model for the outcome
 \(Y\), conditional on the exposure \(A\), and the covariates \(L\). This
@@ -1667,13 +1614,12 @@ This difference \(\hat{\delta}\) represents the average causal effect of
 changing the exposure from level \(a'\) to level \(a\).
 
 We use simulation-based inference methods to compute standard errors and
-confidence intervals (\protect\hyperlink{ref-greifer2023}{Greifer
-\emph{et al.} 2023}).
+confidence intervals (\hyperref[ref-greifer2023]{Greifer \emph{et al.}
+2023}).
 
-\hypertarget{inverse-probability-of-treatment-weighting-iptw-estimator}{%
 \subsubsection{\texorpdfstring{\textbf{Inverse Probability of Treatment
 Weighting (IPTW)
-Estimator}}{Inverse Probability of Treatment Weighting (IPTW) Estimator}}\label{inverse-probability-of-treatment-weighting-iptw-estimator}}
+Estimator}}{Inverse Probability of Treatment Weighting (IPTW) Estimator}}\label{inverse-probability-of-treatment-weighting-iptw-estimator}
 
 \textbf{Step 1} Estimate the propensity score. The propensity score
 \(e(L)\) is the conditional probability of the exposure \(A = 1\), given
@@ -1731,12 +1677,10 @@ simulation-based inference methods to compute standard errors and
 confidence intervals.
 
 We again, use simulation-based inference methods to compute standard
-errors and confidence intervals
-(\protect\hyperlink{ref-greifer2023}{Greifer \emph{et al.} 2023}).
+errors and confidence intervals (\hyperref[ref-greifer2023]{Greifer
+\emph{et al.} 2023}).
 
-\hypertarget{doubly-robust-estimation}{%
-\subsubsection{Doubly Robust
-Estimation}\label{doubly-robust-estimation}}
+\subsubsection{Doubly Robust Estimation}\label{doubly-robust-estimation}
 
 \textbf{Step 1} Estimate the propensity score. The propensity score
 \(e(L)\) is the conditional probability of the exposure \(A = 1\), given
@@ -1787,16 +1731,14 @@ The difference \(\delta\) represents the average causal effect of
 changing the exposure from level \(a^{\prime}\) to level \(a\).
 
 We again use simulation-based inference methods to compute standard
-errors and confidence intervals
-(\protect\hyperlink{ref-greifer2023}{Greifer \emph{et al.} 2023}).
+errors and confidence intervals (\hyperref[ref-greifer2023]{Greifer
+\emph{et al.} 2023}).
 
-\hypertarget{subgroup-estimators}{%
-\subsubsection{Subgroup estimators}\label{subgroup-estimators}}
+\subsubsection{Subgroup estimators}\label{subgroup-estimators}
 
-\hypertarget{g-computation-for-subgroup-analysis-estimator}{%
 \subsubsection{\texorpdfstring{\textbf{G-computation for Subgroup
 Analysis
-Estimator}}{G-computation for Subgroup Analysis Estimator}}\label{g-computation-for-subgroup-analysis-estimator}}
+Estimator}}{G-computation for Subgroup Analysis Estimator}}\label{g-computation-for-subgroup-analysis-estimator}
 
 \textbf{Step 1} Estimate the outcome model. Fit a model for the outcome
 \(Y\), conditional on the exposure \(A\), the covariates \(L\), and
@@ -1839,8 +1781,8 @@ of changing the exposure from level \(a'\) to level \(a\) within each
 subgroup \(g\).
 
 We use simulation-based inference methods to compute standard errors and
-confidence intervals (\protect\hyperlink{ref-greifer2023}{Greifer
-\emph{et al.} 2023}).
+confidence intervals (\hyperref[ref-greifer2023]{Greifer \emph{et al.}
+2023}).
 
 \textbf{Step 4} Compare differences in causal effects by subgroups:
 
@@ -1856,13 +1798,12 @@ measures the interaction effect of the exposure \(A\) and the subgroup
 \(G\) on the outcome \(Y\).
 
 We again use simulation-based inference methods to compute standard
-errors and confidence intervals
-(\protect\hyperlink{ref-greifer2023}{Greifer \emph{et al.} 2023}).
+errors and confidence intervals (\hyperref[ref-greifer2023]{Greifer
+\emph{et al.} 2023}).
 
-\hypertarget{inverse-probability-of-treatment-weighting-iptw-for-subgroup-analysis-estimator}{%
 \subsubsection{\texorpdfstring{\textbf{Inverse Probability of Treatment
 Weighting (IPTW) for Subgroup Analysis
-Estimator}}{Inverse Probability of Treatment Weighting (IPTW) for Subgroup Analysis Estimator}}\label{inverse-probability-of-treatment-weighting-iptw-for-subgroup-analysis-estimator}}
+Estimator}}{Inverse Probability of Treatment Weighting (IPTW) for Subgroup Analysis Estimator}}\label{inverse-probability-of-treatment-weighting-iptw-for-subgroup-analysis-estimator}
 
 \textbf{Step 1} Estimate the propensity score. The propensity score
 \(e(L, G)\) is the conditional probability of the exposure \(A = 1\),
@@ -1934,7 +1875,7 @@ the difference in the predicted outcomes:
 The estimated difference \(\hat{\delta}_g\) represents the average
 causal effect withing group \(g\). We use simulation-based inference
 methods to compute standard errors and confidence intervals
-(\protect\hyperlink{ref-greifer2023}{Greifer \emph{et al.} 2023}).
+(\hyperref[ref-greifer2023]{Greifer \emph{et al.} 2023}).
 
 \textbf{Step 5} Compare differences in causal effects by groups. Compute
 the differences in the estimated causal effects between different
@@ -1947,12 +1888,11 @@ where,
 \[\hat{\gamma} = \overbrace{\big( \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^{\prime})|G=g] \big)}^{\hat{\delta_g}} - \overbrace{\big(\hat{E}[Y(a^{\prime})|G=g^{\prime}]- \hat{E}[Y(a)|G=g^{\prime}]\big)}^{\hat{\delta_{g^{\prime}}}}\]
 
 We again use simulation-based inference methods to compute standard
-errors and confidence intervals
-(\protect\hyperlink{ref-greifer2023}{Greifer \emph{et al.} 2023}).
+errors and confidence intervals (\hyperref[ref-greifer2023]{Greifer
+\emph{et al.} 2023}).
 
-\hypertarget{doubly-robust-estimation-for-subgroup-analysis-estimator}{%
 \subsubsection{Doubly Robust Estimation for Subgroup Analysis
-Estimator}\label{doubly-robust-estimation-for-subgroup-analysis-estimator}}
+Estimator}\label{doubly-robust-estimation-for-subgroup-analysis-estimator}
 
 Doubly Robust Estimation is a powerful technique that combines the
 strengths of both the IPTW and G-computation methods. It uses both the
@@ -2037,8 +1977,8 @@ changing the exposure from level \(a^{\prime}\) to level \(a\) within
 each subgroup.
 
 We use simulation-based inference methods to compute standard errors and
-confidence intervals (\protect\hyperlink{ref-greifer2023}{Greifer
-\emph{et al.} 2023}).
+confidence intervals (\hyperref[ref-greifer2023]{Greifer \emph{et al.}
+2023}).
 
 \textbf{Step 5} Compare differences in causal effects by groups. Compute
 the differences in the estimated causal effects between different
@@ -2051,8 +1991,169 @@ where,
 \[\hat{\gamma} = \overbrace{\big( \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^{\prime})|G=g] \big)}^{\hat{\delta_g}} - \overbrace{\big(\hat{E}[Y(a^{\prime})|G=g^{\prime}]- \hat{E}[Y(a)|G=g^{\prime}]\big)}^{\hat{\delta_{g^{\prime}}}}\]
 
 We again use simulation-based inference methods to compute standard
-errors and confidence intervals
-(\protect\hyperlink{ref-greifer2023}{Greifer \emph{et al.} 2023}).
+errors and confidence intervals (\hyperref[ref-greifer2023]{Greifer
+\emph{et al.} 2023}).
+
+\subsection{Inverse Probability of Treatment Weighting (IPTW)
+Protocolos}\label{inverse-probability-of-treatment-weighting-iptw-protocolos}
+
+We assess balance using \textbf{standardised mean differences},
+\textbf{Mean and Max Difference Adjusted}
+
+\subsubsection{Standardised means difference in the context of Inverse
+Probability of Treatment Weighting
+(IPTW)}\label{standardised-means-difference-in-the-context-of-inverse-probability-of-treatment-weighting-iptw}
+
+Standardised means difference is a measure used to compare the
+difference between two groups.
+
+\subsubsection{Definition:}\label{definition}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Standardised Means Difference (SMD)}: SMD is used to express
+  the size of the intervention effect in each study relative to the
+  variability observed in that study. It is computed as the difference
+  between means divided by a standard deviation of the data. Formula for
+  SMD is: \[
+  \text{SMD} = \frac{{\bar{X}_1 - \bar{X}_2}}{{s}}
+  \] where \(\bar{X}_1\) and \(\bar{X}_2\) are the means of the two
+  groups, and \(s\) is the pooled standard deviation.
+\item
+  \textbf{Inverse Probability of Treatment Weighting (IPTW)}: IPTW uses
+  propensity scores to create a synthetic sample in which the
+  distribution of measured baseline covariates is independent of
+  treatment assignment. It aims to mimic a randomised experiment by
+  creating a balanced comparison.
+\item
+  \textbf{Weighting IPTW with SMD}: Weighting using IPTW can adjust the
+  SMD between the treated and untreated groups. The balance in
+  covariates is often assessed by checking whether the absolute value of
+  the SMD is close to 0.
+\end{enumerate}
+
+\subsubsection{Step-by-step:}\label{step-by-step}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Estimate Propensity Score}: Use logistic regression, or other
+  methods, to estimate the propensity score for each subject.
+\item
+  \textbf{Calculate IPTW}: The weight for each subject is the inverse of
+  the probability of receiving the treatment that was actually received.
+  For treated subjects: \[
+  w = \frac{1}{{\text{propensity score}}}
+  \] For untreated subjects: \[
+  w = \frac{1}{{1 - \text{propensity score}}}
+  \]
+\item
+  \textbf{Compute Standardised Means Difference}: Calculate the SMD for
+  each covariate using the IPTW, comparing the treated and untreated
+  groups.
+\item
+  \textbf{Assess Balance}: If the absolute value of the SMD for a
+  covariate is close to 0, the groups are considered balanced for that
+  covariate.
+\end{enumerate}
+
+This approach allows for causal inference in observational studies,
+making the comparison of treated and untreated groups as if
+randomisation had occurred. It is crucial in causal inference, to
+minimise bias due to confounding variables.
+
+\subsubsection{Min and Max adjusted average difference in
+means}\label{min-and-max-adjusted-average-difference-in-means}
+
+When achieving balance using Inverse Probability of Treatment Weighting
+(IPTW), ``Mean.Diff.Adj'' and ``Max.Diff.Adj'' are specific statistics
+often used to assess the balance of covariates between the treatment and
+control groups after weighting. Definitions:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Mean.Diff.Adj}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Refers to the average difference in means of covariates between the
+    treated and untreated groups after applying IPTW.
+  \item
+    Formula: \[
+    \text{Mean.Diff.Adj} = \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}}
+    \] where \(w_i\) is the weight for subject \(i\), and \(X_{1i}\) and
+    \(X_{0i}\) are the values of the covariate for the treated and
+    untreated subjects, respectively.
+  \item
+    Close to 0 indicates good balance.
+  \end{itemize}
+\item
+  \textbf{Max.Diff.Adj}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Refers to the maximum absolute difference in means of covariates
+    between the treated and untreated groups after applying IPTW.
+  \item
+    Formula: \[
+    \text{Max.Diff.Adj} = \max \left| \frac{{\sum w_i \cdot (X_{1i} - X_{0i})}}{{\sum w_i}} \right|
+    \]
+  \item
+    Close to 0 indicates good balance, and it focuses on the
+    worst-balanced covariate, which could be a point of concern even if
+    the overall mean difference is small.
+  \end{itemize}
+\end{enumerate}
+
+The difference between ``Mean.Diff.Adj'' and ``Max.Diff.Adj'' in the
+context of Inverse Probability of Treatment Weighting (IPTW) lies in
+what they measure regarding the balance of covariates:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Mean.Diff.Adj}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Measures the \textbf{average} difference in means of covariates
+    between the treated and untreated groups after applying IPTW.
+  \item
+    Reflects the overall balance across all covariates.
+  \item
+    A value close to 0 indicates good overall balance.
+  \end{itemize}
+\item
+  \textbf{Max.Diff.Adj}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Measures the \textbf{maximum absolute} difference in means of
+    covariates between the treated and untreated groups after applying
+    IPTW.
+  \item
+    Focuses on the worst-balanced covariate, regardless of the overall
+    balance.
+  \item
+    A value close to 0 indicates that even the most imbalanced covariate
+    is well-balanced, but a high value could be a concern even if the
+    mean difference is small.
+  \end{itemize}
+\end{enumerate}
+
+In summary, while ``Mean.Diff.Adj'' provides a sense of the general
+balance achieved across all covariates, ``Max.Diff.Adj'' zeroes in on
+the single most imbalanced covariate. The former gives a global view,
+while the latter highlights the potentially problematic area, both
+crucial for understanding the balance achieved by IPTW.
 
 \hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
