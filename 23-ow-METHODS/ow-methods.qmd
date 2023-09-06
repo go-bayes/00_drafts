@@ -1,7 +1,7 @@
 ---
 title: "Causal inference in three wave panels: a step-by-step guide"
 abstract: | 
-  I descibe how to address causal questions using panel data...
+ This article offers a guide for addressing causal questions in psychology using three-wave panel designs. We focus on three-wave panel studies for the New Zealand Attitudes and Values Study (NZAVS), however the principles and strategies we describe may generalise. **Part 1** lays the foundation by introducing key definitions, notation, and assumptions required for causal inference. **Part 2** describes the three-wave panel "outcome-wide" design. **Part 3** provides a step-by-step giod for conducting three-wave outcome-wide design using NZAVS data. **Part 4** explains common estimators and their options, again focussing on NZAVS designs. **Part 5** explores more complex causal questions and approaches required for $n > 3$ wave designs. Overall, this article aims to equip pyschological scientists with the tools and understanding needed for robust causal inferences using panel data.
 author: 
   - name: Joseph A. Bulbulia
     orcid: 0000-0002-5861-2056
@@ -124,11 +124,11 @@ dat <- arrow::read_parquet(pull_path)
 
 ### Purpose
 
-This article describes how to address causal questions in psychology using panel data. I primarily focus on the simple case of estimating total effects in three-wave panel designs. A secondary purpose of this article is to guide applied researchers for the New Zealand Attitudes and Values Study in developing studies that address causal questions.
+This article describes how to address causal questions in psychology using panel data. We primarily focus on the simple case of estimating total effects in three-wave panel designs. A secondary purpose of this article is to guide applied researchers for the New Zealand Attitudes and Values Study in developing studies that address causal questions.
 
-**Part 1** introduces definitions and notation, and outlines how causal inference works. The purpose of this section is to introduce readers who are not familiar with causal inference to its conceptual and mathematical basis.
+**Part 1** introduces definitions and notation, and outlines how causal inference works. The purpose of this section is to introduce readers who are not familiar with causal inference to its conceptual basis.
 
-**Part 2** outlines the three-wave panel, and its motivations. Here I introduce the concept of an "outcome-wide study," an concept introduced by Tyler VanderWeele [@vanderweele2017a; @vanderweele2020a]. I review important theoretical motivations for outcome-wide studies, describe pitfalls, and discuss methods for addressing their limitations. To foreshadow, and outcome-wide study quantifies the total effects of a single intervention on multiple outcomes. This approach affords more rapid scientific progress than would be possible were researchers to focus on single outcomes. This approach also avoids selection bias arising from cherry-picking outcomes in the service of a publishable story.
+**Part 2** outlines the three-wave panel, and its motivations. Here, I introduce the concept of an "outcome-wide study," an concept introduced by Tyler VanderWeele [@vanderweele2017a; @vanderweele2020a]. I review important theoretical motivations for outcome-wide studies, describe pitfalls, and discuss methods for addressing their limitations. To foreshadow, and outcome-wide study quantifies the total effects of a single intervention on multiple outcomes. This approach affords more rapid scientific progress than would be possible were researchers to focus on single outcomes. This approach also avoids selection bias arising from cherry-picking outcomes in the service of a publishable story.
 
 **Part 3** develops a the step-by-step guide for conducting causal inference within a three-wave panel design. Here, our focus shifts from theoretical to applied interests. To make theory concrete, we use the New Zealand Attitudes and Values Study (NZAVS). The NZAVS is a national probability study that has been repeatedly measuring individuals since 2009. In 2018-2019 (NZAVS wave 10), the NZAVS conducted a large booster that enrolled 1.5% of the adult population of New Zealand. Our focus here will be on describing causal inference methods as they apply to NZAVS waves 10-13. Part of the purpose of this guide is to assist NZAVS researchers in developing causal inferential studies using NZAVS data. Again, we will focus on outcome-wide approaches.
 
@@ -138,45 +138,100 @@ This article describes how to address causal questions in psychology using panel
 
 An Appendix describes custom functions written for executing the workflows in the NZAVS, again with a focus on three-wave panel designs.
 
-## **Part 1** Definitions and notation
 
-#### Treatment or Exposure
+## **Part 1** Foundational Concepts
 
-We will denote the treatment or exposure by $A$. Here, $A$ represents the specific cause we will examine. We use the terms "treatment" and "exposure" synonomously. 
 
-We assume that different gradations of $A$ are possible; that is, $A = a$ and $A = a'$ symbolise diverse treatment levels. 
+### Observed Outcome ($Y|A=a$)
 
-#### Counterfactual Outcome
+A critical aspect of causal inference is the temporal sequence of events. Specifically, the outcome variable, denoted $Y$, is observed after the treatment or exposure, which is symbolised as $A=a$. This ordering is imperative; causality implies a forward motion in time, from cause to effect. Therefore, $Y$ must be measured post-intervention or post-exposure to be considered as a potential effect of $A$.
 
-Imagine a world where a unit subjected to $ A = a $ could also be observed under $ A = a'$. In reality, this is impossible; a unit experiences only one treatment level at a time. The outcomes under the treatments not received are called "counterfactual outcomes" or equivalently "potential outcomes." 
+The nature of the outcome variable can be diverse. In psychological science, it may be a quantitative measure such as test scores, or a binary outcome like presence or absence of a mental disorder. We might be interested in estimating several outcomes simultaneously.  Whatever the outcome, we must ensure that it has been measured after the occurence of the exposure or treatment. 
 
-A counterfactual outcome is unobservable in practice, as a unit can only experience one treatment level at a time, $Y|A=a$ or $Y|A=a'$, but not both.  However, when certain assumptions are satisfied it may be possible to recover counterfactual outcomes from the data, a point we will elaborate on later.
+### Counterfactual Outcome ($Y(a)$)
 
-In the context of causal inference, counterfactuals are critical for establishing a causal effect. Without counterfactual outcomes, any inferred causal relationship remains speculative. We may think of causal inference as the practice (or art) of obtaining contrasts between counterfactual outcomes from observed data. 
+The counterfactual outcome $Y(a)$ stands for the unobserved outcome that each unit would have experienced under a specific treatment level $a$. This counterfactual serves as the cornerstone for estimating causal effects, allowing us to consider what would have happened the treatments differed  It is crucial to remember that these are theoretical constructs; conterfactuals are not observable because $Y$ can only be measured after a particular level of treatment $A=a$ has actually occurred.
 
-#### Causal Contrast
+For instance, if an individual receives treatment $a$, we observe the outcome $Y|A=a$. What we cannot observe is how the outcome would have varied under different treatments, denoted as $Y(a')$ for $a' \neq a$. This predicament, known as the "fundamental problem of causal inference," will require advanced methods to approximate the counterfactual outcomes from observations.[^note_terminology]
 
-What's the point of counterfactuals? They allow us to define causal contrasts:
+[^note_terminology]: In the literature on causal inference, the conventions $Y(a)$ $Y_a$ and $Y^a$  are all equivalent, and may be used interchangeably.  For consistency, we use the notation $Y(a)$ for counterfactual outcomes throughout this article.
+ 
+### Measuring Causal Effects
+
+In the arena of causal inference, the aim is not merely to detect associations or patterns but to quantify the effect of an intervention. The core tool for this is the counterfactual model, which aids in developing *causal contrasts*. These contrasts are essentially differences in potential outcomes under different treatment levels. They serve as the building blocks for quantifying causal effects.
+
+### Individual Level Causal Contrast
+
+At the individual level, a causal contrast for a specific unit $i$ is defined as $Y_i(a) - Y_i(a')$. However, this is inherently unobservable for any individual. The problem stems from the fact that we can only observe $Y_i | A_i = a$ or $Y_i | A_i = a'$ but never both for the same unit. This limitation is often referred to as the "fundamental problem of causal inference" because it restricts our ability to make conclusive causal claims at the individual level.
+
+### Average (Marginal) Causal Contrasts
+
+While individual-level contrasts may be unobservable, it is often possible to estimate average causal contrasts, particularly when certain assumptions hold. The average or marginal causal contrast is defined as \( E[Y(a)] - E[Y(a')] \). It provides a summary measure of the treatment effect across the entire population. When data meet specific criteria, these aggregate measures can be identified and estimated even in observational settings.
+
+### Causal Contrasts In Experiments
+
+In the experimental paradigm, participants are randomly allocated to treatment groups, and outcomes are observed post-intervention. Although individual-level contrasts remain unobservable, the randomisation process allows for the estimation of average causal contrasts. This is possible because random assignment ensures that, in expectation, each treatment group is a fair representation of the population. Hence, we can generalise the average effect of the treatment across groups.
+
+### Causal Contrasts In Observational Studies: Three Fundamental Assumptions
+
+In observational settings, the aim is to approximate the rigour of randomised experiments. This involves meeting three crucial assumptions:
+
+1.  **Causal Consistency**: This principle ensures that the treatments being compared correspond to well-defined interventions [@hernán2023]. Causal consistency helps resolve the inherent *missing data problems* of causal inference. For instance, when causal consistency holds, observed outcomes can be linked to counterfactual outcomes as follows:
+
+$$
+Y_i^{observed}|A_i = 
+\begin{cases} 
+Y_i(a^*) & \text{if } A_i = a^* \\
+Y_i(a) & \text{if } A_i = a
+\end{cases}
+$$
+
+For two treatment levels \( A=1 \) and \( A=0 \), the counterfactuals are then:
+
+$$
+Y = A \cdot Y(1) + (1-A) \cdot Y(0)
+$$
+
+2.  **Exchangeability**: Also known as the "no unmeasured confounding" condition. It posits that after adjusting for observed covariates, potential outcomes are independent of the treatment received [@hernán2023].
+
+$$
+Y(a) \coprod  A|L
+$$
+
+3.  **Positivity**: This condition asserts that for every level of measured covariates, there is a positive probability of receiving each treatment level [@hernán2023].
+
+$$
+0 < \Pr(A=a|L)<1, ~ \forall a \in A, ~ \forall l \in L
+$$
+
+When these assumptions hold, causal inference in observational data becomes a more tractable problem, enabling the application of various estimation techniques to approximate the unobservable counterfactual outcomes.
+
+#### Scales of causal contrast
+
+We cannot generally obtain causal contrasts for individual units. By definition, treatments are exclusive.  
+
+However, when assumptions are satisfied (describe below), we may obtain average treatment effects. 
 
 
 $$
-f_{\text{causal contrast}}(Y(a), Y(a'))
+ATE = f_{\text{causal contrast}}(E[Y_a], E[Y_a'])
 $$
 
-In words, this function quantifies how different the outcomes are under different treatment states.  $Y(a)$ and $Y(a')$ denote potential outcomes when the treatment levels are $A = a$ and$A = a'$, respectively. 
 
-
-#### Scales of Causal Contrast: Difference and Ratio
-
-We cannot generally obtain causal contrasts for individual units. By definition, treatments are exclusive.  However, when assumptions are satisfied, we may obtain average treatment effect.  For example, when focusing on the average treatment effect (ATE), the causal contrast on the difference scale can be defined as:
+For example, an average treatment affect for the exposure $A = a$ and $A=a'$ may be expressed on the difference scale as:
 
 $$
 ATE_{A,A'} = E[Y(a)] - E[Y(a')]
 $$
 
-This function computes the average effect by contrasting the expected outcomes under two specific treatment levels $A$ and$A'$.
+This function computes the average effect by subtracting the average of the expected outcomes under two specific treatment levels $A$ and$A'$. Because the difference of the means is equivalent to the mean of the differences, this expression is equivalent to: 
 
-Similarly, a causal contrast between the averages of two treatment effects can also be expressed on the ratio scale:
+$$
+ATE_{A,A'} = E[Y(a) - Y(a')]
+$$
+
+
+Similarly, a causal contrast between the averages of one treatment and the average of another treatment can also be expressed on the ratio scale:
 
 $$
 ATE_{A/A'} = \frac{E[Y(a)]}{E[Y(a')]}
@@ -185,38 +240,177 @@ $$
 Regardless of the scale or type of treatment, specifying the level of contrast is essential for interpretation.
 
 
-#### **Causal Effect**
+#### Causal Effect
 
-A causal effect is a contrast in average treatments at some scale.  We say there is a causal effect on the difference scale when a causal contrasts does not equal zero:
+We say there is an average or marginal effect of A on Y on the causal difference scale if: 
 
-$$E[Y(a)] - E[Y(a')] \neq 0$$
+$$ {E}[Y(a)] -  {E}[Y(a')] \neq 0$$
 
-We say there is a causal effect on the ratio scale when a causal estimand does not equal one. For example:
+We say there is an average or marginal effect of A on Y on the causal risk ratio scale if:
 
-$$\frac{E[Y(1)]}{E[Y(0)]}\neq 1$$
+$$\frac{ {E}[Y(a)]}{ {E}[Y(a')]}\neq 1$$
 
-where 1 and 0 represent specific levels of a binary exposure.
-
-#### **Observed Association**
-
-The observed association is the measurable link between a treatment or exposure $A$ and an outcome $Y$ in the sample data. We can represent it as:
-
-$$f_{\text{observed}}(Y, A)$$
-
-For example, we may use a linear regression model to quantify the association between treatment $A$ and outcome $Y$:
+Unless otherwise specified, we will discuss causal contrasts on the difference scale:
 
 $$
-Y = \beta_0 + \beta_1 A + \epsilon
+\delta_{\text{ATE}} = E[Y(a) - Y(a')]
 $$
 
-Here:
+This is the average or "marginal" contrast between the outcome under treatment $a$ and the outcome under the alternative $a'$, averaged over the entire population. This metric provides an aggregate snapshot of the effect size, ignoring any possible heterogeneities or subgroup-specific variations in treatment effects.
 
--   $Y$ is the outcome variable.
--   $A$ signifies treatment or exposure.
--   $\beta_0$ is the intercept, $\beta_1$ the slope.
--   $\epsilon$ represents the error term.
+#### Introducing Conditional Average Treatment Effect (CATE)
 
-Slope $\beta_1$ and intercept $\beta_0$ are estimated via ordinary least squares (OLS), assuming a linear relationship. It reflects observed data, not full data that includes counterfactual outcomes. Hence, drawing causal conclusions based solely on $\beta_1$ is problematic.
+The effect of treatments are not the same for everyone. What works for one subgroup might not work for another, or not work in quite the same way. This brings us to the concept of the Conditional Average Treatment Effect, or CATE.
+
+We define the CATE as the ATE in subgroup $G = g$. Call this quantity: $\delta_{\text{CATE},g}$. It may be computed:
+
+$$
+\delta_{\text{CATE},g} = E[Y(a)|G=g] - E[Y(a')|G=g]
+$$
+
+For example, if $G$ may denote different age groups —say, young adults and the elderly. Let $\delta_{\text{CATE}_{young}}$ denote a treatment effect specifically on young adults, while  $\delta_{\text{CATE}_{elderly}}$ would do the same for the elderly.[^errors]  
+
+[^errors]: To quantify this contrast, we use statistical methods such as simulation-based inference to estimate standard errors and confidence intervals [@greifer2023].
+
+
+#### Distinguishing Between ATE and CATE in Group Comparisons
+
+Suppose we wish to understand how treatment effects vary between different groups, you might want to look into $ \gamma_g $. This term reflects the *differential* average treatment effect between groups $G = g$ and $G = g'$.
+
+To articulate this notion more clearly, let us redefine $\gamma_g$ as follows:
+
+$$
+\gamma_g = \delta_{\text{CATE},g} - \delta_{\text{CATE},g'}
+$$
+
+This notation allow us to distinguish between the ATE in a subgroup, $\delta_{\text{CATE},g}$,  from the concept of effect measure modification $\gamma_g$.
+
+
+#### Example: differential effects of screen-time on well-being among age groups
+
+To illustrate the application of $\gamma_g$, consider a psychological intervention aimed at reducing screen-time to improve well-being. In this context, let $G = \text{'adolescents'}$ and $G' = \text{'adults'}$. Assume that we estimate $\delta_{\text{CATE}, \text{adolescents}} = 10$-point increase in a well-being scale and $\delta_{\text{CATE}, \text{adults}} = 4$-point increase.
+
+We can calculate $\gamma_{\text{adolescents}}$ as:
+
+$$
+\gamma_{\text{adolescents}} = \delta_{\text{CATE}, \text{adolescents}} - \delta_{\text{CATE}, \text{adults}} = 10 - 4 = 6
+$$
+
+In this example, $\gamma_{\text{adolescents}}$ indicates that the intervention is differentially more effective in improving well-being for adolescents compared to adults by an average of 6 points on the well-being scale.
+
+This serves as an instance of "Effect Modification" (or equivalently "Effect Measure Modification"), indicating that the treatment effect of reduced screen-time is not uniformly beneficial across age groups. The term $\gamma_g$ becomes a critical metric for assessing this heterogeneity.
+
+
+#### Relating Average Treatment Effect (ATE) to Differential Effects Across Groups
+
+
+Consider the quantity $\delta_{\text{ATE}}$ as it relates to subgroup-specific treatment effects ($\delta_{\text{CATE},g}$) and the differential treatment effect ($ \gamma_g $).
+
+The ATE represents an average across all subgroups, weighted by their population sizes. If we denote $ p_{\text{adolescents}} $ and $ p_{\text{adults}}$ as the proportion of adolescents and adults in the population, respectively, then:
+
+$$
+\delta_{\text{ATE}} = p_{\text{adolescents}} \cdot \delta_{\text{CATE}_{\text{adolescents}}} + p_{\text{adults}} \cdot \delta_{\text{CATE}_{\text{adults}}}
+$$
+
+In our example, if adolescents make up 30% of the sample and adults make up 70%, then:
+
+$$
+\delta_{\text{ATE}} = 0.3 \cdot 10 + 0.7 \cdot 4 = 3 + 2.8 = 5.8
+$$
+
+Here, $\delta_{\text{ATE}}$ approximates the weighted average of $\delta_{\text{CATE}_{\text{adolescents}}}$ and$\delta_{\text{CATE}_{\text{adults}}}$. It should be noted that $\gamma_{\text{adolescents}} = 6$ underscores how the treatment effect is differentially stronger for adolescents. This differential effect is essentially obscured when looking solely at $\delta_{\text{ATE}}$.
+
+By examining both $\delta_{\text{ATE}}$ and $\gamma_g$, we can make more precise inferences about the heterogeneous effects of interventions across different subpopulations. 
+
+
+#### Formal definition of Effect Modification (or Effect Measure Modification)
+
+Effect Modification occurs when the treatment effect varies across levels of a third variable, often termed the "modifier" or "effect modifier." Formally, it's defined as the interaction between the treatment variable $a$  and the modifier  $G$  in their effect on the outcome  $Y$ .
+
+Mathematically, Effect Measure Modification is said to be present if:
+
+$$ 
+E[Y(a) | G=g_1] - E[Y(a') | G=g_1] \neq E[Y(a) | G=g_2] - E[Y(a') | G=g_2]
+$$ 
+
+Or in terms of our average treatment effects within subgroups ($\delta_{\text{CATE},g}$):
+
+$$ 
+\delta_{\text{CATE},g_1} \neq \delta_{\text{CATE},g_2}
+$$ 
+
+The term $\gamma_g$ which we defined as $\delta_{\text{CATE},g} - \delta_{\text{CATE},g'}$  would be a non-zero value when Effect Measure Modification is present.
+
+Effect Measure Modification implies that the treatment does not act uniformly across different strata of the effect modifier, warranting subgroup-specific estimates of the treatment effect. Again, this concept is pivotal for tailoring interventions and identifying whom they benefit or harm the most.
+
+### Populations
+
+For whom do we estimate causal effects? A multitude of overlapping "groups" demands precise terminology.
+
+#### Source Population
+
+Source population: the origin of our study sample. This population harbours its own true average treatment effect $ATE_{\text{source}}$. 
+
+<!-- This effect is essentially a weighted sum of the various subgroup effects. The representativeness of the sample sets the boundary for causal claims: a skewed sample undermines the generalisability of the ATE to the source population. -->
+
+
+#### Target Population
+
+Target population: the is the population fwe actually care about. It could be defined by location, demographics, or specific conditions unrelated to the source population. The closer the source matches the target in ways that are relevant to our causal questions, the stronger our causal inferences about the target population will be.
+
+
+#### **Generalisability**
+
+Results generalise when they are applicable to the broader population from which the sample is drawn -- the $PATE$, or is the population average treatment effect. We can approximate the PATE from the ATE using survey weights $W$:
+
+$$
+\text{Generalisability} = PATE \approx f_{W}(ATE_{\text{source}}, W)
+$$
+
+#### **Transportability**
+
+Results are transportable when they apply to a different population than the one from which the sample was drawn. To express this:
+
+$$
+\text{Transportability} = ATE_{\text{target}} \approx f_{T}(ATE_{\text{source}}, T)
+$$
+
+Here, $T$ is a function mapping results from the source to the target population. Achieving transportability requires both data and scientific knowledge to understand how relationships between treatment, outcome, and covariates vary between source and target populations.
+
+
+
+#### National Population
+
+The Population Average Treatment Effect $ PATE_{\text{New Zealand}}$ is a weighted sum of the CATEs for each age group, using the proportions of each group within the population as weights:
+
+$$
+PATE_{\text{New Zealand}} = w_{20-30} \times \delta_{\text{CATE}, 20-30} + w_{31-40} \times \delta_{\text{CATE}, 31-40} + w_{41-50} \times \delta_{\text{CATE}, 41-50}
+$$
+
+For example, suppose:
+
+- $\delta_{\text{CATE}, 20-30} = -2$ (screen time decreases well-being by 2 units for age 20-30)
+- $\delta_{\text{CATE}, 31-40} = -1$ (screen time decreases well-being by 1 unit for age 31-40)
+- $\delta_{\text{CATE}, 41-50} = 0$ (no effect for age 41-50)
+
+Suppose the population weights are:
+
+- $w_{20-30} = 0.4$
+- $w_{31-40} = 0.3$
+- $w_{41-50} = 0.3$
+
+The $PATE_{\text{New Zealand}}$ would be:
+
+
+$$
+PATE_{\text{New Zealand}} = 0.4 \times (-2) + 0.3 \times (-1) + 0.3 \times 0 = -0.8 - 0.3 + 0 = -1.1
+$$
+
+
+So, the $PATE_{\text{New Zealand}}$ indicates that, on average, screen time reduces well-being by 1.1 units across the New Zealand population. This takes into account the age distribution and estimated treatment effects for each age group.[^noterestricted]
+
+[^noterestricted]: Technically we have computed a *restricted PATE* because the age groups in New Zealand are wider than the 20-50 year old range described here.
+
 
 #### **Full Data and Observed Data**
 
@@ -224,7 +418,14 @@ The full data is the random vector $(Y(1), Y(0), A, L)$ for covariates $L$, whil
 
 Absent assumptions, we cannot learn about contrasts from the observed data, because they are functionals of (partially) unobserved potential outcomes.
 
-#### **Confounding**
+
+| Data Type      | $Y(1)$                | $Y(0)$                | $A$          |
+|----------------|---------------------------|---------------------------|------------------|
+| Full Data      | Counterfactual $Y(1)$ | Counterfactual $Y(0)$ | Observed $A$ |
+| Observed Data  | Observed $Y$ if $A=1$| Observed $Y$ if $A=0$ | Observed $A$ |
+
+
+### **Confounding**
 
 A condition in which the observed association between the treatment and the outcome in the data does not reflect a causal association.
 
@@ -247,32 +448,6 @@ A statistical estimand is a functional of the observed data that corresponds to 
 #### **Estimator**
 
 An estimator is a statistical function of the observed data, denoted as $\hat{\theta}(Y, A, L)$, that provides an estimate of the statistical estimand. It translates the observed data into a single value, approximating the unknown parameter. In the context of causal inference, an estimator is used to estimate the statistical estimand, thereby providing information about the corresponding causal estimand.
-
-#### **Source Population**
-
-A source population is the population from who a study sample is drawn.
-
-#### **Target Population**
-
-A target population is the larger group we aim to apply our study's results to. It could be defined by location, demographics, or specific conditions.
-
-The closer the source matches the target in ways that are relevant to our causal questions, the stronger our causal inferences about the target population will be.
-
-#### **Generalisability**
-
-We say our results generalise when the causal effect estimated from a sample apply to the wider population from was drawn from the sample population. This is "external validity." Where $PATE$ denotes the population average treatement effect:
-
-$$\text{Generalisability} = PATE \approx f(ATE_{\text{sample}}, W)$$
-
-#### **Transportability**
-
-We say our results are transportable when the causal effect estimated from a sample apply to a population other than that from which the sample population is drawn. This can be expressed:
-
-$$\text{Transportability} = ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)$$
-
-where $f$ is a function and $T$ is a function that maps the results from our source population to another population.
-
-To achieve transportability, we need information about the source and target populations and an understanding of how the relationships between treatment, outcome, and covariates differ between the populations. That is assessing transportability requires scientific knowledge.
 
 #### **Elicitation**
 
@@ -304,9 +479,11 @@ Randomisation is essential here, too. Because we put people into groups randomly
 
 Experiments are the best method for estimating causal effects. They use randomisation and control to identify causation. However, experiments are not always possible or ethical. In those cases, researchers turn to observational studies. These studies are more complex. They do not have random assignment to treatment conditions, and the conditions may vary widely. Some individuals might not even have a chance to receive one or both levels of the treatment being studied.
 
-Therefore, to estimate causal effects in observational settings, certain assumptions must be met $$citations$$. These assumptions are crucial. Without them, it is risky to draw conclusions about causation outside of experimental settings $$cite$$.
+Therefore, to estimate causal effects in observational settings, certain assumptions must be met $citations$. These assumptions are crucial. Without them, it is risky to draw conclusions about causation outside of experimental settings $cite$.
 
 The three fundamental assumptions are the exchangeability assumption, the causal consistency assumption, and the positivity assumption. Each one serves a unique role in ensuring that the causal effects identified in observational studies are valid and reliable.
+
+### Three fundamental assumptions of causal inference
 
 #### **The Exchangeability Assumption**
 
@@ -352,6 +529,9 @@ Unlike the exchangeability and causal consistency assumptions, we can sometimes 
 
 An identification strategy refers to the set of assumptions and methodologies employed to ensure that a causal estimand (recall -- a quantity representing a causal effect) can be determined uniquely from the observed data. It is the process through which researchers make a bridge from the statistical estimand, derived from the observed data, to the causal estimand that represents the actual causal effect of interest. Identifiability relies on assumptions such as exchangeability, positivity, and consistent measurement. The validity of these assumptions enables a unique mapping of the causal estimand from the statistical estimand, facilitating causal inference from observational data.
 
+
+
+
 <!-- ### Scale of effect -->
 
 <!-- Average causal effects can be inferred by contrasting the expected outcome when a population is exposed to an exposure level, $E[Y(A = a)]$, with the expected outcome under a different exposure level, $E[Y(A=a')]$. -->
@@ -390,23 +570,7 @@ An identification strategy refers to the set of assumptions and methodologies em
 -   By inferring effects within strata, we may evaluate whether the effects of different exposures or treatments on some well-defined outcome (measured in some well-defined time-period after the exposure) differ depending on group measurement.
 -   The logic of effect modification differs slightly from that of interaction.
 
-#### Aside: extensions
 
-For continuous exposures, we must stipulate the level of contrast for the exposure (e.g. weekly versus monthly church attendance):
-
-$$ATE_{A,A'} = E[Y(A) - Y(A')| L]$$
-
-This essentially denotes an average treatment effect comparing the outcome under treatment level $A$ to the outcome under treatment level $A'$.
-
-Likewise:
-
-$$ATE_{A/A'} = \frac{E[Y(A)| L]}{E[Y(A')| L]}$$
-
-This defines the contrast of $A$ and $A'$ on a ratio scale.
-
-#### f. Describe the population(s) for whom the intended study is meant to generalise by distinguishing between source and target populations.
-
-Consider the following concepts:
 
 ## Part 2: Three-Wave Panel Designs
 
@@ -449,6 +613,9 @@ a.  **Incidence effect interpretation**: incorporating the baseline exposure all
 2.  **Confounding control**: the baseline exposure's inclusion helps to reduce unmeasured confounding arising from time-invariant confounders. These are variables that do not change over time and could confound the association between the exposure and the outcome if not properly accounted for. For instance, personal attributes such as unmeasured childhood religiosity could confound the association between religious service attendance and outcomes if not considered [@vantongeren2020].
 
 3.  **Better evaluation of sample adequacy for rare exposures**: Particularly when the exposure is uncommon, such as switching from no religious service attendance to weekly attendance, measuring the baseline exposure and outcome exposure can help assess adequacy of a sample size. Suppose this switch occurs rarely in the non-religious population, say 1 in 1,000 non-attenders per year. To estimate causal effects while conditioning on a rich set of baseline covariates, we would need a large sample, potentially comprising hundreds of thousands of participants. Ideally researchers would understake investigations prior to data collection to assess feasiblity of causal inference. In this example, it might be more practical to examine changes within the religious population, that is -- assuming changes are more common within this group -- than it would be to investigate conversion events. However, by restricting to only religious people who change in their religious habits, we would then typically estimate a causal effect generalisable to the religious population from which the sample was drawn, rather than one that could be applied to the non-religious population. In any case, including the baseline exposure can help address these issues by providing a reference point for changes within the population studied.
+
+
+
 
 ### Step 2. Specify the Outcome(s) measure them at wave 0 and wave 2
 
@@ -772,6 +939,99 @@ Consider the following ideas about what to discuss in one's findings. The order 
 
 ## Part X Estimators
 
+### Conditional estimators
+
+#### Beyond Observed Associations: The Causal Hurdle
+
+The observed association can be misleading because it captures the relationship between treatment $A$ and outcome $Y$ without adjusting for confounding variables $L$. The observed association often diverges from the true causal effect $\delta$, which we can express as:
+
+$$
+\delta = f_{\text{causal}}(Y, A | L)
+$$
+
+Note:
+
+- $f_{\text{causal}}$ is the causal function capturing the relationship between $Y$ and $A$, conditioned on $L$.
+- $L$ are the confounding variables.
+
+One approach to isolate $\delta$ from $f_{\text{observed}}(Y, A)$ is to use techniques like matching, inverse probability weighting (IPW), or instrumental variables. These methods aim to emulate a randomized experiment by adjusting for $L$.
+
+For example, to adjust for confounders in our linear model, we would modify it as:
+
+$$
+Y = \beta_0 + \beta_1 A + \beta_2 L + \epsilon
+$$
+
+Here, $\beta_2$ represents the vector of coefficients for confounding variables $C$.
+
+In essence, merely relying on $\beta_1$ from the naive OLS regression can result in biased causal inferences. To move from observed associations to causal estimates, we must adjust for confounders and potentially use more advanced statistical techniques.
+
+#### Marginal Structural Models
+
+A marginal structural model (MSM) is a causal model designed to estimate causal effects from observational data by addressing confounding and time-dependent covariates that may be simultaneously confounders and intermediate variables. MSMs use inverse probability weighting (IPW) to create a pseudo-population where the treatment assignment is independent of measured confounders.
+
+Mathematically, consider a treatment $A$ and outcome $Y$. The MSM specifies the counterfactual outcome $Y^a$ under treatment $a$ as:
+
+$$
+E[Y^a] = \alpha + \theta a
+$$
+
+where $\alpha$ is an intercept, and $\theta$ is the causal effect of interest. 
+
+Inverse probability weights $e$ are calculated based on the conditional probability of receiving the observed treatment given the covariates:
+
+$$
+e_i = \frac{1}{P(A=a_i \mid \text{covariates})}
+$$
+
+For stabilised weights, a numerator term is added:
+
+$$
+e_i = \frac{P(A=a_i)}{P(A=a_i \mid \text{covariates})}
+$$
+
+The MSM is then fitted to the weighted pseudo-population to estimate $\theta$, which approximates the causal effect of the treatment in the entire source population.
+
+For example, in our screen time and well-being study, an MSM could help isolate the direct effect of screen time on well-being while controlling for confounding variables like age, socioeconomic status, or previous well-being measures. The inverse probability weights could account for the fact that different individuals have varying propensities to engage in screen time based on these confounders.
+
+
+#### Survey Weights vs IPTW
+
+Both survey weights and inverse probability of treatment weights (IPTWs) adjust for non-representativeness, but they serve different purposes and arise from different paradigms.
+
+#### **Survey Weights**
+
+Survey weights, commonly denoted as \( W \), correct for unequal probability of selection in the sampling process. These weights aim to make the sample reflective of the source population. In a causal inference context, survey weights are useful to make the estimated average treatment effect (ATE) more generalisable to the source population. Mathematically, 
+
+$$
+ATE_{\text{source}} = \sum_{i=1}^N W_i \left( Y_{i1} - Y_{i0} \right)
+$$
+
+where $N$ is the number of subjects, $Y_{i1}$ and $Y_{i0}$ are potential outcomes under treatment and control, respectively, for subject $i$.
+
+#### **Inverse Probability of Treatment Weights (IPTWs)**
+
+IPTWs, denoted by $e$, are designed to control for confounding by equating the distribution of observed covariates between treatment and control groups within the sample. The aim is to make the treatment assignment as good as random, or ignorable. IPTWs are calculated as follows:
+
+$$
+e_i = \frac{1}{P(A=a_i \mid \text{covariates})}
+$$
+
+When stabilised,
+
+$$
+e_i = \frac{P(A=a_i)}{P(A=a_i \mid \text{covariates})}
+$$
+
+#### **Differences**
+
+1. **Purpose**: Survey weights target the representativeness of the sample concerning the source population, while IPTWs aim to eliminate confounding within the sample.
+   
+2. **Calculation**: Survey weights often derive from design factors like stratification or clustering. IPTWs are calculated based on observed treatment and covariate distributions.
+
+3. **Use Case**: Survey weights are often useful when generalisability to a broader population is the focus. IPTWs are useful in estimating internally valid causal effects within the sample.
+
+In summary, while both sets of weights serve to adjust for non-representativeness or imbalance, they do so in differing contexts and to achieve different aims. Both can coexist in the same analysis if both generalisability and internal validity are concerns.
 ### Average Treatment Effects (Difference Scale)
 
 ### **G-computation Estimator**
