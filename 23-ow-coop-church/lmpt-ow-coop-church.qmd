@@ -92,15 +92,16 @@ library(future.apply)
 SL_folds = 5
 #parallelize and fix multithreading
 progressr::handlers(global = TRUE)
-if (availableCores() < 10L) {
-  plan(multicore)
-} else {
-  # NOTE: bookkeeping for future topologies
-  plan(list(
-    tweak(multicore, workers = availableCores() %/% SL_folds),
-    tweak(multicore, workers = SL_folds - 1L)
-  ))
-}
+
+# if (availableCores() < 10L) {
+#   plan(multicore)
+# } else {
+#   # NOTE: bookkeeping for future topologies
+#   plan(list(
+#     tweak(multicore, workers = availableCores() %/% SL_folds),
+#     tweak(multicore, workers = SL_folds - 1L)
+#   ))
+# }
 # openblasctl::openblas_set_num_threads(1L)
 # OpenMPController::omp_set_num_threads(1L)
 
@@ -480,28 +481,30 @@ library(SuperLearner)
 library(xgboost)
 listWrappers()
 
+f
+A
+C
 
 # "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
 # MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
 
+library(SuperLearner)
+library(ranger)
+library(xgboost)
 # super learner libraries
 sl_lib <- c("SL.glmnet", 
            "SL.ranger", # faster implementation of random forest
-           "SL.glmnet") #
+           "SL.xgboost") #
 
 
 # BONUS: progressr progress bars!
 progressr::handlers(global = TRUE)
 
-# we will only assess behaviour 
-names_outcomes
-# recomend tmle for single time point
-# recommend sdr for multiple time points
-f
-A
-C
+library(future)
+plan(multisession)
+n_cores <- parallel::detectCores()
 
-library(SuperLearner)
+
 # model charitable giving in population 
 # measure time taken to run the model
 timing_info <- system.time({
@@ -517,7 +520,8 @@ timing_info <- system.time({
     outcome_type = "continuous",
     weights = df_clean$t0_sample_weights,
     learners_trt = sl_lib,
-    learners_outcome = sl_lib
+    learners_outcome = sl_lib,
+    parallel = n_cores 
   )
 })
 
