@@ -86,23 +86,25 @@ push_mods
 
 nzavs_exposure<- "religion_church_round"
 # 
-# library(future)
-# library(future.apply)
-# #parallelize and fix multithreading
-# progressr::handlers(global = TRUE)
-# if (availableCores() < 10L) {
-#   plan(multicore)
-# } else {
-#   # NOTE: bookkeeping for future topologies
-#   plan(list(
-#     tweak(multicore, workers = availableCores() %/% SL_folds),
-#     tweak(multicore, workers = SL_folds - 1L)
-#   ))
-# }
+library(future)
+library(future.apply)
+
+SL_folds = 5
+#parallelize and fix multithreading
+progressr::handlers(global = TRUE)
+if (availableCores() < 10L) {
+  plan(multicore)
+} else {
+  # NOTE: bookkeeping for future topologies
+  plan(list(
+    tweak(multicore, workers = availableCores() %/% SL_folds),
+    tweak(multicore, workers = SL_folds - 1L)
+  ))
+}
 # openblasctl::openblas_set_num_threads(1L)
 # OpenMPController::omp_set_num_threads(1L)
-# 
-# set.seed(0112358)
+
+set.seed(0112358)
 ```
 
 ```{r}
