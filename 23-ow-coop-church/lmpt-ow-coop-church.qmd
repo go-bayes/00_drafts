@@ -62,25 +62,27 @@ source("/Users/joseph/GIT/templates/functions/funs.R")
 # )
 
 
-# read data/ set to path in your computer
+# read data/ set to path in your computer (OLDER DATA)
 pull_path <-
   fs::path_expand(
     "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
   )
 
-dat <- arrow::read_parquet("/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"))
+# read data: note that you need use the arrow package in R
+dat <- arrow::read_parquet(pull_path)
+
+
+
+dat <- arrow::read_parquet("/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23")
 
 # for saving models. # set path fo your computer
 push_mods <-  fs::path_expand(
     "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-coop-church-lmtp"
   )
 
-# read data: note that you need use the arrow package in R
-dat <- arrow::read_parquet(pull_path)
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
-install_cmdstan(cores = 2)
 
 nzavs_exposure<- "religion_church_round"
 # 
@@ -101,14 +103,6 @@ nzavs_exposure<- "religion_church_round"
 # OpenMPController::omp_set_num_threads(1L)
 # 
 # set.seed(0112358)
-
-
-
-
-
-
-
-
 ```
 
 ```{r}
@@ -122,16 +116,14 @@ nzavs_exposure<- "religion_church_round"
 # HFAMTJ	Hours.Family.T10	Hours - Socialising with family
 # HCOMTJ	Hours.Community.T10	Hours - Socialising with community groups
 
+colnames(dat)
+
 table1::table1(~hours_community | wave, data = dat)
 table(dat$hours_community)
 table1::table1(~hours_family | wave, data = dat)
-table(dat$hours_family)
+table(dat$education_level_coarsen)
 
-table(dat$hours_family)
-hist(sqrt( dat$hours_friends))
-hist(sqrt( dat$religion_church))
-
-
+dat$religion_religious
 dat_long  <- dat |> 
  # filter(id %in% religious_ids) %>%
   arrange(id, wave) |>
@@ -159,12 +151,10 @@ dat_long  <- dat |>
   ) |>
   mutate(male = as.numeric(male) - 1) |>
   mutate(total_siblings_factor = ordered(round(ifelse(total_siblings > 7, 7, total_siblings), 0))) |> 
-  rename(religion_religious = religious) |>  # religious yes/no
   mutate(religion_prayer_binary = ifelse(religion_prayer > 0, 1, 0)) |>
   mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
   mutate(religion_church_f = ifelse(religion_church >= 21, 21, 0)) |>
   mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
-  mutate(religion_religious = as.numeric(religion_religious) - 1) |>
   mutate(
     religion_church_round = round( ifelse(religion_church >=8, 8, religion_church), 0) )|> 
   mutate(hours_community_round = round(ifelse(hours_community >=24, 24, hours_community), 0) )|> 
@@ -353,6 +343,8 @@ outcome_vars = outcome_vars
 
 here_save(prep_coop_all, "prep_coop_all")
 
+prep_coop_all <- here_read("prep_coop_all")
+
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
 
 
@@ -493,7 +485,7 @@ listWrappers()
 # super learner libraries
 sl_lib <- c("SL.glmnet", 
            "SL.ranger", # faster implementation of random forest
-           "SL.earth") #
+           "SL.glmnet") #
 
 
 # BONUS: progressr progress bars!
@@ -507,25 +499,29 @@ f
 A
 C
 
-
+library(SuperLearner)
 # model charitable giving in population 
-m_hours_charity <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_hours_charity",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib 
-)
+# measure time taken to run the model
+timing_info <- system.time({
+  m_hours_charity_t <- lmtp_tmle(
+    data = df_clean,
+    trt = A,
+    baseline = names_base,
+    outcome = "t2_hours_charity",
+    cens = C,
+    shift = f,
+    mtp = TRUE,
+    folds = 5,
+    outcome_type = "continuous",
+    weights = df_clean$t0_sample_weights,
+    learners_trt = sl_lib,
+    learners_outcome = sl_lib
+  )
+})
+
+# print timing info
+print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
+
 m_hours_charity
 here_save(m_hours_charity, "m_hours_charity")
 m_hours_charity <- here_read("m_hours_charity")
