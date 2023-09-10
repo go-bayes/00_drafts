@@ -100,6 +100,11 @@ library(future)
 plan(multisession)
 n_cores <- parallel::detectCores()
 
+# super learner libraries
+sl_lib <- c("SL.glmnet",
+           "SL.ranger", #
+           "SL.xgboost") #
+
 ```
 
 ```{r}
@@ -1785,7 +1790,7 @@ df_wide_censored_only_time <-
 
 # save
 here_save(df_wide_censored_only_time, "df_wide_censored_only_time")
-
+df_wide_censored_only_time<- here_read( "df_wide_censored_only_time")
 #(df_wide_censored_only_time$t1_hours_community_sqrt_round)
 # 2.5*sd(df_clean$t1_religion_church_round)
 # 2.5*sd(df_wide_censored_only_time$t1_hours_community_sqrt_round)
@@ -1904,7 +1909,7 @@ sl_lib
 progressr::handlers(global = TRUE)
 
 # we will only assess behaviour 
-names_outcomes
+
 # recomend tmle for single time point
 # recommend sdr for multiple time points
 f
@@ -1914,7 +1919,7 @@ C
 df<- df_clean_time
 
 names_base<- names_base_time
-
+names_base
 # model charitable giving in population 
 m_hours_charity_time <- lmtp_tmle(
   data = df,
@@ -2262,6 +2267,8 @@ hours_volunteering_gained
 
 
 ```{r}
+
+df_clean <- df
 # Warmth time
 m_church_t2_warm_asians_z_time <- lmtp_tmle(
   data = df_clean,
