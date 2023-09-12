@@ -108,7 +108,6 @@ sl_lib <- c("SL.glmnet",
 # boost xgboost
 SL.xgboost = list(tree_method = 'gpu_hist')
 
-
 ```
 
 ```{r}
@@ -1040,11 +1039,11 @@ here_save(null_t2_hours_charity_z, "null_t2_hours_charity_z")
 # ## donation model 
 # t2_charity_donate
 
-m_charity_donate <- lmtp_tmle(
+t2_charity_donate_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
   baseline = names_base,
-  outcome = "t2_charity_donate",
+  outcome = "t2_charity_donate_z",
   cens = C,
   shift = f,
   mtp = TRUE,
@@ -1056,9 +1055,43 @@ m_charity_donate <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores 
 )
-here_save(m_charity_donate, "m_charity_donate")
-m_charity_donate
+here_save(t2_charity_donate_z, "t2_charity_donate_z")
+t2_charity_donate_z
 # under null
+null_t2_charity_donate_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_charity_donate_z",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(null_t2_charity_donate_z, "null_t2_charity_donate_z")
+null_t2_charity_donate_z
+
+
+
+
+
+contrast_donate_full_z <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
+contrast_donate_full_z
+
+
+m_charity_donate_null <- here_read("m_charity_donate_null")
+
+m_charity_donate_null
+
+
 m_charity_donate_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1080,7 +1113,12 @@ m_charity_donate_null <- lmtp_tmle(
 here_save(m_charity_donate_null, "m_charity_donate_null")
 m_charity_donate_null <- here_read("m_charity_donate_null")
 
-m_charity_donate_null
+
+
+
+
+
+
 contrast_donate_full <- lmtp_contrast(m_charity_donate,ref = m_charity_donate_null, type = "additive")
 contrast_donate_full
 
@@ -1924,6 +1962,8 @@ EValue::evalues.OLS(est = .4029,
                     se =  0.0588,
                     sd = 4.101962)
 
+
+
 # charity
 m_charity_donate <- here_read("m_charity_donate")
 m_charity_donate_null <- here_read("m_charity_donate_null")
@@ -1938,6 +1978,11 @@ sd( df_clean$t2_charity_donate, na.rm = TRUE )
 EValue::evalues.OLS(est = 704,
                     se =  50.8,
                     sd = 4953.71)
+
+EValue::evalues.OLS(est = .14,
+                    se =  0.0104,
+                    sd = 1)
+
 
 # tables
 #sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
@@ -3306,7 +3351,7 @@ hours_only_religion_perceive_religious_discrim_z <- lmtp_tmle(
   data = df_clean,
   trt = A_2,
   baseline = names_base,
-  outcome = "religion_perceive_religious_discrim_z",
+  outcome = "t2_religion_perceive_religious_discrim_z",
   cens = C,
   shift = f,
   mtp = TRUE,
@@ -3328,7 +3373,7 @@ null_hours_only_religion_perceive_religious_discrim_z<- lmtp_tmle(
   data = df_clean,
   trt = A_2,
   baseline = names_base,
-  outcome = "religion_perceive_religious_discrim_z",
+  outcome = "t2_religion_perceive_religious_discrim_z",
   cens = C,
   shift = NULL,
   mtp = FALSE,
@@ -3345,8 +3390,6 @@ null_hours_only_religion_perceive_religious_discrim_z<- lmtp_tmle(
 
 here_save(null_hours_only_religion_perceive_religious_discrim_z, "null_hours_only_religion_perceive_religious_discrim_z")
 null_hours_only_religion_perceive_religious_discrim_z
-
-
 ```
 
 ```{r}
