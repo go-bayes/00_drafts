@@ -4,21 +4,7 @@ subtitle: ""
 abstract: |
   Counterfactual Prediction
 author: 
-  - name: Joseph A. Bulbulia
-    affiliation: Victoria University of Wellington, New Zealand
-    orcid_id: 0000-0002-5861-2056
-    email: joseph.bulbulia@vuw.ac.nz
-    corresponding: yes
-  - name: Don E Davis
-    affiliation: Georgia State University
-    orcid_id: 0000-0003-3169-6576 
-  - name: Ken Rice
-    affiliation: Georgia State University 
-  - name: Geoffrey Troughton
-    affiliation: Victoria University of Wellington
-  - name: Chris G. Sibley
-    affiliation: School of Psychology, University of Auckland
-    orcid_id: 0000-0002-4064-8800
+  TBA
 execute:
   warning: false
   eval: false
@@ -35,6 +21,22 @@ editor_options:
 #| include: true
 #| eval: true
 
+# format for YAML.  InKuk to lead
+ # - name: Joseph A. Bulbulia
+ #    affiliation: Victoria University of Wellington, New Zealand
+ #    orcid_id: 0000-0002-5861-2056
+ #    email: joseph.bulbulia@vuw.ac.nz
+ #    corresponding: yes
+ #  - name: Don E Davis
+ #    affiliation: Georgia State University
+ #    orcid_id: 0000-0003-3169-6576 
+ #  - name: Ken Rice
+ #    affiliation: Georgia State University 
+ #  - name: Geoffrey Troughton
+ #    affiliation: Victoria University of Wellington
+ #  - name: Chris G. Sibley
+ #    affiliation: School of Psychology, University of Auckland
+ #    orcid_id: 0000-0002-4064-8800
 # uncomment and use these links to load your functions
 # source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
@@ -101,6 +103,10 @@ nzavs_exposure <-
 A <-
   "t1_trust_science_our_society_places_too_much_emphasis_reversed_z"
 
+# set exposure variable, can be both the continuous and the coarsened, if needed
+exposure_var = c("trust_science_our_society_places_too_much_emphasis_reversed",
+                 "not_lost") #
+
 # define shift function (if any one is average make them average, otherwise leave alone)
 f <- function(data, trt) {
   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
@@ -154,7 +160,7 @@ SL.xgboost = list(tree_method = 'gpu_hist')
 listWrappers()
 
 
-
+dat$scienc
 ```
 
 
@@ -225,7 +231,6 @@ dat_long <- dat |>
   mutate(total_siblings_factor = ordered(round(
     ifelse(total_siblings > 7, 7, total_siblings), 0
   ))) |>
-  
   mutate(
     eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
@@ -240,6 +245,7 @@ dat_long <- dat |>
     hours_housework_log = log(hours_housework + 1),
     hours_exercise_log = log(hours_exercise + 1)
   ) |>
+  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   select(
     "wave",
     "year_measured",
@@ -256,6 +262,8 @@ dat_long <- dat |>
     "age",
     "born_nz",
     "hlth_disability",
+    "kessler_latent_anxiety",
+    "kessler_latent_depression",
     # value label 0    No 1   Yes
     "eth_cat",
     #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
@@ -284,7 +292,6 @@ dat_long <- dat |>
     "total_siblings_factor",
     # sum siblings
     "number_sisters_older",
-    
     #How many older sisters do you have?
     "number_sisters_younger",
     #	How many younger sisters do you have?
@@ -382,12 +389,15 @@ dat_long <- dat |>
     "env_climate_chg_cause",
     # "Climate change is caused by humans"
     "env_climate_chg_concern",
+    "belong",
+    "support",
     #"I am deeply concerned about climate change."
     "env_sat_nz_environment",
+    "trust_science_high_confidence_scientific_community",
+    "trust_science_our_society_places_too_much_emphasis_reversed",
     "alert_level_combined",
     "sample_origin",
   ) |>
-  
   arrange(id, wave) %>%
   dplyr::filter((wave == 2019 & year_measured  == 1) |
                   (wave == 2020  &
@@ -397,18 +407,19 @@ dat_long <- dat |>
   ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
   dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
                                                    !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   dplyr::mutate(k_19 =  ifelse(wave == 2019 &
                                  meets_criteria_baseline == 1, 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_20 =  ifelse(wave == 2020 &
-                                 ymeets_criteria_baseline == 1, #  Inclusion criteria
+                                 meets_criteria_baseline == 1, #  Inclusion criteria
                                1,
                                0)) |>   # creating an indicator for the first wave; note that we allow people
   dplyr::mutate(h_20 = mean(k_20, na.rm = TRUE)) |>  # Hack
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_20 > 0) |>  # hack to enable repeat of baseline
   ungroup() |>
+  mutate(time = as.numeric(as.character(wave))-2018) |>
+  mutate(wave = time) |>
   arrange(id, wave) |>
   droplevels() |>
   mutate(
@@ -423,360 +434,618 @@ dat_long <- dat |>
   select(-h_19, -k_20, -h_20, -k_19) |>
   data.frame()
 
-colnames(dat_long)
-# 
-# margot_wide <- function(.data, baseline_vars, exposure_var, outcome_vars) {
-#   require(tidyverse)
-#   # Add the 'time' column to the data
-#   data_with_time <- .data %>%
-#     mutate(time = as.numeric(wave) - 1) %>%
-#     arrange(id, time)
-# 
-#   # Filter the data based on the time condition
-#   data_filtered <- data_with_time %>%
-#     filter(time >= 0)
-# 
-#   # Create the wide data frame
-#   wide_data <- data_filtered %>%
-#     pivot_wider(
-#       id_cols = id,
-#       names_from = time,
-#       values_from = -c(id, time),
-#       names_glue = "t{time}_{.value}",
-#       names_prefix = "t"
-#     )
-# 
-#   # Define a custom function to filter columns based on conditions
-#   custom_col_filter <- function(col_name) {
-#     if (startsWith(col_name, "t0_")) {
-#       return(col_name %in% c(
-#         paste0("t0_", baseline_vars),
-#         paste0("t0_", exposure_var),
-#         paste0("t0_", outcome_vars)
-#       ))
-#     } else if (startsWith(col_name, "t1_")) {
-#       return(col_name %in% paste0("t1_", exposure_var))
-#     } else if (grepl("^t[2-9][0-9]*_", col_name)) {
-#       return(col_name %in% paste0("t2_", outcome_vars))
-#     } else {
-#       return(FALSE)
-#     }
-#   }
-# 
-#   # Apply the custom function to select the desired columns
-#   wide_data_filtered <- wide_data %>%
-#     dplyr::select(id, which(sapply(colnames(wide_data), custom_col_filter))) %>%
-#     dplyr::relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-#     arrange(id)
-# 
-#   # Extract unique time values from column names
-#   time_values <- gsub("^t([0-9]+)_.+$", "\\1", colnames(wide_data_filtered))
-#   time_values <- time_values[grepl("^[0-9]+$", time_values)]
-#   time_values <- unique(as.numeric(time_values))
-#   time_values <- time_values[order(time_values)]
-# 
-#   # Relocate columns iteratively
-#   for (i in 2:(length(time_values) - 1)) {
-#     wide_data_filtered <- wide_data_filtered %>%
-#       dplyr::relocate(starts_with(paste0("t", time_values[i + 1], "_")), .after = starts_with(paste0("t", time_values[i], "_")))
-#   }
-#   # Reorder t0_ columns
-#   t0_column_order <- c(paste0("t0_", baseline_vars), paste0("t0_", exposure_var), paste0("t0_", outcome_vars))
-#   wide_data_ordered <- wide_data_filtered %>%
-#     select(id, all_of(t0_column_order), everything())
-# 
-#   return(data.frame(wide_data_ordered)) # Ensure output is a data.frame
-# }
-# 
+N <- n_unique(dat_long$id) # 32737
+N
+
+dat_long$wave
+
+# eyeball distribution
+# table(dat_long$wave)
+dt_20 <- dat_long |>
+  filter(year_measured ==1 & wave == 2) |> 
+  mutate(trust_science_our_society_places_too_much_emphasis_reversed_z =
+           scale(trust_science_our_society_places_too_much_emphasis_reversed))
+
+hist(dt_20$trust_science_our_society_places_too_much_emphasis_reversed)
+table(dt_20$trust_science_our_society_places_too_much_emphasis_reversed)
+
+# table(dat_long$wave)
+dt_19 <- dat_long |>
+  filter(year_measured ==1 & wave == 1) 
+table(dt_19$alert_level_combined)
+
+
+mean_exposure <- mean(dt_20$trust_science_our_society_places_too_much_emphasis_reversed,
+                      na.rm = TRUE)
+mean_exposure
+
+max_score <- max(dt_19$trust_science_our_society_places_too_much_emphasis_reversed, na.rm = TRUE)
+max_score
+
+sd_exposure <- sd(dt_19$trust_science_our_society_places_too_much_emphasis_reversed,
+                  na.rm = TRUE)
+sd_exposure
+
+one_point_in_sd_units <- 1/sd_exposure
+one_point_in_sd_units
+
+# half_sd <- sd_exposure / 2
+# half_sd
+
+
+
+#  increase everyone by one point, contrasted with what they would be anyway.
+# only use this function for raw scores
+
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+}
+
 
 # Define your baseline, exposure, and outcome variables without any prefix
-baseline_vars <- c(
+dat_long$alert_level_combined
+
+baseline_vars = c(
   "male",
-  "born_nz",
-  "covid19_timeline",
-  "urban",
-  "partner",
-  "parent",
+  "age",
+  "education_level_coarsen",
+  # factors
   "eth_cat",
+  #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+  #"bigger_doms", #religious denomination
+  "sample_origin",
+  "nz_dep2018",
   "nzsei13",
-  "pol_orient",
-  "sample_weights"
+  "born_nz",
+  "hlth_disability",
+  # "hlth_bmi",
+  # "pwi", # pwi
+  # "kessler6_sum",
+  "kessler_latent_depression",
+  "kessler_latent_anxiety",
+  "support",
+  #soc support
+  "belong",
+  # social belonging
+  "total_siblings_factor",
+  #  "smoker", # smoker
+  # "sfhealth",
+  # "alcohol_frequency", measured with error
+  # "alcohol_intensity",
+  # "hours_family_log",
+  # "hours_friends_log",
+  # "hours_community_log",
+  # "hours_community_sqrt_round",
+  # "lifemeaning",
+  "household_inc_log",
+  # added: measured with error but OK for imputations
+  "partner",
+  # "parent",  # newly changed - have information in child number
+  "political_conservative",
+  #Please rate how politically liberal versus conservative you see yourself as being.
+  # Sample origin names combined
+  "urban",
+  "children_num",
+  "hours_children_log",
+  # new
+  "hours_work_log",
+  # new
+  "hours_housework_log",
+  #new
+  "hours_exercise_log",
+  "agreeableness",
+  "conscientiousness",
+  "extraversion",
+  "honesty_humility",
+  "openness",
+  "neuroticism",
+  "modesty",
+  # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
+  # "religion_religious", # Do you identify with a religion and/or spiritual group?
+  # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
+ # "religion_church_round",
+  # "religion_religious", #
+#  "religion_spiritual_identification",
+  "religion_identification_level",
+  #  "religion_religious",
+  #  "religion_church_binary",
+  #  "religion_prayer_binary",
+  #  "religion_scripture_binary",
+  #"religion_believe_god",
+  #"religion_believe_spirit",
+  "sample_weights",
+  "alert_level_combined"
 )
 
-
-
-exposure_var <- c("science_trust01","not_lost")
+# check
+exposure_var
 
 outcome_vars <- c("env_climate_chg_real", "env_climate_chg_cause","env_climate_chg_concern", "env_sat_nz_environment")
 
-# Call your function
-df_wide <- margot_wide(df, baseline_vars = baseline_vars, exposure_var = exposure_var, outcome_vars = outcome_vars)
-df_wide_censored <- 
-  df_wide |> 
+
+
+prep_coop_all <- margot_wide_impute_baseline(
+  dat_long,
+  baseline_vars = baseline_vars,
+  exposure_var = exposure_var,
+  outcome_vars = outcome_vars
+)
+
+margot_wide_impute_baseline
+
+
+push_mods
+# save function -- will save to your "push_mod" directory
+here_save(prep_coop_all, "prep_coop_all")
+
+# read function
+prep_coop_all <- here_read("prep_coop_all")
+
+table( prep_coop_all$t1_not_lost )
+
+head(prep_coop_all)
+
+
+# find  columns with NA in t0
+cols_with_na <- prep_coop_all %>%
+  select(starts_with("t2_")) %>%
+  summarise(across(everything(), ~any(is.na(.)))) %>%
+  pivot_longer(cols = everything(), names_to = "col_name", values_to = "has_na") %>%
+  filter(has_na == TRUE) %>%
+  pull(col_name)
+
+# show results
+print(cols_with_na)
+
+table(prep_coop_all$t1_not_lost)
+
+
+#hack 
+naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
+
+# arrange data for analysis -----------------------------------------------
+# spit and shine
+
+df_wide_censored <-
+  prep_coop_all |>
+  mutate(
+    t0_eth_cat = as.factor(t0_eth_cat)#,
+ #   t0_smoker_binary = as.integer(ifelse(t0_smoker > 0, 1, 0))#,
+#    t2_smoker_binary = as.integer(ifelse(t2_smoker > 0, 1, 0)),
+  ) |>
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
   relocate("t1_not_lost", .before = starts_with("t2_"))
-  # select(-"t0_not_lost") 
+#check
+head(df_wide_censored)
+dim(df_wide_censored)
+str(df_wide_censored)
 
-head( df_wide_censored ) 
-
-
-n_unique(df_wide_censored$id) # 31782
-# missing values not permitted for lmpt
-# df_clean <- df_wide_censored %>%
-#   filter(!rowSums(is.na(select(
-#     ., starts_with("t0_") )))) |>
-#   dplyr::mutate(across(where(is.numeric) &
-#                         !t0_not_lost &  !t1_not_lost & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) |>
-#   select(where(is.factor), t0_not_lost,  t1_not_lost, t0_sample_weights, ends_with("_z")) |>
-#   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-#   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-#   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
-#   relocate("t1_not_lost", .before = starts_with("t2_")) |>
-#   mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
-#   data.frame()
-
+# spit and shine
 df_clean <- df_wide_censored %>%
-  mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
+  mutate(t2_na_flag = rowSums(is.na(select(
+    ., starts_with("t2_")
+  ))) > 0) %>%
   mutate(t1_not_lost = ifelse(t2_na_flag, 0, t1_not_lost)) %>%
- # select(-t2_na_flag) %>%
-  filter(!rowSums(is.na(select(., starts_with("t0_"))))) |> 
-  dplyr::mutate(across(where(is.numeric) &
-                        !t0_not_lost & !t1_not_lost & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) |>
-  select(where(is.factor), t0_not_lost, t1_not_lost, t0_sample_weights, ends_with("_z")) |>
+  # select(-t2_na_flag) %>%
+  filter(!rowSums(is.na(select(
+    ., starts_with("t0_")
+  )))) |>
+  dplyr::mutate(
+    across(
+      where(is.numeric) &
+        !t0_not_lost &
+        !t1_not_lost &
+        !t0_sample_weights,# &
+      #  !t0_smoker_binary & 
+      #  !t1_trust_science_our_society_places_too_much_emphasis_reversed,
+     #   !t2_smoker_binary,
+      ~ scale(.x),
+      .names = "{col}_z"
+    )
+  ) |>
+  select(
+    where(is.factor),
+  #  t0_smoker_binary,
+    t0_not_lost,
+    t0_sample_weights,
+  #  t1_trust_science_our_society_places_too_much_emphasis_reversed,
+    t1_not_lost,
+ #   t2_smoker_binary,
+    ends_with("_z")
+  ) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_lost", .before = starts_with("t2_")) |> 
-  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |> 
+  relocate("t1_not_lost", .before = starts_with("t2_")) |>
+  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
   data.frame()
 
-# df_clean <- df_wide_censored %>%
-#   mutate(t1_not_lost = ifelse(rowSums(is.na(select(., starts_with("t2_")))) > 0, 0, t1_not_lost)) %>%
-#   filter(!rowSums(is.na(select(., starts_with("t0_"))))) %>%
-#   dplyr::mutate(across(where(is.numeric) &
-#                         !t0_not_lost &  !t1_not_lost & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
-#   select(where(is.factor), t0_not_lost,  t1_not_lost, t0_sample_weights, ends_with("_z")) %>%
-#   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-#   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-#   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
-#   relocate("t1_not_lost", .before = starts_with("t2_")) %>%
-#   mutate(t0_sample_weights = as.numeric(t0_sample_weights)) %>%
-#   data.frame()
+dim(df_clean)
+naniar::vis_miss(df_clean, warn_large_data = FALSE)
+dev.off()
+
+table(df_clean$t1_trust_science_our_society_places_too_much_emphasis_reversed)
 
 
-# Check the output
-n_unique(df_clean$id) # 29946
+# check path
+push_mods
 
-table(df_clean$t1_not_lost)
+# save
+here_save(df_clean, "df_clean")
 
-# Continue on with the other steps
 
+f_1
 
-head(df_clean)
-
-names_base <- df_clean |> select( starts_with("t0"), - t0_sample_weights,-t0_not_lost )|> colnames()
+# get names
+names_base <-
+  df_clean |> select(starts_with("t0"),
+                     -t0_sample_weights,
+                     -t0_not_lost) |> colnames()
 
 names_base
 
-n_unique(df_clean$id) # 30420
-head(df_clean)
+#### SET VARIABLE NAMES: Customise for each outcomewide model
+#  model
+A
 
-# check: 
-df_clean$t2_env_climate_chg_cause_z
 
-#vis_miss(df_clean_2)
+C <- c("t1_not_lost")
 
-outcome_vars
-# attempt model
-A <- c( "t1_science_trust01_z")
-C <- c( "t1_not_lost")
-
-#L <- list(c("L1"), c("L2")) 
+#L <- list(c("L1"), c("L2"))
 W <- c(paste(names_base, collapse = ", "))
 
-print(W) 
-
-#baseline confounders
-#L <- as.list(names_base)
-min(df_clean$t1_science_trust01_z, na.rm=TRUE)
-# shift function -- what if everyone increased by .5 standard deviation, except those above 2 
+# check
+print(W)
 
 
-f <- function(data, trt){
-  ifelse( data[[trt]] < 0,  data[[trt]] + 1,  data[[trt]] )
-}
+# check shift
+f
 
-#f <- function(data, trt) data[[trt]] + 0.25
-
-# Create a vector indicating what algorithms should be R. # used in the SuperLearner 
-sl_lib <- c("SL.glmnet", "SL.ranger", "SL.earth") 
-# "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
-
-# MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
-
-
-sl_lib2<- c("SL.glmnet", "SL.xgboost", "SL.randomForest") # faster
-
-vis_miss(df_clean)
-dev.off()
-
-head(sim_cens)
-# save model
-push_mods
-here_save(df_clean,"df_clean")
-
-# BONUS: progressr progress bars!
-progressr::handlers(global = TRUE)
-
-# recomend tmle for single time point
-# recommend sdr for multiple time points
-m_env_climate_chg_real <- lmtp_tmle(data = df_clean, 
-                                   trt = A, 
-                                   baseline = names_base,
-                                   outcome = "t2_env_climate_chg_real_z",  
-                                   cens = C,
-                                   shift = f, 
-                                   mtp = TRUE, 
-                                   folds = 5, # ideally use ten
-                                   #.trim = 0.999,
-                                  # time_vary = NULL,
-                                   outcome_type = "continuous",
-                                 #  id = "id",
-                                   weights = df_clean$t0_sample_weights,
-                                   learners_trt = "SL.glmnet",
-                                   learners_outcome = "SL.glmnet")
-
-
-here_save(m_env_climate_chg_real, "m_env_climate_chg_real")
-m_env_climate_chg_real
-
-m_env_climate_chg_cause <- lmtp_tmle(data = df_clean, 
-                                   trt = A, 
-                                   baseline = names_base,
-                                   outcome = "t2_env_climate_chg_cause_z",  
-                                   cens = C,
-                                   shift = f, 
-                                   mtp = TRUE, 
-                                   folds = 5, # ideally use ten
-                                   #.trim = 0.999,
-                                  # time_vary = NULL,
-                                   outcome_type = "continuous",
-                                 #  id = "id",
-                                   weights = df_clean$t0_sample_weights,
-                                   learners_trt = "SL.glmnet",
-                                   learners_outcome = "SL.glmnet")
-
-here_save(m_env_climate_chg_cause, "m_env_climate_chg_cause")
-m_env_climate_chg_cause <- here_read("m_env_climate_chg_cause")
-
-m_env_climate_chg_cause
-
-m_env_climate_chg_concern <- lmtp_tmle(data = df_clean, 
-                                   trt = A, 
-                                   baseline = names_base,
-                                   outcome = "t2_env_climate_chg_concern_z",
-                                   cens = C,
-                                   shift = f, 
-                                   mtp = TRUE, 
-                                   folds = 5, # ideally use ten
-                                   #.trim = 0.999,
-                                  # time_vary = NULL,
-                                   outcome_type = "continuous",
-                                 #  id = "id",
-                                   weights = df_clean$t0_sample_weights,
-                                   learners_trt = "SL.glmnet",
-                                   learners_outcome = "SL.glmnet")
-
-
-here_save(m_env_climate_chg_concern, "m_env_climate_chg_concern")
-m_env_climate_chg_concern <- here_read( "m_env_climate_chg_concern")
-
-
-
-m_env_sat_nz_environment <- lmtp_tmle(data = df_clean, 
-                                   trt = A, 
-                                   baseline = names_base,
-                                   outcome = "t2_env_sat_nz_environment_z",
-                                   cens = C,
-                                   shift = f, 
-                                   mtp = TRUE, 
-                                   folds = 5, # ideally use ten
-                                   #.trim = 0.999,
-                                  # time_vary = NULL,
-                                   outcome_type = "continuous",
-                                 #  id = "id",
-                                   weights = df_clean$t0_sample_weights,
-                                   learners_trt = "SL.glmnet",
-                                   learners_outcome = "SL.glmnet")
-m_env_sat_nz_environment
-str(m_env_sat_nz_environment)
-summarize_results( m_env_sat_nz_environment, est_trt = 0, ci_level = 0.95,
-                              ci_type = c("marginal") ) 
-
-m_env_sat_nz_environment <- here_read( "m_env_sat_nz_environment")
-
-#### My code
-format_tab_tmle <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
-  
-  scale <- match.arg(scale)
-  
-  require(dplyr)
-  
-  tab_tmle <- cbind.data.frame(
-    tmtp_output$theta,
-    tmtp_output$standard_error,
-    tmtp_output$low,
-    tmtp_output$high
-  )
-  
-  if (scale == "RD") {
-    colnames(tab_tmle) <- c("E[Y(1)]-E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-  } else if (scale == "RR") {
-    colnames(tab_tmle) <- c("E[Y(1)]/E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-  }
-  
-  tab_tmle_round <- tab_tmle |> 
-    dplyr::mutate(across(where(is.numeric), round, digits = 4))
-  
-  rownames(tab_tmle_round)[1] <- paste0(new_name)
-  
-  return(tab_tmle_round)
-}
-tab_tmle_round
-
-
-result_m_env_sat_nz_environment <- format_tab_tmle(m_env_sat_nz_environment, scale = "RD", new_name = "satisfied environment")
-
-result_m_env_sat_nz_environment
-
-result_m_env_climate_chg_concern <- format_tab_tmle(m_env_climate_chg_concern, scale = "RD", new_name = "climate change concern")
-
-result_m_env_climate_chg_concern
-
-result_m_env_climate_chg_cause <- format_tab_tmle(m_env_climate_chg_cause, scale = "RD", new_name = "climate change human")
-
-result_m_env_climate_chg_cause
-
-result_m_env_climate_chg_real <-  format_tab_tmle(m_env_climate_chg_real, scale = "RD", new_name = "climate change real")
-
-str(result_m_env_climate_chg_real)
-test_group_tab
-test_group_tab <- rbind(result_m_env_climate_chg_real,result_m_env_climate_chg_cause,result_m_env_climate_chg_concern,result_m_env_sat_nz_environment)
-
-grouped_outcomes <- group_tab_2( test_group_tab, type = "RD" ) 
-grouped_outcomes
-margot_plot(
-  grouped_outcomes,
-  type = "RD",
-  title = "Modified Treatment Policy",
-  subtitle = "If one is below average trust in science, intervene to add + 1 SD trust in science.",
-  xlab = "x",
-  ylab = "y",
-  x_offset =  -.2,
-  x_lim_lo = -.2,
-  x_lim_hi = .2
+# model 1
+t2_env_climate_chg_real_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_climate_chg_real_z",
+  cens = C,
+  shift = f_1,
+  outcome_type = "continuous",
+  mtp = TRUE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
 )
-    
+
+t2_env_climate_chg_real_z
+here_save(t2_env_climate_chg_real_z, "t2_env_climate_chg_real_z")
+t2_env_climate_chg_real_z
+
+
+t2_env_climate_chg_real_z_null  <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_climate_chg_real_z",
+  cens = C,
+  shift = NULL,
+  outcome_type = "continuous",
+  mtp = FALSE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_env_climate_chg_real_z_null
+here_save(t2_env_climate_chg_real_z_null, "t2_env_climate_chg_real_z_null")
+
+
+
+# model 2 t2_env_climate_chg_cause_z
+t2_env_climate_chg_cause_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_climate_chg_cause_z",
+  cens = C,
+  shift = f_1,
+  outcome_type = "continuous",
+  mtp = TRUE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_env_climate_chg_cause_z
+here_save(t2_env_climate_chg_cause_z, "t2_env_climate_chg_cause_z")
+t2_env_climate_chg_cause_z
+
+
+t2_env_climate_chg_cause_z_null  <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_climate_chg_cause_z",
+  cens = C,
+  shift = NULL,
+  outcome_type = "continuous",
+  mtp = FALSE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_env_climate_chg_cause_z_null
+here_save(t2_env_climate_chg_cause_z_null, "t2_env_climate_chg_cause_z_null")
+
+
+# model 3  t2_env_climate_chg_concern_z
+
+t2_env_climate_chg_concern_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_climate_chg_concern_z",
+  cens = C,
+  shift = f_1,
+  outcome_type = "continuous",
+  mtp = TRUE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_env_climate_chg_concern_z
+here_save(t2_env_climate_chg_concern_z, "t2_env_climate_chg_concern_z")
+t2_env_climate_chg_concern_z
+
+
+t2_env_climate_chg_concern_z_null  <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_climate_chg_concern_z",
+  cens = C,
+  shift = NULL,
+  outcome_type = "continuous",
+  mtp = FALSE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_env_climate_chg_concern_z_null
+here_save(t2_env_climate_chg_concern_z_null, "t2_env_climate_chg_concern_z_null")
+
+
+# model 4 t2_env_sat_nz_environment_z
+
+t2_env_sat_nz_environment_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_sat_nz_environment_z",
+  cens = C,
+  shift = f_1,
+  outcome_type = "continuous",
+  mtp = TRUE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_env_sat_nz_environment_z
+here_save(t2_env_sat_nz_environment_z, "t2_env_sat_nz_environment_z")
+t2_env_sat_nz_environment_z
+
+
+t2_env_sat_nz_environment_z_null  <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_env_sat_nz_environment_z",
+  cens = C,
+  shift = NULL,
+  outcome_type = "continuous",
+  mtp = FALSE,
+  folds = 5,
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_env_sat_nz_environment_z_null
+here_save(t2_env_sat_nz_environment_z_null, "t2_env_sat_nz_environment_z_null")
+
+# contrasts
+
+# 1 climate change is real
+t2_env_climate_chg_real_z <- here_read("t2_env_climate_chg_real_z")
+t2_env_climate_chg_real_z_null <-
+  here_read("t2_env_climate_chg_real_z_null")
+
+
+contrast_t2_env_climate_chg_real_z <-
+  lmtp_contrast(t2_env_climate_chg_real_z,
+                ref = t2_env_climate_chg_real_z_null,
+                type = "rd")
+
+
+tab_contrast_t2_env_climate_chg_real_z <-
+  margot_tab_lmtp(contrast_t2_env_climate_chg_real_z,
+                  scale = "RD",
+                  new_name = "Climate change is real.")
+
+tab_contrast_t2_env_climate_chg_real_z
+
+
+out_tab_contrast_t2_env_climate_chg_real_z<-
+  lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_real_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_env_climate_chg_real_z
+
+
+# model 2 t2_env_climate_chg_cause_z
+
+# climate change is real
+t2_env_climate_chg_cause_z <- here_read("t2_env_climate_chg_cause_z")
+t2_env_climate_chg_cause_z_null <-
+  here_read("t2_env_climate_chg_cause_z_null")
+
+
+contrast_t2_env_climate_chg_cause_z <-
+  lmtp_contrast(t2_env_climate_chg_cause_z,
+                ref = t2_env_climate_chg_cause_z_null,
+                type = "rd")
+
+
+tab_contrast_t2_env_climate_chg_cause_z <-
+  margot_tab_lmtp(contrast_t2_env_climate_chg_cause_z,
+                  scale = "RD",
+                  new_name = "Climate change is caused by humans.")
+
+tab_contrast_t2_env_climate_chg_cause_z
+
+
+out_tab_contrast_t2_env_climate_chg_cause_z<-
+  lmtp_evalue_tab(out_tab_contrast_t2_env_climate_chg_cause_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_env_climate_chg_cause_z
+
+#  Model 3: t2_env_climate_chg_concern_z
+
+t2_env_climate_chg_concern_z <- here_read("t2_env_climate_chg_concern_z")
+t2_env_climate_chg_concern_z_null <-
+  here_read("t2_env_climate_chg_concern_z_null")
+
+
+contrast_t2_env_climate_chg_concern_z <-
+  lmtp_contrast(t2_env_climate_chg_concern_z,
+                ref = t2_env_climate_chg_concern_z_null,
+                type = "rd")
+
+
+tab_contrast_t2_env_climate_chg_concern_z <-
+  margot_tab_lmtp(contrast_t2_env_climate_chg_concern_z,
+                  scale = "RD",
+                  new_name = "I am deeply concerned about climate change.")
+
+tab_contrast_t2_env_climate_chg_concern_z
+
+
+out_tab_contrast_t2_env_climate_chg_concern_z<-
+  lmtp_evalue_tab(out_tab_contrast_t2_env_climate_chg_concern_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_env_climate_chg_concern_z
+
+
+# contrast 4: t2_env_sat_nz_environment_z
+
+t2_env_sat_nz_environment_z <- here_read("t2_env_sat_nz_environment_z")
+t2_env_sat_nz_environment_z_null <-
+  here_read("t2_env_sat_nz_environment_z_null")
+
+
+contrast_t2_env_sat_nz_environment_z <-
+  lmtp_contrast(t2_env_sat_nz_environment_z,
+                ref = t2_env_sat_nz_environment_z_null,
+                type = "rd")
+
+
+tab_contrast_t2_env_sat_nz_environment_z <-
+  margot_tab_lmtp(contrast_t2_env_sat_nz_environment_z,
+                  scale = "RD",
+                  new_name = "(Satisfied with ...The quality of New Zealand’s natural environment.")
+
+tab_contrast_t2_env_sat_nz_environment_z
+
+
+out_tab_contrast_t2_env_sat_nz_environment_z<-
+  lmtp_evalue_tab(tab_contrast_t2_env_sat_nz_environment_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_env_sat_nz_environment_z
+
+# bind individual tables
+tab_envir <- rbind(
+  out_tab_contrast_t2_env_climate_chg_real_z,
+  out_tab_contrast_t2_env_climate_chg_cause_z,
+  out_tab_contrast_t2_env_climate_chg_concern_z,
+  out_tab_contrast_t2_env_sat_nz_environment_z
+)
+
+
+# make group table
+group_tab_envir<- group_tab(tab_envir  , type = "RD")
+
+# save
+here_save(group_tab_envir, "group_tab_envir")
+
+# read
+group_tab_envir <- here_read("group_tab_envir")
+
+
+# create plots -------------------------------------------------------------
+
+# check N
+N
+sub_title = "Trust in science (place in society): shift everyone by 1x point to max of 7, N = 32737"
+
+
+# graph health
+plot_group_tab_envir <- margot_plot(
+  group_tab_envir,
+  type = "RD",
+  title = "Environmental attitudes",
+  subtitle = sub_title,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 15,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+plot_group_tab_envir
+dev.off()
+# save graph
+ggsave(
+  plot_group_tab_envir,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_group_tab_envir.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
 
 ```
 
