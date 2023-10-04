@@ -67,7 +67,7 @@ source(
 # read data/ set to path in your computer
 pull_path <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
   )
 
 # for saving models. # set path fo your computer
@@ -92,6 +92,69 @@ push_mods
 # for modified treatment policies
 library("lmtp")
 push_mods
+
+# set exposure here
+nzavs_exposure <-
+  "trust_science_our_society_places_too_much_emphasis_reversed"
+
+# define exposure
+A <-
+  "t1_trust_science_our_society_places_too_much_emphasis_reversed_z"
+
+# define shift function (if any one is average make them average, otherwise leave alone)
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+}
+
+# set number of folds for ML here. use a minimum of 5 and a max of 10
+SL_folds = 5
+
+#this will allow you to track progress
+progressr::handlers(global = TRUE)
+
+# set seed for reproducing results
+set.seed(0112358)
+
+# set cores for estimation
+library(future)
+plan(multisession)
+n_cores <- parallel::detectCores()
+
+# super learner libraries
+sl_lib <- c("SL.glmnet",
+            "SL.ranger",
+            "SL.xgboost")
+
+#Improve speed (if needed)
+
+# sl_lib_args <- list(
+#   SL.glmnet = list(nalpha = 5, nlambda = 20),
+#   SL.ranger = list(num.threads = 4),
+#   SL.xgboost = list(nthread = 4,
+#                     nrounds = 50,
+#                     early_stopping_rounds = 10,
+#                     max_depth = 6,
+#                     colsample_bytree = 0.8,
+#                     subsample = 0.8,
+#                     eta = 0.01,
+#                     tree_method = 'hist')
+# )
+
+# superlearner libraries
+library(SuperLearner)
+library(ranger)
+library(xgboost)
+library(glmnet)
+
+# boost spped
+SL.xgboost = list(tree_method = 'gpu_hist')
+
+
+# check options
+listWrappers()
+
+
+
 ```
 
 
@@ -107,13 +170,12 @@ push_mods
 # table(is.na( dat$religion_church)) 
 # table(is.na( dat$religion_church2)) 
 
-# Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see: 
-# https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
+# Note: read this: # create dataframes, one for each level of the factor.  This allows valid multiple imputation see:# https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-023-01843-6
 
 
 # select variables and emulate a target trial according to eligibility criteria
 # you may need to select different confounders. note that the more you include, the less efficient the estimates,
-# particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution 
+# particularly if the confounder is only associated with the exposure.  On the other hand, better to err on the side of caution
 
 #"science_trust",# #"I have a high degree of confidence in the scientific community./  Our society places too much emphasis on science.(n) (SD)
 
@@ -121,80 +183,247 @@ push_mods
 ## assess correlation
 # cor(dat$science_trust01, dat$science_trust02r,  method = "pearson", use = "complete.obs")
 # #[1] 0.5033631. # not convincing
-# 
+#
 # cor(dat$science_trust01, dat$science_trust02r,  method = "spearman", use = "complete.obs")
 # # [1] 0.5694429
-# 
 # cor(dat$science_trust01, dat$science_trust02r,  method = "kendall", use = "complete.obs")
 # # [1] 0.4913033
-df <- dat |>
+dat_long <- dat |>
   arrange(id, wave) |>
-  mutate(urban = factor(
-    ifelse(
-      rural_gch2018 == "Medium Urban Accessibility" |
-        # Define urban condition
-        rural_gch2018 == "High Urban Accessibility",
-      "urban",
-      # Label 'urban' if condition is met
-      "rural"  # Label 'rural' if condition is not met
-    )
-  )) |>
-  mutate(covid19_timeline = as.factor(covid19_timeline)) |> 
+  # mutate(urban = factor(
+  #   ifelse(
+  #     rural_gch2018 == "Medium Urban Accessibility" |
+  #       # Define urban condition
+  #       rural_gch2018 == "High Urban Accessibility",
+  #     "urban",
+  #     # Label 'urban' if condition is met
+  #     "rural"  # Label 'rural' if condition is not met
+  #   )
+  # )) |>
+  rename(
+    trust_science_high_confidence_scientific_community = science_trust01,
+    trust_science_our_society_places_too_much_emphasis_reversed =
+      science_trust02r
+  ) |>
+  mutate(covid19_timeline = as.factor(covid19_timeline)) |>
   dplyr::rename(sample_weights = w_gend_age_euro) |>
-  select("id", 
-         "wave",
-         "sample_weights",
-         "year_measured", 
-         "male", 
-         "born_nz",
-         "covid19_timeline",
-         "urban",
-         "religion_identification",
-         "science_trust01",
-         "pol_orient",
-         "age",
-         "partner",
-         "parent",
-         "eth_cat",
-         "nzsei13",
-         "covid19_timeline",
-         "env_climate_chg_real",
-         "env_climate_chg_cause", # "Climate change is caused by humans"
-         "env_climate_chg_concern", #"I am deeply concerned about climate change."
-         "env_sat_nz_environment") |>
+  arrange(id, wave) |>
+  rowwise(wave) |>
+  mutate(power_no_control_composite = mean(c(
+    power_self_nocontrol, power_others_control
+  ), na.rm = TRUE)) |>
+  mutate(kessler_latent_depression =  mean(
+    c(kessler_depressed, kessler_hopeless, kessler_worthless),
+    na.rm = TRUE
+  )) |>
+  mutate(kessler_latent_anxiety  = mean(c(
+    kessler_effort, kessler_nervous, kessler_restless
+  ), na.rm = TRUE)) |>
+  ungroup() |>
+  mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
+  mutate(male = as.numeric(male)) |>
+  mutate(total_siblings_factor = ordered(round(
+    ifelse(total_siblings > 7, 7, total_siblings), 0
+  ))) |>
+  
+  mutate(
+    eth_cat = as.integer(eth_cat),
+    urban = as.numeric(urban),
+    education_level_coarsen = as.integer(education_level_coarsen)
+  ) |>
+  dplyr::mutate(
+    friends_money = ifelse(friends_money < 0, 0, friends_money),
+    # someone gave neg number
+    household_inc_log = log(household_inc + 1),
+    hours_children_log = log(hours_children + 1),
+    hours_work_log = log(hours_work + 1),
+    hours_housework_log = log(hours_housework + 1),
+    hours_exercise_log = log(hours_exercise + 1)
+  ) |>
+  select(
+    "wave",
+    "year_measured",
+    "id",
+    # "edu",
+    "sample_origin_names_combined",
+    # Sample origin names combined
+    #"alert_level_combined_lead",  not needed because all receive all levels by the point the outcome is measured
+    # covid alert levels -> 2019-2020
+    "education_level_coarsen",
+    # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing)  Combined highschool levels See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
+    "male",
+    # 0 = female, 0.5 = neither female nor male, 1 = male.
+    "age",
+    "born_nz",
+    "hlth_disability",
+    # value label 0    No 1   Yes
+    "eth_cat",
+    #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+    "employed",
+    # Are you currently employed? (this includes self-employment or casual work)
+    # "gen_cohort",
+    "household_inc_log",
+    # Please estimate your total household income (before tax) for the last year.
+    "nz_dep2018",
+    # see nzavs materials
+    "nzsei13",
+    # see nzavs materials
+    "partner",
+    # 0 = no, 1 = yes
+    "parent",
+    # 0 = no, 1 = yes
+    "political_conservative",
+    #Please rate how politically liberal versus conservative you see yourself as being.
+    "pol_wing",
+    # Please rate how politically left-wing versus right-wing you see yourself as being.
+    "urban",
+    # see NZAVS,
+    "have_siblings",
+    #Do you have siblings?
+    "total_siblings",
+    "total_siblings_factor",
+    # sum siblings
+    "number_sisters_older",
+    
+    #How many older sisters do you have?
+    "number_sisters_younger",
+    #	How many younger sisters do you have?
+    "number_brothers_older",
+    #	How many older brothers do you have?
+    "number_brothers_younger",
+    #	How many older brothers do you have?
+    "children_num",
+    # How many children have you given birth to, fathered, or adopted?
+    "hours_children_log",
+    #Hours - Looking after children
+    "hours_work_log",
+    #Hours - Working in paid employment
+    "hours_housework_log",
+    # Hours - Housework/cooking
+    "hours_exercise_log",
+    "agreeableness",
+    # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
+    # Sympathize with others' feelings.
+    # Am not interested in other people's problems.
+    # Feel others' emotions.
+    # Am not really interested in others.
+    "conscientiousness",
+    # see mini ipip6
+    # Get chores done right away.
+    # Like order.
+    # Make a mess of things.
+    # Often forget to put things back in their proper place.
+    "extraversion",
+    # Mini-IPIP6 Extraversion
+    # Am the life of the party.
+    # Don't talk a lot.
+    # Keep in the background.
+    # Talk to a lot of different people at parties.
+    "honesty_humility",
+    # see mini ipip6
+    # Would like to be seen driving around in a very expensive car.
+    # Would get a lot of pleasure from owning expensive luxury goods.
+    # Feel entitled to more of everything.
+    # Deserve more things in life.
+    "openness",
+    # see mini ipip6
+    # Have a vivid imagination.
+    # Have difficulty understanding abstract ideas.
+    # Do not have a good imagination.
+    # Am not interested in abstract ideas.
+    "neuroticism",
+    # see mini ipip6
+    # Have frequent mood swings.
+    # Am relaxed most of the time.
+    # Get upset easily.
+    # Seldom feel blue.
+    "modesty",
+    # see mini ipip6
+    # I want people to know that I am an important person of high status,
+    # I am an ordinary person who is no better than others.
+    # I wouldn’t want people to treat me as though I were superior to them.
+    # I think that I am entitled to more respect than the average person is
+    # "sdo",
+    # "rwa",
+    # "brk_relationship",
+    # "began_relationship",
+    "religion_religious",
+    # Do you identify with a religion and/or spiritual group?
+    # "religion_religious_not",  # reverse this indicator
+    "religion_identification_level",
+    #How important is your religion to how you see yourself?"
+    "religion_prayer",
+    # How many times did you pray in the last week?
+    "religion_scripture",
+    # How many times did you read religious scripture in the last week?
+    "religion_church",
+    # How many times did you attend a church or place of worship in the last month?
+    "religion_believe_spirit",
+    #Do you believe in some form of spirit or lifeforce?
+    "religion_believe_spirit",
+    #inverse believe in god
+    "religion_believe_god",
+    #Do you believe in a God
+    "religion_believe_god_not",
+    #inverse believe in god
+    "religion_spiritual_identification",
+    #w8,w10,w12-13 "I identify as a spiritual person."
+    "religion_perceive_religious_discrim",
+    #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
+    # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
+    "sample_weights",
+    # sample_weights.
+    # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+    "gratitude",
+    ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of peopl
+    "modesty",
+    # see above
+    "env_climate_chg_real",
+    "env_climate_chg_cause",
+    # "Climate change is caused by humans"
+    "env_climate_chg_concern",
+    #"I am deeply concerned about climate change."
+    "env_sat_nz_environment",
+    "alert_level_combined",
+    "sample_origin",
+  ) |>
+  
   arrange(id, wave) %>%
   dplyr::filter((wave == 2019 & year_measured  == 1) |
                   (wave == 2020  &
                      year_measured  == 1) |
-                  (wave == 2021 )) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
+                  (wave == 2021)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
+  ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
+  dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
+                                                   !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
+  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   dplyr::mutate(k_19 =  ifelse(wave == 2019 &
-                                 !is.na(science_trust01), 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
+                                 meets_criteria_baseline == 1, 1, 0)) |>   # creating an indicator for the first wave. Inclusion criteria
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_20 =  ifelse(wave == 2020 &
-                                 year_measured == 1 &
-                                 !is.na(science_trust01), #  Inclusion criteria
+                                 ymeets_criteria_baseline == 1, #  Inclusion criteria
                                1,
-                               0)) |>   # creating an indicator for the first wave; note that we allow people t
+                               0)) |>   # creating an indicator for the first wave; note that we allow people
   dplyr::mutate(h_20 = mean(k_20, na.rm = TRUE)) |>  # Hack
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_20 > 0) |>  # hack to enable repeat of baseline
-    mutate(
-    not_censored = ifelse(lead(year_measured) == 1, 1, 0),
-    # not_censored = ifelse(lead(year_measured)== -1, 0, not_censored,
-    # not_censored = ifelse(lead(year_measured) == 0, 0, not_censored,
-    not_censored = ifelse(is.na(not_censored) &
-                            year_measured == 1, 1, not_censored),
-    not_censored = ifelse(is.na(not_censored), 0, not_censored)
-
+  ungroup() |>
+  arrange(id, wave) |>
+  droplevels() |>
+  mutate(
+    not_lost = ifelse(lead(year_measured) == 1, 1, 0),
+    # not_lost = ifelse(lead(year_measured)== -1, 0, not_lost,
+    # not_lost = ifelse(lead(year_measured) == 0, 0, not_lost,
+    not_lost = ifelse(is.na(not_lost) &
+                        year_measured == 1, 1, not_lost),
+    not_lost = ifelse(is.na(not_lost), 0, not_lost)
+    
   ) |>
-  ungroup() |> 
-  arrange(id, wave) |> 
-  droplevels() |> 
-  select(-h_19,-k_20,-h_20,-k_19) |> 
+  select(-h_19, -k_20, -h_20, -k_19) |>
   data.frame()
 
-colnames(df)
+colnames(dat_long)
 # 
 # margot_wide <- function(.data, baseline_vars, exposure_var, outcome_vars) {
 #   require(tidyverse)
@@ -276,7 +505,7 @@ baseline_vars <- c(
 
 
 
-exposure_var <- c("science_trust01","not_censored")
+exposure_var <- c("science_trust01","not_lost")
 
 outcome_vars <- c("env_climate_chg_real", "env_climate_chg_cause","env_climate_chg_concern", "env_sat_nz_environment")
 
@@ -284,9 +513,9 @@ outcome_vars <- c("env_climate_chg_real", "env_climate_chg_cause","env_climate_c
 df_wide <- margot_wide(df, baseline_vars = baseline_vars, exposure_var = exposure_var, outcome_vars = outcome_vars)
 df_wide_censored <- 
   df_wide |> 
-  relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_censored", .before = starts_with("t2_"))
-  # select(-"t0_not_censored") 
+  relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
+  relocate("t1_not_lost", .before = starts_with("t2_"))
+  # select(-"t0_not_lost") 
 
 head( df_wide_censored ) 
 
@@ -297,40 +526,40 @@ n_unique(df_wide_censored$id) # 31782
 #   filter(!rowSums(is.na(select(
 #     ., starts_with("t0_") )))) |>
 #   dplyr::mutate(across(where(is.numeric) &
-#                         !t0_not_censored &  !t1_not_censored & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) |>
-#   select(where(is.factor), t0_not_censored,  t1_not_censored, t0_sample_weights, ends_with("_z")) |>
+#                         !t0_not_lost &  !t1_not_lost & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) |>
+#   select(where(is.factor), t0_not_lost,  t1_not_lost, t0_sample_weights, ends_with("_z")) |>
 #   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
 #   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-#   relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-#   relocate("t1_not_censored", .before = starts_with("t2_")) |>
+#   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
+#   relocate("t1_not_lost", .before = starts_with("t2_")) |>
 #   mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
 #   data.frame()
 
 df_clean <- df_wide_censored %>%
   mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
-  mutate(t1_not_censored = ifelse(t2_na_flag, 0, t1_not_censored)) %>%
+  mutate(t1_not_lost = ifelse(t2_na_flag, 0, t1_not_lost)) %>%
  # select(-t2_na_flag) %>%
   filter(!rowSums(is.na(select(., starts_with("t0_"))))) |> 
   dplyr::mutate(across(where(is.numeric) &
-                        !t0_not_censored & !t1_not_censored & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) |>
-  select(where(is.factor), t0_not_censored, t1_not_censored, t0_sample_weights, ends_with("_z")) |>
+                        !t0_not_lost & !t1_not_lost & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) |>
+  select(where(is.factor), t0_not_lost, t1_not_lost, t0_sample_weights, ends_with("_z")) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-  relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_censored", .before = starts_with("t2_")) |> 
+  relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
+  relocate("t1_not_lost", .before = starts_with("t2_")) |> 
   mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |> 
   data.frame()
 
 # df_clean <- df_wide_censored %>%
-#   mutate(t1_not_censored = ifelse(rowSums(is.na(select(., starts_with("t2_")))) > 0, 0, t1_not_censored)) %>%
+#   mutate(t1_not_lost = ifelse(rowSums(is.na(select(., starts_with("t2_")))) > 0, 0, t1_not_lost)) %>%
 #   filter(!rowSums(is.na(select(., starts_with("t0_"))))) %>%
 #   dplyr::mutate(across(where(is.numeric) &
-#                         !t0_not_censored &  !t1_not_censored & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
-#   select(where(is.factor), t0_not_censored,  t1_not_censored, t0_sample_weights, ends_with("_z")) %>%
+#                         !t0_not_lost &  !t1_not_lost & !t0_sample_weights, ~ scale(.x), .names = "{col}_z")) %>%
+#   select(where(is.factor), t0_not_lost,  t1_not_lost, t0_sample_weights, ends_with("_z")) %>%
 #   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
 #   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-#   relocate("t0_not_censored", .before = starts_with("t1_"))  %>%
-#   relocate("t1_not_censored", .before = starts_with("t2_")) %>%
+#   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
+#   relocate("t1_not_lost", .before = starts_with("t2_")) %>%
 #   mutate(t0_sample_weights = as.numeric(t0_sample_weights)) %>%
 #   data.frame()
 
@@ -338,14 +567,14 @@ df_clean <- df_wide_censored %>%
 # Check the output
 n_unique(df_clean$id) # 29946
 
-table(df_clean$t1_not_censored)
+table(df_clean$t1_not_lost)
 
 # Continue on with the other steps
 
 
 head(df_clean)
 
-names_base <- df_clean |> select( starts_with("t0"), - t0_sample_weights,-t0_not_censored )|> colnames()
+names_base <- df_clean |> select( starts_with("t0"), - t0_sample_weights,-t0_not_lost )|> colnames()
 
 names_base
 
@@ -360,7 +589,7 @@ df_clean$t2_env_climate_chg_cause_z
 outcome_vars
 # attempt model
 A <- c( "t1_science_trust01_z")
-C <- c( "t1_not_censored")
+C <- c( "t1_not_lost")
 
 #L <- list(c("L1"), c("L2")) 
 W <- c(paste(names_base, collapse = ", "))
