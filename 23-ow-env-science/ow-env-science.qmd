@@ -948,10 +948,6 @@ t2_env_sat_nz_environment_z_null  <- lmtp_tmle(
 t2_env_sat_nz_environment_z_null
 here_save(t2_env_sat_nz_environment_z_null, "t2_env_sat_nz_environment_z_null")
 
-# delete
-
-
-
 # contrasts
 
 # contrasts 1 climate change is real
@@ -995,7 +991,7 @@ tab_contrast_t2_env_climate_chg_real_z_1 <-
                   new_name = "Climate change is real.")
 
 tab_contrast_t2_env_climate_chg_real_z_1
-
+tab_contrast_t2_env_climate_chg_real_z
 
 out_tab_contrast_t2_env_climate_chg_real_z_1<-
   lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_real_z_1,
@@ -1029,7 +1025,7 @@ tab_contrast_t2_env_climate_chg_cause_z
 
 
 out_tab_contrast_t2_env_climate_chg_cause_z<-
-  lmtp_evalue_tab(out_tab_contrast_t2_env_climate_chg_cause_z,
+  lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_cause_z,
                   scale = c("RD"))
 
 out_tab_contrast_t2_env_climate_chg_cause_z
@@ -1055,7 +1051,6 @@ out_tab_contrast_t2_env_climate_chg_cause_z_1<-
 
 out_tab_contrast_t2_env_climate_chg_cause_z_1
 
-
 #  contrasts: 3: t2_env_climate_chg_concern_z
 t2_env_climate_chg_concern_z <- here_read("t2_env_climate_chg_concern_z")
 t2_env_climate_chg_concern_z_1 <- here_read("t2_env_climate_chg_concern_z_1")
@@ -1078,7 +1073,7 @@ tab_contrast_t2_env_climate_chg_concern_z
 
 
 out_tab_contrast_t2_env_climate_chg_concern_z<-
-  lmtp_evalue_tab(out_tab_contrast_t2_env_climate_chg_concern_z,
+  lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_concern_z,
                   scale = c("RD"))
 
 out_tab_contrast_t2_env_climate_chg_concern_z
@@ -1115,6 +1110,27 @@ t2_env_sat_nz_environment_z_null <-
   here_read("t2_env_sat_nz_environment_z_null")
 
 
+# first contrast
+contrast_t2_env_sat_nz_environment_z <-
+  lmtp_contrast(t2_env_sat_nz_environment_z,
+                ref = t2_env_sat_nz_environment_z_null,
+                type = "additive")
+
+
+tab_contrast_t2_env_sat_nz_environment_z <-
+  margot_tab_lmtp(contrast_t2_env_sat_nz_environment_z,
+                  scale = "RD",
+                  new_name = "(Satisfied with the quality of New Zealand’s natural environment.")
+
+tab_contrast_t2_env_sat_nz_environment_z
+
+out_tab_contrast_t2_env_sat_nz_environment_z<-
+  lmtp_evalue_tab(tab_contrast_t2_env_sat_nz_environment_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_env_sat_nz_environment_z
+
+# second contrast
 contrast_t2_env_sat_nz_environment_z_1 <-
   lmtp_contrast(t2_env_sat_nz_environment_z_1,
                 ref = t2_env_sat_nz_environment_z_null,
@@ -1124,7 +1140,7 @@ contrast_t2_env_sat_nz_environment_z_1 <-
 tab_contrast_t2_env_sat_nz_environment_z_1 <-
   margot_tab_lmtp(contrast_t2_env_sat_nz_environment_z_1,
                   scale = "RD",
-                  new_name = "(Satisfied with ...The quality of New Zealand’s natural environment.")
+                  new_name = "Satisfied with the quality of New Zealand’s natural environment.")
 
 tab_contrast_t2_env_sat_nz_environment_z_1
 
@@ -1144,7 +1160,7 @@ tab_envir <- rbind(
 
 
 # make group table
-group_tab_envir<- group_tab(tab_envir  , type = "additive")
+group_tab_envir<- group_tab(tab_envir  , type = "RD")
 
 # save
 here_save(group_tab_envir, "group_tab_envir")
@@ -1174,7 +1190,7 @@ group_tab_envir_1 <- here_read("group_tab_envir_1")
 # create plots -------------------------------------------------------------
 # check N
 N
-sub_title = "Trust in science (place in society): shift everyone below average to average, do not shift others, N = 32737"
+sub_title = "Trust in science (place in society): shift those below average to average, otherwise do not shift: N = 32737"
 
 
 # graph health
@@ -1203,8 +1219,8 @@ dev.off()
 ggsave(
   plot_group_tab_envir,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_envir.png",
   device = 'png',
