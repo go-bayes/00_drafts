@@ -160,7 +160,6 @@ SL.xgboost = list(tree_method = 'gpu_hist')
 listWrappers()
 
 
-dat$scienc
 ```
 
 
@@ -451,7 +450,8 @@ table(dt_20$trust_science_our_society_places_too_much_emphasis_reversed)
 
 # table(dat_long$wave)
 dt_19 <- dat_long |>
-  filter(year_measured ==1 & wave == 1) 
+  filter(year_measured ==1 & wave == 1) |> 
+  mutate(trust_science_our_society_places_too_much_emphasis_reversed_z = scale(trust_science_our_society_places_too_much_emphasis_reversed))
 table(dt_19$alert_level_combined)
 
 
@@ -459,7 +459,7 @@ mean_exposure <- mean(dt_20$trust_science_our_society_places_too_much_emphasis_r
                       na.rm = TRUE)
 mean_exposure
 
-max_score <- max(dt_19$trust_science_our_society_places_too_much_emphasis_reversed, na.rm = TRUE)
+max_score <- max(dt_19$trust_science_our_society_places_too_much_emphasis_reversed_z, na.rm = TRUE)
 max_score
 
 sd_exposure <- sd(dt_19$trust_science_our_society_places_too_much_emphasis_reversed,
@@ -672,9 +672,12 @@ push_mods
 
 # save
 here_save(df_clean, "df_clean")
+df_clean <- here_read("df_clean")
+
 
 
 f_1
+max_score
 
 # get names
 names_base <-
@@ -1157,8 +1160,8 @@ tab_envir <- rbind(
   out_tab_contrast_t2_env_climate_chg_concern_z,
   out_tab_contrast_t2_env_sat_nz_environment_z
 )
-
-
+t2_env_climate_chg_real_z
+out_tab_contrast_t2_env_climate_chg_cause_z
 # make group table
 group_tab_envir<- group_tab(tab_envir  , type = "RD")
 
