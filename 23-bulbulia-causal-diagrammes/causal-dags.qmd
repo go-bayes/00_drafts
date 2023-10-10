@@ -1,5 +1,5 @@
 ---
-title: "Causal Diagrams (DAGS) for Evolutionary Human Science: A Practical Guide"
+title: "Causal Diagrams for Evolutionary Human Science: A Practical Guide"
 abstract: | 
   Causation unfolds over time. However, the quantification of a causal effect requires the conceptualisation of an unobserved counterfactual. This article offers pragmatic guidance for building causal diagrams. It emphasises the benefits of aligning a graph's spatial organisation with the inherent time sequence of causation to assess conditions for causal identifiability. Part 1 reviews the framework of assumptions that underlies causal inference. Understanding how causal inference works is essential for understanding the purposes and uses of causal diagrams. Part 2 examines structures of *confounding bias*. Here we use chronologically ordered causal diagrams to clarify widely misunderstood concepts of causal interaction, causal mediation, and dynamic longitudinal feedback. Part 3 highlights the application of causal diagrams for data collection, focusing on the three-wave panel design. Part 4 examines structures of *selection bias* within this design. Here, we use causal diagrams to clarify directives for sampling, participant retention, and missing data handling. Finally, Part 5 examines structures of *measurement bias*. Here, causal diagrams clarify how confounding arises from correlated and directed measurement errors, with applications to comparative cultural and historical research. Overall, this guide furnishes researchers with the ability to construct and interpret causal diagrams to effectively address their causal questions.
 author: 
@@ -104,7 +104,7 @@ Correlation is not causation. However, persistent confusion in the analysis and 
 
 When integrated into methodologically rigorous workflows, causal Directed Acyclic Graphs ("DAGs" or "causal diagrams") can be powerful tools for clarifying causality.[^1] A system of formal mathematical proofs underpins their design. This quality brings confidence. No formal mathematical training is required to use them. This quality makes them accessible. However, causal inference relies on assumptions. Causal diagrams are methods for encoding such assumptions. When assumptions are unwarranted, causal diagrams may deceive. For example, when researchers lack time-series data, causal effect estimates are generally unwarranted: causal diagrams should not be used. Ideally, causal diagrams would serve as circuit breakers that halt such misapplications.
 
-[^1]: The term "DAG" is somewhat misleading because not all directed acyclic graphs represent causal structures. For a graph to embody a causal structure, it must satisfy the conditions of the Markov factorisation property (see: Part 2).
+[^1]: The term "DAG" -- directed acyclic graph -- is somewhat misleading because not all directed acyclic graphs represent causal structures. For a graph to embody a causal structure, it must satisfy the conditions of the Markov factorisation (see: Part 2).
 
 In this article, I present advice for building causal diagrams. Central to my recommendations is to *chronologically order causal diagrams*. The spatial layout of the graph and the labelling of the nodes should clearly display the temporal sequence of (assumed) cause and effect. While not infallible circuit breakers against misapplications, temporally organised causal diagrams significantly bolster safety, greatly clarifying imperatives for data collection and analysis.
 
@@ -130,7 +130,7 @@ Before answering causal questions, we must understand how to ask them [@hernán2
 
 ### The fundamental problem of causal inference
 
-We are entitled to claim that $A$ causes $Y$ if altering $A$ would have influenced the outcome of $Y$ [@hume1902; @lewis1973]. This claim requires counterfactual reasoning. We must contrast the world as it is when $A$ is set to one level with the world as it might have been when $A$ is set to another level. Our objective in causal inference is to quantify the magnitude of such contrasts.
+Let $A$ denote the cause for intervention and  $Y$ denote the effect to be measured in response. We can claim  $A$ causes  $Y $ if a change in  $A$ influences the outcome of  $Y$ [@hume1902; @lewis1973]. This claim turns on counterfactual reasoning. Specifically, we contrast the world in which $A$ is set at one level against a hypothetical world with $A$ is set at a different level. The goal in causal inference is to quantify such contrasts.
 
 Suppose we observe a correlation between cultural beliefs in Big Gods and social complexity. Suppose further that we seek to quantify the magnitude of the causal effect of such beliefs. Denote beliefs in Big Gods, the "exposure" or "treatment," by $A_i$. Denote social complexity, the outcome, by $Y_i$. For now, assume the exposure, outcome, and the units on which the exposures and outcomes are measured, "cultures" (units $i\dots N$) are well-defined. (We will relax these assumptions shortly.)
 
@@ -142,26 +142,12 @@ $$
 
 To evaluate causality for any individual culture, we must measure two potential outcomes:
 
--   $Y_i(a = 1)$: The social complexity of culture $i$ under belief in Big Gods. This outcome is counterfactual for each culture where $A_i = 0$.
--   $Y_i(a = 0)$: The social complexity of culture $i$ without belief in Big Gods. This outcome is counterfactual for each culture where $A_i = 1$.[^3]
+-   $Y_i(1)$: The social complexity of culture $i$ under belief in Big Gods. This outcome is counterfactual for each culture in which $A_i$ were set to $0$.
+-   $Y_i(0)$: The social complexity of culture $i$ without belief in Big Gods. This outcome is counterfactual for each culture in which $A_i$ were set to $1$.
 
-[^3]: The counterfactual outcome under exposure $A_i = a$ can be denoted in several ways, such as $Y_i(a)$, $Y_i^{a}$, and $Y_a$ (without a subscript). Here, we use the notation $Y(a)$, dropping the subscript $i$ for clarity.
+Note: the counterfactual outcome can be denoted in several ways, such as $Y(a)$, $Y^{a}$, and $Y_a$. In what follows, use the bracket notation for counterfactuals: $Y(a)$. When describing realised exposures, such as $Y_i|A_i = a$, we follow the convention of dropping the subscripts to avoid clutter, thus $Y|A = a$.
 
-To compute an individual causal effect, we contrast two potential outcomes for the same unit, representing two different states of the world. Since each individual can be observed under one treatment condition at a time, one of these states is inevitably counterfactual.
-
-For a binary treatment $A$:
-
--   If $A = 14, the outcome under treatment is observed ($Y_i\|A=1$), but the outcome under no treatment is unobserved ($Y_i\|A=0\$). This can be expressed as:
-
-    $$ Y_i|A = 1 \implies Y_i|A=0~ \text{is counterfactual} $$
-
--   Conversely, if ( A = 0 ), the outcome under no treatment is observed ($Y_i|A=0$), but the outcome under treatment is unobserved ($Y_i|A=1$). This can be expressed as:
-
-    $$ Y_i|A = 0 \implies Y_i|A=1~ \text{is counterfactual} $$
-
-This framework highlights the fundamental challenge of causal inference, where one of the potential outcomes is always missing. That individual causal effects are not identified from observations is "*the fundamental problem of causal inference*" [@rubin1976; @holland1986].
-
-Next, we consider assumptions under which average causal effects may be identified from the data. For now, it is important to note that because average causal effects require summing over individual causal effects, causal inference must inevitably solve a special, elusive, *missing data problem* [@westreich2015; @edwards2015].
+To calculate an individual causal effect, we compare two potential outcomes for the same unit, each representing different states of the world. Since only one treatment condition can be observed for an individual at a time, one state is counterfactual. "The fundamental problem of causal inference" arises because we can observe only one treatment state for an individual unit at a given time [@rubin1976; @holland1986]. As such, the outcome under the unobserved or counterfactual treatment condition is missing. Consequently, causal inference must address a unique, elusive missing data problem [@westreich2015; @edwards2015]. Note that this is not a typical missing data problem in which observations could have been recorded but are lacking. Missing data are intrinsic to the very nature of causal understanding, which requires contrasting the world as it is with the world as it might have been otherwise.  Next, we consider assumptions under which *average* causal effects may be identified from the data. 
 
 <!-- @tbl-consistency expresses the relationship between observable and counterfactual outcomes as a contingency table (This table is modified from a table in [@morgan2014]). -->
 
@@ -304,7 +290,7 @@ Satisfaction of this assumption allows us to approximate a randomised experiment
 The positivity assumption is satisfied if there is a non-zero probability of receiving or not receiving the exposure within each level of all covariates. In other words, within every stratum of every covariate, the probability of each exposure value must be greater than zero. Mathematically the positivity assumption is expressed:
 
 $$
-0 < \Pr(A=a|L)<1, ~ \forall a \in A, ~ \forall l \in L
+0 < \Pr(A=a|L=l)<1, ~ \forall a \in A, ~ \forall l \in L
 $$
 
 Causal inference encounters challenges without the satisfaction of the positivity assumption, as the envisioning of causal contrasts hinges on the potential for randomised assignment to interventions [@westreich2010].

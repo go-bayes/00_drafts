@@ -76,28 +76,38 @@
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
 \newlength{\cslhangindent}
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newlength{\cslentryspacingunit} % times entry-spacing
-\setlength{\cslentryspacingunit}{\parskip}
-\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
- {% don't indent paragraphs
-  \setlength{\parindent}{0pt}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
   % turn on hanging indent if param 1 is 1
   \ifodd #1
-  \let\oldpar\par
-  \def\par{\hangindent=\cslhangindent\oldpar}
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
   \fi
   % set entry spacing
-  \setlength{\parskip}{#2\cslentryspacingunit}
- }%
- {}
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLBlock}[1]{\hfill\break#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{cancel}
@@ -107,10 +117,6 @@
 \renewcommand*{\Authands}{, }
 \renewcommand\Affilfont{\small}
 \usepackage{cancel}
-\makeatletter
-\makeatother
-\makeatletter
-\makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -147,18 +153,10 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
+\makeatother
+\makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
-\makeatother
-\makeatletter
-\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
-\makeatother
-\makeatletter
-\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
-\makeatother
-\makeatletter
-\makeatother
-\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
@@ -167,7 +165,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={Causal Diagrams (DAGS) for Evolutionary Human Science: A Practical Guide},
+  pdftitle={Causal Diagrams for Evolutionary Human Science: A Practical Guide},
   pdfauthor={Joseph A. Bulbulia},
   pdfkeywords={DAGS, Causal
 Inference, Confounding, History, Psychology, Panel},
@@ -178,8 +176,8 @@ Inference, Confounding, History, Psychology, Panel},
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\title{Causal Diagrams (DAGS) for Evolutionary Human Science: A
-Practical Guide}
+\title{Causal Diagrams for Evolutionary Human Science: A Practical
+Guide}
 
 
   \author{Joseph A. Bulbulia}
@@ -189,7 +187,7 @@ Practical Guide}
                   Research
               }
       
-\date{2023-08-17}
+\date{2023-10-10}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -216,10 +214,7 @@ research. Overall, this guide furnishes researchers with the ability to
 construct and interpret causal diagrams to effectively address their
 causal questions.
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, frame hidden, boxrule=0pt, breakable, borderline west={3pt}{0pt}{shadecolor}, interior hidden, sharp corners]}{\end{tcolorbox}}\fi
-
-\hypertarget{introduction}{%
-\subsection{Introduction}\label{introduction}}
+\subsection{Introduction}\label{introduction}
 
 Correlation is not causation. However, persistent confusion in the
 analysis and reporting of correlations has limited scientific progress
@@ -228,26 +223,25 @@ opposite to the direction of manifest correlations. This problem is
 widely known. Nevertheless, many human scientists report manifest
 correlations using hedging language. Making matters worse, widely
 adopted strategies for confounding control fail
-(\protect\hyperlink{ref-mcelreath2020}{McElreath 2020}), suggesting a
-``causality crisis'' (\protect\hyperlink{ref-bulbulia2022}{Bulbulia
-2022}). Addressing the causality crisis is among the human science's
-most pressing tasks.
+(\citeproc{ref-mcelreath2020}{McElreath 2020}), suggesting a ``causality
+crisis'' (\citeproc{ref-bulbulia2022}{Bulbulia 2022}). Addressing the
+causality crisis is among the human science's most pressing tasks.
 
 When integrated into methodologically rigorous workflows, causal
 Directed Acyclic Graphs (``DAGs'' or ``causal diagrams'') can be
-powerful tools for clarifying causality.\footnote{The term ``DAG'' is
-  somewhat misleading because not all directed acyclic graphs represent
-  causal structures. For a graph to embody a causal structure, it must
-  satisfy the conditions of the Markov factorisation property (see: Part
-  2).} A system of formal mathematical proofs underpins their design.
-This quality brings confidence. No formal mathematical training is
-required to use them. This quality makes them accessible. However,
-causal inference relies on assumptions. Causal diagrams are methods for
-encoding such assumptions. When assumptions are unwarranted, causal
-diagrams may deceive. For example, when researchers lack time-series
-data, causal effect estimates are generally unwarranted: causal diagrams
-should not be used. Ideally, causal diagrams would serve as circuit
-breakers that halt such misapplications.
+powerful tools for clarifying causality.\footnote{The term ``DAG'' --
+  directed acyclic graph -- is somewhat misleading because not all
+  directed acyclic graphs represent causal structures. For a graph to
+  embody a causal structure, it must satisfy the conditions of the
+  Markov factorisation (see: Part 2).} A system of formal mathematical
+proofs underpins their design. This quality brings confidence. No formal
+mathematical training is required to use them. This quality makes them
+accessible. However, causal inference relies on assumptions. Causal
+diagrams are methods for encoding such assumptions. When assumptions are
+unwarranted, causal diagrams may deceive. For example, when researchers
+lack time-series data, causal effect estimates are generally
+unwarranted: causal diagrams should not be used. Ideally, causal
+diagrams would serve as circuit breakers that halt such misapplications.
 
 In this article, I present advice for building causal diagrams. Central
 to my recommendations is to \emph{chronologically order causal
@@ -259,16 +253,14 @@ bolster safety, greatly clarifying imperatives for data collection and
 analysis.
 
 There are many excellent introductions to causal diagrams
-(\protect\hyperlink{ref-barrett2021}{Barrett 2021};
-\protect\hyperlink{ref-cinelli2022}{Cinelli \emph{et al.} 2022};
-\protect\hyperlink{ref-greenland1999}{Greenland \emph{et al.} 1999};
-\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023};
-\protect\hyperlink{ref-mcelreath2020}{McElreath 2020};
-\protect\hyperlink{ref-pearl2009}{Pearl 2009a};
-\protect\hyperlink{ref-rohrer2018}{Rohrer 2018};
-\protect\hyperlink{ref-suzuki2020}{Suzuki \emph{et al.}
-2020}).\footnote{An excellent resource is Miguel Hernan's free online
-  course, here:
+(\citeproc{ref-barrett2021}{Barrett 2021};
+\citeproc{ref-cinelli2022}{Cinelli \emph{et al.} 2022};
+\citeproc{ref-greenland1999}{Greenland \emph{et al.} 1999};
+\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023};
+\citeproc{ref-mcelreath2020}{McElreath 2020};
+\citeproc{ref-pearl2009}{Pearl 2009a}; \citeproc{ref-rohrer2018}{Rohrer
+2018}; \citeproc{ref-suzuki2020}{Suzuki \emph{et al.} 2020}).\footnote{An
+  excellent resource is Miguel Hernan's free online course, here:
   \url{https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions}.}
 One may reasonably ask whether another introduction adds clutter. The
 approach I present here hopes to add value in five ways.
@@ -308,28 +300,26 @@ Throughout this study, the application of chronologically ordered causal
 diagrams in the setting of counterfactual data science illuminates both
 effective research strategies and their limitations.
 
-\hypertarget{part-1.-the-three-fundamental-identifiability-assumptions-of-causal-inference}{%
 \subsection{Part 1. The Three Fundamental Identifiability Assumptions of
 Causal
-Inference}\label{part-1.-the-three-fundamental-identifiability-assumptions-of-causal-inference}}
+Inference}\label{part-1.-the-three-fundamental-identifiability-assumptions-of-causal-inference}
 
 Before answering causal questions, we must understand how to ask them
-(\protect\hyperlink{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016}). In
-this section, I review the three fundamental identification assumptions
+(\citeproc{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016}). In this
+section, I review the three fundamental identification assumptions
 required for causal inference.
 
-\hypertarget{the-fundamental-problem-of-causal-inference}{%
 \subsubsection{The fundamental problem of causal
-inference}\label{the-fundamental-problem-of-causal-inference}}
+inference}\label{the-fundamental-problem-of-causal-inference}
 
-We are entitled to claim that \(A\) causes \(Y\) if altering \(A\) would
-have influenced the outcome of \(Y\)
-(\protect\hyperlink{ref-hume1902}{Hume 1902};
-\protect\hyperlink{ref-lewis1973}{Lewis 1973}). This claim requires
-counterfactual reasoning. We must contrast the world as it is when \(A\)
-is set to one level with the world as it might have been when \(A\) is
-set to another level. Our objective in causal inference is to quantify
-the magnitude of such contrasts.
+Let \(A\) denote the cause for intervention and \(Y\) denote the effect
+to be measured in response. We can claim \(A\) causes \$Y \$ if a change
+in \(A\) influences the outcome of \(Y\) (\citeproc{ref-hume1902}{Hume
+1902}; \citeproc{ref-lewis1973}{Lewis 1973}). This claim turns on
+counterfactual reasoning. Specifically, we contrast the world in which
+\(A\) is set at one level against a hypothetical world with \(A\) is set
+at a different level. The goal in causal inference is to quantify such
+contrasts.
 
 Suppose we observe a correlation between cultural beliefs in Big Gods
 and social complexity. Suppose further that we seek to quantify the
@@ -357,59 +347,43 @@ potential outcomes:
 \begin{itemize}
 \tightlist
 \item
-  \(Y_i(a = 1)\): The social complexity of culture \(i\) under belief in
-  Big Gods. This outcome is counterfactual for each culture where
-  \(A_i = 0\).
+  \(Y_i(1)\): The social complexity of culture \(i\) under belief in Big
+  Gods. This outcome is counterfactual for each culture in which \(A_i\)
+  were set to \(0\).
 \item
-  \(Y_i(a = 0)\): The social complexity of culture \(i\) without belief
-  in Big Gods. This outcome is counterfactual for each culture where
-  \(A_i = 1\).\footnote{The counterfactual outcome under exposure
-    \(A_i = a\) can be denoted in several ways, such as \(Y_i(a)\),
-    \(Y_i^{a}\), and \(Y_a\) (without a subscript). Here, we use the
-    notation \(Y(a)\), dropping the subscript \(i\) for clarity.}
+  \(Y_i(0)\): The social complexity of culture \(i\) without belief in
+  Big Gods. This outcome is counterfactual for each culture in which
+  \(A_i\) were set to \(1\).
 \end{itemize}
 
-To compute an individual causal effect, we contrast two potential
-outcomes for the same unit, representing two different states of the
-world. Since each individual can be observed under one treatment
-condition at a time, one of these states is inevitably counterfactual.
+Note: the counterfactual outcome can be denoted in several ways, such as
+\(Y(a)\), \(Y^{a}\), and \(Y_a\). In what follows, use the bracket
+notation for counterfactuals: \(Y(a)\). When describing realised
+exposures, such as \(Y_i|A_i = a\), we follow the convention of dropping
+the subscripts to avoid clutter, thus \(Y|A = a\).
 
-For a binary treatment \(A\):
+To calculate an individual causal effect, we compare two potential
+outcomes for the same unit, each representing different states of the
+world. Since only one treatment condition can be observed for an
+individual at a time, one state is counterfactual. ``The fundamental
+problem of causal inference'' arises because we can observe only one
+treatment state for an individual unit at a given time
+(\citeproc{ref-holland1986}{Holland 1986};
+\citeproc{ref-rubin1976}{Rubin 1976}). As such, the outcome under the
+unobserved or counterfactual treatment condition is missing.
+Consequently, causal inference must address a unique, elusive missing
+data problem (\citeproc{ref-edwards2015}{Edwards \emph{et al.} 2015};
+\citeproc{ref-westreich2015}{Westreich \emph{et al.} 2015}). Note that
+this is not a typical missing data problem in which observations could
+have been recorded but are lacking. Missing data are intrinsic to the
+very nature of causal understanding, which requires contrasting the
+world as it is with the world as it might have been otherwise. Next, we
+consider assumptions under which \emph{average} causal effects may be
+identified from the data.
 
-\begin{itemize}
-\item
-  If
-  \(A = 14, the outcome under treatment is observed (\)Y\_i\textbar A=1\(), but the outcome under no treatment is unobserved (\)Y\_i\textbar A=0\$).
-  This can be expressed as:
-
-  \[ Y_i|A = 1 \implies Y_i|A=0~ \text{is counterfactual} \]
-\item
-  Conversely, if ( A = 0 ), the outcome under no treatment is observed
-  (\(Y_i|A=0\)), but the outcome under treatment is unobserved
-  (\(Y_i|A=1\)). This can be expressed as:
-
-  \[ Y_i|A = 0 \implies Y_i|A=1~ \text{is counterfactual} \]
-\end{itemize}
-
-This framework highlights the fundamental challenge of causal inference,
-where one of the potential outcomes is always missing. That individual
-causal effects are not identified from observations is ``\emph{the
-fundamental problem of causal inference}''
-(\protect\hyperlink{ref-holland1986}{Holland 1986};
-\protect\hyperlink{ref-rubin1976}{Rubin 1976}).
-
-Next, we consider assumptions under which average causal effects may be
-identified from the data. For now, it is important to note that because
-average causal effects require summing over individual causal effects,
-causal inference must inevitably solve a special, elusive, \emph{missing
-data problem} (\protect\hyperlink{ref-edwards2015}{Edwards \emph{et al.}
-2015}; \protect\hyperlink{ref-westreich2015}{Westreich \emph{et al.}
-2015}).
-
-\hypertarget{causal-inference-is-an-approach-for-estimating-average-marginal-causal-effects}{%
 \paragraph{Causal inference is an approach for estimating average
 (marginal) causal
-effects}\label{causal-inference-is-an-approach-for-estimating-average-marginal-causal-effects}}
+effects}\label{causal-inference-is-an-approach-for-estimating-average-marginal-causal-effects}
 
 Individual-level causal effects are typically unobservable. However,
 under certain conditions we may use observations to obtain average
@@ -456,13 +430,12 @@ of assumptions.\footnote{There are different formulations of causality,
   because, as used in applied research, the varieties of framework are
   mathematically equivalent. The variety I present here is called the
   ``potential outcomes'' framework. It traces its origins to works of
-  Neyman (\protect\hyperlink{ref-neyman1923}{\textbf{neyman1923?}}),
-  Rubin Rubin (\protect\hyperlink{ref-rubin1976}{1976}), and Robins
-  Robins (\protect\hyperlink{ref-robins1986}{1986}).}
+  Neyman (\citeproc{ref-neyman1923}{\textbf{neyman1923?}}), Rubin Rubin
+  (\citeproc{ref-rubin1976}{1976}), and Robins Robins
+  (\citeproc{ref-robins1986}{1986}).}
 
-\hypertarget{identification-assumption-1-causal-consistency}{%
 \subsubsection{Identification Assumption 1: Causal
-Consistency}\label{identification-assumption-1-causal-consistency}}
+Consistency}\label{identification-assumption-1-causal-consistency}
 
 Causal consistency is crucial for addressing the special, elusive,
 \emph{missing data problems} at the heart of causal inference.
@@ -488,18 +461,17 @@ observed outcome is just equated to a counterfactual outcome. This
 hardly seems difficult. However, the causal consistency assumption is
 only met if there is treatment variation irrelevance, such that any
 variations in treatment can be ignored conditional on other variables
-included in the model
-(\protect\hyperlink{ref-vanderweele2009}{VanderWeele 2009a}). On closer
-inspection, however, the requirement for treatment variation irrelevance
-sets a high bar.
+included in the model (\citeproc{ref-vanderweele2009}{VanderWeele
+2009a}). On closer inspection, however, the requirement for treatment
+variation irrelevance sets a high bar.
 
 Consider, causal consistency requires satisfaction of \textbf{the no
 interference assumption (SUTVA)}: the effects of exposure must be
 independent across units such that an exposure's effect on one unit does
 not depend on the exposure status of any other other unit
-(\protect\hyperlink{ref-rubin2005}{Rubin 2005}). (Note that such
-dependencies violate the assumption of treatment variation irrelevance
-even if the treatment were administered experimentally.)
+(\citeproc{ref-rubin2005}{Rubin 2005}). (Note that such dependencies
+violate the assumption of treatment variation irrelevance even if the
+treatment were administered experimentally.)
 
 Let \(Y_i(a_i, a_j)\) denote the potential outcome for unit \(i\) under
 treatment \(a_i\) when unit \(j\) has exposure status \(a_j\). The no
@@ -517,20 +489,19 @@ of the exposure statuses \(a_j\) and \(a'_j\) of other units.
 How might this assumption be challenged? Whenever there are social
 network effects the assumption may fail. For instance, the efficacy of a
 vaccine may depend on the vaccination rate in the population
-(\protect\hyperlink{ref-murray2021}{Murray \emph{et al.} 2021a},
-\protect\hyperlink{ref-murray2021a}{2021b};
-\protect\hyperlink{ref-ogburn2022}{Ogburn \emph{et al.} 2022}). (The no
-interference is an aspect of Rubin's Stable Unit Treatment Value
-Assumption (SUTVA), see Rubin
-(\protect\hyperlink{ref-rubin2005}{2005}).)
+(\citeproc{ref-murray2021}{Murray \emph{et al.} 2021a},
+\citeproc{ref-murray2021a}{2021b}; \citeproc{ref-ogburn2022}{Ogburn
+\emph{et al.} 2022}). (The no interference is an aspect of Rubin's
+Stable Unit Treatment Value Assumption (SUTVA), see Rubin
+(\citeproc{ref-rubin2005}{2005}).)
 
 However, there is hope. \textbf{The theory of causal inference under
 multiple versions of treatment} provides a proof showing that even if
 there are multiple versions of treatment, we may consistently estimate
 causal effects if the different versions of treatment are conditionally
 independent of the outcomes VanderWeele and Hernan
-(\protect\hyperlink{ref-vanderweele2013}{2013}). (See Appendix 1 for
-additional discussion of the proof and its implications.)
+(\citeproc{ref-vanderweele2013}{2013}). (See Appendix 1 for additional
+discussion of the proof and its implications.)
 
 Where there are \(K\) different versions of treatment \(A\) and no
 confounding for \(K\)'s effect on \(Y\) given measured confounders \(L\)
@@ -551,22 +522,20 @@ then causal consistency follows.
 According to the theory of causal inference under multiple versions of
 treatment, the measured variable \(A\) functions as a ``coarsened
 indicator'' for estimating the causal effect of the multiple versions of
-treatment \(K\) on \(Y(k)\)
-(\protect\hyperlink{ref-vanderweele2009}{VanderWeele 2009a},
-\protect\hyperlink{ref-vanderweele2018}{2018};
-\protect\hyperlink{ref-vanderweele2013}{VanderWeele and Hernan 2013}).
-In practice, however, the symbol \(K\) might denote little more than our
+treatment \(K\) on \(Y(k)\) (\citeproc{ref-vanderweele2009}{VanderWeele
+2009a}, \citeproc{ref-vanderweele2018}{2018};
+\citeproc{ref-vanderweele2013}{VanderWeele and Hernan 2013}). In
+practice, however, the symbol \(K\) might denote little more than our
 ignorance. As such, we might not know how to evaluate the conditional
 independence assumption or know how to interpret the causal quantities
-we compute (see: (\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022};
-\protect\hyperlink{ref-hernuxe1n2008}{Hernán \emph{et al.} 2008};
-\protect\hyperlink{ref-hernuxe1n2022a}{Hernán \emph{et al.} 2022a};
-\protect\hyperlink{ref-murray2021a}{Murray \emph{et al.} 2021b})). We
-will return to this topic in Part 4.
+we compute (see: (\citeproc{ref-bulbulia2022}{Bulbulia 2022};
+\citeproc{ref-hernuxe1n2008}{Hernán \emph{et al.} 2008};
+\citeproc{ref-hernuxe1n2022a}{Hernán \emph{et al.} 2022a};
+\citeproc{ref-murray2021a}{Murray \emph{et al.} 2021b})). We will return
+to this topic in Part 4.
 
-\hypertarget{identification-assumption-2-conditional-exchangeability}{%
 \subsubsection{Identification Assumption 2: (Conditional)
-Exchangeability}\label{identification-assumption-2-conditional-exchangeability}}
+Exchangeability}\label{identification-assumption-2-conditional-exchangeability}
 
 We say that conditional exchangeability is satisfied if, after
 controlling for observed covariates, the assignment of treatment is
@@ -604,9 +573,8 @@ and positivity assumptions, we may express the average treatment effect
 Satisfaction of this assumption allows us to approximate a randomised
 experiment with observational data.
 
-\hypertarget{identification-assumption-3-positivity}{%
 \subsubsection{Identification Assumption 3:
-Positivity}\label{identification-assumption-3-positivity}}
+Positivity}\label{identification-assumption-3-positivity}
 
 The positivity assumption is satisfied if there is a non-zero
 probability of receiving or not receiving the exposure within each level
@@ -615,13 +583,13 @@ covariate, the probability of each exposure value must be greater than
 zero. Mathematically the positivity assumption is expressed:
 
 \[
-0 < \Pr(A=a|L)<1, ~ \forall a \in A, ~ \forall l \in L
+0 < \Pr(A=a|L=l)<1, ~ \forall a \in A, ~ \forall l \in L
 \]
 
 Causal inference encounters challenges without the satisfaction of the
 positivity assumption, as the envisioning of causal contrasts hinges on
 the potential for randomised assignment to interventions
-(\protect\hyperlink{ref-westreich2010}{Westreich and Cole 2010}).
+(\citeproc{ref-westreich2010}{Westreich and Cole 2010}).
 
 There are two types of positivity violations.
 
@@ -644,21 +612,18 @@ There are two types of positivity violations.
   deterministic non-positivity.
 \end{enumerate}
 
-\hypertarget{the-difficulty-of-satisfying-the-three-fundamental-assumptions-of-causal-inference-when-asking-causal-questions-of-history}{%
 \subsubsection{The difficulty of satisfying the three fundamental
 assumptions of causal inference when asking causal questions of
-history}\label{the-difficulty-of-satisfying-the-three-fundamental-assumptions-of-causal-inference-when-asking-causal-questions-of-history}}
+history}\label{the-difficulty-of-satisfying-the-three-fundamental-assumptions-of-causal-inference-when-asking-causal-questions-of-history}
 
 Consider the Protestant Reformation of the 16th century, which initiated
 religious change throughout much of Europe. Historians have argued that
 Protestantism caused social, cultural, and economic changes in those
-societies where it took hold (see:
-(\protect\hyperlink{ref-basten2013}{Basten and Betz 2013};
-\protect\hyperlink{ref-swanson1967}{Swanson 1967};
-\protect\hyperlink{ref-swanson1971}{Swanson 1971};
-\protect\hyperlink{ref-weber1905}{Weber 1905},
-\protect\hyperlink{ref-weber1993}{1993}), for an overview see:
-(\protect\hyperlink{ref-becker2016}{Becker \emph{et al.} 2016})).
+societies where it took hold (see: (\citeproc{ref-basten2013}{Basten and
+Betz 2013}; \citeproc{ref-swanson1967}{Swanson 1967};
+\citeproc{ref-swanson1971}{Swanson 1971}; \citeproc{ref-weber1905}{Weber
+1905}, \citeproc{ref-weber1993}{1993}), for an overview see:
+(\citeproc{ref-becker2016}{Becker \emph{et al.} 2016})).
 
 Suppose we are interested in estimating the ``Average Treatment Effect''
 of the Protestant Reformation. Let \(A = a^*\) denote the adoption of
@@ -695,14 +660,14 @@ across different countries and time periods.
 
 There is undoubtedly considerable heterogeneity in the ``Protestant
 exposure.'' In England, Protestantism was closely tied to the monarchy
-(\protect\hyperlink{ref-collinson2007}{Collinson 2007}). In Germany,
-Martin Luther's teachings emphasised individual faith in scripture,
-which, it has been claimed, supported economic development by promoting
-literacy (\protect\hyperlink{ref-gawthrop1984}{Gawthrop and Strauss
-1984}). In England, King Henry VIII abolished Catholicism
-(\protect\hyperlink{ref-collinson2007}{Collinson 2007}). The
-Reformation, then, occurred differently in different places. The
-exposure needs to be better-defined.
+(\citeproc{ref-collinson2007}{Collinson 2007}). In Germany, Martin
+Luther's teachings emphasised individual faith in scripture, which, it
+has been claimed, supported economic development by promoting literacy
+(\citeproc{ref-gawthrop1984}{Gawthrop and Strauss 1984}). In England,
+King Henry VIII abolished Catholicism
+(\citeproc{ref-collinson2007}{Collinson 2007}). The Reformation, then,
+occurred differently in different places. The exposure needs to be
+better-defined.
 
 There is also ample scope for interference: 16th century societies were
 interconnected through trade, diplomacy, and warfare. Thus, the
@@ -724,7 +689,7 @@ events, or political circumstances, some countries might only ever have
 the possibility of either remaining Catholic or becoming Protestant, but
 not both. For example, it is unclear under which conditions 16th century
 Spain could have been randomly assigned to Protestantism
-(\protect\hyperlink{ref-nalle1987}{Nalle 1987}).
+(\citeproc{ref-nalle1987}{Nalle 1987}).
 
 Perhaps a more credible measure of effect in the region of our interests
 is the Average Treatment Effect in the Treated (ATT) expressed
@@ -741,10 +706,9 @@ would avoid the assumption of non-deterministic positivity for the
 untreated. However, whether matching is conceptually plausible remains
 debatable. Ostensibly, it would seem that assigning a religion to a
 culture a religion is not as easy as administering a pill
-(\protect\hyperlink{ref-watts2018}{Watts \emph{et al.} 2018}).
+(\citeproc{ref-watts2018}{Watts \emph{et al.} 2018}).
 
-\hypertarget{summary-part-1}{%
-\subsubsection{Summary Part 1}\label{summary-part-1}}
+\subsubsection{Summary Part 1}\label{summary-part-1}
 
 To quantify causal effects requires converting observations from data
 into \emph{counterfactual} causal contrasts. Causation itself, recall,
@@ -757,18 +721,17 @@ causal inference are:
 \item
   \textbf{Causal Consistency}: exposures under comparison relate to
   well-defined interventions found in the data
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023}) (see
-  also: Chatton \emph{et al.}
-  (\protect\hyperlink{ref-chatton2020}{2020})).
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023}) (see also:
+  Chatton \emph{et al.} (\citeproc{ref-chatton2020}{2020})).
 \item
   \textbf{Exchangeability}: after adjusted for measured covariates, the
   potential outcomes under all exposure levels are independent of the
-  actual exposure level received
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023}).
+  actual exposure level received (\citeproc{ref-hernuxe1n2023}{Hernán
+  and Robins 2023}).
 \item
   \textbf{Positivity:} the probability of receiving every exposure value
   within all strata of covariates exceeds zero
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023}).
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023}).
 \end{enumerate}
 
 In Part 1 we have reviewed the comprehensive framework of counterfactual
@@ -778,26 +741,22 @@ counterfactual outcomes for inferring causal contrasts. Exchangeability
 supplies the remaining half.} It is within this comprehensive framework
 that causal diagrams find their utility. We use causal diagrams to
 evaluate \emph{structural biases} arising from confounding, selection,
-and measurement error (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and
-Robins 2023}). Retaining a focus on these functions, within the
-framework of counterfactual data science, helps to avert
-misapplications.
+and measurement error (\citeproc{ref-hernuxe1n2023}{Hernán and Robins
+2023}). Retaining a focus on these functions, within the framework of
+counterfactual data science, helps to avert misapplications.
 
-\hypertarget{part-2.applications-of-chronologically-ordered-causal-diagrams-for-understanding-confounding-bias}{%
 \subsection{Part 2.Applications of Chronologically Ordered Causal
 Diagrams for Understanding Confounding
-Bias}\label{part-2.applications-of-chronologically-ordered-causal-diagrams-for-understanding-confounding-bias}}
+Bias}\label{part-2.applications-of-chronologically-ordered-causal-diagrams-for-understanding-confounding-bias}
 
-\hypertarget{background-concepts-and-conventions}{%
 \subsubsection{Background: Concepts and
-Conventions}\label{background-concepts-and-conventions}}
+Conventions}\label{background-concepts-and-conventions}
 
 Causal diagrams, in their contemporary form, were developed by Judea
 Pearl. Their purpose is to assist researchers in identifying the
 conditions under which causal effects can be discerned from data
-(\protect\hyperlink{ref-greenland1999}{Greenland \emph{et al.} 1999};
-\protect\hyperlink{ref-pearl1995}{Pearl 1995},
-\protect\hyperlink{ref-pearl2009}{2009a}).
+(\citeproc{ref-greenland1999}{Greenland \emph{et al.} 1999};
+\citeproc{ref-pearl1995}{Pearl 1995}, \citeproc{ref-pearl2009}{2009a}).
 
 To use causal diagrams, we must understand the following concepts and
 conventions:
@@ -825,12 +784,12 @@ conventions:
   if a node along it prevents the transmission of influence. Two
   variables are considered d-separated if all paths between them are
   blocked; otherwise, they are d-connected
-  (\protect\hyperlink{ref-pearl1995}{Pearl 1995}).
+  (\citeproc{ref-pearl1995}{Pearl 1995}).
 \end{enumerate}
 
 Pearl showed that the principles of d-separation enable us to evaluate
 relationships between nodes in a causal diagram
-(\protect\hyperlink{ref-pearl1995}{Pearl 1995}).
+(\citeproc{ref-pearl1995}{Pearl 1995}).
 
 The rules of d-separation:
 
@@ -858,13 +817,13 @@ In each case, if \(B\) does not d-separate \(A\) and \(C\), \(A\) and
 open path between \(A\) and \(C\). If all paths between \(A\) and \(C\)
 are blocked, or equivalently, if no path remains open, then \(A\) and
 \(C\) are d-separated given a set of conditioning variables
-(\protect\hyperlink{ref-pearl2009}{Pearl 2009a}).
+(\citeproc{ref-pearl2009}{Pearl 2009a}).
 
 The rules of d-separation clarify which variables to adjust for when
 estimating causal effects: we seek a set of variables that d-separates
 the exposure from the outcome. By conditioning on such an adjustment
 set, we block all confounding paths, leaving only the causal effect
-(\protect\hyperlink{ref-pearl2009}{Pearl 2009a}).
+(\citeproc{ref-pearl2009}{Pearl 2009a}).
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -873,7 +832,7 @@ set, we block all confounding paths, leaving only the causal effect
   \textbf{Adjustment set}: a collection of variables that we either
   condition upon or deliberately avoid conditioning upon to block all
   backdoor paths between the exposure and the outcome in the causal
-  diagram (\protect\hyperlink{ref-pearl2009}{Pearl 2009a}).
+  diagram (\citeproc{ref-pearl2009}{Pearl 2009a}).
 \item
   \textbf{Confounders}: a member of an adjustment set. Importantly,
   \emph{we call a variable as a ``confounder'' in relation to a specific
@@ -882,11 +841,11 @@ set, we block all confounding paths, leaving only the causal effect
   \textbf{Control of confounding by the Modified Disjunctive Cause
   Criterion}: VanderWeele's Modified Disjunctive Cause Criterion
   provides practical guidance for controlling for confounding
-  (\protect\hyperlink{ref-vanderweele2019}{VanderWeele 2019}). According
-  to this criterion, a member of any set of variables that can reduce or
-  remove the bias caused by confounding is deemed a member of this
-  confounder set. VanderWeele's strategy for defining a confounder set
-  is as follows:
+  (\citeproc{ref-vanderweele2019}{VanderWeele 2019}). According to this
+  criterion, a member of any set of variables that can reduce or remove
+  the bias caused by confounding is deemed a member of this confounder
+  set. VanderWeele's strategy for defining a confounder set is as
+  follows:
 \end{enumerate}
 
 \begin{enumerate}
@@ -931,15 +890,15 @@ the outcome.\footnote{Nearly every plausible scenario involving causal
 \item
   \textbf{Compatibility}: the joint distribution of the variables is
   said to be compatible with the graph if it upholds the conditional
-  independencies the graph implies
-  (\protect\hyperlink{ref-pearl2009a}{Pearl 2009b}).
+  independencies the graph implies (\citeproc{ref-pearl2009a}{Pearl
+  2009b}).
 \item
   \textbf{Faithfulness}: a graph is said to be faithful if the
   conditional independencies found in the data are reflected in the
   graph, and conversely, if the dependencies suggested by the graph can
-  be observed in the data (\protect\hyperlink{ref-pearl1995a}{Pearl and
-  Robins 1995}).\footnote{Although the assumption of faithfulness or
-    ``weak faithfulness'' allows for the possibility that some of the
+  be observed in the data (\citeproc{ref-pearl1995a}{Pearl and Robins
+  1995}).\footnote{Although the assumption of faithfulness or ``weak
+    faithfulness'' allows for the possibility that some of the
     independences in the data might occur by coincidence (i.e., because
     of a cancellation of different effects), the assumption of strong
     faithfulness does not. The strong faithfulness condition assumes
@@ -965,30 +924,30 @@ the outcome.\footnote{Nearly every plausible scenario involving causal
   depends directly only on its parent variables and is independent of
   the others, thereby facilitating the graphical representation of
   complex relationships between multiple variables in a causal system
-  (\protect\hyperlink{ref-lauritzen1990}{Lauritzen \emph{et al.} 1990};
-  \protect\hyperlink{ref-pearl1988}{Pearl 1988}).
+  (\citeproc{ref-lauritzen1990}{Lauritzen \emph{et al.} 1990};
+  \citeproc{ref-pearl1988}{Pearl 1988}).
 \item
   \textbf{Causal Markov assumption}: any given variable, when
   conditioned on its direct antecedents, is rendered independent from
   all other variables that it does not cause
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023}). In
-  essence, once we account for a variable's immediate causes, it ceases
-  to provide additional causal information about any other variables in
-  the system, except for those it directly causes. This assumption
-  allows for inferring the causal effects of interventions in systems,
-  as represented by causal diagrams
-  (\protect\hyperlink{ref-pearl2009a}{Pearl 2009b}).
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023}). In essence,
+  once we account for a variable's immediate causes, it ceases to
+  provide additional causal information about any other variables in the
+  system, except for those it directly causes. This assumption allows
+  for inferring the causal effects of interventions in systems, as
+  represented by causal diagrams (\citeproc{ref-pearl2009a}{Pearl
+  2009b}).
 \item
   \textbf{Backdoor criterion}: a set of conditions under which the
   effect of a treatment on an outcome can be obtained by controlling for
   a specific set of variables. The backdoor criterion guides the
-  selection of \textbf{adjustment sets}
-  (\protect\hyperlink{ref-pearl1995}{Pearl 1995}).\footnote{Note there
-    is also a Front-Door Criterion, which provides another way to
-    estimate causal effects, even in the presence of unmeasured
-    confounding variables. It relies on identifying a variable (or set
-    of variables) that mediates the entire effect of the treatment on
-    the outcome. The front-door criterion is rarely used in practice.}
+  selection of \textbf{adjustment sets} (\citeproc{ref-pearl1995}{Pearl
+  1995}).\footnote{Note there is also a Front-Door Criterion, which
+    provides another way to estimate causal effects, even in the
+    presence of unmeasured confounding variables. It relies on
+    identifying a variable (or set of variables) that mediates the
+    entire effect of the treatment on the outcome. The front-door
+    criterion is rarely used in practice.}
 \end{enumerate}
 
 \begin{enumerate}
@@ -1007,9 +966,9 @@ the outcome.\footnote{Nearly every plausible scenario involving causal
   estimate causal effects quantitatively. In Part 3 we consider how
   adding baseline measures of the outcome and exposure in a three-wave
   repeated measures design greatly enhances causal estimation
-  (\protect\hyperlink{ref-pearl2009}{Pearl 2009a}). To represent the
-  nodes of this design on a graph we must index them by time because the
-  nodes are repeated.
+  (\citeproc{ref-pearl2009}{Pearl 2009a}). To represent the nodes of
+  this design on a graph we must index them by time because the nodes
+  are repeated.
 \item
   \textbf{Total, direct and indirect effects}: in the presence of
   mediating variables, it is helpful to differentiate the total effect
@@ -1017,7 +976,7 @@ the outcome.\footnote{Nearly every plausible scenario involving causal
   effect (the effect of \(A\) on \(Y\) not via any mediator), and
   indirect effect (the effect of \(A\) on \(Y\) via mediator). We
   consider the assumptions of causal mediation below
-  (\protect\hyperlink{ref-vanderweele2015}{VanderWeele 2015}).
+  (\citeproc{ref-vanderweele2015}{VanderWeele 2015}).
 \item
   \textbf{Time-varying confounding:} this occurs when a confounder that
   changes over time also acts as a mediator in the causal pathway
@@ -1025,7 +984,7 @@ the outcome.\footnote{Nearly every plausible scenario involving causal
   introduce bias. G-methods, a set of longitudinal methods, are
   typically utilised to address time-varying confounding. We discuss
   time-varying confounding at the end of Part 2
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023}).
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023}).
 \end{enumerate}
 
 \begin{enumerate}
@@ -1043,10 +1002,10 @@ the outcome.\footnote{Nearly every plausible scenario involving causal
   factor loading and the latent variable, plus an error term.
   Importantly, \textbf{statistical models such as the reflective latent
   factor model can correspond to multiple causal structures}
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023};
-  \protect\hyperlink{ref-pearl2018}{Pearl and Mackenzie 2018};
-  \protect\hyperlink{ref-wright1920}{Wright 1920},
-  \protect\hyperlink{ref-wright1923}{1923}).
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023};
+  \citeproc{ref-pearl2018}{Pearl and Mackenzie 2018};
+  \citeproc{ref-wright1920}{Wright 1920},
+  \citeproc{ref-wright1923}{1923}).
 \item
   \textbf{Structural model:} a structural model goes beyond a
   statistical model by defining assumptions about causal relationships.
@@ -1054,7 +1013,7 @@ the outcome.\footnote{Nearly every plausible scenario involving causal
   inferring causal relationships necessitates additional assumptions or
   information. Causal diagrams serve to graphically encode these
   assumptions, effectively representing the structural model
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023}).These
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023}).These
   assumptions should be developed in consultation with experts.
 \end{enumerate}
 
@@ -1077,7 +1036,7 @@ and forms the motivation for this work.)
 \tightlist
 \item
   \textbf{A structural classification of bias}
-  (\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023})
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023})
 \end{enumerate}
 
 \begin{enumerate}
@@ -1096,9 +1055,8 @@ and forms the motivation for this work.)
   the observed relationship between the exposure and the outcome.
 \end{enumerate}
 
-\hypertarget{variable-naming-conventions}{%
 \paragraph{\texorpdfstring{\textbf{Variable Naming
-Conventions}}{Variable Naming Conventions}}\label{variable-naming-conventions}}
+Conventions}}{Variable Naming Conventions}}\label{variable-naming-conventions}
 
 \textbf{Outcome}: Denoted by \(Y\) below. To estimate a causal effect,
 the outcome must be precisely delineated. Instead of a vague statement
@@ -1129,18 +1087,16 @@ d-separation of exposure and outcome. Unmeasured confounders may bias
 causal estimates by creating spurious relationships between the exposure
 and outcome.
 
-\hypertarget{elemental-counfounds}{%
-\subsubsection{Elemental counfounds}\label{elemental-counfounds}}
+\subsubsection{Elemental counfounds}\label{elemental-counfounds}
 
-McElreath (\protect\hyperlink{ref-mcelreath2020}{2020}) p.185. describes
-four fundamental confounders. Next, we consider the benefits, both for
-data analysis and data collection, of expressing chronology in the
-spatial organisation of a causal diagrams when assessing these four
-structures of confounding bias.
+McElreath (\citeproc{ref-mcelreath2020}{2020}) p.185. describes four
+fundamental confounders. Next, we consider the benefits, both for data
+analysis and data collection, of expressing chronology in the spatial
+organisation of a causal diagrams when assessing these four structures
+of confounding bias.
 
-\hypertarget{the-problem-of-confounding-by-a-common-cause}{%
 \subsubsection{1. The problem of confounding by a common
-cause}\label{the-problem-of-confounding-by-a-common-cause}}
+cause}\label{the-problem-of-confounding-by-a-common-cause}
 
 The problem of confounding by common cause arises when there is a
 variable, denoted by \(L\), that influences both the exposure, denoted
@@ -1160,7 +1116,9 @@ their common cause \(L\).
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-1.pdf}
 
 }
 
@@ -1168,18 +1126,17 @@ their common cause \(L\).
 dashed path indicates bias arising from the open backdoor path from A to
 Y.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{advice-attend-to-the-temporal-order-of-all-measured-variables}{%
 \subsubsection{Advice: attend to the temporal order of all measured
-variables}\label{advice-attend-to-the-temporal-order-of-all-measured-variables}}
+variables}\label{advice-attend-to-the-temporal-order-of-all-measured-variables}
 
 Addressing confounding by a common cause involves its adjustment. This
 adjustment effectively closes the backdoor path from the exposure to the
 outcome. Equivalently, conditioning on \(L\) d-separates \(A\) and
 \(Y\). Common adjustment methods include regression, matching, inverse
 probability of treatment weighting, and G-methods (covered in
-(\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023})).
+(\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023})).
 Figure~\ref{fig-dag-common-cause-solution} clarifies that any confounder
 that is a common cause of both \(A\) and \(Y\) must precede \(A\) (and
 hence \(Y\)), since effects follow their causes chronologically.
@@ -1192,7 +1149,9 @@ causal inference in settings where researchers lack time series data.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-solution-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-cause-solution-1.pdf}
 
 }
 
@@ -1200,12 +1159,11 @@ causal inference in settings where researchers lack time series data.
 pre-exposure confounder. The implication: obtain time series data to
 ensure the confounder occurs before the exposure.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{confounding-by-collider-stratification-conditioning-on-a-common-effect}{%
 \subsubsection{2. Confounding by collider stratification (conditioning
 on a common
-effect)}\label{confounding-by-collider-stratification-conditioning-on-a-common-effect}}
+effect)}\label{confounding-by-collider-stratification-conditioning-on-a-common-effect}
 
 Conditioning on a common effect occurs when a variable \(L\) is affected
 by the treatment \(A\) and an outcome \(Y\).
@@ -1265,7 +1223,9 @@ Gods and social complexity without a causal association.\footnote{To
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-1.pdf}
 
 }
 
@@ -1273,11 +1233,10 @@ Gods and social complexity without a causal association.\footnote{To
 collider. The dashed red path indicates bias from the open backdoor path
 from A to Y.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{advice-attend-to-the-temporal-order-of-all-measured-variables-1}{%
 \subsubsection{Advice: attend to the temporal order of all measured
-variables}\label{advice-attend-to-the-temporal-order-of-all-measured-variables-1}}
+variables}\label{advice-attend-to-the-temporal-order-of-all-measured-variables-1}
 
 To address the problem of conditioning on a common effect, we should
 \emph{generally} ensure that:
@@ -1304,19 +1263,20 @@ beliefs, with measurements of social complexity before and after.
 Moreover, the cultures in the dataset would need to be independent of
 each other.\footnote{The independence of cultural units was at the
   centre of the study of comparative urban archaeology from the late
-  19th (\protect\hyperlink{ref-decoulanges1903}{De Coulanges 1903})
-  through the late 20th century
-  (\protect\hyperlink{ref-wheatley1971}{Wheatley 1971}). Despite
-  attention to this problem in recent work (e.g.
-  (\protect\hyperlink{ref-watts2016}{Watts \emph{et al.} 2016})), there
-  is arguably a greater head-room for understanding the need for
+  19th (\citeproc{ref-decoulanges1903}{De Coulanges 1903}) through the
+  late 20th century (\citeproc{ref-wheatley1971}{Wheatley 1971}).
+  Despite attention to this problem in recent work (e.g.
+  (\citeproc{ref-watts2016}{Watts \emph{et al.} 2016})), there is
+  arguably a greater head-room for understanding the need for
   conditional independence of cultures in recent cultural evolutionary
   studies. Again, attending to the temporal order of events is
   essential.}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-solution-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-common-effect-solution-1.pdf}
 
 }
 
@@ -1327,12 +1287,11 @@ confounders measured before the exposure, and that we must likewise
 measure the exposure before the outcome, with data collected
 repeatitively on the same units.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{m-bias-conditioning-on-a-collider-that-occurs-before-the-exposure-may-introduce-bias}{%
 \subsubsection{M-bias: conditioning on a collider that occurs before the
 exposure may introduce
-bias}\label{m-bias-conditioning-on-a-collider-that-occurs-before-the-exposure-may-introduce-bias}}
+bias}\label{m-bias-conditioning-on-a-collider-that-occurs-before-the-exposure-may-introduce-bias}
 
 Typically, indicators for confounders should be included only if they
 are known to be measured before their exposures - with notable
@@ -1350,15 +1309,17 @@ not a common cause of \(A\) and \(Y\), or the effect of a shared common
 cause, \(L\) should not be included in a causal model.
 Figure~\ref{fig-m-bias} presents a case in which \(A \coprod Y(a)\) but
 \(A \cancel{\coprod} Y(a)| L\). M-bias is another example of collider
-stratification bias (see: (\protect\hyperlink{ref-cole2010}{Cole
-\emph{et al.} 2010})).\footnote{Note, when we draw a chronologically
-  ordered path from left to right the M shape for which ``M-bias'' takes
-  its name changes to an E shape We shall avoid proliferating jargon and
-  retain the term ``M bias.''}
+stratification bias (see: (\citeproc{ref-cole2010}{Cole \emph{et al.}
+2010})).\footnote{Note, when we draw a chronologically ordered path from
+  left to right the M shape for which ``M-bias'' takes its name changes
+  to an E shape We shall avoid proliferating jargon and retain the term
+  ``M bias.''}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-m-bias-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-m-bias-1.pdf}
 
 }
 
@@ -1369,12 +1330,11 @@ L. The solution: do not condition on L. The graph makes it evident that
 conditioning on variables measured before the exposure is not sufficient
 to prevent confounding.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{advice-adopt-the-modified-disjunctive-cause-criterion-for-confounding-control}{%
 \subsubsection{Advice: adopt the modified disjunctive cause criterion
 for confounding
-control}\label{advice-adopt-the-modified-disjunctive-cause-criterion-for-confounding-control}}
+control}\label{advice-adopt-the-modified-disjunctive-cause-criterion-for-confounding-control}
 
 Again, the modified disjunctive cause criterion will satisfy the
 backdoor criterion in all cases and reduce bias where this criterion
@@ -1394,9 +1354,8 @@ cannot be fully satisfied:
   exposure but does not influence the outcome independently, except
   through the exposure. Exclude any instrumental variable that is not a
   proxy for an unmeasured confounder from the confounder set (see:
-  VanderWeele \emph{et al.}
-  (\protect\hyperlink{ref-vanderweele2020}{2020}) page 441,
-  (\protect\hyperlink{ref-vanderweele2019}{VanderWeele 2019}))
+  VanderWeele \emph{et al.} (\citeproc{ref-vanderweele2020}{2020}) page
+  441, (\citeproc{ref-vanderweele2019}{VanderWeele 2019}))
 \end{enumerate}
 
 Of course, the difficulty is in determining which variables belong to a
@@ -1404,8 +1363,7 @@ confounder set. Specialist knowledge can facilitate this task. However,
 the data alone typically do not settle this question. (For exceptions
 see: bulbulia2021).
 
-\hypertarget{mediator-bias}{%
-\subsubsection{3. Mediator bias}\label{mediator-bias}}
+\subsubsection{3. Mediator bias}\label{mediator-bias}
 
 Conditioning on a mediator -- a variable that lies along the causal
 pathway between the treatment and the outcome -- can distort the total
@@ -1442,7 +1400,9 @@ presented in Figure~\ref{fig-dag-descendent}.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-1.pdf}
 
 }
 
@@ -1450,11 +1410,10 @@ presented in Figure~\ref{fig-dag-descendent}.
 mediator. The dashed black arrow indicates bias arising from partially
 blocking the path between A and Y.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{advice-attend-to-the-temporal-order-of-all-measured-variables-2}{%
 \subsubsection{Advice: attend to the temporal order of all measured
-variables}\label{advice-attend-to-the-temporal-order-of-all-measured-variables-2}}
+variables}\label{advice-attend-to-the-temporal-order-of-all-measured-variables-2}
 
 To mitigate the issue of mediator bias, particularly when focusing on
 total effects, we should generally avoid conditioning on a mediator. We
@@ -1471,7 +1430,9 @@ variables.\footnote{Note that if \(L\) were associated with \(Y\) and
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-solution-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediator-solution-1.pdf}
 
 }
 
@@ -1480,11 +1441,10 @@ a mediator. The implication: by ensuring temporal order in data
 collection we diminish the probabilty of mistaking an effect of an
 exposure for its confounder.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{conditioning-on-a-descendant-man-induce-confounding}{%
 \subsubsection{4. Conditioning on a descendant man induce
-confounding}\label{conditioning-on-a-descendant-man-induce-confounding}}
+confounding}\label{conditioning-on-a-descendant-man-induce-confounding}
 
 Say \(L\) is a cause of \(L^\prime\). According to Markov factorisation,
 if we condition on \(L\), we partially condition on \(L^\prime\).
@@ -1499,7 +1459,9 @@ between \(A\) and \(Y\) through the path \(A \to L^\prime \to U \to Y\).
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-1.pdf}
 
 }
 
@@ -1508,7 +1470,7 @@ dashed path illustrates the introduction of bias by conditioning on the
 descendant of a confounder that is affected by the exposure, thus
 opening of a backdoor path between the exposure, A, and the outcome, Y.}
 
-\end{figure}
+\end{figure}%
 
 Again, the advice is evident from the chronology of the graph: we should
 measure the (\(L^\prime\)) before the exposure (\(A\)). This strategy is
@@ -1516,7 +1478,9 @@ presented in Figure~\ref{fig-dag-descendent-solution}.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-solution-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-solution-1.pdf}
 
 }
 
@@ -1526,11 +1490,10 @@ measurements. By ensuring that L occurs before A confounding is
 controlled. The figure also makes it evident that L need not affect Y to
 be a confounder (i.e.~a member of a confounder set).}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{conditioning-on-a-descendent-may-reduce-confounding}{%
 \subsubsection{5. Conditioning on a descendent may reduce
-confounding}\label{conditioning-on-a-descendent-may-reduce-confounding}}
+confounding}\label{conditioning-on-a-descendent-may-reduce-confounding}
 
 Next consider how we may use a post-treatment descendent to reduce bias.
 Suppose an unmeasured confounder \(U\) affects \(A\), \(Y\), and
@@ -1540,9 +1503,9 @@ Figure~\ref{fig-dag-descendent-solution-2}. If we deploy the modified
 disjunctive cause criterion for confounding control, we would ``include
 as a covariate any proxy for an unmeasured variable that is a common
 cause of both the exposure and the outcome''
-(\protect\hyperlink{ref-vanderweele2019}{VanderWeele 2019}). We discover
-that although \(L^\prime\) may occur \emph{after} the exposure, and
-indeed occur \emph{after} the outcome, we may condition on it to reduce
+(\citeproc{ref-vanderweele2019}{VanderWeele 2019}). We discover that
+although \(L^\prime\) may occur \emph{after} the exposure, and indeed
+occur \emph{after} the outcome, we may condition on it to reduce
 confounding because it is a proxy for an unmeasured common cause of the
 exposure and the confounder. \textbf{This example shows that employing a
 rule that requires us to condition only on pre-exposure (and indeed
@@ -1553,7 +1516,9 @@ rules about confounding control. Each problem must be approached anew.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-solution-2-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-descendent-solution-2-1.pdf}
 
 }
 
@@ -1571,12 +1536,11 @@ measured by an indicator late that is expressed (and may be measured)
 later in life. Adjusting for such an indicator would constitute an
 example of post-outcome confounding control.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{case-1-causal-interaction-and-causal-effect-modification-do-not-draw-non-linear-relationships-such-as-interactions}{%
 \subsubsection{Case 1: Causal Interaction and Causal Effect
 Modification: do not draw non-linear relationships such as
-interactions}\label{case-1-causal-interaction-and-causal-effect-modification-do-not-draw-non-linear-relationships-such-as-interactions}}
+interactions}\label{case-1-causal-interaction-and-causal-effect-modification-do-not-draw-non-linear-relationships-such-as-interactions}
 
 Interactions are scientific interesting because we often wish to
 understand for whom effects occur. How shall we depict interactions on a
@@ -1599,9 +1563,8 @@ scientific research. However, we must distinguish between concepts of
 causal interaction and concepts of causal effect modification because
 these concepts address different causal questions.
 
-\hypertarget{causal-interaction-as-a-double-exposure}{%
 \paragraph{\texorpdfstring{\textbf{Causal interaction as a double
-exposure}}{Causal interaction as a double exposure}}\label{causal-interaction-as-a-double-exposure}}
+exposure}}{Causal interaction as a double exposure}}\label{causal-interaction-as-a-double-exposure}
 
 Causal interaction refers to the combined or separate (or non-existent)
 effect of two exposures. Evidence for interaction on a given scale is
@@ -1628,12 +1591,11 @@ sub-additive effect. If the value is virtually zero, there is no
 reliable evidence for interaction.\footnote{Note that causal effects of
   interactions often differ when measured on the ratio scale. This
   discrepency can have significant policy implications, see:
-  (\protect\hyperlink{ref-vanderweele2014}{VanderWeele and Knol 2014}).
-  Although beyond the scope of this article, when evaluating evidence
-  for causality we must clarify the measure of effect in which we are
-  interested (\protect\hyperlink{ref-hernuxe1n2004}{Hernán \emph{et al.}
-  2004}; \protect\hyperlink{ref-tripepi2007}{Tripepi \emph{et al.}
-  2007}).}
+  (\citeproc{ref-vanderweele2014}{VanderWeele and Knol 2014}). Although
+  beyond the scope of this article, when evaluating evidence for
+  causality we must clarify the measure of effect in which we are
+  interested (\citeproc{ref-hernuxe1n2004}{Hernán \emph{et al.} 2004};
+  \citeproc{ref-tripepi2007}{Tripepi \emph{et al.} 2007}).}
 
 Remember that causal diagrams are non-parametric. They do not directly
 represent interactions. They are tools for addressing the identification
@@ -1644,7 +1606,9 @@ interaction's nature or scale.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-interaction-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-interaction-1.pdf}
 
 }
 
@@ -1659,12 +1623,11 @@ variable upon which intervention can occur, then the interaction is
 better conceived as effect modification (see next figure). Important: do
 not attempt to draw a path into another path.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{causal-effect-modification-under-a-single-exposure}{%
 \paragraph{\texorpdfstring{\textbf{Causal effect modification under a
 single
-exposure}}{Causal effect modification under a single exposure}}\label{causal-effect-modification-under-a-single-exposure}}
+exposure}}{Causal effect modification under a single exposure}}\label{causal-effect-modification-under-a-single-exposure}
 
 With the analysis of effect modification, we aim to understand how an
 exposure's effect varies, if at all, across levels of another variable,
@@ -1722,13 +1685,14 @@ visualisations to represent effect modification. Instead, we should draw
 two edges into the exposure. This is depicted in
 Figure~\ref{fig-dag-effect-modfication}.\footnote{For distinctions
   within varieties of effect modification relevant for strategies of
-  confounding controul see
-  (\protect\hyperlink{ref-vanderweele2007}{VanderWeele and Robins
-  2007b}).}
+  confounding controul see (\citeproc{ref-vanderweele2007}{VanderWeele
+  and Robins 2007b}).}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-effect-modfication-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-effect-modfication-1.pdf}
 
 }
 
@@ -1737,12 +1701,11 @@ effect-modification in which there are no confounders. G is an effect
 modifier of A on Y. We draw a box around G to indicate we are
 conditioning on this variable.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{case-2-causal-mediation-causal-diagrams-reveal-the-inadequacy-of-standard-approaches}{%
 \subsubsection{Case 2: Causal mediation: causal diagrams reveal the
 inadequacy of standard
-approaches}\label{case-2-causal-mediation-causal-diagrams-reveal-the-inadequacy-of-standard-approaches}}
+approaches}\label{case-2-causal-mediation-causal-diagrams-reveal-the-inadequacy-of-standard-approaches}
 
 The conditions necessary for causal mediation are stringent. I present
 these conditions in the chronologically ordered causal diagram shown in
@@ -1842,11 +1805,13 @@ We have now considered how chronologically ordered causal diagrams
 elucidate the conditions necessary for causal mediation
 analysis.\footnote{An excellent resource both for understanding causal
   interaction and causal mediation is
-  (\protect\hyperlink{ref-vanderweele2015}{VanderWeele 2015}).}
+  (\citeproc{ref-vanderweele2015}{VanderWeele 2015}).}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediation-assumptions-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-mediation-assumptions-1.pdf}
 
 }
 
@@ -1876,12 +1841,11 @@ understood. For example structural equation models and multi-level
 models cannot address causal questions in the presence of such feedback,
 but these models remain widely favoured.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{case-3-confounder-treatment-feedback-longitudinal-growth-is-not-causation}{%
 \subsubsection{Case 3: Confounder-Treatment Feedback: Longitudinal
 ``growth'' is not
-causation}\label{case-3-confounder-treatment-feedback-longitudinal-growth-is-not-causation}}
+causation}\label{case-3-confounder-treatment-feedback-longitudinal-growth-is-not-causation}
 
 In our discussion of causal mediation, we consider how the effects of
 two sequential exposures may combine to affect an outcome. We can
@@ -1906,14 +1870,13 @@ regimes:''
   \textbf{Treat once second (Y(0,1))}
 \end{enumerate}
 
-\hypertarget{tbl-regimes}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1351}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.5405}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3243}}@{}}
-\caption{\label{tbl-regimes}Table describes four fixed treatment regimes
-and six causal contrasts in time series data where the exposure may
-vary.}\tabularnewline
+\caption{Table describes four fixed treatment regimes and six causal
+contrasts in time series data where the exposure may
+vary.}\label{tbl-regimes}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 Type
@@ -2024,7 +1987,9 @@ condition on a confounder that is affected by the prior exposure, we are
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-9-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-9-1.pdf}
 
 }
 
@@ -2037,7 +2002,7 @@ multiple exposures. Instead, at best, we may obtain controlled effects
 using G-methods. Multi-level models will not eliminate bias (!).
 However, outside of epidemiology, G-methods are presently rarely used.}
 
-\end{figure}
+\end{figure}%
 
 A similar problem arises when a time-varying exposure and time-varying
 confounder share a common cause. This problem arises even without the
@@ -2046,7 +2011,9 @@ Figure~\ref{fig-dag-time-vary-common-cause-A1-l1}.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-time-vary-common-cause-A1-l1-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-time-vary-common-cause-A1-l1-1.pdf}
 
 }
 
@@ -2059,7 +2026,7 @@ infer causal effects in such scenarios by using regression-based
 methods. In this setting, to address causal questions, we require
 G-methods.}
 
-\end{figure}
+\end{figure}%
 
 The potential for confounding increases when the exposure \(A_{t1}\)
 affects the outcome \(Y_{t4}\). For example, since \(L_{t2}\) is on the
@@ -2070,34 +2037,33 @@ open backdoor path from \(L_{t2}\) to \(Y_{t4}\), it becomes necessary
 to condition on \(L_{t2}\). Paradoxically, we have just stated that
 conditioning should be avoided! This broader dilemma of
 exposure-confounder feedback is thoroughly explored in
-(\protect\hyperlink{ref-hernuxe1n2023}{Hernán and Robins 2023}).
-Treatment confounder feedback is particularly challenging for
-evolutionary human science, yet its handling is beyond the capabilities
-of conventional regression-based methods, including multi-level models
-(\protect\hyperlink{ref-hernuxe1n2006}{Hernán and Robins 2006};
-\protect\hyperlink{ref-robins1986}{Robins 1986};
-\protect\hyperlink{ref-robins1999}{Robins \emph{et al.} 1999}). As
-mentioned previously, G-methods encompass models appropriate for
-investigating the causal effects of both time-fixed and time-varying
-exposures (\protect\hyperlink{ref-chatton2020}{Chatton \emph{et al.}
-2020}; \protect\hyperlink{ref-hernuxe1n2006}{Hernán and Robins 2006};
-\protect\hyperlink{ref-naimi2017}{Naimi \emph{et al.} 2017}). Despite
-significant recent advancements in the health sciences
-(\protect\hyperlink{ref-breskin2020}{Breskin \emph{et al.} 2020};
-\protect\hyperlink{ref-duxedaz2021}{Díaz \emph{et al.} 2021};
-\protect\hyperlink{ref-williams2021}{Williams and Díaz 2021}), these
-methods have not been widely embraced in the field of human evolutionary
-sciences \footnote{It is worth noting that the identification of
-  controlled effect estimates can be enhanced by graphical methods such
-  as ``Single World Intervention Graphs'' (SWIGs), which represent
-  counterfactual outcomes in the diagrams. However, SWIGs are more
-  accurately considered templates rather than causal diagrams in their
-  general form. The use of SWIGs extends beyond the scope of this
-  tutorial. For more information, see Richardson and Robins
-  (\protect\hyperlink{ref-richardson2013}{2013}).}
+(\citeproc{ref-hernuxe1n2023}{Hernán and Robins 2023}). Treatment
+confounder feedback is particularly challenging for evolutionary human
+science, yet its handling is beyond the capabilities of conventional
+regression-based methods, including multi-level models
+(\citeproc{ref-hernuxe1n2006}{Hernán and Robins 2006};
+\citeproc{ref-robins1986}{Robins 1986}; \citeproc{ref-robins1999}{Robins
+\emph{et al.} 1999}). As mentioned previously, G-methods encompass
+models appropriate for investigating the causal effects of both
+time-fixed and time-varying exposures
+(\citeproc{ref-chatton2020}{Chatton \emph{et al.} 2020};
+\citeproc{ref-hernuxe1n2006}{Hernán and Robins 2006};
+\citeproc{ref-naimi2017}{Naimi \emph{et al.} 2017}). Despite significant
+recent advancements in the health sciences
+(\citeproc{ref-breskin2020}{Breskin \emph{et al.} 2020};
+\citeproc{ref-duxedaz2021}{Díaz \emph{et al.} 2021};
+\citeproc{ref-williams2021}{Williams and Díaz 2021}), these methods have
+not been widely embraced in the field of human evolutionary sciences
+\footnote{It is worth noting that the identification of controlled
+  effect estimates can be enhanced by graphical methods such as ``Single
+  World Intervention Graphs'' (SWIGs), which represent counterfactual
+  outcomes in the diagrams. However, SWIGs are more accurately
+  considered templates rather than causal diagrams in their general
+  form. The use of SWIGs extends beyond the scope of this tutorial. For
+  more information, see Richardson and Robins
+  (\citeproc{ref-richardson2013}{2013}).}
 
-\hypertarget{summary-part-2}{%
-\subsubsection{Summary Part 2}\label{summary-part-2}}
+\subsubsection{Summary Part 2}\label{summary-part-2}
 
 To consistently estimate causal effects, we must contrast the world as
 it has been with the world as it might have been. For many questions in
@@ -2112,10 +2078,9 @@ protect us from blowing up our causal inferences. More constructively,
 temporal order in the graph focusses attention on imperatives for data
 collection, offering guidance and hope.
 
-\hypertarget{part-3.-an-application-of-chronologically-ordered-causal-diagrams-to-confounding-bias-for-data-collection-the-three-wave-panel-design}{%
 \subsection{Part 3. An Application of Chronologically Ordered Causal
 Diagrams to Confounding Bias for Data Collection: The Three-Wave Panel
-Design}\label{part-3.-an-application-of-chronologically-ordered-causal-diagrams-to-confounding-bias-for-data-collection-the-three-wave-panel-design}}
+Design}\label{part-3.-an-application-of-chronologically-ordered-causal-diagrams-to-confounding-bias-for-data-collection-the-three-wave-panel-design}
 
 In the following discussion, the focus is on the application of
 temporally ordered causal diagrams as tools to guide researchers in
@@ -2133,10 +2098,9 @@ interest is a rare event (such as religious conversion) such short
 measurement interval separating baseline from exposure might not be
 feasible.
 
-\hypertarget{step-1.-defining-the-exposure-measure-it-at-wave-0-and-wave-1}{%
 \subsubsection{Step 1. Defining the exposure: measure it at wave 0 and
 wave
-1}\label{step-1.-defining-the-exposure-measure-it-at-wave-0-and-wave-1}}
+1}\label{step-1.-defining-the-exposure-measure-it-at-wave-0-and-wave-1}
 
 We begin with a well-defined exposure. Unless our study objectives
 revolve around causal interactions, causal mediation, or sequential
@@ -2150,9 +2114,9 @@ comparison of attendance versus non-attendance? Are we distinguishing
 between weekly and monthly attendees? Perhaps, we are interested in a
 different facet altogether? Visualising a hypothetical experiment - even
 when it is not feasible - reveals the need for a precise intervention
-specification (\protect\hyperlink{ref-bulbulia2022}{Bulbulia 2022};
-\protect\hyperlink{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016};
-\protect\hyperlink{ref-hernuxe1n2022}{Hernán \emph{et al.} 2022b}).
+specification (\citeproc{ref-bulbulia2022}{Bulbulia 2022};
+\citeproc{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016};
+\citeproc{ref-hernuxe1n2022}{Hernán \emph{et al.} 2022b}).
 
 The exposure is measured at wave 1 (i.e.~+1 interval from baseline, wave
 0). When estimating causal effects, the inclusion of exposure at the
@@ -2165,9 +2129,9 @@ baseline carries three critical advantages:
   \textbf{Incidence effect interpretation}: incorporating the baseline
   exposure allows us to interpret the effect of exposure measured
   post-baseline as an incidence effect, not a prevalence effect
-  (\protect\hyperlink{ref-vanderweele2020}{VanderWeele \emph{et al.}
-  2020}). This means we can interpret the effect as the change due to a
-  new occurrence (incidence) of the exposure, rather than the overall
+  (\citeproc{ref-vanderweele2020}{VanderWeele \emph{et al.} 2020}). This
+  means we can interpret the effect as the change due to a new
+  occurrence (incidence) of the exposure, rather than the overall
   presence (prevalence) of the exposure. For example, in a study
   investigating the impact of weekly religious service attendance,
   including the baseline measure of attendance enables us to understand
@@ -2186,8 +2150,7 @@ baseline carries three critical advantages:
   not properly accounted for. For instance, personal attributes such as
   unmeasured childhood religiosity could confound the association
   between religious service attendance and outcomes if not considered
-  (\protect\hyperlink{ref-vantongeren2020}{Van Tongeren \emph{et al.}
-  2020}).
+  (\citeproc{ref-vantongeren2020}{Van Tongeren \emph{et al.} 2020}).
 \item
   \textbf{Better evaluation of sample adequacy for rare exposures}:
   Particularly when the exposure is uncommon, such as switching from no
@@ -2211,10 +2174,9 @@ baseline carries three critical advantages:
   changes within the population studied.
 \end{enumerate}
 
-\hypertarget{step-2.-specify-the-outcomes-measure-them-at-wave-0-and-wave-2}{%
 \subsubsection{Step 2. Specify the Outcome(s): Measure them at wave 0
 and wave
-2}\label{step-2.-specify-the-outcomes-measure-them-at-wave-0-and-wave-2}}
+2}\label{step-2.-specify-the-outcomes-measure-them-at-wave-0-and-wave-2}
 
 After defining the exposure, we need to determine a well-defined outcome
 (or potentially several outcomes). For instance, we might be interested
@@ -2253,7 +2215,7 @@ Measuring the outcome at baseline offers several advantages:
   collected.\footnote{Given the typical uncertainty about having
     accounted for all unmeasured confounding, it is prudent for
     researchers to conduct sensitivity analyses
-    (\protect\hyperlink{ref-shi2021}{Shi \emph{et al.} 2021}).}
+    (\citeproc{ref-shi2021}{Shi \emph{et al.} 2021}).}
 \end{enumerate}
 
 \begin{enumerate}
@@ -2270,7 +2232,9 @@ Measuring the outcome at baseline offers several advantages:
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-6-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-6-1.pdf}
 
 }
 
@@ -2284,12 +2248,11 @@ confounders before the exposure and the exposure before the outcome, we
 reduce the potential for reverse causation, collider stratification, and
 mediator biases.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{step-3.-identify-observable-common-causes-of-the-exposure-and-the-outcome}{%
 \subsubsection{Step 3. Identify observable common causes of the exposure
 and the
-outcome}\label{step-3.-identify-observable-common-causes-of-the-exposure-and-the-outcome}}
+outcome}\label{step-3.-identify-observable-common-causes-of-the-exposure-and-the-outcome}
 
 Next, we should identify all the potential confounders that, when
 adjusted for, can eliminate any non-causal association between the
@@ -2305,10 +2268,9 @@ causal diagrams are meant to be human read. We should not include these
 additional nodes when including a single node will suffice for clarity
 and thoroughness.
 
-\hypertarget{step-4.-gather-data-for-proxy-variables-of-unmeasured-common-causes-at-the-baseline-wave}{%
 \subsubsection{Step 4. Gather data for proxy variables of unmeasured
 common causes at the baseline
-wave}\label{step-4.-gather-data-for-proxy-variables-of-unmeasured-common-causes-at-the-baseline-wave}}
+wave}\label{step-4.-gather-data-for-proxy-variables-of-unmeasured-common-causes-at-the-baseline-wave}
 
 Recall Figure~\ref{fig-dag-descendent-solution-2}: if any unmeasured
 confounders influence both the exposure and outcome, but we lack direct
@@ -2316,10 +2278,9 @@ measurements, we should make efforts to include proxies for them. Again,
 even if this strategy cannot eliminate all bias from unmeasured
 confounding, it will generally reduce bias.
 
-\hypertarget{step-5.-state-the-target-population-for-whom-the-causal-question-applies}{%
 \subsubsection{Step 5. State the target population for whom the causal
 question
-applies}\label{step-5.-state-the-target-population-for-whom-the-causal-question-applies}}
+applies}\label{step-5.-state-the-target-population-for-whom-the-causal-question-applies}
 
 We need to define for whom our causal inference applies. For this
 purpose, it is helpful to distinguish the concepts of source population
@@ -2377,9 +2338,8 @@ specialist understanding. In Section 4, we will return to the concepts
 of generalisability and transportability as they pertain to sample
 selection.
 
-\hypertarget{step-6.-retention-is-a-mission-critical-imperative}{%
 \subsubsection{Step 6. Retention is a mission-critical
-imperative}\label{step-6.-retention-is-a-mission-critical-imperative}}
+imperative}\label{step-6.-retention-is-a-mission-critical-imperative}
 
 for reasons we clarify in Part 4, sample retention is a mission-critical
 imperative because panel attrition opens novel pathways for bias.
@@ -2391,19 +2351,17 @@ science) is critical for causal human science. These strategies must be
 developed with specialist knowledge of the population under study and
 the participation and insights of the people being studied.
 
-\hypertarget{summary-of-part-3}{%
-\subsubsection{Summary of Part 3}\label{summary-of-part-3}}
+\subsubsection{Summary of Part 3}\label{summary-of-part-3}
 
 The strengths of three-wave panel designs for confounding control are
 demonstrated in Figure~\ref{fig-dag-6}. This diagram, adapted from
-VanderWeele \emph{et al.}
-(\protect\hyperlink{ref-vanderweele2020}{2020}), highlights the
-potential for residual unmeasured confounding even after incorporating
-baseline measurements for both the exposure and outcome, represented by
-the blue-dotted line. As such, for an unmeasured confounder \(U\) to
-exert bias on the association between the exposure \(A_{t1}\) and
-outcome \(Y_{t2}\), it must do so independently of the baseline
-measurements of the exposure \(A_{t0}\) and outcome \(Y_{t0}\).
+VanderWeele \emph{et al.} (\citeproc{ref-vanderweele2020}{2020}),
+highlights the potential for residual unmeasured confounding even after
+incorporating baseline measurements for both the exposure and outcome,
+represented by the blue-dotted line. As such, for an unmeasured
+confounder \(U\) to exert bias on the association between the exposure
+\(A_{t1}\) and outcome \(Y_{t2}\), it must do so independently of the
+baseline measurements of the exposure \(A_{t0}\) and outcome \(Y_{t0}\).
 
 The diagram also reveals the advantage of three-wave panel designs for
 addressing reverse causation. This control is achieved by adjusting for
@@ -2423,30 +2381,27 @@ outcome.
 Figure~\ref{fig-dag-6} emphasises the crucial role of understanding both
 confounding and confoundign control before collecting repeated measures
 data. Nonetheless, VanderWeele \emph{et al.}
-(\protect\hyperlink{ref-vanderweele2020}{2020})'s causal diagram does
-not account for potential selection bias from panel attrition. In Part
-4, we will develop this causal diagram to clarify such challenges.
+(\citeproc{ref-vanderweele2020}{2020})'s causal diagram does not account
+for potential selection bias from panel attrition. In Part 4, we will
+develop this causal diagram to clarify such challenges.
 
-\hypertarget{part-4.-applications-of-chronologically-ordered-causal-diagrams-for-understanding-selection-bias}{%
 \subsection{Part 4. Applications of Chronologically Ordered Causal
 Diagrams for Understanding Selection
-Bias}\label{part-4.-applications-of-chronologically-ordered-causal-diagrams-for-understanding-selection-bias}}
+Bias}\label{part-4.-applications-of-chronologically-ordered-causal-diagrams-for-understanding-selection-bias}
 
-\hypertarget{introduction-to-selection-bias}{%
 \subsubsection{Introduction to selection
-bias}\label{introduction-to-selection-bias}}
+bias}\label{introduction-to-selection-bias}
 
 Selection bias arises when the parameter of interest in the target
 population and the equivalent parameter in a subset of this population
 used for analysis, the source population, do not align
-(\protect\hyperlink{ref-hernuxe1n2017}{Hernán 2017}). To understand
-selection bias, consider the following topology of confounding developed
-by Suzuki and colleagues (\protect\hyperlink{ref-suzuki2016}{Suzuki
-\emph{et al.} 2016}; \protect\hyperlink{ref-suzuki2020}{Suzuki \emph{et
-al.} 2020}; \protect\hyperlink{ref-suzuki2014}{Suzuki and Yamamoto
-2014}).\footnote{This typology builds on VanderWeele's work
-  (\protect\hyperlink{ref-vanderweele2012}{VanderWeele and Hernán
-  2012}).}
+(\citeproc{ref-hernuxe1n2017}{Hernán 2017}). To understand selection
+bias, consider the following topology of confounding developed by Suzuki
+and colleagues (\citeproc{ref-suzuki2016}{Suzuki \emph{et al.} 2016};
+\citeproc{ref-suzuki2020}{Suzuki \emph{et al.} 2020};
+\citeproc{ref-suzuki2014}{Suzuki and Yamamoto 2014}).\footnote{This
+  typology builds on VanderWeele's work
+  (\citeproc{ref-vanderweele2012}{VanderWeele and Hernán 2012}).}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -2492,17 +2447,19 @@ disassociation in the population. We might say that selection leads to
 ``confounding in distribution for confounding in expectation.'' More
 simply, we might say that despite selection, the null effect in the
 source population is not biased for the target population
-(\protect\hyperlink{ref-greenland1977}{Greenland 1977};
-\protect\hyperlink{ref-hernuxe1n2004}{Hernán \emph{et al.}
-2004}).\footnote{Note we use the term ``null effect'' as a structural
-  concept. There are no statistical ``null effects.'' Instead there are
-  reliable or unreliable statistical effect estimates according to some
-  measure of evidence and arbitrary threshold
-  (\protect\hyperlink{ref-bulbulia2021}{Bulbulia \emph{et al.} 2021}).}
+(\citeproc{ref-greenland1977}{Greenland 1977};
+\citeproc{ref-hernuxe1n2004}{Hernán \emph{et al.} 2004}).\footnote{Note
+  we use the term ``null effect'' as a structural concept. There are no
+  statistical ``null effects.'' Instead there are reliable or unreliable
+  statistical effect estimates according to some measure of evidence and
+  arbitrary threshold (\citeproc{ref-bulbulia2021}{Bulbulia \emph{et
+  al.} 2021}).}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-selection-under-the-null-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-selection-under-the-null-1.pdf}
 
 }
 
@@ -2511,26 +2468,27 @@ An unmeasured variable affects the selection for the study and the
 outcome. D-separation is preserved; there is no confounding in
 expectation.}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-selection-off-the-null} presents a different scenario in
 which there is selection bias for the population parameter: the
 association in the population of selected individuals differs from the
 causal association for the target population. Hernán calls this scenario
-``selection bias off the null''
-(\protect\hyperlink{ref-hernuxe1n2017}{Hernán 2017}). Lu et al.~call
-this scenario ``type 2 selection bias''
-(\protect\hyperlink{ref-lu2022}{Lu \emph{et al.} 2022}). Such bias
-occurs because the selection into the study occurs on an effect modifier
-for the effect of the exposure on the outcome. Note that although the
-causal effect of \(A\to Y\) is unbiased for the exposed and unexposed in
-the source population, the effect estimate does not generalise to the
-exposed and unexposed in the target population:
+``selection bias off the null'' (\citeproc{ref-hernuxe1n2017}{Hernán
+2017}). Lu et al.~call this scenario ``type 2 selection bias''
+(\citeproc{ref-lu2022}{Lu \emph{et al.} 2022}). Such bias occurs because
+the selection into the study occurs on an effect modifier for the effect
+of the exposure on the outcome. Note that although the causal effect of
+\(A\to Y\) is unbiased for the exposed and unexposed in the source
+population, the effect estimate does not generalise to the exposed and
+unexposed in the target population:
 \(PATE \cancel{\approx} ATE_{\text{selected sample}}\).
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-selection-off-the-null-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-selection-off-the-null-1.pdf}
 
 }
 
@@ -2540,34 +2498,33 @@ Here the exposure affects the outcome. Selection, then, is an effect
 modifier. Although d-separation is preserved, there is `confounding in
 distribution'.}
 
-\end{figure}
+\end{figure}%
 
 There has been considerable technical research investigating the
 conditions under which causal estimates for a target population may be
 identified when the source population differs from the target population
-(see: (\protect\hyperlink{ref-lu2022}{Lu \emph{et al.} 2022})). There
-has also been considerable technical research investigating the
-conditions in which results might transport to populations that
-systematically differ from the source population (see:
-(\protect\hyperlink{ref-bareinboim2022}{Bareinboim \emph{et al.} 2022};
-\protect\hyperlink{ref-deffner2022}{Deffner \emph{et al.} 2022};
-\protect\hyperlink{ref-pearl2022}{Pearl and Bareinboim 2022})).To
-address type 2 selection bias in a three-wave pane, we must accurately
-measure and adjust for a sufficient set of covariates that affect
-selection \(\framebox{S}\) (\protect\hyperlink{ref-lu2022}{Lu \emph{et
-al.} 2022}). Moreover, when drawing causal diagrams, it is vital to
-present confounding as it is assumed to exist in the target population,
-not the source population (see Suzuki \emph{et al.}
-(\protect\hyperlink{ref-suzuki2020}{2020}), especially their examples in
-the supplement.) Practically speaking, where census data are available
-these should be collected for constructing survey weights (see:
-(\protect\hyperlink{ref-pishgar2021}{Pishgar \emph{et al.} 2021};
-\protect\hyperlink{ref-stuart2015}{Stuart \emph{et al.} 2015})).
+(see: (\citeproc{ref-lu2022}{Lu \emph{et al.} 2022})). There has also
+been considerable technical research investigating the conditions in
+which results might transport to populations that systematically differ
+from the source population (see:
+(\citeproc{ref-bareinboim2022}{Bareinboim \emph{et al.} 2022};
+\citeproc{ref-deffner2022}{Deffner \emph{et al.} 2022};
+\citeproc{ref-pearl2022}{Pearl and Bareinboim 2022})).To address type 2
+selection bias in a three-wave pane, we must accurately measure and
+adjust for a sufficient set of covariates that affect selection
+\(\framebox{S}\) (\citeproc{ref-lu2022}{Lu \emph{et al.} 2022}).
+Moreover, when drawing causal diagrams, it is vital to present
+confounding as it is assumed to exist in the target population, not the
+source population (see Suzuki \emph{et al.}
+(\citeproc{ref-suzuki2020}{2020}), especially their examples in the
+supplement.) Practically speaking, where census data are available these
+should be collected for constructing survey weights (see:
+(\citeproc{ref-pishgar2021}{Pishgar \emph{et al.} 2021};
+\citeproc{ref-stuart2015}{Stuart \emph{et al.} 2015})).
 
-\hypertarget{selection-bias-in-which-both-the-exposure-and-outcome-affect-censoring}{%
 \subsubsection{Selection bias in which both the exposure and outcome
 affect
-censoring}\label{selection-bias-in-which-both-the-exposure-and-outcome-affect-censoring}}
+censoring}\label{selection-bias-in-which-both-the-exposure-and-outcome-affect-censoring}
 
 In panel designs, there is additionally a constant threat of selection
 occurring \emph{after} enrolment into the study. We next put
@@ -2588,8 +2545,8 @@ directed measurement error, described in in
 Figure~\ref{fig-dag-indep-d-effect}. Either way, restricting the
 analysis to the retained sample introduces bias in the causal effect
 estimate by opening a backdoor path from the exposure to the outcome. Lu
-\emph{et al.} (\protect\hyperlink{ref-lu2022}{2022}) call this form of
-bias: ``type 1 selection bias'' and distinguishes between scenarios when
+\emph{et al.} (\citeproc{ref-lu2022}{2022}) call this form of bias:
+``type 1 selection bias'' and distinguishes between scenarios when
 causal effects that generalise are recoverable (type 1a selection bias)
 and not recoverable (type 1b selection bias). In both cases, we must
 develop strategies to evaluate whether we may recover from the subset of
@@ -2598,7 +2555,9 @@ that generalise to a clearly defined target population.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-5-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-5-1.pdf}
 
 }
 
@@ -2606,11 +2565,10 @@ that generalise to a clearly defined target population.
 affect attrition. Dashed red path shows correlation of A an Y in the
 absence of causation.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{selection-bias-in-a-three-wave-panel}{%
 \subsubsection{Selection bias in a three-wave
-panel}\label{selection-bias-in-a-three-wave-panel}}
+panel}\label{selection-bias-in-a-three-wave-panel}
 
 Figure~\ref{fig-dag-8} shows selection bias manifest in a three-wave
 panel design when loss-to-follow-up results in a systematic disparity
@@ -2623,7 +2581,9 @@ associations not evident in the source population at baseline.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-1.pdf}
 
 }
 
@@ -2631,12 +2591,11 @@ associations not evident in the source population at baseline.
 with selection bias. Red paths reveal the open backdoor path induced by
 conditioning on the selected sample.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{unmeasured-confounder-affects-outcome-and-variable-that-affects-attrition}{%
 \subsubsection{Unmeasured confounder affects outcome and variable that
 affects
-attrition}\label{unmeasured-confounder-affects-outcome-and-variable-that-affects-attrition}}
+attrition}\label{unmeasured-confounder-affects-outcome-and-variable-that-affects-attrition}
 
 Figure~\ref{fig-dag-8-2} presents another problem of selection bias in a
 three-wave panel design. This diagram shows how an unmeasured
@@ -2655,7 +2614,9 @@ assessment of bias.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-2-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-8-2-1.pdf}
 
 }
 
@@ -2667,12 +2628,11 @@ sample is a descendent of L\_t2. Hence selection is a form of
 conditioning on L\_t2. Such conditioning opens a biasing path, indicated
 by the red-dashed lines.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{why-regression-adjustment-fails-to-address-select-bias-from-attrition}{%
 \subsubsection{Why regression adjustment fails to address select bias
 from
-attrition}\label{why-regression-adjustment-fails-to-address-select-bias-from-attrition}}
+attrition}\label{why-regression-adjustment-fails-to-address-select-bias-from-attrition}
 
 We cannot address selection bias from attrition using regression.
 Shifting the example from culture to health, suppose that sicker
@@ -2702,31 +2662,29 @@ What to do?
   values based on our data, assuming that the missingness is random
   conditional on baseline measures. Note that this missingness should be
   predicted separately within strata of the exposed and unexposed in the
-  previous wave (see: (\protect\hyperlink{ref-westreich2015}{Westreich
-  \emph{et al.} 2015}; \protect\hyperlink{ref-zhang2023}{Zhang \emph{et
-  al.} 2023})). Imputation methods typically assume that data are
-  missing conditional on a correctly specified model and information
-  obtained at baseline.
+  previous wave (see: (\citeproc{ref-westreich2015}{Westreich \emph{et
+  al.} 2015}; \citeproc{ref-zhang2023}{Zhang \emph{et al.} 2023})).
+  Imputation methods typically assume that data are missing conditional
+  on a correctly specified model and information obtained at baseline.
 \item
   \textbf{Inverse probability weighting with censoring weights}: this
   requires weighting the values of each participant in the study by the
   inverse of the probability of their observed pattern of missingness
-  (censoring weights)(\protect\hyperlink{ref-cole2008}{Cole and Hernán
-  2008}; \protect\hyperlink{ref-leyrat2019}{Leyrat \emph{et al.} 2019}).
-  In this approach, the sample gives more weight to under-represented
+  (censoring weights)(\citeproc{ref-cole2008}{Cole and Hernán 2008};
+  \citeproc{ref-leyrat2019}{Leyrat \emph{et al.} 2019}). In this
+  approach, the sample gives more weight to under-represented
   individuals owing to drop-out. As with missing data imputation, IPW
   with censoring weights also assumes that we can correctly model the
-  missingness from the observed data
-  (\protect\hyperlink{ref-shiba2021}{Shiba and Kawahara 2021}).
+  missingness from the observed data (\citeproc{ref-shiba2021}{Shiba and
+  Kawahara 2021}).
 \item
   \textbf{Sensitivity analysis}: as with nearly all causal inference, we
   should quantitatively evaluate how sensitive results are to different
   assumptions and methods for handling censoring events
-  (\protect\hyperlink{ref-shi2021}{Shi \emph{et al.} 2021}).
+  (\citeproc{ref-shi2021}{Shi \emph{et al.} 2021}).
 \end{enumerate}
 
-\hypertarget{summary-of-part-4}{%
-\subsubsection{Summary of Part 4}\label{summary-of-part-4}}
+\subsubsection{Summary of Part 4}\label{summary-of-part-4}
 
 In this segment, we considered how causal diagrams may elucidate
 confounding from selection bias. Selection bias can occur independently
@@ -2750,15 +2708,15 @@ the following strategies at design:
   \textbf{Accurate measurement and adjustment for covariates}: in
   developing a three-wave panel, addressing type 2 selection bias
   requires precise measurements and appropriate confounding control
-  (\protect\hyperlink{ref-lu2022}{Lu \emph{et al.} 2022}). Failing to
-  measure and adjust for these covariates may lead to erroneous
-  conclusions about the relationship between exposure and outcome.
+  (\citeproc{ref-lu2022}{Lu \emph{et al.} 2022}). Failing to measure and
+  adjust for these covariates may lead to erroneous conclusions about
+  the relationship between exposure and outcome.
 \item
   \textbf{Construct causal diagrams for the target population}: causal
   diagrams should represent confounding as it exists in the target
   population (see Suzuki \emph{et al.}
-  (\protect\hyperlink{ref-suzuki2020}{2020}), especially the
-  supplementary materials provided).
+  (\citeproc{ref-suzuki2020}{2020}), especially the supplementary
+  materials provided).
 \item
   \textbf{Maximise retention}: Rention is the mission-critical
   objective. In a nutshell the advise: ``Retention, Retention,
@@ -2782,10 +2740,9 @@ analysis:
   results to methods for handling attrition.
 \end{enumerate}
 
-\hypertarget{part-5.-applications-of-chronologically-ordered-causal-diagrams-for-understanding-confounding-bias}{%
 \subsection{Part 5. Applications of Chronologically Ordered Causal
 Diagrams for Understanding Confounding
-Bias}\label{part-5.-applications-of-chronologically-ordered-causal-diagrams-for-understanding-confounding-bias}}
+Bias}\label{part-5.-applications-of-chronologically-ordered-causal-diagrams-for-understanding-confounding-bias}
 
 In this section, we apply causal diagrams to illustrate the distinct
 pathway of bias introduced by measurement error and discuss its
@@ -2795,9 +2752,8 @@ outcome, and selection bias, which arises from the participant selection
 process or dropout rate, measurement bias arises from how variables are
 measured or categorised.
 
-\hypertarget{measurement-error-in-the-confounder}{%
 \subsubsection{Measurement Error in the
-Confounder}\label{measurement-error-in-the-confounder}}
+Confounder}\label{measurement-error-in-the-confounder}
 
 Measurement error pervades all research. Figure
 Figure~\ref{fig-dag-measure-confounder} demonstrates that even
@@ -2811,12 +2767,14 @@ essential to evaluate the potential impact of this threat.\footnote{A
   association that an unmeasured confounder would require with both the
   exposure and outcome, beyond the measured confounders, to negate the
   observed exposure-outcome association (refer to the R package
-  \texttt{EValue}:(\protect\hyperlink{ref-mathur2018}{Mathur \emph{et
-  al.} 2018})).}
+  \texttt{EValue}:(\citeproc{ref-mathur2018}{Mathur \emph{et al.}
+  2018})).}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-measure-confounder-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-measure-confounder-1.pdf}
 
 }
 
@@ -2827,7 +2785,7 @@ opens between A - L - Y, highlighted in red. Given the ubiquity of
 measurement error, it is imperative to minimise such errors and conduct
 sensitivity analyses to assess the risk of unmeasured confounding.}
 
-\end{figure}
+\end{figure}%
 
 Acknowledging the pervasiveness of measurement error and its potential
 influence on our research, we will further explore how structural
@@ -2835,17 +2793,16 @@ approaches to understanding measurement error clarify the nature of the
 problem, methods for adjustment, and the unceasing need for sensitivity
 analyses.
 
-Following Hernán and Cole (\protect\hyperlink{ref-hernuxe1n2009}{2009}),
-we define structural concepts of measurement error and utilise causal
+Following Hernán and Cole (\citeproc{ref-hernuxe1n2009}{2009}), we
+define structural concepts of measurement error and utilise causal
 diagrams to understand how such errors may bias causal effect estimates.
 A deeper understanding of these concepts (developed in
-(\protect\hyperlink{ref-vanderweele2012}{VanderWeele and Hernán 2012}),
-will equip us to better manage and account for assessing bias from
+(\citeproc{ref-vanderweele2012}{VanderWeele and Hernán 2012}), will
+equip us to better manage and account for assessing bias from
 measurement error in causal inference.
 
-\hypertarget{uncorrelated-non-differential-undirected-measurement-error}{%
 \subsubsection{1. Uncorrelated non-differential (undirected) measurement
-error}\label{uncorrelated-non-differential-undirected-measurement-error}}
+error}\label{uncorrelated-non-differential-undirected-measurement-error}
 
 As shown in Figure~\ref{fig-dag-uu-null}, an uncorrelated
 non-differential measurement error occurs when the errors in the
@@ -2873,7 +2830,9 @@ inference even though they do not induce structural bias under the null.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-uu-null-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-uu-null-1.pdf}
 
 }
 
@@ -2881,11 +2840,10 @@ inference even though they do not induce structural bias under the null.
 measurement error does not bias estimates under the null, however may
 attenuate true effects.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{uncorrelated-differential-directed-measurement-error}{%
 \subsubsection{2. Uncorrelated differential (directed) measurement
-error}\label{uncorrelated-differential-directed-measurement-error}}
+error}\label{uncorrelated-differential-directed-measurement-error}
 
 As shown in Figure~\ref{fig-dag-indep-d-effect}, uncorrelated
 differential (or directed) measurement error occurs when the measurement
@@ -2916,7 +2874,9 @@ measurement bias.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-indep-d-effect-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-indep-d-effect-1.pdf}
 
 }
 
@@ -2924,11 +2884,10 @@ measurement bias.
 (uncorrelated) measurement error can bias effect estimates under the
 null. This bias is indicated by the red paths.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{correlated-non-differential-undirected-measurement-error}{%
 \subsubsection{3. Correlated non-differential (undirected) measurement
-error}\label{correlated-non-differential-undirected-measurement-error}}
+error}\label{correlated-non-differential-undirected-measurement-error}
 
 As shown, Figure~\ref{fig-dag-dep-u-effect} correlated non-differential
 (undirected) measurement error occurs when the errors in measuring both
@@ -2948,7 +2907,9 @@ indicated by the red path in Figure~\ref{fig-dag-dep-u-effect}.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-dep-u-effect-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-dep-u-effect-1.pdf}
 
 }
 
@@ -2956,11 +2917,10 @@ indicated by the red path in Figure~\ref{fig-dag-dep-u-effect}.
 error can distort causal effect estimates under the null, indicated by
 the red path.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{correlated-differential-directed-measurement-error}{%
 \subsubsection{4. Correlated differential (directed) measurement
-error}\label{correlated-differential-directed-measurement-error}}
+error}\label{correlated-differential-directed-measurement-error}
 
 Correlated differential (directed) measurement error occurs when the
 measurement errors are related independently of the exposure, and the
@@ -3040,7 +3000,7 @@ errors are both constant over time and undirected. If the errors vary
 over time or if the the exposure affects the error of the outcome then
 controlling for baseline measurements of the exposure and outcome will
 be inadequate for confounding control (see:
-(\protect\hyperlink{ref-keogh2020}{Keogh \emph{et al.} 2020})).
+(\citeproc{ref-keogh2020}{Keogh \emph{et al.} 2020})).
 
 Consider a scenario where individuals attending religious services at
 wave 1 acquire greater social desirability bias, affecting their
@@ -3064,7 +3024,9 @@ reporting do not differ by exposure status.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-d-d-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-d-d-1.pdf}
 
 }
 
@@ -3076,13 +3038,12 @@ dynamics open pathways for bias, indicated by the red paths. Sructural
 sources of bias in measurement error must be evaluated, and sensitivity
 analyses should be preformed to assess threats to causal inference.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{using-time-ordered-causal-diagrams-to-understand-threats-of-correlated-measurement-error-for-causal-inference-comparative-cultural-research}{%
 \subsubsection{Using time-ordered causal diagrams to understand threats
 of correlated measurement error for causal inference comparative
 cultural
-research}\label{using-time-ordered-causal-diagrams-to-understand-threats-of-correlated-measurement-error-for-causal-inference-comparative-cultural-research}}
+research}\label{using-time-ordered-causal-diagrams-to-understand-threats-of-correlated-measurement-error-for-causal-inference-comparative-cultural-research}
 
 To comprehend the structural features that might undermine causal
 inferences in comparative cultural research, consider a simplified
@@ -3123,7 +3084,9 @@ fit the specific situation at hand.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-dep-u-effect-selection-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-dep-u-effect-selection-1.pdf}
 
 }
 
@@ -3137,13 +3100,12 @@ population cannot coherently map onto any coherent targe population.
 Reserachers will often do better to restrict generalisations within
 cultures.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{using-time-ordered-causal-diagrams-to-understand-how-post-outcome-adjustment-may-diminish-threats-of-directed-measurement-error-in-cultural-evolutionary-research}{%
 \subsubsection{Using time-ordered causal diagrams to understand how
 post-outcome adjustment may diminish threats of directed measurement
 error in cultural evolutionary
-research}\label{using-time-ordered-causal-diagrams-to-understand-how-post-outcome-adjustment-may-diminish-threats-of-directed-measurement-error-in-cultural-evolutionary-research}}
+research}\label{using-time-ordered-causal-diagrams-to-understand-how-post-outcome-adjustment-may-diminish-threats-of-directed-measurement-error-in-cultural-evolutionary-research}
 
 Figure Figure~\ref{fig-dag-measure-selection-0} illustrates a situation
 often encountered in the evolutionary science of historical cultures.
@@ -3160,7 +3122,9 @@ evolutionary human science because history written by victors.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-measure-selection-0-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-measure-selection-0-1.pdf}
 
 }
 
@@ -3170,7 +3134,7 @@ independent, their measured counterparts, A' and Y', are not. The
 systematic error introduced by changes in Y opens a biasing path,
 signified in red.}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-dag-measure-selection} exposes the structure of bias
 where post-outcome adjustment is necessary to mitigate or eliminate
@@ -3186,7 +3150,9 @@ accuracy of our causal effect estimates.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-measure-selection-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-measure-selection-1.pdf}
 
 }
 
@@ -3195,12 +3161,11 @@ refined measurements attenuate bias. By recovering measures undistorted
 by past outcomes, we attenuate the directed measurement error. We
 repesent this scenario on the graph by removing the path from Y to UA.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{using-time-ordered-causal-diagrams-to-clarify-the-structural-assumptions-of-latent-factor-models}{%
 \subsubsection{Using time-ordered causal diagrams to clarify the
 structural assumptions of latent factor
-models}\label{using-time-ordered-causal-diagrams-to-clarify-the-structural-assumptions-of-latent-factor-models}}
+models}\label{using-time-ordered-causal-diagrams-to-clarify-the-structural-assumptions-of-latent-factor-models}
 
 Human evolutionary scientists who wish to collect time-series data by
 measuring individuals over time in panel designs may consider using
@@ -3210,24 +3175,25 @@ traditional psychometric theory. However, classical psychometric theory
 developed without the benefit of causal approaches. VanderWeele argues
 that difficulties surface when assessing the causal assumptions of
 formative and reflective latent factor models
-(\protect\hyperlink{ref-vanderweele2022}{VanderWeele 2022}). These
-models are based on statistical formulations. However, the causal
-inferences they embody cannot be determined solely by statistical
-models. This discussion will concentrate on reflective models, although
-the concerns raised are equally applicable to formative models, and I
-refer interested readers to:
-(\protect\hyperlink{ref-vanderweele2022}{VanderWeele 2022}).\footnote{In
-  formative models, observed variables are perceived to generate the
-  latent variable. This latent variable is assumed to be a composite of
-  the observed variables, \(X_i\), mathematically expressed as
-  \(\eta = \sum_i\lambda_i X_i\). The structural assumption is that a
-  single latent variable causally influences the observed variables.
-  This structural is depicted in
+(\citeproc{ref-vanderweele2022}{VanderWeele 2022}). These models are
+based on statistical formulations. However, the causal inferences they
+embody cannot be determined solely by statistical models. This
+discussion will concentrate on reflective models, although the concerns
+raised are equally applicable to formative models, and I refer
+interested readers to: (\citeproc{ref-vanderweele2022}{VanderWeele
+2022}).\footnote{In formative models, observed variables are perceived
+  to generate the latent variable. This latent variable is assumed to be
+  a composite of the observed variables, \(X_i\), mathematically
+  expressed as \(\eta = \sum_i\lambda_i X_i\). The structural assumption
+  is that a single latent variable causally influences the observed
+  variables. This structural is depicted in
   Figure~\ref{fig-structural-assumptions-reflective-model}.}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-structural-assumptions-reflective-model-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-structural-assumptions-reflective-model-1.pdf}
 
 }
 
@@ -3239,7 +3205,7 @@ independent effects of the indicators on outcomes. Blue line indicates
 assumed causal path. The figure is adapted from VanderWeele: doi:
 10.1097/EDE.0000000000001434}
 
-\end{figure}
+\end{figure}%
 
 However, VanderWeele notes that the statistical model is consistent with
 multiple causal models. The presumption that a univariate latent reality
@@ -3252,35 +3218,36 @@ measures. Indeed, for specific widely used measures, the assumption of a
 univariate reality is so strong that they make testable assumptions.
 VanderWeele and Vansteeland test the empirical examination assumptions
 of widely used depression scales and find the assumptions fail
-(\protect\hyperlink{ref-vanderweele2022b}{VanderWeele and Vansteelandt
-2022}). Although we cannot generally determine which structural models
-are accurate, the data rule out the univariate model in case that
-VanderWeele and Vansteelandt
-(\protect\hyperlink{ref-vanderweele2022b}{2022}) examine.
+(\citeproc{ref-vanderweele2022b}{VanderWeele and Vansteelandt 2022}).
+Although we cannot generally determine which structural models are
+accurate, the data rule out the univariate model in the case that
+VanderWeele and Vansteelandt (\citeproc{ref-vanderweele2022b}{2022})
+examine.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag_multivariate_reality_again-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag_multivariate_reality_again-1.pdf}
 
 }
 
-\caption{\label{fig-dag_multivariate_reality_again}Vanderweele's example
-of an alternative structural model that is consistent with the
+\caption{\label{fig-dag\_multivariate\_reality\_again}Vanderweele's
+example of an alternative structural model that is consistent with the
 statistical model that underpins reflective construct models. Here, a
 multivariate reality gives rise to the indicators from which we draw our
 measures. Additional paths from the latent factors to the outcome are
 presented in Blue. (Confounders are omited for simplicity). This figure
 is adapted from VanderWeele: doi: 10.1097/EDE.0000000000001434}
 
-\end{figure}
+\end{figure}%
 
 Although the assumptions of a univariate reality that underlie
 traditional latent factor models are not generally credible, VanderWeele
 suggests that construct measures can still find application in research.
 On VanderWeele's view, the key to salvaging latent factor models is to
 extend the theory of causal inference under multiple interventions to
-latent factor models
-(\protect\hyperlink{ref-vanderweele2022}{VanderWeele 2022}).
+latent factor models (\citeproc{ref-vanderweele2022}{VanderWeele 2022}).
 Specifically, by framing measured variables as functions of indicators
 that may map onto a complex multivariate underlying reality, we may
 approach them as coarsened indicators for that reality. As long as the
@@ -3301,10 +3268,9 @@ develop a related concern arising from threats to confounding arising
 from directed measurement error from the potentially multivariate
 reality that underlies construct measures.
 
-\hypertarget{causal-diagrams-highlight-biases-arising-from-measurement-errors-within-constructs}{%
 \subsubsection{Causal diagrams highlight biases arising from measurement
 errors within
-constructs}\label{causal-diagrams-highlight-biases-arising-from-measurement-errors-within-constructs}}
+constructs}\label{causal-diagrams-highlight-biases-arising-from-measurement-errors-within-constructs}
 
 Consider a three-wave panel with the assumption that no unmeasured
 confounding exists. We represent the exposure \(A\) as a function of
@@ -3356,7 +3322,9 @@ the specifics of each research question within its context.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-coarsen-measurement-error-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag-coarsen-measurement-error-1.pdf}
 
 }
 
@@ -3367,10 +3335,9 @@ multi-item factor models. Their popularity notwithstanding, a careful
 consideration of measurement bias underscores the necessity to tailor
 measurement strategies to specific research contexts.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{summary-part-5}{%
-\subsubsection{Summary Part 5}\label{summary-part-5}}
+\subsubsection{Summary Part 5}\label{summary-part-5}
 
 Part 5 describes sources of bias from measurement error in repeated
 measures data designs. We examined four types of measurement error bias,
@@ -3383,22 +3350,20 @@ we obtain may be biased indicators of causation.
 
 Although there are methods for adjusting for measurement error that not
 covered in this article, a host of useful resources exists, including
-the works of Keogh \emph{et al.}
-(\protect\hyperlink{ref-keogh2020}{2020}) Buonaccorsi
-(\protect\hyperlink{ref-buonaccorsi2010}{2010}) Shi \emph{et al.}
-(\protect\hyperlink{ref-shi2021}{2021}) Valeri \emph{et al.}
-(\protect\hyperlink{ref-valeri2014}{2014}) and Bandalos
-(\protect\hyperlink{ref-bandalos2018}{2018}). Additionally, specialist
-knowledge may often indicate the direction of influence in the
-associations of measurement error terms, whether positive or negative
-(\protect\hyperlink{ref-suzuki2020}{Suzuki \emph{et al.} 2020};
-\protect\hyperlink{ref-vanderweele2007a}{VanderWeele and Robins 2007a},
-\protect\hyperlink{ref-vanderweele2010}{2010}). In such cases,
-researchers may sometimes employ causal diagrams with signed paths to
-improve causal inferences
-(\protect\hyperlink{ref-vanderweele2012}{VanderWeele and Hernán 2012}).
-Such methods take us beyond the purpose of this section, which has been
-to review how causal diagrams can be used to reveal sources of
+the works of Keogh \emph{et al.} (\citeproc{ref-keogh2020}{2020})
+Buonaccorsi (\citeproc{ref-buonaccorsi2010}{2010}) Shi \emph{et al.}
+(\citeproc{ref-shi2021}{2021}) Valeri \emph{et al.}
+(\citeproc{ref-valeri2014}{2014}) and Bandalos
+(\citeproc{ref-bandalos2018}{2018}). Additionally, specialist knowledge
+may often indicate the direction of influence in the associations of
+measurement error terms, whether positive or negative
+(\citeproc{ref-suzuki2020}{Suzuki \emph{et al.} 2020};
+\citeproc{ref-vanderweele2007a}{VanderWeele and Robins 2007a},
+\citeproc{ref-vanderweele2010}{2010}). In such cases, researchers may
+sometimes employ causal diagrams with signed paths to improve causal
+inferences (\citeproc{ref-vanderweele2012}{VanderWeele and Hernán
+2012}). Such methods take us beyond the purpose of this section, which
+has been to review how causal diagrams can be used to reveal sources of
 counfounding from measurement bias, how measurement bias arises in
 settings of comparative cultural research, why the latent factor models
 employed to validate construct measures make exceptionally strong causal
@@ -3409,8 +3374,7 @@ the need to devise and use measurement tools that minimise error. And
 they empower us to reject blind adherence to psychometric tradition by
 contemplating causality in the context of a specific question at hand.
 
-\hypertarget{conclusions}{%
-\subsection{Conclusions}\label{conclusions}}
+\subsection{Conclusions}\label{conclusions}
 
 Chronologically ordered causal diagrams provide significant enrichment
 to causal inference endeavours. Their utility is not limited to just
@@ -3420,8 +3384,7 @@ that support causal inference, causal diagrams can substantially enhance
 the pursuit of accurate and robust causal understanding. Here is a
 summary of advice.
 
-\hypertarget{tips}{%
-\subsubsection{Tips}\label{tips}}
+\subsubsection{Tips}\label{tips}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -3464,7 +3427,7 @@ summary of advice.
   Apply a two-step strategy: Initially, isolate confounding bias and
   selection bias, then contemplate measurement bias using a secondary
   graph. This approach will foster clarity.\footnote{See Hernán and
-    Robins (\protect\hyperlink{ref-hernuxe1n2023}{2023}) p.125}
+    Robins (\citeproc{ref-hernuxe1n2023}{2023}) p.125}
 \end{enumerate}
 
 \begin{enumerate}
@@ -3480,8 +3443,7 @@ summary of advice.
   atlases.
 \end{enumerate}
 
-\hypertarget{pitfalls}{%
-\subsubsection{Pitfalls}\label{pitfalls}}
+\subsubsection{Pitfalls}\label{pitfalls}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -3532,18 +3494,18 @@ summary of advice.
     effectiveness notwithstanding, many evolutionary human scientists
     have not adopted them.{[}\^{}g-methods-cites{]} For good
     introductions see: Hernán and Robins
-    (\protect\hyperlink{ref-hernuxe1n2023}{2023}) Díaz \emph{et al.}
-    (\protect\hyperlink{ref-duxedaz2021}{2021}) VanderWeele
-    (\protect\hyperlink{ref-vanderweele2015}{2015}) Hoffman \emph{et
-    al.} (\protect\hyperlink{ref-hoffman2022}{2022}) Hoffman \emph{et
-    al.} (\protect\hyperlink{ref-hoffman2023}{2023}) Chatton \emph{et
-    al.} (\protect\hyperlink{ref-chatton2020}{2020}) Shiba and Kawahara
-    (\protect\hyperlink{ref-shiba2021}{2021}) Sjölander
-    (\protect\hyperlink{ref-sjuxf6lander2016}{2016}) Breskin \emph{et
-    al.} (\protect\hyperlink{ref-breskin2020}{2020}) VanderWeele
-    (\protect\hyperlink{ref-vanderweele2009a}{2009b}) Vansteelandt
-    \emph{et al.} (\protect\hyperlink{ref-vansteelandt2012}{2012}) Shi
-    \emph{et al.} (\protect\hyperlink{ref-shi2021}{2021}).)}
+    (\citeproc{ref-hernuxe1n2023}{2023}) Díaz \emph{et al.}
+    (\citeproc{ref-duxedaz2021}{2021}) VanderWeele
+    (\citeproc{ref-vanderweele2015}{2015}) Hoffman \emph{et al.}
+    (\citeproc{ref-hoffman2022}{2022}) Hoffman \emph{et al.}
+    (\citeproc{ref-hoffman2023}{2023}) Chatton \emph{et al.}
+    (\citeproc{ref-chatton2020}{2020}) Shiba and Kawahara
+    (\citeproc{ref-shiba2021}{2021}) Sjölander
+    (\citeproc{ref-sjuxf6lander2016}{2016}) Breskin \emph{et al.}
+    (\citeproc{ref-breskin2020}{2020}) VanderWeele
+    (\citeproc{ref-vanderweele2009a}{2009b}) Vansteelandt \emph{et al.}
+    (\citeproc{ref-vansteelandt2012}{2012}) Shi \emph{et al.}
+    (\citeproc{ref-shi2021}{2021}).)}
 \end{enumerate}
 
 \begin{enumerate}
@@ -3556,8 +3518,7 @@ summary of advice.
   sense for the three-wave panel design described in Part 3.
 \end{enumerate}
 
-\hypertarget{concluding-remarks}{%
-\subsubsection{Concluding remarks}\label{concluding-remarks}}
+\subsubsection{Concluding remarks}\label{concluding-remarks}
 
 In causal analysis, the passage of time is not just another variable but
 the stage on which the entire causal play unfolds. Time-ordered causal
@@ -3579,560 +3540,20 @@ rich, time-resolved data sets.
 
 \newpage{}
 
-\hypertarget{funding}{%
-\subsection{Funding}\label{funding}}
+\subsection{Funding}\label{funding}
 
 This work is supported by a grant from the Templeton Religion Trust
 (TRT0418). JB received support from the Max Planck Institute for the
 Science of Human History. The funders had no role in preparing the
 manuscript or the decision to publish it.
 
-\hypertarget{references}{%
-\subsection{References}\label{references}}
-
-\hypertarget{refs}{}
-\begin{CSLReferences}{1}{0}
-\leavevmode\vadjust pre{\hypertarget{ref-bandalos2018}{}}%
-Bandalos, DL (2018) \emph{Measurement theory and applications for the
-social sciences}, Guilford Publications.
-
-\leavevmode\vadjust pre{\hypertarget{ref-bareinboim2022}{}}%
-Bareinboim, E, Tian, J, and Pearl, J (2022) Recovering from selection
-bias in causal and statistical inference. In, 1st edn, Vol. 36, New
-York, NY, USA: Association for Computing Machinery, 433450. Retrieved
-from \url{https://doi.org/10.1145/3501714.3501740}
-
-\leavevmode\vadjust pre{\hypertarget{ref-barrett2021}{}}%
-Barrett, M (2021) \emph{Ggdag: Analyze and create elegant directed
-acyclic graphs}. Retrieved from
-\url{https://CRAN.R-project.org/package=ggdag}
-
-\leavevmode\vadjust pre{\hypertarget{ref-basten2013}{}}%
-Basten, C, and Betz, F (2013) Beyond work ethic: Religion, individual,
-and political preferences. \emph{American Economic Journal: Economic
-Policy}, \textbf{5}(3), 67--91.
-doi:\href{https://doi.org/10.1257/pol.5.3.67}{10.1257/pol.5.3.67}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-becker2016}{}}%
-Becker, SO, Pfaff, S, and Rubin, J (2016) Causes and consequences of the
-protestant reformation. \emph{Explorations in Economic History},
-\textbf{62}, 125.
-
-\leavevmode\vadjust pre{\hypertarget{ref-breskin2020}{}}%
-Breskin, A, Edmonds, A, Cole, SR, \ldots{} Adimora, AA (2020)
-G-computation for policy-relevant effects of interventions on
-time-to-event outcomes. \emph{International Journal of Epidemiology},
-\textbf{49}(6), 2021--2029.
-doi:\href{https://doi.org/10.1093/ije/dyaa156}{10.1093/ije/dyaa156}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-bulbulia2022}{}}%
-Bulbulia, JA (2022) A workflow for causal inference in cross-cultural
-psychology. \emph{Religion, Brain \& Behavior}, \textbf{0}(0), 1--16.
-doi:\href{https://doi.org/10.1080/2153599X.2022.2070245}{10.1080/2153599X.2022.2070245}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-bulbulia2021}{}}%
-Bulbulia, J, Schjoedt, U, Shaver, JH, Sosis, R, and Wildman, WJ (2021)
-Causal inference in regression: Advice to authors. \emph{Religion, Brain
-\& Behavior}, \textbf{11}(4), 353360.
-
-\leavevmode\vadjust pre{\hypertarget{ref-buonaccorsi2010}{}}%
-Buonaccorsi, JP (2010) \emph{Measurement error: Models, methods, and
-applications}, New York: Chapman; Hall/CRC.
-doi:\href{https://doi.org/10.1201/9781420066586}{10.1201/9781420066586}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-chatton2020}{}}%
-Chatton, A, Le Borgne, F, Leyrat, C, \ldots{} Foucher, Y (2020)
-G-computation, propensity score-based methods, and targeted maximum
-likelihood estimator for causal inference with different covariates
-sets: a comparative simulation study. \emph{Scientific Reports},
-\textbf{10}(1), 9219.
-doi:\href{https://doi.org/10.1038/s41598-020-65917-x}{10.1038/s41598-020-65917-x}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-cinelli2022}{}}%
-Cinelli, C, Forney, A, and Pearl, J (2022) A Crash Course in Good and
-Bad Controls. \emph{Sociological Methods \& Research},
-00491241221099552.
-doi:\href{https://doi.org/10.1177/00491241221099552}{10.1177/00491241221099552}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-cole2008}{}}%
-Cole, SR, and Hernán, MA (2008) Constructing inverse probability weights
-for marginal structural models. \emph{American Journal of Epidemiology},
-\textbf{168}(6), 656--664.
-doi:\href{https://doi.org/10.1093/aje/kwn164}{10.1093/aje/kwn164}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-cole2010}{}}%
-Cole, SR, Platt, RW, Schisterman, EF, \ldots{} Poole, C (2010)
-Illustrating bias due to conditioning on a collider. \emph{International
-Journal of Epidemiology}, \textbf{39}(2), 417--420.
-doi:\href{https://doi.org/10.1093/ije/dyp334}{10.1093/ije/dyp334}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-collinson2007}{}}%
-Collinson, P (2007) \emph{The reformation: A history}, Vol. 19, Modern
-Library.
-
-\leavevmode\vadjust pre{\hypertarget{ref-decoulanges1903}{}}%
-De Coulanges, F (1903) \emph{La cité antique: Étude sur le culte, le
-droit, les institutions de la grèce et de rome}, Hachette.
-
-\leavevmode\vadjust pre{\hypertarget{ref-deffner2022}{}}%
-Deffner, D, Rohrer, JM, and McElreath, R (2022) A Causal Framework for
-Cross-Cultural Generalizability. \emph{Advances in Methods and Practices
-in Psychological Science}, \textbf{5}(3), 25152459221106366.
-doi:\href{https://doi.org/10.1177/25152459221106366}{10.1177/25152459221106366}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-duxedaz2021}{}}%
-Díaz, I, Williams, N, Hoffman, KL, and Schenck, EJ (2021) Non-parametric
-causal effects based on longitudinal modified treatment policies.
-\emph{Journal of the American Statistical Association}.
-doi:\href{https://doi.org/10.1080/01621459.2021.1955691}{10.1080/01621459.2021.1955691}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-edwards2015}{}}%
-Edwards, JK, Cole, SR, and Westreich, D (2015) All your data are always
-missing: Incorporating bias due to measurement error into the potential
-outcomes framework. \emph{International Journal of Epidemiology},
-\textbf{44}(4), 14521459.
-
-\leavevmode\vadjust pre{\hypertarget{ref-gawthrop1984}{}}%
-Gawthrop, R, and Strauss, G (1984) Protestantism and literacy in early
-modern germany. \emph{Past \& Present}, (104), 3155.
-
-\leavevmode\vadjust pre{\hypertarget{ref-greenland1977}{}}%
-Greenland, S (1977) Response and follow-up bias in cohort studies.
-\emph{American Journal of Epidemiology}, \textbf{106}(3), 184--187.
-doi:\href{https://doi.org/10.1093/oxfordjournals.aje.a112451}{10.1093/oxfordjournals.aje.a112451}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-greenland1999}{}}%
-Greenland, S, Pearl, J, and Robins, JM (1999) Causal diagrams for
-epidemiologic research. \emph{Epidemiology (Cambridge, Mass.)},
-\textbf{10}(1), 37--48.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2017}{}}%
-Hernán, MA (2017) Invited commentary: Selection bias without colliders
-\textbar{} american journal of epidemiology \textbar{} oxford academic.
-\emph{American Journal of Epidemiology}, \textbf{185}(11), 10481050.
-Retrieved from \url{https://doi.org/10.1093/aje/kwx077}
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2008}{}}%
-Hernán, MA, Alonso, A, Logan, R, \ldots{} Robins, JM (2008)
-Observational studies analyzed like randomized experiments: An
-application to postmenopausal hormone therapy and coronary heart
-disease. \emph{Epidemiology}, \textbf{19}(6), 766.
-doi:\href{https://doi.org/10.1097/EDE.0b013e3181875e61}{10.1097/EDE.0b013e3181875e61}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2009}{}}%
-Hernán, MA, and Cole, SR (2009) Invited commentary: Causal diagrams and
-measurement bias. \emph{American Journal of Epidemiology},
-\textbf{170}(8), 959--962.
-doi:\href{https://doi.org/10.1093/aje/kwp293}{10.1093/aje/kwp293}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2004}{}}%
-Hernán, MA, Hernández-Díaz, S, and Robins, JM (2004) A structural
-approach to selection bias. \emph{Epidemiology}, \textbf{15}(5),
-615--625. Retrieved from \url{https://www.jstor.org/stable/20485961}
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2006}{}}%
-Hernán, MA, and Robins, JM (2006) Estimating causal effects from
-epidemiological data. \emph{Journal of Epidemiology \& Community
-Health}, \textbf{60}(7), 578586.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2023}{}}%
-Hernán, MA, and Robins, JM (2023) \emph{Causal inference: What if?},
-Taylor \& Francis. Retrieved from
-\url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2016}{}}%
-Hernán, MA, Sauer, BC, Hernández-Díaz, S, Platt, R, and Shrier, I (2016)
-Specifying a target trial prevents immortal time bias and other
-self-inflicted injuries in observational analyses. \emph{Journal of
-Clinical Epidemiology}, \textbf{79}, 7075.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2022}{}}%
-Hernán, MA, Wang, W, and Leaf, DE (2022b) Target trial emulation: A
-framework for causal inference from observational data. \emph{JAMA},
-\textbf{328}(24), 2446--2447.
-doi:\href{https://doi.org/10.1001/jama.2022.21383}{10.1001/jama.2022.21383}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2022a}{}}%
-Hernán, MA, Wang, W, and Leaf, DE (2022a) Target trial emulation: A
-framework for causal inference from observational data. \emph{JAMA},
-\textbf{328}(24), 2446--2447.
-doi:\href{https://doi.org/10.1001/jama.2022.21383}{10.1001/jama.2022.21383}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hoffman2023}{}}%
-Hoffman, KL, Salazar-Barreto, D, Rudolph, KE, and Díaz, I (2023)
-Introducing longitudinal modified treatment policies: A unified
-framework for studying complex exposures.
-doi:\href{https://doi.org/10.48550/arXiv.2304.09460}{10.48550/arXiv.2304.09460}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hoffman2022}{}}%
-Hoffman, KL, Schenck, EJ, Satlin, MJ, \ldots{} Díaz, I (2022) Comparison
-of a target trial emulation framework vs cox regression to estimate the
-association of corticosteroids with COVID-19 mortality. \emph{JAMA
-Network Open}, \textbf{5}(10), e2234425.
-doi:\href{https://doi.org/10.1001/jamanetworkopen.2022.34425}{10.1001/jamanetworkopen.2022.34425}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-holland1986}{}}%
-Holland, PW (1986) Statistics and causal inference. \emph{Journal of the
-American Statistical Association}, \textbf{81}(396), 945960.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hume1902}{}}%
-Hume, D (1902) \emph{Enquiries Concerning the Human Understanding: And
-Concerning the Principles of Morals}, Clarendon Press.
-
-\leavevmode\vadjust pre{\hypertarget{ref-keogh2020}{}}%
-Keogh, RH, Shaw, PA, Gustafson, P, \ldots{} Freedman, LS (2020) STRATOS
-guidance document on measurement error and misclassification of
-variables in observational epidemiology: Part 1{\textemdash}Basic theory
-and simple methods of adjustment. \emph{Statistics in Medicine},
-\textbf{39}(16), 2197--2231.
-doi:\href{https://doi.org/10.1002/sim.8532}{10.1002/sim.8532}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-lauritzen1990}{}}%
-Lauritzen, SL, Dawid, AP, Larsen, BN, and Leimer, H-G (1990)
-Independence properties of directed markov fields. \emph{Networks},
-\textbf{20}(5), 491505.
-
-\leavevmode\vadjust pre{\hypertarget{ref-lewis1973}{}}%
-Lewis, D (1973) Causation. \emph{The Journal of Philosophy},
-\textbf{70}(17), 556--567.
-doi:\href{https://doi.org/10.2307/2025310}{10.2307/2025310}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-leyrat2019}{}}%
-Leyrat, C, Seaman, SR, White, IR, \ldots{} Williamson, EJ (2019)
-Propensity score analysis with partially observed covariates: How should
-multiple imputation be used? \emph{Statistical Methods in Medical
-Research}, \textbf{28}(1), 319.
-
-\leavevmode\vadjust pre{\hypertarget{ref-lu2022}{}}%
-Lu, H, Cole, SR, Howe, CJ, and Westreich, D (2022) Toward a Clearer
-Definition of Selection Bias When Estimating Causal Effects.
-\emph{Epidemiology (Cambridge, Mass.)}, \textbf{33}(5), 699--706.
-doi:\href{https://doi.org/10.1097/EDE.0000000000001516}{10.1097/EDE.0000000000001516}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-mathur2018}{}}%
-Mathur, MB, Ding, P, Riddell, CA, and VanderWeele, TJ (2018) Website and
-r package for computing e-values. \emph{Epidemiology (Cambridge,
-Mass.)}, \textbf{29}(5), e45.
-
-\leavevmode\vadjust pre{\hypertarget{ref-mcelreath2020}{}}%
-McElreath, R (2020) \emph{Statistical rethinking: A bayesian course with
-examples in r and stan}, CRC press.
-
-\leavevmode\vadjust pre{\hypertarget{ref-murray2021}{}}%
-Murray, EJ, Marshall, BDL, and Buchanan, AL (2021a) Emulating target
-trials to improve causal inference from agent-based models.
-\emph{American Journal of Epidemiology}, \textbf{190}(8), 1652--1658.
-doi:\href{https://doi.org/10.1093/aje/kwab040}{10.1093/aje/kwab040}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-murray2021a}{}}%
-Murray, EJ, Marshall, BDL, and Buchanan, AL (2021b) Emulating target
-trials to improve causal inference from agent-based models.
-\emph{American Journal of Epidemiology}, \textbf{190}(8), 1652--1658.
-doi:\href{https://doi.org/10.1093/aje/kwab040}{10.1093/aje/kwab040}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-naimi2017}{}}%
-Naimi, AI, Cole, SR, and Kennedy, EH (2017) An introduction to g
-methods. \emph{International Journal of Epidemiology}, \textbf{46}(2),
-756--762.
-doi:\href{https://doi.org/10.1093/ije/dyw323}{10.1093/ije/dyw323}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-nalle1987}{}}%
-Nalle, ST (1987) Inquisitors, priests, and the people during the
-catholic reformation in spain. \emph{The Sixteenth Century Journal},
-557587.
-
-\leavevmode\vadjust pre{\hypertarget{ref-ogburn2022}{}}%
-Ogburn, EL, Sofrygin, O, Díaz, I, and Laan, MJ van der (2022) Causal
-inference for social network data. \emph{Journal of the American
-Statistical Association}, \textbf{0}(0), 1--15.
-doi:\href{https://doi.org/10.1080/01621459.2022.2131557}{10.1080/01621459.2022.2131557}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-pearl1988}{}}%
-Pearl, J (1988) \emph{Probabilistic reasoning in intelligent systems:
-Networks of plausible inference}, Morgan kaufmann.
-
-\leavevmode\vadjust pre{\hypertarget{ref-pearl1995}{}}%
-Pearl, J (1995) Causal diagrams for empirical research.
-\emph{Biometrika}, \textbf{82}(4), 669--688.
-doi:\href{https://doi.org/10.1093/biomet/82.4.669}{10.1093/biomet/82.4.669}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-pearl2009}{}}%
-Pearl, J (2009a) \emph{\href{https://doi.org/10.1214/09-SS057}{Causal
-inference in statistics: An overview}}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-pearl2009a}{}}%
-Pearl, J (2009b) \emph{Causality}, Cambridge University Press.
-
-\leavevmode\vadjust pre{\hypertarget{ref-pearl2022}{}}%
-Pearl, J, and Bareinboim, E (2022) External validity: From do-calculus
-to transportability across populations. In, 1st edn, Vol. 36, New York,
-NY, USA: Association for Computing Machinery, 451482. Retrieved from
-\url{https://doi.org/10.1145/3501714.3501741}
-
-\leavevmode\vadjust pre{\hypertarget{ref-pearl2018}{}}%
-Pearl, J, and Mackenzie, D (2018) \emph{The book of why: The new science
-of cause and effect}, Basic books.
-
-\leavevmode\vadjust pre{\hypertarget{ref-pearl1995a}{}}%
-Pearl, J, and Robins, JM (1995) Probabilistic evaluation of sequential
-plans from causal models with hidden variables. In, Vol. 95, Citeseer,
-444453.
-
-\leavevmode\vadjust pre{\hypertarget{ref-pishgar2021}{}}%
-Pishgar, F, Greifer, N, Leyrat, C, and Stuart, E (2021) MatchThem::
-Matching and weighting after multiple imputation. \emph{The R Journal},
-\textbf{13}(2), 292305.
-doi:\href{https://doi.org/10.32614/RJ-2021-073}{10.32614/RJ-2021-073}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-richardson2013}{}}%
-Richardson, TS, and Robins, JM (2013) Single world intervention graphs
-(SWIGs): A unification of the counterfactual and graphical approaches to
-causality. \emph{Center for the Statistics and the Social Sciences,
-University of Washington Series. Working Paper}, \textbf{128}(30), 2013.
-
-\leavevmode\vadjust pre{\hypertarget{ref-robins1986}{}}%
-Robins, J (1986) A new approach to causal inference in mortality studies
-with a sustained exposure period{\textemdash}application to control of
-the healthy worker survivor effect. \emph{Mathematical Modelling},
-\textbf{7}(9), 1393--1512.
-doi:\href{https://doi.org/10.1016/0270-0255(86)90088-6}{10.1016/0270-0255(86)90088-6}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-robins1999}{}}%
-Robins, JM, Greenland, S, and Hu, F-C (1999) Estimation of the causal
-effect of a time-varying exposure on the marginal mean of a repeated
-binary outcome. \emph{Journal of the American Statistical Association},
-\textbf{94}(447), 687--700.
-doi:\href{https://doi.org/10.1080/01621459.1999.10474168}{10.1080/01621459.1999.10474168}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-rohrer2018}{}}%
-Rohrer, JM (2018) Thinking clearly about correlations and causation:
-Graphical causal models for observational data. \emph{Advances in
-Methods and Practices in Psychological Science}, \textbf{1}(1), 2742.
-
-\leavevmode\vadjust pre{\hypertarget{ref-rubin1976}{}}%
-Rubin, DB (1976) Inference and missing data. \emph{Biometrika},
-\textbf{63}(3), 581--592.
-doi:\href{https://doi.org/10.1093/biomet/63.3.581}{10.1093/biomet/63.3.581}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-rubin2005}{}}%
-Rubin, DB (2005) Causal inference using potential outcomes: Design,
-modeling, decisions. \emph{Journal of the American Statistical
-Association}, \textbf{100}(469), 322--331. Retrieved from
-\url{https://www.jstor.org/stable/27590541}
-
-\leavevmode\vadjust pre{\hypertarget{ref-shi2021}{}}%
-Shi, B, Choirat, C, Coull, BA, VanderWeele, TJ, and Valeri, L (2021)
-CMAverse: A suite of functions for reproducible causal mediation
-analyses. \emph{Epidemiology}, \textbf{32}(5), e20e22.
-
-\leavevmode\vadjust pre{\hypertarget{ref-shiba2021}{}}%
-Shiba, K, and Kawahara, T (2021) Using propensity scores for causal
-inference: Pitfalls and tips. \emph{Journal of Epidemiology},
-\textbf{31}(8), 457463.
-
-\leavevmode\vadjust pre{\hypertarget{ref-sjuxf6lander2016}{}}%
-Sjölander, A (2016) Regression standardization with the R package
-stdReg. \emph{European Journal of Epidemiology}, \textbf{31}(6),
-563--574.
-doi:\href{https://doi.org/10.1007/s10654-016-0157-3}{10.1007/s10654-016-0157-3}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-stuart2015}{}}%
-Stuart, EA, Bradshaw, CP, and Leaf, PJ (2015) Assessing the
-Generalizability of Randomized Trial Results to Target Populations.
-\emph{Prevention Science}, \textbf{16}(3), 475--485.
-doi:\href{https://doi.org/10.1007/s11121-014-0513-z}{10.1007/s11121-014-0513-z}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-suzuki2016}{}}%
-Suzuki, E, Mitsuhashi, T, Tsuda, T, and Yamamoto, E (2016) A typology of
-four notions of confounding in epidemiology. \emph{Journal of
-Epidemiology}, \textbf{27}(2), 49--55.
-doi:\href{https://doi.org/10.1016/j.je.2016.09.003}{10.1016/j.je.2016.09.003}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-suzuki2020}{}}%
-Suzuki, E, Shinozaki, T, and Yamamoto, E (2020) Causal Diagrams:
-Pitfalls and Tips. \emph{Journal of Epidemiology}, \textbf{30}(4),
-153--162.
-doi:\href{https://doi.org/10.2188/jea.JE20190192}{10.2188/jea.JE20190192}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-suzuki2014}{}}%
-Suzuki, E, and Yamamoto, E (2014) Further refinements to the
-organizational schema for causal effects. \emph{Epidemiology},
-\textbf{25}(4), 618.
-doi:\href{https://doi.org/10.1097/EDE.0000000000000114}{10.1097/EDE.0000000000000114}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-swanson1967}{}}%
-Swanson, GE (1967) Religion and regime: A sociological account of the
-reformation.
-
-\leavevmode\vadjust pre{\hypertarget{ref-swanson1971}{}}%
-Swanson, GE (1971) Interpreting the reformation. \emph{The Journal of
-Interdisciplinary History}, \textbf{1}(3), 419446. Retrieved from
-\url{http://www.jstor.org/stable/202620}
-
-\leavevmode\vadjust pre{\hypertarget{ref-tripepi2007}{}}%
-Tripepi, G, Jager, KJ, Dekker, FW, Wanner, C, and Zoccali, C (2007)
-Measures of effect: Relative risks, odds ratios, risk difference, and
-{`}number needed to treat{'}. \emph{Kidney International},
-\textbf{72}(7), 789--791.
-doi:\href{https://doi.org/10.1038/sj.ki.5002432}{10.1038/sj.ki.5002432}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-valeri2014}{}}%
-Valeri, L, Lin, X, and VanderWeele, TJ (2014) Mediation analysis when a
-continuous mediator is measured with error and the outcome follows a
-generalized linear model. \emph{Statistics in Medicine},
-\textbf{33}(28), 48754890.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vantongeren2020}{}}%
-Van Tongeren, DR, DeWall, CN, Chen, Z, Sibley, CG, and Bulbulia, J
-(2020) Religious residue: Cross-cultural evidence that religious
-psychology and behavior persist following deidentification.
-\emph{Journal of Personality and Social Psychology}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2015}{}}%
-VanderWeele, T (2015) \emph{Explanation in causal inference: Methods for
-mediation and interaction}, Oxford University Press.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2009}{}}%
-VanderWeele, TJ (2009a) Concerning the consistency assumption in causal
-inference. \emph{Epidemiology}, \textbf{20}(6), 880.
-doi:\href{https://doi.org/10.1097/EDE.0b013e3181bd5638}{10.1097/EDE.0b013e3181bd5638}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2009a}{}}%
-VanderWeele, TJ (2009b) Marginal structural models for the estimation of
-direct and indirect effects. \emph{Epidemiology}, 1826.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2018}{}}%
-VanderWeele, TJ (2018) On well-defined hypothetical interventions in the
-potential outcomes framework. \emph{Epidemiology}, \textbf{29}(4), e24.
-doi:\href{https://doi.org/10.1097/EDE.0000000000000823}{10.1097/EDE.0000000000000823}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2019}{}}%
-VanderWeele, TJ (2019) Principles of confounder selection.
-\emph{European Journal of Epidemiology}, \textbf{34}(3), 211--219.
-doi:\href{https://doi.org/10.1007/s10654-019-00494-6}{10.1007/s10654-019-00494-6}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2022}{}}%
-VanderWeele, TJ (2022) Constructed measures and causal inference:
-Towards a new model of measurement for psychosocial constructs.
-\emph{Epidemiology}, \textbf{33}(1), 141.
-doi:\href{https://doi.org/10.1097/EDE.0000000000001434}{10.1097/EDE.0000000000001434}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2013}{}}%
-VanderWeele, TJ, and Hernan, MA (2013) Causal inference under multiple
-versions of treatment. \emph{Journal of Causal Inference},
-\textbf{1}(1), 120.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2012}{}}%
-VanderWeele, TJ, and Hernán, MA (2012) Results on differential and
-dependent measurement error of the exposure and the outcome using signed
-directed acyclic graphs. \emph{American Journal of Epidemiology},
-\textbf{175}(12), 1303--1310.
-doi:\href{https://doi.org/10.1093/aje/kwr458}{10.1093/aje/kwr458}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2014}{}}%
-VanderWeele, TJ, and Knol, MJ (2014) A tutorial on interaction.
-\emph{Epidemiologic Methods}, \textbf{3}(1), 3372.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2020}{}}%
-VanderWeele, TJ, Mathur, MB, and Chen, Y (2020) Outcome-wide
-longitudinal designs for causal inference: A new template for empirical
-studies. \emph{Statistical Science}, \textbf{35}(3), 437466.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2007a}{}}%
-VanderWeele, TJ, and Robins, JM (2007a) Directed acyclic graphs,
-sufficient causes, and the properties of conditioning on a common
-effect. \emph{American Journal of Epidemiology}, \textbf{166}(9),
-1096--1104.
-doi:\href{https://doi.org/10.1093/aje/kwm179}{10.1093/aje/kwm179}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2007}{}}%
-VanderWeele, TJ, and Robins, JM (2007b) Four types of effect
-modification: a classification based on directed acyclic graphs.
-\emph{Epidemiology (Cambridge, Mass.)}, \textbf{18}(5), 561--568.
-doi:\href{https://doi.org/10.1097/EDE.0b013e318127181b}{10.1097/EDE.0b013e318127181b}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2010}{}}%
-VanderWeele, TJ, and Robins, JM (2010) Signed directed acyclic graphs
-for causal inference. \emph{Journal of the Royal Statistical Society
-Series B: Statistical Methodology}, \textbf{72}(1), 111--127.
-doi:\href{https://doi.org/10.1111/j.1467-9868.2009.00728.x}{10.1111/j.1467-9868.2009.00728.x}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2022b}{}}%
-VanderWeele, TJ, and Vansteelandt, S (2022) A statistical test to reject
-the structural interpretation of a latent factor model. \emph{Journal of
-the Royal Statistical Society Series B: Statistical Methodology},
-\textbf{84}(5), 20322054.
-
-\leavevmode\vadjust pre{\hypertarget{ref-vansteelandt2012}{}}%
-Vansteelandt, S, Bekaert, M, and Lange, T (2012) Imputation strategies
-for the estimation of natural direct and indirect effects.
-\emph{Epidemiologic Methods}, \textbf{1}(1), 131158.
-
-\leavevmode\vadjust pre{\hypertarget{ref-watts2016}{}}%
-Watts, J, Bulbulia, J. A., Gray, RD, and Atkinson, QD (2016) Clarity and
-causality needed in claims about big gods., \textbf{39}, 4142.
-doi:\href{https://doi.org/d4qp}{d4qp}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-watts2018}{}}%
-Watts, J, Sheehan, O, Bulbulia, Joseph A, Gray, RD, and Atkinson, QD
-(2018) Christianity spread faster in small, politically structured
-societies. \emph{Nature Human Behaviour}, \textbf{2}(8), 559564.
-doi:\href{https://doi.org/gdvnjn}{gdvnjn}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-weber1905}{}}%
-Weber, M (1905) \emph{The protestant ethic and the spirit of capitalism:
-And other writings}, Penguin.
-
-\leavevmode\vadjust pre{\hypertarget{ref-weber1993}{}}%
-Weber, M (1993) \emph{The sociology of religion}, Beacon Press.
-
-\leavevmode\vadjust pre{\hypertarget{ref-westreich2010}{}}%
-Westreich, D, and Cole, SR (2010) Invited commentary: positivity in
-practice. \emph{American Journal of Epidemiology}, \textbf{171}(6).
-doi:\href{https://doi.org/10.1093/aje/kwp436}{10.1093/aje/kwp436}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-westreich2015}{}}%
-Westreich, D, Edwards, JK, Cole, SR, Platt, RW, Mumford, SL, and
-Schisterman, EF (2015) Imputation approaches for potential outcomes in
-causal inference. \emph{International Journal of Epidemiology},
-\textbf{44}(5), 17311737.
-
-\leavevmode\vadjust pre{\hypertarget{ref-wheatley1971}{}}%
-Wheatley, P (1971) \emph{The pivot of the four quarters : A preliminary
-enquiry into the origins and character of the ancient chinese city},
-Edinburgh University Press. Retrieved from
-\url{https://cir.nii.ac.jp/crid/1130000795717727104}
-
-\leavevmode\vadjust pre{\hypertarget{ref-williams2021}{}}%
-Williams, NT, and Díaz, I (2021) \emph{Lmtp: Non-parametric causal
-effects of feasible interventions based on modified treatment policies}.
-doi:\href{https://doi.org/10.5281/zenodo.3874931}{10.5281/zenodo.3874931}.
-
-\leavevmode\vadjust pre{\hypertarget{ref-wright1920}{}}%
-Wright, S (1920) The relative importance of heredity and environment in
-determining the piebald pattern of guinea-pigs. \emph{Proceedings of the
-National Academy of Sciences of the United States of America},
-\textbf{6}(6), 320.
-
-\leavevmode\vadjust pre{\hypertarget{ref-wright1923}{}}%
-Wright, S (1923) The theory of path coefficients a reply to niles's
-criticism. \emph{Genetics}, \textbf{8}(3), 239.
-
-\leavevmode\vadjust pre{\hypertarget{ref-zhang2023}{}}%
-Zhang, J, Dashti, SG, Carlin, JB, Lee, KJ, and Moreno-Betancur, M (2023)
-Should multiple imputation be stratified by exposure group when
-estimating causal effects via outcome regression in observational
-studies? \emph{BMC Medical Research Methodology}, \textbf{23}(1), 42.
-doi:\href{https://doi.org/10.1186/s12874-023-01843-6}{10.1186/s12874-023-01843-6}.
-
-\end{CSLReferences}
+\subsection{References}\label{references}
 
 \newpage{}
 
-\hypertarget{appendix-1-review-of-vanderweeles-theory-of-causal-inference-under-multiple-versions-of-treatment}{%
 \subsection{Appendix 1: Review of VanderWeele's theory of causal
 inference under multiple versions of
-treatment}\label{appendix-1-review-of-vanderweeles-theory-of-causal-inference-under-multiple-versions-of-treatment}}
+treatment}\label{appendix-1-review-of-vanderweeles-theory-of-causal-inference-under-multiple-versions-of-treatment}
 
 We denote an average causal effect as the change in the expected
 potential outcomes when all units receive one level of treatment
@@ -4161,8 +3582,8 @@ This condition implies that, given \(L\), \(A\) adds no additional
 information about \(Y\) after accounting for \(K\) and \(L\). If
 \(Y = Y(k)\) for \(K = k\) and \(Y(k)\) is independent of \(K\),
 conditional on \(L\), we can interpret \(A\) as a simplified indicator
-of \(K\) (\protect\hyperlink{ref-vanderweele2013}{VanderWeele and Hernan
-2013}). This scenario is depicted in
+of \(K\) (\citeproc{ref-vanderweele2013}{VanderWeele and Hernan 2013}).
+This scenario is depicted in
 Figure~\ref{fig-dag_multiple_version_treatment_dag}.
 
 With the necessary assumptions in place, Vandeweele shows that can
@@ -4178,32 +3599,571 @@ assigned \(K\) version from the \((A = 0, L = l)\) distribution.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag_multiple_version_treatment_dag-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{causal-dags_files/figure-pdf/fig-dag_multiple_version_treatment_dag-1.pdf}
 
 }
 
-\caption{\label{fig-dag_multiple_version_treatment_dag}Causal inference
-under multiple versions of treatment. Here, (A) may be regarded as a
-coarseneed indicator of (K)}
+\caption{\label{fig-dag\_multiple\_version\_treatment\_dag}Causal
+inference under multiple versions of treatment. Here, (A) may be
+regarded as a coarseneed indicator of (K)}
 
-\end{figure}
+\end{figure}%
 
 The theory of causal inference under multiple versions of treatment
 reveal that consistent causal effect estimates are possible even when
 treatments exhibit variability
-(\protect\hyperlink{ref-vanderweele2013}{VanderWeele and Hernan 2013}).
-In Part 5, I explored VanderWeele's application of this theory to latent
-factor models, where the presumption of a single underlying reality for
-the items that constitute constructs can be challenged. VandnerWeele
-shows that we may nevertheless, under assumptions of exchangeability,
+(\citeproc{ref-vanderweele2013}{VanderWeele and Hernan 2013}). In Part
+5, I explored VanderWeele's application of this theory to latent factor
+models, where the presumption of a single underlying reality for the
+items that constitute constructs can be challenged. VandnerWeele shows
+that we may nevertheless, under assumptions of exchangeability,
 consistenty estimate causal effects using a logic that parrallels the
 theory of causal inference under multiple versions of treatment
-(\protect\hyperlink{ref-vanderweele2022}{VanderWeele 2022}). I noted
-that the possibility that directed or correlated error terms for the
-exposure and outcome might nevertheless undermine inferences, and that
-such threats may become more exaggerated with multiple items for our
-measures. I noted that in place of general rules, researchers should be
-encouraged to consider the problems of measurement in context.
+(\citeproc{ref-vanderweele2022}{VanderWeele 2022}). I noted that the
+possibility that directed or correlated error terms for the exposure and
+outcome might nevertheless undermine inferences, and that such threats
+may become more exaggerated with multiple items for our measures. I
+noted that in place of general rules, researchers should be encouraged
+to consider the problems of measurement in context.
+
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-bandalos2018}
+Bandalos, DL (2018) \emph{Measurement theory and applications for the
+social sciences}, Guilford Publications.
+
+\bibitem[\citeproctext]{ref-bareinboim2022}
+Bareinboim, E, Tian, J, and Pearl, J (2022) Recovering from selection
+bias in causal and statistical inference. In, 1st edn, Vol. 36, New
+York, NY, USA: Association for Computing Machinery, 433450. Retrieved
+from \url{https://doi.org/10.1145/3501714.3501740}
+
+\bibitem[\citeproctext]{ref-barrett2021}
+Barrett, M (2021) \emph{Ggdag: Analyze and create elegant directed
+acyclic graphs}. Retrieved from
+\url{https://CRAN.R-project.org/package=ggdag}
+
+\bibitem[\citeproctext]{ref-basten2013}
+Basten, C, and Betz, F (2013) Beyond work ethic: Religion, individual,
+and political preferences. \emph{American Economic Journal: Economic
+Policy}, \textbf{5}(3), 67--91.
+doi:\href{https://doi.org/10.1257/pol.5.3.67}{10.1257/pol.5.3.67}.
+
+\bibitem[\citeproctext]{ref-becker2016}
+Becker, SO, Pfaff, S, and Rubin, J (2016) Causes and consequences of the
+protestant reformation. \emph{Explorations in Economic History},
+\textbf{62}, 125.
+
+\bibitem[\citeproctext]{ref-breskin2020}
+Breskin, A, Edmonds, A, Cole, SR, \ldots{} Adimora, AA (2020)
+G-computation for policy-relevant effects of interventions on
+time-to-event outcomes. \emph{International Journal of Epidemiology},
+\textbf{49}(6), 2021--2029.
+doi:\href{https://doi.org/10.1093/ije/dyaa156}{10.1093/ije/dyaa156}.
+
+\bibitem[\citeproctext]{ref-bulbulia2022}
+Bulbulia, JA (2022) A workflow for causal inference in cross-cultural
+psychology. \emph{Religion, Brain \& Behavior}, \textbf{0}(0), 1--16.
+doi:\href{https://doi.org/10.1080/2153599X.2022.2070245}{10.1080/2153599X.2022.2070245}.
+
+\bibitem[\citeproctext]{ref-bulbulia2021}
+Bulbulia, J, Schjoedt, U, Shaver, JH, Sosis, R, and Wildman, WJ (2021)
+Causal inference in regression: Advice to authors. \emph{Religion, Brain
+\& Behavior}, \textbf{11}(4), 353360.
+
+\bibitem[\citeproctext]{ref-buonaccorsi2010}
+Buonaccorsi, JP (2010) \emph{Measurement error: Models, methods, and
+applications}, New York: Chapman; Hall/CRC.
+doi:\href{https://doi.org/10.1201/9781420066586}{10.1201/9781420066586}.
+
+\bibitem[\citeproctext]{ref-chatton2020}
+Chatton, A, Le Borgne, F, Leyrat, C, \ldots{} Foucher, Y (2020)
+G-computation, propensity score-based methods, and targeted maximum
+likelihood estimator for causal inference with different covariates
+sets: a comparative simulation study. \emph{Scientific Reports},
+\textbf{10}(1), 9219.
+doi:\href{https://doi.org/10.1038/s41598-020-65917-x}{10.1038/s41598-020-65917-x}.
+
+\bibitem[\citeproctext]{ref-cinelli2022}
+Cinelli, C, Forney, A, and Pearl, J (2022) A Crash Course in Good and
+Bad Controls. \emph{Sociological Methods \& Research},
+00491241221099552.
+doi:\href{https://doi.org/10.1177/00491241221099552}{10.1177/00491241221099552}.
+
+\bibitem[\citeproctext]{ref-cole2008}
+Cole, SR, and Hernán, MA (2008) Constructing inverse probability weights
+for marginal structural models. \emph{American Journal of Epidemiology},
+\textbf{168}(6), 656--664.
+doi:\href{https://doi.org/10.1093/aje/kwn164}{10.1093/aje/kwn164}.
+
+\bibitem[\citeproctext]{ref-cole2010}
+Cole, SR, Platt, RW, Schisterman, EF, \ldots{} Poole, C (2010)
+Illustrating bias due to conditioning on a collider. \emph{International
+Journal of Epidemiology}, \textbf{39}(2), 417--420.
+doi:\href{https://doi.org/10.1093/ije/dyp334}{10.1093/ije/dyp334}.
+
+\bibitem[\citeproctext]{ref-collinson2007}
+Collinson, P (2007) \emph{The reformation: A history}, Vol. 19, Modern
+Library.
+
+\bibitem[\citeproctext]{ref-decoulanges1903}
+De Coulanges, F (1903) \emph{La cité antique: Étude sur le culte, le
+droit, les institutions de la grèce et de rome}, Hachette.
+
+\bibitem[\citeproctext]{ref-deffner2022}
+Deffner, D, Rohrer, JM, and McElreath, R (2022) A Causal Framework for
+Cross-Cultural Generalizability. \emph{Advances in Methods and Practices
+in Psychological Science}, \textbf{5}(3), 25152459221106366.
+doi:\href{https://doi.org/10.1177/25152459221106366}{10.1177/25152459221106366}.
+
+\bibitem[\citeproctext]{ref-duxedaz2021}
+Díaz, I, Williams, N, Hoffman, KL, and Schenck, EJ (2021) Non-parametric
+causal effects based on longitudinal modified treatment policies.
+\emph{Journal of the American Statistical Association}.
+doi:\href{https://doi.org/10.1080/01621459.2021.1955691}{10.1080/01621459.2021.1955691}.
+
+\bibitem[\citeproctext]{ref-edwards2015}
+Edwards, JK, Cole, SR, and Westreich, D (2015) All your data are always
+missing: Incorporating bias due to measurement error into the potential
+outcomes framework. \emph{International Journal of Epidemiology},
+\textbf{44}(4), 14521459.
+
+\bibitem[\citeproctext]{ref-gawthrop1984}
+Gawthrop, R, and Strauss, G (1984) Protestantism and literacy in early
+modern germany. \emph{Past \& Present}, (104), 3155.
+
+\bibitem[\citeproctext]{ref-greenland1977}
+Greenland, S (1977) Response and follow-up bias in cohort studies.
+\emph{American Journal of Epidemiology}, \textbf{106}(3), 184--187.
+doi:\href{https://doi.org/10.1093/oxfordjournals.aje.a112451}{10.1093/oxfordjournals.aje.a112451}.
+
+\bibitem[\citeproctext]{ref-greenland1999}
+Greenland, S, Pearl, J, and Robins, JM (1999) Causal diagrams for
+epidemiologic research. \emph{Epidemiology (Cambridge, Mass.)},
+\textbf{10}(1), 37--48.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2017}
+Hernán, MA (2017) Invited commentary: Selection bias without colliders
+\textbar{} american journal of epidemiology \textbar{} oxford academic.
+\emph{American Journal of Epidemiology}, \textbf{185}(11), 10481050.
+Retrieved from \url{https://doi.org/10.1093/aje/kwx077}
+
+\bibitem[\citeproctext]{ref-hernuxe1n2008}
+Hernán, MA, Alonso, A, Logan, R, \ldots{} Robins, JM (2008)
+Observational studies analyzed like randomized experiments: An
+application to postmenopausal hormone therapy and coronary heart
+disease. \emph{Epidemiology}, \textbf{19}(6), 766.
+doi:\href{https://doi.org/10.1097/EDE.0b013e3181875e61}{10.1097/EDE.0b013e3181875e61}.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2009}
+Hernán, MA, and Cole, SR (2009) Invited commentary: Causal diagrams and
+measurement bias. \emph{American Journal of Epidemiology},
+\textbf{170}(8), 959--962.
+doi:\href{https://doi.org/10.1093/aje/kwp293}{10.1093/aje/kwp293}.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2004}
+Hernán, MA, Hernández-Díaz, S, and Robins, JM (2004) A structural
+approach to selection bias. \emph{Epidemiology}, \textbf{15}(5),
+615--625. Retrieved from \url{https://www.jstor.org/stable/20485961}
+
+\bibitem[\citeproctext]{ref-hernuxe1n2006}
+Hernán, MA, and Robins, JM (2006) Estimating causal effects from
+epidemiological data. \emph{Journal of Epidemiology \& Community
+Health}, \textbf{60}(7), 578586.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2023}
+Hernán, MA, and Robins, JM (2023) \emph{Causal inference: What if?},
+Taylor \& Francis. Retrieved from
+\url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}
+
+\bibitem[\citeproctext]{ref-hernuxe1n2016}
+Hernán, MA, Sauer, BC, Hernández-Díaz, S, Platt, R, and Shrier, I (2016)
+Specifying a target trial prevents immortal time bias and other
+self-inflicted injuries in observational analyses. \emph{Journal of
+Clinical Epidemiology}, \textbf{79}, 7075.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2022}
+Hernán, MA, Wang, W, and Leaf, DE (2022b) Target trial emulation: A
+framework for causal inference from observational data. \emph{JAMA},
+\textbf{328}(24), 2446--2447.
+doi:\href{https://doi.org/10.1001/jama.2022.21383}{10.1001/jama.2022.21383}.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2022a}
+Hernán, MA, Wang, W, and Leaf, DE (2022a) Target trial emulation: A
+framework for causal inference from observational data. \emph{JAMA},
+\textbf{328}(24), 2446--2447.
+doi:\href{https://doi.org/10.1001/jama.2022.21383}{10.1001/jama.2022.21383}.
+
+\bibitem[\citeproctext]{ref-hoffman2023}
+Hoffman, KL, Salazar-Barreto, D, Rudolph, KE, and Díaz, I (2023)
+Introducing longitudinal modified treatment policies: A unified
+framework for studying complex exposures.
+doi:\href{https://doi.org/10.48550/arXiv.2304.09460}{10.48550/arXiv.2304.09460}.
+
+\bibitem[\citeproctext]{ref-hoffman2022}
+Hoffman, KL, Schenck, EJ, Satlin, MJ, \ldots{} Díaz, I (2022) Comparison
+of a target trial emulation framework vs cox regression to estimate the
+association of corticosteroids with COVID-19 mortality. \emph{JAMA
+Network Open}, \textbf{5}(10), e2234425.
+doi:\href{https://doi.org/10.1001/jamanetworkopen.2022.34425}{10.1001/jamanetworkopen.2022.34425}.
+
+\bibitem[\citeproctext]{ref-holland1986}
+Holland, PW (1986) Statistics and causal inference. \emph{Journal of the
+American Statistical Association}, \textbf{81}(396), 945960.
+
+\bibitem[\citeproctext]{ref-hume1902}
+Hume, D (1902) \emph{Enquiries Concerning the Human Understanding: And
+Concerning the Principles of Morals}, Clarendon Press.
+
+\bibitem[\citeproctext]{ref-keogh2020}
+Keogh, RH, Shaw, PA, Gustafson, P, \ldots{} Freedman, LS (2020) STRATOS
+guidance document on measurement error and misclassification of
+variables in observational epidemiology: Part 1{\textemdash}Basic theory
+and simple methods of adjustment. \emph{Statistics in Medicine},
+\textbf{39}(16), 2197--2231.
+doi:\href{https://doi.org/10.1002/sim.8532}{10.1002/sim.8532}.
+
+\bibitem[\citeproctext]{ref-lauritzen1990}
+Lauritzen, SL, Dawid, AP, Larsen, BN, and Leimer, H-G (1990)
+Independence properties of directed markov fields. \emph{Networks},
+\textbf{20}(5), 491505.
+
+\bibitem[\citeproctext]{ref-lewis1973}
+Lewis, D (1973) Causation. \emph{The Journal of Philosophy},
+\textbf{70}(17), 556--567.
+doi:\href{https://doi.org/10.2307/2025310}{10.2307/2025310}.
+
+\bibitem[\citeproctext]{ref-leyrat2019}
+Leyrat, C, Seaman, SR, White, IR, \ldots{} Williamson, EJ (2019)
+Propensity score analysis with partially observed covariates: How should
+multiple imputation be used? \emph{Statistical Methods in Medical
+Research}, \textbf{28}(1), 319.
+
+\bibitem[\citeproctext]{ref-lu2022}
+Lu, H, Cole, SR, Howe, CJ, and Westreich, D (2022) Toward a Clearer
+Definition of Selection Bias When Estimating Causal Effects.
+\emph{Epidemiology (Cambridge, Mass.)}, \textbf{33}(5), 699--706.
+doi:\href{https://doi.org/10.1097/EDE.0000000000001516}{10.1097/EDE.0000000000001516}.
+
+\bibitem[\citeproctext]{ref-mathur2018}
+Mathur, MB, Ding, P, Riddell, CA, and VanderWeele, TJ (2018) Website and
+r package for computing e-values. \emph{Epidemiology (Cambridge,
+Mass.)}, \textbf{29}(5), e45.
+
+\bibitem[\citeproctext]{ref-mcelreath2020}
+McElreath, R (2020) \emph{Statistical rethinking: A bayesian course with
+examples in r and stan}, CRC press.
+
+\bibitem[\citeproctext]{ref-murray2021}
+Murray, EJ, Marshall, BDL, and Buchanan, AL (2021a) Emulating target
+trials to improve causal inference from agent-based models.
+\emph{American Journal of Epidemiology}, \textbf{190}(8), 1652--1658.
+doi:\href{https://doi.org/10.1093/aje/kwab040}{10.1093/aje/kwab040}.
+
+\bibitem[\citeproctext]{ref-murray2021a}
+Murray, EJ, Marshall, BDL, and Buchanan, AL (2021b) Emulating target
+trials to improve causal inference from agent-based models.
+\emph{American Journal of Epidemiology}, \textbf{190}(8), 1652--1658.
+doi:\href{https://doi.org/10.1093/aje/kwab040}{10.1093/aje/kwab040}.
+
+\bibitem[\citeproctext]{ref-naimi2017}
+Naimi, AI, Cole, SR, and Kennedy, EH (2017) An introduction to g
+methods. \emph{International Journal of Epidemiology}, \textbf{46}(2),
+756--762.
+doi:\href{https://doi.org/10.1093/ije/dyw323}{10.1093/ije/dyw323}.
+
+\bibitem[\citeproctext]{ref-nalle1987}
+Nalle, ST (1987) Inquisitors, priests, and the people during the
+catholic reformation in spain. \emph{The Sixteenth Century Journal},
+557587.
+
+\bibitem[\citeproctext]{ref-ogburn2022}
+Ogburn, EL, Sofrygin, O, Díaz, I, and Laan, MJ van der (2022) Causal
+inference for social network data. \emph{Journal of the American
+Statistical Association}, \textbf{0}(0), 1--15.
+doi:\href{https://doi.org/10.1080/01621459.2022.2131557}{10.1080/01621459.2022.2131557}.
+
+\bibitem[\citeproctext]{ref-pearl1988}
+Pearl, J (1988) \emph{Probabilistic reasoning in intelligent systems:
+Networks of plausible inference}, Morgan kaufmann.
+
+\bibitem[\citeproctext]{ref-pearl1995}
+Pearl, J (1995) Causal diagrams for empirical research.
+\emph{Biometrika}, \textbf{82}(4), 669--688.
+doi:\href{https://doi.org/10.1093/biomet/82.4.669}{10.1093/biomet/82.4.669}.
+
+\bibitem[\citeproctext]{ref-pearl2009}
+Pearl, J (2009a) \emph{\href{https://doi.org/10.1214/09-SS057}{Causal
+inference in statistics: An overview}}.
+
+\bibitem[\citeproctext]{ref-pearl2009a}
+Pearl, J (2009b) \emph{Causality}, Cambridge University Press.
+
+\bibitem[\citeproctext]{ref-pearl2022}
+Pearl, J, and Bareinboim, E (2022) External validity: From do-calculus
+to transportability across populations. In, 1st edn, Vol. 36, New York,
+NY, USA: Association for Computing Machinery, 451482. Retrieved from
+\url{https://doi.org/10.1145/3501714.3501741}
+
+\bibitem[\citeproctext]{ref-pearl2018}
+Pearl, J, and Mackenzie, D (2018) \emph{The book of why: The new science
+of cause and effect}, Basic books.
+
+\bibitem[\citeproctext]{ref-pearl1995a}
+Pearl, J, and Robins, JM (1995) Probabilistic evaluation of sequential
+plans from causal models with hidden variables. In, Vol. 95, Citeseer,
+444453.
+
+\bibitem[\citeproctext]{ref-pishgar2021}
+Pishgar, F, Greifer, N, Leyrat, C, and Stuart, E (2021) MatchThem::
+Matching and weighting after multiple imputation. \emph{The R Journal},
+\textbf{13}(2), 292305.
+doi:\href{https://doi.org/10.32614/RJ-2021-073}{10.32614/RJ-2021-073}.
+
+\bibitem[\citeproctext]{ref-richardson2013}
+Richardson, TS, and Robins, JM (2013) Single world intervention graphs
+(SWIGs): A unification of the counterfactual and graphical approaches to
+causality. \emph{Center for the Statistics and the Social Sciences,
+University of Washington Series. Working Paper}, \textbf{128}(30), 2013.
+
+\bibitem[\citeproctext]{ref-robins1986}
+Robins, J (1986) A new approach to causal inference in mortality studies
+with a sustained exposure period{\textemdash}application to control of
+the healthy worker survivor effect. \emph{Mathematical Modelling},
+\textbf{7}(9), 1393--1512.
+doi:\href{https://doi.org/10.1016/0270-0255(86)90088-6}{10.1016/0270-0255(86)90088-6}.
+
+\bibitem[\citeproctext]{ref-robins1999}
+Robins, JM, Greenland, S, and Hu, F-C (1999) Estimation of the causal
+effect of a time-varying exposure on the marginal mean of a repeated
+binary outcome. \emph{Journal of the American Statistical Association},
+\textbf{94}(447), 687--700.
+doi:\href{https://doi.org/10.1080/01621459.1999.10474168}{10.1080/01621459.1999.10474168}.
+
+\bibitem[\citeproctext]{ref-rohrer2018}
+Rohrer, JM (2018) Thinking clearly about correlations and causation:
+Graphical causal models for observational data. \emph{Advances in
+Methods and Practices in Psychological Science}, \textbf{1}(1), 2742.
+
+\bibitem[\citeproctext]{ref-rubin1976}
+Rubin, DB (1976) Inference and missing data. \emph{Biometrika},
+\textbf{63}(3), 581--592.
+doi:\href{https://doi.org/10.1093/biomet/63.3.581}{10.1093/biomet/63.3.581}.
+
+\bibitem[\citeproctext]{ref-rubin2005}
+Rubin, DB (2005) Causal inference using potential outcomes: Design,
+modeling, decisions. \emph{Journal of the American Statistical
+Association}, \textbf{100}(469), 322--331. Retrieved from
+\url{https://www.jstor.org/stable/27590541}
+
+\bibitem[\citeproctext]{ref-shi2021}
+Shi, B, Choirat, C, Coull, BA, VanderWeele, TJ, and Valeri, L (2021)
+CMAverse: A suite of functions for reproducible causal mediation
+analyses. \emph{Epidemiology}, \textbf{32}(5), e20e22.
+
+\bibitem[\citeproctext]{ref-shiba2021}
+Shiba, K, and Kawahara, T (2021) Using propensity scores for causal
+inference: Pitfalls and tips. \emph{Journal of Epidemiology},
+\textbf{31}(8), 457463.
+
+\bibitem[\citeproctext]{ref-sjuxf6lander2016}
+Sjölander, A (2016) Regression standardization with the R package
+stdReg. \emph{European Journal of Epidemiology}, \textbf{31}(6),
+563--574.
+doi:\href{https://doi.org/10.1007/s10654-016-0157-3}{10.1007/s10654-016-0157-3}.
+
+\bibitem[\citeproctext]{ref-stuart2015}
+Stuart, EA, Bradshaw, CP, and Leaf, PJ (2015) Assessing the
+Generalizability of Randomized Trial Results to Target Populations.
+\emph{Prevention Science}, \textbf{16}(3), 475--485.
+doi:\href{https://doi.org/10.1007/s11121-014-0513-z}{10.1007/s11121-014-0513-z}.
+
+\bibitem[\citeproctext]{ref-suzuki2016}
+Suzuki, E, Mitsuhashi, T, Tsuda, T, and Yamamoto, E (2016) A typology of
+four notions of confounding in epidemiology. \emph{Journal of
+Epidemiology}, \textbf{27}(2), 49--55.
+doi:\href{https://doi.org/10.1016/j.je.2016.09.003}{10.1016/j.je.2016.09.003}.
+
+\bibitem[\citeproctext]{ref-suzuki2020}
+Suzuki, E, Shinozaki, T, and Yamamoto, E (2020) Causal Diagrams:
+Pitfalls and Tips. \emph{Journal of Epidemiology}, \textbf{30}(4),
+153--162.
+doi:\href{https://doi.org/10.2188/jea.JE20190192}{10.2188/jea.JE20190192}.
+
+\bibitem[\citeproctext]{ref-suzuki2014}
+Suzuki, E, and Yamamoto, E (2014) Further refinements to the
+organizational schema for causal effects. \emph{Epidemiology},
+\textbf{25}(4), 618.
+doi:\href{https://doi.org/10.1097/EDE.0000000000000114}{10.1097/EDE.0000000000000114}.
+
+\bibitem[\citeproctext]{ref-swanson1967}
+Swanson, GE (1967) Religion and regime: A sociological account of the
+reformation.
+
+\bibitem[\citeproctext]{ref-swanson1971}
+Swanson, GE (1971) Interpreting the reformation. \emph{The Journal of
+Interdisciplinary History}, \textbf{1}(3), 419446. Retrieved from
+\url{http://www.jstor.org/stable/202620}
+
+\bibitem[\citeproctext]{ref-tripepi2007}
+Tripepi, G, Jager, KJ, Dekker, FW, Wanner, C, and Zoccali, C (2007)
+Measures of effect: Relative risks, odds ratios, risk difference, and
+{`}number needed to treat{'}. \emph{Kidney International},
+\textbf{72}(7), 789--791.
+doi:\href{https://doi.org/10.1038/sj.ki.5002432}{10.1038/sj.ki.5002432}.
+
+\bibitem[\citeproctext]{ref-valeri2014}
+Valeri, L, Lin, X, and VanderWeele, TJ (2014) Mediation analysis when a
+continuous mediator is measured with error and the outcome follows a
+generalized linear model. \emph{Statistics in Medicine},
+\textbf{33}(28), 48754890.
+
+\bibitem[\citeproctext]{ref-vantongeren2020}
+Van Tongeren, DR, DeWall, CN, Chen, Z, Sibley, CG, and Bulbulia, J
+(2020) Religious residue: Cross-cultural evidence that religious
+psychology and behavior persist following deidentification.
+\emph{Journal of Personality and Social Psychology}.
+
+\bibitem[\citeproctext]{ref-vanderweele2015}
+VanderWeele, T (2015) \emph{Explanation in causal inference: Methods for
+mediation and interaction}, Oxford University Press.
+
+\bibitem[\citeproctext]{ref-vanderweele2009}
+VanderWeele, TJ (2009a) Concerning the consistency assumption in causal
+inference. \emph{Epidemiology}, \textbf{20}(6), 880.
+doi:\href{https://doi.org/10.1097/EDE.0b013e3181bd5638}{10.1097/EDE.0b013e3181bd5638}.
+
+\bibitem[\citeproctext]{ref-vanderweele2009a}
+VanderWeele, TJ (2009b) Marginal structural models for the estimation of
+direct and indirect effects. \emph{Epidemiology}, 1826.
+
+\bibitem[\citeproctext]{ref-vanderweele2018}
+VanderWeele, TJ (2018) On well-defined hypothetical interventions in the
+potential outcomes framework. \emph{Epidemiology}, \textbf{29}(4), e24.
+doi:\href{https://doi.org/10.1097/EDE.0000000000000823}{10.1097/EDE.0000000000000823}.
+
+\bibitem[\citeproctext]{ref-vanderweele2019}
+VanderWeele, TJ (2019) Principles of confounder selection.
+\emph{European Journal of Epidemiology}, \textbf{34}(3), 211--219.
+doi:\href{https://doi.org/10.1007/s10654-019-00494-6}{10.1007/s10654-019-00494-6}.
+
+\bibitem[\citeproctext]{ref-vanderweele2022}
+VanderWeele, TJ (2022) Constructed measures and causal inference:
+Towards a new model of measurement for psychosocial constructs.
+\emph{Epidemiology}, \textbf{33}(1), 141.
+doi:\href{https://doi.org/10.1097/EDE.0000000000001434}{10.1097/EDE.0000000000001434}.
+
+\bibitem[\citeproctext]{ref-vanderweele2013}
+VanderWeele, TJ, and Hernan, MA (2013) Causal inference under multiple
+versions of treatment. \emph{Journal of Causal Inference},
+\textbf{1}(1), 120.
+
+\bibitem[\citeproctext]{ref-vanderweele2012}
+VanderWeele, TJ, and Hernán, MA (2012) Results on differential and
+dependent measurement error of the exposure and the outcome using signed
+directed acyclic graphs. \emph{American Journal of Epidemiology},
+\textbf{175}(12), 1303--1310.
+doi:\href{https://doi.org/10.1093/aje/kwr458}{10.1093/aje/kwr458}.
+
+\bibitem[\citeproctext]{ref-vanderweele2014}
+VanderWeele, TJ, and Knol, MJ (2014) A tutorial on interaction.
+\emph{Epidemiologic Methods}, \textbf{3}(1), 3372.
+
+\bibitem[\citeproctext]{ref-vanderweele2020}
+VanderWeele, TJ, Mathur, MB, and Chen, Y (2020) Outcome-wide
+longitudinal designs for causal inference: A new template for empirical
+studies. \emph{Statistical Science}, \textbf{35}(3), 437466.
+
+\bibitem[\citeproctext]{ref-vanderweele2007a}
+VanderWeele, TJ, and Robins, JM (2007a) Directed acyclic graphs,
+sufficient causes, and the properties of conditioning on a common
+effect. \emph{American Journal of Epidemiology}, \textbf{166}(9),
+1096--1104.
+doi:\href{https://doi.org/10.1093/aje/kwm179}{10.1093/aje/kwm179}.
+
+\bibitem[\citeproctext]{ref-vanderweele2007}
+VanderWeele, TJ, and Robins, JM (2007b) Four types of effect
+modification: a classification based on directed acyclic graphs.
+\emph{Epidemiology (Cambridge, Mass.)}, \textbf{18}(5), 561--568.
+doi:\href{https://doi.org/10.1097/EDE.0b013e318127181b}{10.1097/EDE.0b013e318127181b}.
+
+\bibitem[\citeproctext]{ref-vanderweele2010}
+VanderWeele, TJ, and Robins, JM (2010) Signed directed acyclic graphs
+for causal inference. \emph{Journal of the Royal Statistical Society
+Series B: Statistical Methodology}, \textbf{72}(1), 111--127.
+doi:\href{https://doi.org/10.1111/j.1467-9868.2009.00728.x}{10.1111/j.1467-9868.2009.00728.x}.
+
+\bibitem[\citeproctext]{ref-vanderweele2022b}
+VanderWeele, TJ, and Vansteelandt, S (2022) A statistical test to reject
+the structural interpretation of a latent factor model. \emph{Journal of
+the Royal Statistical Society Series B: Statistical Methodology},
+\textbf{84}(5), 20322054.
+
+\bibitem[\citeproctext]{ref-vansteelandt2012}
+Vansteelandt, S, Bekaert, M, and Lange, T (2012) Imputation strategies
+for the estimation of natural direct and indirect effects.
+\emph{Epidemiologic Methods}, \textbf{1}(1), 131158.
+
+\bibitem[\citeproctext]{ref-watts2016}
+Watts, J, Bulbulia, J. A., Gray, RD, and Atkinson, QD (2016) Clarity and
+causality needed in claims about big gods., \textbf{39}, 4142.
+doi:\href{https://doi.org/d4qp}{d4qp}.
+
+\bibitem[\citeproctext]{ref-watts2018}
+Watts, J, Sheehan, O, Bulbulia, Joseph A, Gray, RD, and Atkinson, QD
+(2018) Christianity spread faster in small, politically structured
+societies. \emph{Nature Human Behaviour}, \textbf{2}(8), 559564.
+doi:\href{https://doi.org/gdvnjn}{gdvnjn}.
+
+\bibitem[\citeproctext]{ref-weber1905}
+Weber, M (1905) \emph{The protestant ethic and the spirit of capitalism:
+And other writings}, Penguin.
+
+\bibitem[\citeproctext]{ref-weber1993}
+Weber, M (1993) \emph{The sociology of religion}, Beacon Press.
+
+\bibitem[\citeproctext]{ref-westreich2010}
+Westreich, D, and Cole, SR (2010) Invited commentary: positivity in
+practice. \emph{American Journal of Epidemiology}, \textbf{171}(6).
+doi:\href{https://doi.org/10.1093/aje/kwp436}{10.1093/aje/kwp436}.
+
+\bibitem[\citeproctext]{ref-westreich2015}
+Westreich, D, Edwards, JK, Cole, SR, Platt, RW, Mumford, SL, and
+Schisterman, EF (2015) Imputation approaches for potential outcomes in
+causal inference. \emph{International Journal of Epidemiology},
+\textbf{44}(5), 17311737.
+
+\bibitem[\citeproctext]{ref-wheatley1971}
+Wheatley, P (1971) \emph{The pivot of the four quarters : A preliminary
+enquiry into the origins and character of the ancient chinese city},
+Edinburgh University Press. Retrieved from
+\url{https://cir.nii.ac.jp/crid/1130000795717727104}
+
+\bibitem[\citeproctext]{ref-williams2021}
+Williams, NT, and Díaz, I (2021) \emph{Lmtp: Non-parametric causal
+effects of feasible interventions based on modified treatment policies}.
+doi:\href{https://doi.org/10.5281/zenodo.3874931}{10.5281/zenodo.3874931}.
+
+\bibitem[\citeproctext]{ref-wright1920}
+Wright, S (1920) The relative importance of heredity and environment in
+determining the piebald pattern of guinea-pigs. \emph{Proceedings of the
+National Academy of Sciences of the United States of America},
+\textbf{6}(6), 320.
+
+\bibitem[\citeproctext]{ref-wright1923}
+Wright, S (1923) The theory of path coefficients a reply to niles's
+criticism. \emph{Genetics}, \textbf{8}(3), 239.
+
+\bibitem[\citeproctext]{ref-zhang2023}
+Zhang, J, Dashti, SG, Carlin, JB, Lee, KJ, and Moreno-Betancur, M (2023)
+Should multiple imputation be stratified by exposure group when
+estimating causal effects via outcome regression in observational
+studies? \emph{BMC Medical Research Methodology}, \textbf{23}(1), 42.
+doi:\href{https://doi.org/10.1186/s12874-023-01843-6}{10.1186/s12874-023-01843-6}.
+
+\end{CSLReferences}
 
 
 
