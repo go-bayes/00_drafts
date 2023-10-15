@@ -50,60 +50,71 @@ editor_options:
 rstudioapi::restartSession()
 
 
+
+# WARNING: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB 
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+
+# # WARNING: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
 # for latex graphs
 # for making graphs
 library("tinytex")
 library(extrafont)
 loadfonts(device = "all")
 
-
-# uncomment and use these links to load your functions
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
-
-# # read functions
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
 ### ALWAYS RESTART R IN A FRESH SESSION ####
-# regularly update tinytex: quarto update tinytex
 
-# libraries for jb (when internet is not accessible): comment out and use above
-# read libraries
+
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
-# read functions: # for jb: comment out and use above
-# read libraries
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
+# experimental functions (more functions)
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
-# read data/ set to path in your computer
+
+## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE. 
 pull_path <-
   fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
-  )
-
-# for saving models. # set path fo your computer
-push_mods <-
-  fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-template"
-  )
-
-# for sourcing functions mid-script (for experimental scripts only)
-path_funs<- 
-  fs::path_expand(
-    "/Users/joseph/GIT/templates/functions/funs.R"
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
   )
 
 # read data: note that you need use the arrow package in R
+
 dat <- arrow::read_parquet(pull_path)
 
+
+### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
+### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
+push_mods <-  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-coop-church-lmtp"
+  )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
-## set nzavs exposure: example here
-nzavs_exposure <- "perfectionism"
 
+# set exposure here
+nzavs_exposure <- "religion_church_round"
 
+# set number of folds for ML here. use a minimum of 5 and a max of 10
+SL_folds = 5
+
+#this will allow you to track progress
+progressr::handlers(global = TRUE)
+
+# set seed for reproducing results
+set.seed(0112358)
+
+# set cores for estimation 
+library(future)
+plan(multisession)
+n_cores <- parallel::detectCores()
 ```
 
 ```{r}
