@@ -1,8 +1,7 @@
 ---
-title: "Causal effects of gaining pets on multi-dimensional well-being"
-subtitle: "An outcome-wide study"
+title: "Causal effects of owning pets on multi-dimensional well-being"
 abstract: |
-  Meaning and purpose averaged.
+  This study rigorously assesses the causal impact of pet ownership, specifically acquiring cats and dogs, on various dimensions of human well-being among New Zealanders. Using data from the New Zealand Attitudes and Values Study (NZAVS) spanning 2015 to 2020, we employ a robust methodological framework for causal inference. Our framework incorporates targeted machine learning models to balance confounders and doubly-robust methods for causal estimation, utilising Targeted Maximum Likelihood Estimation (TMLE). Cat ownership: results offer only provisional and weak evidence for causal effects of cat ownership on health and well-being, notably a loss of sleep. Dog ownership: results offer only provisional and weak evidence for causal effects of cat ownership on health and well-being, namely: greater exercise. The study has implications for understanding the complexities of causal relationships in non-experimental settings where randomised experiments are not feasible and offers a template for future research in the area of pet ownership and psycho-social well-being.
 author: 
   - name: Marc Wilson
     affiliation:  Victoria University of Wellington, New Zealand
@@ -19,17 +18,16 @@ format:
     sanitize: true
     keep-tex: true
     link-citations: true
-    colorlinks: true
-    documentclass: report
-    classoption: [singlecolumn]
+    documentclass: article
+    classoption: 
+      - singlecolumn
+      - 9pt 
     lof: false
     lot: false
-    geometry:
-      - top=30mm
-      - left=20mm
-      - heightrounded
 keywords:
   - Authors to be added/ order TBA.
+  - Cats
+  - Dogs
 execute:
   warning: false
   eval: true
@@ -45,6 +43,7 @@ editor_options:
 #| include: false
 #| eval: true
 
+#tinytex::tlmgr_update()
 
 
 
@@ -81,8 +80,15 @@ dat <- arrow::read_parquet(pull_path)
 
 push_mods <-fs::path_expand("/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/mans/23/started/man-lmtp-ow-fl-pets")
 
+
+# data results from cat models
 push_mods_cats_gain <-
   fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-fl-cats-gain")
+
+
+# data/ results from dog models
+push_mods_dogs_gain <-
+  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-fl-dogs-gain")
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods_cats_gain
@@ -97,9 +103,6 @@ loadfonts(device = "all")
 ## read cats n
 
 n_cats <- readRDS(here::here(push_mods_cats_gain, "n_cats"))
-
-#  check
-n_cats
 
 # stable state cats
 t_tab_cats <- readRDS(here::here(push_mods_cats_gain, "t_tab_cats"))
@@ -123,50 +126,76 @@ group_tab_social_cats <- readRDS(here::here(push_mods_cats_gain,"group_tab_socia
 
 
 
+n_dogs <- readRDS(here::here(push_mods_dogs_gain, "n_dogs"))
+t_tab_dogs <- readRDS(here::here(push_mods_dogs_gain , "t_tab"))
+table_baseline_dogs<- readRDS(here::here(push_mods_dogs_gain , "table_baseline"))
+table_baseline_dogs
+baseline_tab_dogs <- readRDS(here::here(push_mods_dogs_gain , "table_baseline"))
+
+## SD DATA
+
+dat_sd_tranform <- readRDS(here::here(push_mods_dogs_gain, "dat_sd_tranform"))
+
+
+
+
+# tables
+# tab_health_dogs <- readRDS(here::here(push_mods_dogs_gain,"tab_health"))
+# tab_body_dogs <-readRDS(here::here(push_mods_dogs_gain,"tab_body"))
+# #group_tab_ego <- here_read("group_tab_ego")
+# tab_reflective_dogs <- readRDS(here::here(push_mods_dogs_gain,"tab_reflective"))
+# tab_social_dogs <- readRDS(here::here(push_mods_dogs_gain,"tab_social"))
+
+# results
+group_tab_health_dogs <- readRDS(here::here(push_mods_dogs_gain,"group_tab_health"))
+group_tab_body_dogs <-readRDS(here::here(push_mods_dogs_gain,"group_tab_body"))
+#group_tab_ego <- here_read("group_tab_ego")
+group_tab_reflective_dogs <- readRDS(here::here(push_mods_dogs_gain,"group_tab_reflective"))
+group_tab_social_dogs <- readRDS(here::here(push_mods_dogs_gain,"group_tab_social"))
+
+
+
+# Compare ordinary causal contrast "z-0" with shift contrast
+
+# ordinary
+dog_exercise_log_z_0 <- readRDS(here::here(push_mods_dogs_gain,"out_tab_contrast_t2_hours_exercise_log_z_0"))
+
+# shift
+dog_exercise_log_z <- readRDS(here::here(push_mods_dogs_gain,"out_tab_contrast_t2_hours_exercise_log_z"))
+
+
 ```
 
 ## Introduction
 
-Whether pets benefit their owners is a question of perennial fascination and debate. Research abounds on the physical and psychological effects of pet ownership, often highlighting benefits such as reduced stress levels, increased physical activity, and better overall well-being. However, the majority of these studies, including our own previous work, rely heavily on correlational analyses. Thus, questions concerning the causal impact of pet ownership on human health remain unanswered. 
+Whether pets benefit their owners is a question of perennial fascination and debate. Research abounds on the physical and psychological effects of pet ownership, often highlighting benefits such as reduced stress levels, increased physical activity, and better overall well-being. However, the majority of these studies, including our own previous work, rely heavily on correlational analyses. Thus, questions concerning the causal impact of pet ownership on human health and psychological well-being remain unanswered. 
 
-Traditional studies, even those of longitudinal design, have been limited in establishing causality for several reasons. Firstly, pet ownership cannot be randomised due to ethical and logistical constraints. Secondly, there are numerous confounding variables that can affect both pet ownership and the outcomes under study, such as socio-economic status, lifestyle, and health status. These confounders introduce bias, making it challenging to isolate the specific effects of pet ownership. 
+Traditional studies, even those of longitudinal design, have been limited in establishing causality for several reasons: 
 
+First, pet ownership cannot be randomised. For example ethical considerations prohibit the random allocation of pets to households. However, absent randomisation we cannot fully ensure that association between pet ownership and well-being is causal. 
 
-To mitigate these limitations and offer a robust methodological framework for causal inference, our study adopts the following strategies:
+Second, and relatedly, there are numerous confounding variables that can affect both pet ownership and the outcomes under study, such as socio-economic status, lifestyle, and health status. Such confounders may introduce bias, making it challenging to isolate the specific effects of pet ownership.
 
+Third, large scale panel datasets are rare; where they exist, they have yet to be employed to address causality. These opportunities await.
 
-1. **Defining the Causal Question*:** prior to any analysis, it is crucial to explicitly define the causal question under scrutiny. Within the umbrella term of "pet ownership," multiple scenarios can be considered: owning cats, dogs, or other animals, acquiring new pets, or even parting with them. For the sake of causal clarity, we focus on two average treatment effects: (a) the impact of acquiring cats and (b) the impact of acquiring dogs. Each scenario is conceptualised as a randomised experiment, contrasting a population that acquires the animal with one that does not.
-
-2. **Target Population**: The study's findings are intended to generalise to New Zealanders who did not own cats or dogs at the baseline wave \( t \) of the New Zealand Attitudes and Values Study (NZAVS), but acquired them in the subsequent wave \( t + 1 \). We measure the outcomes as "intention-to-treat" effects in wave \( t + 2 \) and apply population weights from the New Zealand Census for year \( t+2 \) to obtain valid estimates.
-
-3. **Temporal Ordering of Variables**: The study's design incorporates a clear temporal structure for confounders and outcomes. Confounders are assessed prior to the treatment, negating the risk of post-treatment bias. Outcomes pertaining to well-being are evaluated after the treatment, thereby reducing the potential for reverse causation. This structure underpins the causal flow from pet ownership to well-being.
-
-4. **Balancing Confounders**: Once the temporal structure is set, we tackle confounders that could distort the causal link between pet ownership and well-being. We employ doubly-robust methods using the `lmtp` package in R. These methods amalgamate targeted machine learning models for both the treatment and the outcome variables. Being doubly robust, the analysis can recover consistent causal estimates even if either model is misspecified.
-
-5. **Inclusion of Baseline Measures**: After confounder adjustment, we introduce baseline measures for both the treatment and the outcomes. This strategy serves two objectives: first, it augments control for confounding variables, and second, it permits differentiation between "incidence" and "prevalence" effects.
-  - **Incidence Effects**: These capture the emergence of new cases or conditions among individuals who acquire pets during the study. This facilitates an evaluation of the causal impact of pet adoption on well-being among those who were not pet owners at the baseline.
-
-6. **Adoption of an Outcomewide Approach for Well-being**: In measuring well-being, we utilise an outcomewide approach [@vanderweele2020], to assess effects across multiple dimensions within the same study. This multifaceted approach has several benefits:
-
-  - **Contextualised effects**: first, the approach allows us to place each outcome in context relative to the others. This facilitates a better understanding of the importance of each individual effect within the overarching construct of well-being.
-  
-  - **Mitigation of spurious findings**: second, by assessing multiple outcomes simultaneously, we minimise the risk of cherry-picking cases that confirm a preconceived hypothesis, thereby reducing the likelihood of chance findings.
-  
-  - **Acceleration of Scientific Understanding**: third, this comprehensive assessment can fast-track our scientific insights into the potential advantages and disadvantages of pet ownership on various aspects of human well-being.
-  
-
-The selection of outcomes below are based on previous studies reflecting interest in the relationship between pet ownership and (1) health, (2) embodied well-being and distress, (3) reflective well-being and (4) social well-being. 
+To address these limitations and offer a robust methodological framework for causal inference, our study adopts the following strategies:
 
 
-7. **Enhanced Methodological Rigour through TMLE and Machine Learning**: to address the intrinsic limitations of non-randomised pet ownership, our study employs   Targeted Maximum Likelihood Estimation (TMLE) coupled with machine learning techniques (the `superlearner` library in R). These advanced methodological enhancement offer the following benefits:
+1. **Clarify the causal question:** prior to any analysis, it is crucial to explicitly define the causal question under scrutiny. Within the umbrella term of "pet ownership," multiple scenarios can be considered: coming to own a cat, coming to own a dog, coming to own other animals, parting with one or several types of pet, and so forth. Here, for the sake of causal clarity, we focus on two population average treatment effects: (a) the impact of acquiring cats and (b) the impact of acquiring dogs. Each scenario is conceptualised as a randomised experiment, contrasting a population that acquires the animal with one that does not. Effects are summarised for the population.
 
-  - **Reduced Model Dependence**: The use of TMLE allows for doubly-robust causal inference, reducing our dependence on correct model specification for either treatment or outcome. The method is robust even if either the treatment model (i.e., pet ownership) or the outcome model (i.e., well-being indicators) is incorrectly specified.
-  
-  - **Machine Learning for confounder Balncing**: employing machine learning algorithms further refines our ability to balance confounders, particularly when these are high-dimensional or interact in complex ways. This enhances the study's internal validity and makes our causal claims more plausible.
-  
-  - **Robustness against assumptions**: flexible estimation approach for the parameters that are of no intrinsic interest (the control variables) protects inference from model mis-specificatoin. 
+2. **Clearly define the target population**: the study's findings are intended to generalise to New Zealanders from the baseline wave 2015 of the New Zealand Attitudes and Values Study (NZAVS), who may have acquired or lost pets in the next available wave for which the NZAVS has measures of pet ownership: NZAVS wave 2019.  We measure the outcomesas "intention-to-treat" effects in NZAVS wave 2020, and apply population weights from the New Zealand Census for year wave 2020 to obtain valid estimates for the New Zealand population in 2020-2021.
 
-By integrating these methodological elements—namely an outcomewide approach, confounder balancing, temporal ordering, and baseline measures—we strive to overcome the limitations of prior studies and contribute to a deeper, more rigorous understanding of the causal relationship between cat and dog ownership and human well-being.
+3. **Ensure correct temporal order in the variables**: the study's design incorporates a clear temporal structure for confounders and outcomes. Confounders are assessed prior to the treatment, negating the risk of post-treatment bias. Outcomes pertaining to well-being are evaluated after the treatment, thereby reducing the potential for reverse causation. This structure underpins the causal flow from pet ownership to well-being.
+
+4. **Balance confounders**: once the temporal structure is set, we adjust for confounders that could distort the causal link between pet ownership and well-being. We employ doubly-robust methods using the `lmtp` package in R (CITE_. These methods amalgamate targeted machine learning models for both the treatment and the outcome variables. Being doubly robust, the analysis can recover consistent causal estimates even if either model is misspecified.
+
+5. **Include of baseline measures of the treatment and outcome**: after confounder adjustment, we introduce baseline measures for both the treatment and the outcomes. This strategy serves two objectives: first, it augments control for confounding variables, and second, it permits differentiation between "incidence" and "prevalence" effects. *Incidence effects* capture the emergence of new cases or conditions among individuals who acquire pets during the study. This facilitates an evaluation of the causal impact of pet adoption on well-being among those who were not pet owners at the baseline.
+
+6. **Assess multiple dimensions of well-being**: we use an outcomewide approach [@vanderweele2020] to assess well-being effects across multiple dimensions within the same study. This approach has several benefits. First we obtain *contextualised effects*: each outcome is evaluated in context relative to the others. This facilitates a better understanding of the importance of each individual effect within the overarching construct of well-being. Second, we *mitigate* of spurious findings: by assessing multiple outcomes simultaneously, we minimise the risk of cherry-picking cases that confirm a preconceived hypothesis, thereby reducing the likelihood of chance findings. Third, we *accelerate sientific understanding*: a comprehensive assessment can fast-track our scientific insights into the potential advantages and disadvantages of pet ownership on various aspects of human well-being. The selection of outcomes below are based on previous studies reflecting interest in the relationship between pet ownership and (1) health, (2) embodied well-being and distress, (3) reflective well-being and (4) social well-being. 
+
+7. **Obtain methodological precision through TMLE and machine learning**: to address the intrinsic limitations of non-randomised pet ownership, our study employs   Targeted Maximum Likelihood Estimation (TMLE) coupled with machine learning techniques (the `superlearner` library in R). These advanced methodological enhancement offer the following benefits. First, our approach *reduces model dependence*: TMLE allows for doubly-robust causal inference, reducing reliance on correct model specification. The method is robust even if either the treatment model (i.e., pet ownership) or the outcome model (i.e., well-being indicators) is incorrectly specified. Second, *machine Learning for confounder balancing improves precision* further refines our ability to balance confounders, particularly when these are high-dimensional or interact in complex ways. Flexible estimation of parameters that are of no intrinsic interest (the control variables) protects inference from model mis-specificatoin. 
+
+Thesase featurs help us to contribute to a deeper, more rigorous understanding of the causal relationship between cat and dog ownership and human well-being.
 
 ## Method
 
@@ -174,7 +203,8 @@ By integrating these methodological elements—namely an outcomewide approach, c
 
 Data were collected as part of The New Zealand Attitudes and Values Study (NZAVS) is an annual longitudinal national probability panel study of social attitudes, personality, ideology and health outcomes. The NZAVS began in 2009. It includes questionnaire responses from more almost 70,000 New Zealand residents. The study includes researchers from many New Zealand universities, including the University of Auckland, Victoria University of Wellington, the University of Canterbury, the University of Otago, and Waikato University. Because the survey asks the same people to respond each year, it can track subtle change in attitudes and values over time, and is an important resource for researchers both in New Zealand and around the world. The NZAVS is university-based, not- for-profit and independent of political or corporate funding.https://doi.org/10.17605/OSF.IO/75SNB
 
-### Eligibility criteria: cat study
+
+### Eligibility criteria for the causal effects of cat ownership
 
 The sample consisted of respondents to NZAVS waves 2015 (baseline), 2019 (exposure wave), and 2020 (outcome wave) (years 2015-2021) (See Appendix A.)
 
@@ -182,7 +212,8 @@ The sample consisted of respondents to NZAVS waves 2015 (baseline), 2019 (exposu
 1.  Included: full information provided about pets at baseline and the exposure wave (wave 2019)
 2.  Included: missing data for all variables at baseline tolerated: missing data were multiply imputed through the `mice` package. 
 3.  Included: those without pets at baseline or those with cats
-3.  Excluded: those who had any other pets at baseline other than cats. 
+4.  Included: those without pets at the exposure wave or those with cats. 
+3.  Excluded: those who had any other pets at baseline or the exposure wave other than cats. 
 4.  Allowed: loss-to-follow up in wave 2020 (the outcome wave). Missing values and non-response were were handled using censoring weights.
 
 There were `r n_cats` NZAVS participants who met these criteria.
@@ -199,7 +230,7 @@ There were `r n_cats` NZAVS participants who met these criteria.
 
 ```
 
-@tbl-transition is a transition matrix describes the shifts from one state of meaning of life to another state between the baseline wave and the following wave. The numbers in the cells represent the number of individuals who transitioned from one state (rows) to another (columns). For example, the cell in the first row and second column shows the number of individuals who transitioned from the first state (indicated by the left-most cell in the row) to the second state. The top left cell shows the number of individuals who remained in the first state. For the continuous exposure analysis, we fit regressions with splines to avoid linearity assumptions.We find evidence for both change in the exposure between the baseline wave and the exposure wave (wave 18) among the `r n_cats` participants, thus satisifying the positivity assumpition (see below). 
+@tbl-transition is a transition matrix describes the shifts from one state of meaning of life to another state between the baseline wave and the following wave. The numbers in the cells represent the number of individuals who transitioned from one state (rows) to another (columns). For example, the cell in the first row and second column shows the number of individuals who transitioned from the first state (indicated by the left-most cell in the row) to the second state. The top left cell shows the number of individuals who remained in the first state. We find evidence for both change in the exposure between the baseline wave and the exposure wave (wave 18) among the `r n_cats` participants, thus satisifying the positivity assumpition (see below). 
 
 
 |  From   | No Cats | Cats |
@@ -210,13 +241,60 @@ There were `r n_cats` NZAVS participants who met these criteria.
 : Transition matrix for change in cat ownership from baseline to to the exposure wave {#tbl-transition}
 
 
+
+### Eligibility criteria for the causal effects of dog ownership
+
+The sample consisted of respondents to NZAVS waves 2015 (baseline), 2019 (exposure wave), and 2020 (outcome wave) (years 2015-2021) (See Appendix A.)
+
+
+1.  Included: full information provided about pets at baseline and the exposure wave (wave 2019)
+2.  Included: missing data for all variables at baseline tolerated: missing data were multiply imputed through the `mice` package. 
+3.  Included: those without pets at baseline or those with dogs
+4.  Included: those without pets at the exposure wave or those with dogs 
+3.  Excluded: those who had any other pets at baseline or the exposure wave other than dogs 
+4.  Allowed: loss-to-follow up in wave 2020 (the outcome wave). Missing values and non-response were were handled using censoring weights.
+
+There were `r n_dogs` NZAVS participants who met these criteria.
+
+
+### The exposure: cat ownership
+
+```{r}
+#| label: verify-positivity-data-dogs
+#| eval: false
+#| echo: false
+
+ #t_tab_dogs
+```
+
+@tbl-transition-dogs is a transition matrix describes the shifts from one state of meaning of life to another state between the baseline wave and the following wave. The numbers in the cells represent the number of individuals who transitioned from one state (rows) to another (columns). For example, the cell in the first row and second column shows the number of individuals who transitioned from the first state (indicated by the left-most cell in the row) to the second state. The top left cell shows the number of individuals who remained in the first state. We find evidence for both change in the exposure between the baseline wave and the exposure wave (wave 18) among the `r n_cats` participants, thus satisifying the positivity assumpition (see below). 
+
+
+
+|  From   | No Dogs | Dogs |
+|:-------:|:-------:|:----:|
+| No Dogs |  2781   | 183  |
+|  Dogs   |   215   | 953  |
+
+: Transition matrix for change in cat ownership from baseline to to the exposure wave {#tbl-transition-dogs}
+
+
+
+### Evaluation of positivity in the exposure: cat ownership
+
+
 ### Indicators of well-being.
 
 We assessed well-being following @vanderweele2020 outcome-wide template. Outcomewide studies argue that, rather than cherry-picking one or several domains of well-being, science may advance more rapidly, and with greater hope for replication, by assess well-being across as many range of indicators the data may afford. To assist with interpretation, @vanderweele2020 groups well-being into larger dimensions of interest. Here, we identify five-domains: health, embodied well-being, practical well-being, reflective well-being, and social well-being (see Appendix A.)
 
+
+### Baseline confounders, exposure, and outcome measures
+
+
+
 ### Assumptions for causal inference
 
-In this study, we aim to find out if changing one thing (an intervention) would cause a different outcome. However, in reality, we can only observe what happens when we intervene, not what would have happened if we did not, or vice versa. So we face a fundamental problem in showing cause and effect directly. To get around this, we estimate what we call the "average treatment effect" (ATE), which compares the average outcomes of those who received the intervention and those who did not.
+In this study, we aim to find out if changing one thing (an intervention) would cause a different outcome. However, in reality, we can only observe what happens when we intervene, not what would have happened if we did not, or vice versa. So we face a fundamental problem in showing cause and effect directly. To get around this, we estimate a population aaverage treatment effect (PATE), which compares the average outcomes of those who received the intervention and those who did not.
 
 For us to say something is a cause, we rely on three important assumptions:
 
@@ -224,11 +302,7 @@ For us to say something is a cause, we rely on three important assumptions:
 
 2. **Exchangability**: this involves us assuming that whether or not someone received the intervention does not affect their potential outcomes, once we consider certain observed factors. This is akin to how psychologists would randomly assign people to experimental conditions. When using real-world data, we mimic this random assignment by considering factors that could link the intervention and the outcome without any causal relation.
 
-3. **Positivity**: This refers to our expectation that there is always a chance for someone to receive or not receive the intervention, regardless of other factors. There are two ways this can be violated:
-   
-   - **Random non-positivity** happens when we think there's a causal effect for an observation that's missing, which we can check using the data.
-   
-   - **Deterministic non-positivity** occurs when a causal effect is unthinkable. For example, it's illogical to consider the causal effect of a procedure like a hysterectomy for biological males.
+3. **Positivity**: This refers to our expectation that there is always a chance for someone to receive or not receive the intervention, regardless of other factors. There are two ways this can be violated *Random non-positivity* happens when we think there's a causal effect for an observation that is missing, which we can check using the data. *Deterministic non-positivity* occurs when a causal effect is unthinkable. For example, it is generally impossible to consider the causal effect of a procedure like a hysterectomy for biological males.
    
 These assumptions help us build a fair and meaningful comparison between those who received the intervention and those who did not. The goal is to learn about the intervention's overall effect, even though we cannot directly observe what would have happened without it.
 
@@ -247,6 +321,8 @@ Effects must follow causes. To avoid the problems of reverse causation, we measu
 5.  **Control for prior outcome**: It is also vital to control for the outcome measured at baseline -- the 'baseline outcome'. This tactic aims to rule out reverse causation by ensuring that the cause-effect relationship follows the right temporal order. Even though it does not eliminate the possibility of reverse causation, controlling for the baseline outcome helps mitigate its effects. Hence, along with a rich set of covariates, the baseline outcome should be included in the covariate set to make the confounding control assumption as plausible as possible. It is often the strongest confounder affecting both the exposure and subsequent outcome. (For a detailed account of confounding control in three-wave panel designs see @vanderweele2020)
 
 To avoid bias, we must also handle missing data arising from non-response or panel attrition (loss-to-follow up). To address selection bias at basekube we imputated missingness using the `mice` package in R [@vanbuuren2018].  To handling non-response/ missingness at follow-up we used censoring weights (see details of the `lmtp`package)
+
+{{< pagebreak >}}
 
 ```{tikz}
 #| label: fig-outcomewide-dag
@@ -291,40 +367,40 @@ To avoid bias, we must also handle missing data arising from non-response or pan
 
 ```
 
+{{< pagebreak >}}
+
 ### Targeted Maximum Likelihood Estimation for Causal Inference in Cat/Dog Ownership 
 
 To assess the causal impact of pet ownership on well-being, our analysis employs Targeted Maximum Likelihood Estimation (TMLE) for doubly-robust causal inference. This method integrates both treatment models and outcome models, enhancing the study's resilience against model misspecification.
 
-1. **Treatment Model with Propensity Scores**: The initial step in our analytical pipeline involves the calculation of propensity scores for each participant. These scores represent the likelihood of an individual acquiring a pet, conditioned on their covariates. We derive these scores from a targeted machine learning model, which incorporates high-dimensional confounders to estimate the likelihood of treatment assignment (i.e., pet ownership).
+1. **Treatment model with propensity scores**: The initial step in our analytical pipeline involves the calculation of propensity scores for each participant. These scores represent the likelihood of an individual acquiring a pet, conditioned on their covariates. We derive these scores from a targeted machine learning model, which incorporates high-dimensional confounders to estimate the likelihood of treatment assignment (i.e., pet ownership).
 
-2. **Weighting via Propensity Scores**: Post-calculation of propensity scores, each individual in the dataset is assigned a weight. These weights are inverse probability weights and serve to balance the distribution of observed covariates between treated and untreated groups, thereby reducing the bias in causal estimates.
+2. **Weighting via propensity scores**: Post-calculation of propensity scores, each individual in the dataset is assigned a weight. These weights are inverse probability weights and serve to balance the distribution of observed covariates between treated and untreated groups, thereby reducing the bias in causal estimates.
 
-3. **Outcome Models Focused on Well-being**: Subsequently, we develop a second targeted machine learning model concentrating on the outcome variables, which encompass approximately 35 measures of well-being across five domains. This model incorporates both the treatment status (pet ownership) and the aforementioned weights, refining our ability to make causal inferences.
+3. **Outcome models focused on well-being**: Subsequently, we develop a second targeted machine learning model concentrating on the outcome variables, which encompass approximately 15 measures of well-being across five domains. This model incorporates both the treatment status (pet ownership) and the aforementioned weights, refining our ability to make causal inferences.
 
-4. **Counterfactual Prediction**: Central to TMLE is the prediction of counterfactual outcomes. Utilising the estimates from both treatment and outcome models, TMLE facilitates the prediction of what the well-being measures would have been for each individual under both treatment conditions—owning a pet and not owning a pet.
+4. **Counterfactual contrasts**: Central to TMLE is the prediction of counterfactual outcomes. Utilising the estimates from both treatment and outcome models, TMLE facilitates the prediction of what the well-being measures would have been for each individual under both treatment conditions—owning a pet and not owning a pet.
 
-5. **Effect Estimation**: Finally, we compute the average treatment effect by contrasting these counterfactual outcomes. Specifically, we calculate the difference in predicted well-being between the two treatment levels—having a pet versus not having one.
+5. **Effect estimation**: Finally, we compute the average treatment effect by contrasting these counterfactual outcomes. Specifically, we calculate the difference in predicted well-being between the two treatment levels—having a pet versus not having one.
 
 The integration of TMLE and machine learning mitigates reliance on stringent modelling assumptions and adds an extra layer of robustness, making this a particularly rigorous approach for causal inference in the study of pet ownership and human well-being.
 
+### Shift estimand
 
+Comparison of "gain" of pet compared to population as it would have been .... Policy intervention...  
 
-### Baseline confounders, exposure, and outcome measures
-
+{{< pagebreak >}}
 
 ## Study 1: Cat Ownership
 
 ### Effects on health
 
-@fig-results-health_con, presents expected + one-year effect of cat ownership on health outcomes
-
 ```{r}
-#| label: fig-results-health_con
-#| fig-cap: "Causal effects of religious loss on reported physical health"
+#| label: fig-results-health-cats
+#| fig-cap: "Causal effects on embodied well-being"
 #| eval: true
 #| include: true
 #| echo: false
-# import models 
 #| fig-height: 6
 
 
@@ -370,8 +446,11 @@ group_plot_ate_health_cats
 #  )
 ```
 
+{{< pagebreak >}}
+
+
 ```{r}
-#| label: tbl-results-health_con
+#| label: tbl-results-health-cats
 #| tbl-cap: "Table of results for the health domain"
 #| eval: true
 #| include: true
@@ -384,33 +463,30 @@ group_tab_health_cats |>
 
 ```
 
-@tbl-results-health_con presents the Population Average Treatment Effect (PATE) which is the expected difference in outcomes between treatment and control groups for the New Zealand population. We observed the following:
+@tbl-results-health-cats and @tbl-results-health-cats presents the Population Average Treatment Effect (PATE) which is the expected difference in outcomes between treatment and control groups for the New Zealand population. We observed the following:
 
 
-For the outcome 'Alcohol frequency:Gain cat if not have pets.', the PATE causal contrast is 0.014. The confidence interval ranges from -0.015 to 0.042. The E-value for this outcome is 1.125, indicating no reliable evidence for causality.
+For the outcome 'Alcohol frequency', the PATE causal contrast is 0.014. The confidence interval ranges from -0.015 to 0.042. The E-value for this outcome is 1.125, indicating no reliable evidence for causality.
 
-For the outcome 'BMI:Gain cat if not have pets.', the PATE causal contrast is 0.006. The confidence interval ranges from -0.013 to 0.026. The E-value for this outcome is 1.082, indicating no reliable evidence for causality.
+For the outcome 'BMI', the PATE causal contrast is 0.006. The confidence interval ranges from -0.013 to 0.026. The E-value for this outcome is 1.082, indicating no reliable evidence for causality.
 
-For the outcome 'Alcohol intensity:Gain cat if not have pets.', the PATE causal contrast is -0.001. The confidence interval ranges from -0.035 to 0.032. The E-value for this outcome is 1.037, indicating no reliable evidence for causality.
+For the outcome 'Alcohol intensity', the PATE causal contrast is -0.001. The confidence interval ranges from -0.035 to 0.032. The E-value for this outcome is 1.037, indicating no reliable evidence for causality.
 
-For the outcome 'Hours excercise:Gain cat if not have pets.', the PATE causal contrast is -0.008. The confidence interval ranges from -0.049 to 0.034. The E-value for this outcome is 1.09, indicating no reliable evidence for causality.
+For the outcome 'Hours excercise', the PATE causal contrast is -0.008. The confidence interval ranges from -0.049 to 0.034. The E-value for this outcome is 1.09, indicating no reliable evidence for causality.
 
-For the outcome 'Short form health, your health:Gain cat if not have pets.', the PATE causal contrast is -0.025. The confidence interval ranges from -0.06 to 0.01. The E-value for this outcome is 1.176,  indicating no reliable evidence for causality.
+For the outcome 'Short form health, your health', the PATE causal contrast is -0.025. The confidence interval ranges from -0.06 to 0.01. The E-value for this outcome is 1.176,  indicating no reliable evidence for causality.
 
-For the outcome 'Hours sleep:Gain cat if not have pets.', the PATE causal contrast is -0.057. The confidence interval ranges from -0.096 to -0.018. The E-value for this outcome is 1.291, indicating reliable evidence for causality.
+For the outcome 'Hours sleep', the PATE causal contrast is -0.057. The confidence interval ranges from -0.096 to -0.018. The E-value for this outcome is 1.291, indicating reliable evidence for causality.
 
-
-### Effects on embodied well-being continuous model (intervention of +1 SD from average meaning of life)
-
+{{< pagebreak >}}  
+### Effects on embodied well-being
 ```{r}
-#| label: fig-results-embodied_con
-#| fig-cap: "Causal effects of religious loss on embodied well-being"
+#| label: fig-results-embodied-cats
+#| fig-cap: "Causal effects on embodied well-being"
 #| eval: true
 #| include: true
 #| echo: false
 #| fig-height: 6
-
-
 #check
 #title
 title = title
@@ -452,9 +528,11 @@ plot_group_tab_body_cats
 # )
 # dev.off()
 ```
+{{< pagebreak >}} 
+
 
 ```{r}
-#| label: tbl-results-embodied_con
+#| label: tbl-results-embodied-cats
 #| tbl-cap: "Table of results for the embodied well-being domain"
 #| eval: true
 #| include: true
@@ -467,20 +545,24 @@ group_tab_body_cats |>
 
 ```
 
-@tbl-results-embodied_con presents the Population Average Treatment Effect (PATE) for the embodied domain.
+@fig-results-embodied-cats and @tbl-results-embodied-cats presents the Population Average Treatment Effect (PATE) for the embodied domain.
 
 
-For the outcome 'Fatigue:Gain cat if not have pets.', the PATE causal contrast is 0.022. The confidence interval ranges from -0.015 to 0.059. The E-value for this outcome is 1.163,  indicating no reliable evidence for causality.
+For the outcome 'Fatigue', the PATE causal contrast is 0.022. The confidence interval ranges from -0.015 to 0.059. The E-value for this outcome is 1.163,  indicating no reliable evidence for causality.
 
-For the outcome 'Kessler 6 distress:Gain cat if not have pets.', the PATE causal contrast is 0.002. The confidence interval ranges from -0.029 to 0.032. The E-value for this outcome is 1.04, indicating no reliable evidence for causality.
+For the outcome 'Kessler 6 distress', the PATE causal contrast is 0.002. The confidence interval ranges from -0.029 to 0.032. The E-value for this outcome is 1.04, indicating no reliable evidence for causality.
 
-For the outcome 'Body satisfaction:Gain cat if not have pets.', the PATE causal contrast is -0.025. The confidence interval ranges from -0.061 to 0.01. The E-value for this outcome is 1.178, i indicating no reliable evidence for causality.
+For the outcome 'Body satisfaction', the PATE causal contrast is -0.025. The confidence interval ranges from -0.061 to 0.01. The E-value for this outcome is 1.178, i indicating no reliable evidence for causality.
 
-### Effects on reflective well-being continuous model (intervention of +1 SD from average meaning of life)
+
+
+
+{{< pagebreak >}}  
+### Effects on reflective well-being
 
 ```{r}
-#| label: fig-results-reflective-well-being_con
-#| fig-cap: "Causal effects of religious loss on reflective well-being"
+#| label: fig-results-reflective-well-being-cats
+#| fig-cap: "Causal effects on reflective well-being"
 #| eval: true
 #| include: true
 #| echo: false
@@ -524,9 +606,9 @@ plot_group_tab_reflective_cats
 #   dpi = 600
 # )
 ```
-
+{{< pagebreak >}}  
 ```{r}
-#| label: tbl-results-reflective_con
+#| label: tbl-results-reflective-cats
 #| tbl-cap: "Table of results for the reflective well-being domain"
 #| eval: true
 #| include: true
@@ -539,33 +621,34 @@ group_tab_reflective_cats|>
 
 ```
 
-@tbl-results-reflective_con presents the Population Average Treatment Effect (PATE) for the reflective domain.
 
 
-For the outcome 'PWB your future security:Gain cat if not have pets.', the PATE causal contrast is -0.001. The confidence interval ranges from -0.039 to 0.037. The E-value for this outcome is 1.03, indicating no reliable evidence for causality.
+@fig-results-reflective-well-being-cats and @tbl-results-reflective-cats presents the Population Average Treatment Effect (PATE) for the reflective domain.
 
-For the outcome 'PWB your standard living:Gain cat if not have pets.', the PATE causal contrast is -0.002. The confidence interval ranges from -0.04 to 0.036. The E-value for this outcome is 1.042, indicating no reliable evidence for causality.
 
-For the outcome 'Self esteem:Gain cat if not have pets.', the PATE causal contrast is -0.017. The confidence interval ranges from -0.047 to 0.012. The E-value for this outcome is 1.143,  indicating no reliable evidence for causality.
+For the outcome 'PWB your future security', the PATE causal contrast is -0.001. The confidence interval ranges from -0.039 to 0.037. The E-value for this outcome is 1.03, indicating no reliable evidence for causality.
 
-For the outcome 'PWB your health:Gain cat if not have pets.', the PATE causal contrast is -0.021. The confidence interval ranges from -0.057 to 0.016. The E-value for this outcome is 1.159,  indicating no reliable evidence for causality.
+For the outcome 'PWB your standard living', the PATE causal contrast is -0.002. The confidence interval ranges from -0.04 to 0.036. The E-value for this outcome is 1.042, indicating no reliable evidence for causality.
 
-For the outcome 'PWB your relationships:Gain cat if not have pets.', the PATE causal contrast is -0.038. The confidence interval ranges from -0.076 to -0.001. The E-value for this outcome is 1.228, indicating evidence for causality is weak.
+For the outcome 'Self esteem', the PATE causal contrast is -0.017. The confidence interval ranges from -0.047 to 0.012. The E-value for this outcome is 1.143,  indicating no reliable evidence for causality.
 
+For the outcome 'PWB your health', the PATE causal contrast is -0.021. The confidence interval ranges from -0.057 to 0.016. The E-value for this outcome is 1.159,  indicating no reliable evidence for causality.
+
+For the outcome 'PWB your relationships', the PATE causal contrast is -0.038. The confidence interval ranges from -0.076 to -0.001. The E-value for this outcome is 1.228, indicating evidence for causality is weak.
+
+{{< pagebreak >}}  
 ### Effects social well-being 
 
 ```{r}
-#| label: fig-results-social-wellbeing_con
-#| fig-cap: "Causal effects of religious loss on social well-being"
+#| label: fig-results-social-wellbeing-cats
+#| fig-cap: "Causal effects on social well-being"
 #| eval: true
 #| include: true
 #| echo: false
 #| fig-height: 6
 
 # check title 
-#title
-title = title_cats
-
+#
 #check sub
 subtitle_social = "Social outcomes"
 plot_group_tab_social_cats <- margot_plot(group_tab_social_cats,    
@@ -603,29 +686,32 @@ plot_group_tab_social_cats
 #   dpi = 600
 # )
 ```
-
+{{< pagebreak >}} 
 ```{r}
-#| label: tbl-results-social-con
+#| label: tbl-results-social-cats
 #| tbl-cap: "Table of results for the reflective well-being domain"
 #| eval: true
 #| include: true
 #| echo: false
 
 group_tab_social_cats|> 
-  kbl(format="markdown")
+  kbl(format = "markdown", booktabs = TRUE)
+
+
+
 
 #interpret_table(group_tab_social_cats, "causal_difference", "PATE" )
 
 ```
 
-@tbl-results-social_con
+@fig-results-social-wellbeing-cats and @tbl-results-social-cats present the results of the social well-being analysis.
 
 
-For the outcome 'Neighbourhood community:Gain cat if not have pets.', the PATE causal contrast is 0.009. The confidence interval ranges from -0.028 to 0.046. The E-value for this outcome is 1.1, indicating no reliable evidence for causality.
+For the outcome 'Neighbourhood community', the PATE causal contrast is 0.009. The confidence interval ranges from -0.028 to 0.046. The E-value for this outcome is 1.1, indicating no reliable evidence for causality.
 
-For the outcome 'Social belonging:Gain cat if not have pets.', the PATE causal contrast is -0.011. The confidence interval ranges from -0.044 to 0.021. The E-value for this outcome is 1.112,  indicating no reliable evidence for causality..
+For the outcome 'Social belonging', the PATE causal contrast is -0.011. The confidence interval ranges from -0.044 to 0.021. The E-value for this outcome is 1.112,  indicating no reliable evidence for causality..
 
-For the outcome 'Social support:Gain cat if not have pets.', the PATE causal contrast is -0.024. The confidence interval ranges from -0.058 to 0.01. The E-value for this outcome is 1.171,  indicating no reliable evidence for causality.
+For the outcome 'Social support', the PATE causal contrast is -0.024. The confidence interval ranges from -0.058 to 0.01. The E-value for this outcome is 1.171,  indicating no reliable evidence for causality.
 
 
 ### Discussion of Results: Cat Ownership
@@ -640,29 +726,530 @@ Our analyses reveals little evidence to support strong causal claims about the i
 
 The results thus prompt caution in making substantive claims about the causal impacts of pet ownership, particularly in gaining a cat, on well-being for the New Zealand population. Further research is warranted to corroborate or refute these preliminary findings.
 
+{{< pagebreak >}}  
 
 ## Study 2. Dog Ownership
+```{r}
+#| label: fig-results-health-dogs
+#| fig-cap: "Causal effects on embodied well-being"
+#| eval: true
+#| include: true
+#| echo: false
+#| fig-height: 6
+
+title_dogs = "Dog ownership, N = 4132"
+# set title
+subtitle_health = "Health outcomes"
+
+group_plot_ate_health_dogs <- margot_plot(group_tab_health_dogs,    
+                           type = "RD",
+                           title = title_dogs, 
+                           subtitle = subtitle_health, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -1.5,
+                           x_lim_lo = -1.5,
+                           x_lim_hi =  .3)  
+
+#check
+group_plot_ate_health_dogs
+# 
+# ggsave(
+#   group_plot_ate_health_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_health_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_health_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+#  )
+```
+{{< pagebreak >}} 
+```{r}
+#| label: tbl-results-health-dogs
+#| tbl-cap: "Table of results for the health domain"
+#| eval: true
+#| include: true
+#| echo: false
+
+group_tab_health_dogs |> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_health_dogs, "causal_difference", "PATE")
+
+```
+
+@fig-results-health-dogs and @tbl-results-health-dogs presents the Population Average Treatment Effect (PATE) which is the expected difference in outcomes between treatment and control groups for the New Zealand population. We observed the following:
+
+
+For the outcome 'Hours excercise', the PATE causal contrast is 0.074. The confidence interval ranges from 0.007 to 0.142. The E-value for this outcome is 1.343, indicating reliable evidence for causality.
+
+For the outcome 'Alcohol intensity', the PATE causal contrast is 0.022. The confidence interval ranges from -0.032 to 0.076. The E-value for this outcome is 1.165, indicating no reliable evidence for causality.
+
+For the outcome 'BMI', the PATE causal contrast is 0.016. The confidence interval ranges from -0.018 to 0.051. The E-value for this outcome is 1.138, indicating no reliable evidence for causality. weak.
+
+For the outcome 'Alcohol frequency', the PATE causal contrast is -0.029. The confidence interval ranges from -0.082 to 0.024. The E-value for this outcome is 1.192, indicating no reliable evidence for causality.
+
+For the outcome 'Hours sleep', the PATE causal contrast is -0.035. The confidence interval ranges from -0.1 to 0.03. The E-value for this outcome is 1.217, indicating no reliable evidence for causality.
+
+For the outcome 'Short form health, your health', the PATE causal contrast is -0.039. The confidence interval ranges from -0.1 to 0.022. The E-value for this outcome is 1.229, no reliable evidence for causality.
+
+{{< pagebreak >}} 
+### Effects on embodied well-being
+
+```{r}
+#| label: fig-results-embodied-dogs
+#| fig-cap: "Causal effects on embodied well-being"
+#| eval: true
+#| include: true
+#| echo: false
+#| fig-height: 6
+
+
+#check
+#title
+# make subtitle
+subtitle_embodied = "Embodied outcomes"
+
+# make graph
+plot_group_tab_body_dogs<- margot_plot(group_tab_body_dogs,    
+                           type = "RD",
+                           title = title_dogs, 
+                           subtitle = subtitle_embodied, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -1.5,
+                           x_lim_lo = -1.5,
+                           x_lim_hi =  .3)  
+# view graph
+plot_group_tab_body_dogs
+
+# save after first modelling attempt 
+# ggsave(
+#   group_plot_ate_embodied_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_embodied_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_embodied_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+# dev.off()
+```
+{{< pagebreak >}} 
+```{r}
+#| label: tbl-results-embodied-dogs
+#| tbl-cap: "Table of results for the embodied well-being domain"
+#| eval: true
+#| include: true
+#| echo: false
+
+group_tab_body_dogs |> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_body_dogs, "causal_difference", "PATE" )
+
+```
+
+@fig-results-embodied-dogs and @tbl-results-embodied-dogs presents the Population Average Treatment Effect (PATE) for the embodied domain.
+
+
+For the outcome 'Fatigue', the PATE causal contrast is 0.032. The confidence interval ranges from -0.034 to 0.098. The E-value for this outcome is 1.203, indicating no reliable evidence for causality.
+
+For the outcome 'Kessler 6 distress', the PATE causal contrast is 0.028. The confidence interval ranges from -0.029 to 0.085. The E-value for this outcome is 1.189,indicating no reliable evidence for causality.
+
+For the outcome 'Body satisfaction', the PATE causal contrast is -0.031. The confidence interval ranges from -0.094 to 0.032. The E-value for this outcome is 1.2,indicating no reliable evidence for causality.
+
+{{< pagebreak >}} 
+### Effects on reflective well-being
+
+```{r}
+#| label: fig-results-reflective-well-being-dogs
+#| fig-cap: "Causal effects on reflective well-being"
+#| eval: true
+#| include: true
+#| echo: false
+#| fig-height: 6
+
+#group_tab_ego <- here_read("group_tab_ego")
+
+# make subtitle
+subtitle_reflective = "Reflective outcomes"
+
+# make graph
+plot_group_tab_reflective_dogs <- margot_plot(group_tab_reflective_dogs,    
+                           type = "RD",
+                           title = title_dogs, 
+                           subtitle = subtitle_reflective, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -1.5,
+                           x_lim_lo = -1.5,
+                           x_lim_hi =  .3)  
+# view graph
+plot_group_tab_reflective_dogs
+
+# ggsave(
+#   group_plot_ate_reflective_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_reflective_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_reflective_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+```
+{{< pagebreak >}} 
+```{r}
+#| label: tbl-results-reflective-dogs
+#| tbl-cap: "Table of results for the reflective well-being domain"
+#| eval: true
+#| include: true
+#| echo: false
+
+group_tab_reflective_dogs|> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_reflective_dogs, "causal_difference", "PATE" )
+
+```
+
+@fig-results-reflective-well-being-dogs and @tbl-results-reflective-dogs presents the Population Average Treatment Effect (PATE) for the reflective domain.
+
+
+For the outcome 'PWB your standard living', the PATE causal contrast is 0.033. The confidence interval ranges from -0.03 to 0.097. The E-value for this outcome is 1.209, indicating no reliable evidence for causality.
+
+For the outcome 'PWB your relationships', the PATE causal contrast is -0.013. The confidence interval ranges from -0.075 to 0.05. The E-value for this outcome is 1.12, indicating no reliable evidence for causality.
+
+For the outcome 'PWB your health', the PATE causal contrast is -0.029. The confidence interval ranges from -0.095 to 0.036. The E-value for this outcome is 1.193, indicating no reliable evidence for causality.
+
+For the outcome 'Self esteem', the PATE causal contrast is -0.034. The confidence interval ranges from -0.088 to 0.021. The E-value for this outcome is 1.21, indicating no reliable evidence for causality.
+For the outcome 'PWB your future security', the PATE causal contrast is -0.06. The confidence interval ranges from -0.13 to 0.011. The E-value for this outcome is 1.299, indicating no reliable evidence for causality.
+
+{{< pagebreak >}} 
+### Effects social well-being 
+```{r}
+#| label: fig-results-social-wellbeing-dogs
+#| fig-cap: "Causal effects on social well-being"
+#| eval: true
+#| include: true
+#| echo: false
+#| fig-height: 6
+
+# check title 
+
+#check sub
+subtitle_social = "Social outcomes"
+plot_group_tab_social_dogs <- margot_plot(group_tab_social_dogs,    
+                           type = "RD",
+                           title = title_dogs, 
+                           subtitle = subtitle_social, 
+                           xlab = "(sd units)", 
+                           ylab = "test",
+                           estimate_scale = 1,
+                           base_size = 8,
+                           text_size = 2.5,
+                           point_size = .5,
+                           title_size = 12,
+                           subtitle_size = 11,
+                           legend_text_size = 8,
+                           legend_title_size = 10,
+                           x_offset = -2.5,
+                           x_lim_lo = -2.5,
+                           x_lim_hi =  .3)  
+
+#check
+plot_group_tab_social_dogs
+
+
+# save once
+# ggsave(
+#   group_plot_ate_social_con,
+#   path = here::here(here::here(push_mods, "group_plot_ate_social_con")),
+#   width = 6,
+#   height = 6,
+#   units = "in",
+#   filename = "group_plot_ate_social_con.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+```
+{{< pagebreak >}} 
+```{r}
+#| label: tbl-results-social-dogs
+#| tbl-cap: "Table of results for the reflective well-being domain"
+#| eval: true
+#| include: true
+#| echo: false
+
+group_tab_social_dogs|> 
+  kbl(format="markdown")
+
+#interpret_table(group_tab_social_dogs, "causal_difference", "PATE" )
+
+```
+
+@fig-results-social-wellbeing-dogs and @tbl-results-social-dogs present the population average treatement effects for the social domain. 
+
+
+For the outcome 'Neighbourhood community', the PATE causal contrast is 0.021. The confidence interval ranges from -0.038 to 0.08. The E-value for this outcome is 1.159, indicating no reliable evidence for causality.
+
+For the outcome 'Social belonging', the PATE causal contrast is -0.015. The confidence interval ranges from -0.071 to 0.04. The E-value for this outcome is 1.133, indicating no reliable evidence for causality.
+
+For the outcome 'Social support', the PATE causal contrast is -0.064. The confidence interval ranges from -0.128 to 0.001. The E-value for this outcome is 1.311, indicating no reliable evidence for causality.
+
+
+## Discussion of Dog ownership results
+
+Among the array of outcomes studied in relation to acquiring a dog, only one indicator provided reliable evidence for a causal effect—exercise. Specifically, the Population Average Treatment Effect (PATE) for 'Hours exercise' was 0.074, with a confidence interval ranging from 0.007 to 0.142 and an E-value of 1.343. This suggests that gaining a dog leads to a modest but statistically significant increase in exercise for individuals who socialise at least two hours per week. 
+
+For all other outcomes examined—ranging from body mass index (BMI) and alcohol consumption to various psychological well-being markers—there was no reliable evidence supporting a causal relationship. Confidence intervals for these outcomes generally crossed zero, and E-values fell short of indicating strong evidence for causality.
+
+In summary, our study provides limited support for the proposition that acquiring a dog causally affects human well-being, with evidence restricted to exercise levels. 
+
 
 
 ## General Discussion 
 
 
-### Generalisability and Transportability
+```{r}
+#| label: compute effect on hours excercise for the NZ population
+#| eval: true
+#| echo: false
+#| include: false
 
+# function to backtransform effect sizes and confidence intervals
+back_transform_minutes <- function(effect_sd, lb_sd, ub_sd, sigma, mean_hours) {
+  # calculate the back-transformed effect size in hours
+  effect_original_hours = (effect_sd * sigma) + mean_hours
+  
+  # calculate the back-transformed lower and upper bounds in hours
+  lb_original_hours = (lb_sd * sigma) + mean_hours
+  ub_original_hours = (ub_sd * sigma) + mean_hours
+  
+  # convert hours to minutes
+  effect_original_minutes = effect_original_hours * 60
+  lb_original_minutes = lb_original_hours * 60
+  ub_original_minutes = ub_original_hours * 60
+  
+  # calculate the delta from mean in minutes for effect, lb and ub
+  delta_mean_minutes = (mean_hours - effect_original_hours) * 60
+  delta_mean_minutes_lb = (mean_hours - lb_original_hours) * 60
+  delta_mean_minutes_ub = (mean_hours - ub_original_hours) * 60
+  
+  # create a list to store the results
+  result <- list(
+    effect_original_hours = effect_original_hours,
+    lb_original_hours = lb_original_hours,
+    ub_original_hours = ub_original_hours,
+    effect_original_minutes = effect_original_minutes,
+    lb_original_minutes = lb_original_minutes,
+    ub_original_minutes = ub_original_minutes,
+    delta_mean_minutes = delta_mean_minutes,
+    delta_mean_minutes_lb = delta_mean_minutes_lb,
+    delta_mean_minutes_ub = delta_mean_minutes_ub
+  )
+  
+  return(result)
+}
+
+# example usage
+sigma = sd(dat_sd_tranform$hlth_sleep_hours, na.rm = TRUE)
+mean_hours = mean(dat_sd_tranform$hlth_sleep_hours, na.rm = TRUE)
+effect_sd = -0.057
+lb_sd = -0.096
+ub_sd = -0.018
+
+
+result_back_transform_minutes <-  back_transform_minutes(effect_sd, lb_sd, ub_sd, sigma, mean_hours)
+
+
+
+# Exercise transform
+
+# example usage
+sigma_log_exercise = sd(dat_sd_tranform$hours_exercise_log, na.rm = TRUE)
+mean_log_exercise = mean(dat_sd_tranform$hours_exercise_log, na.rm = TRUE)
+mean_log_exercise = mean(dat_sd_tranform$hours_exercise_log, na.rm = TRUE)
+
+
+# results for dog and exercise
+effect_sd =  0.074
+lb_sd = 0.007 
+ub_sd =  0.142
+
+
+# function to backtransform effect sizes and confidence intervals
+back_transform_generic <- function(effect_sd, lb_sd, ub_sd, sigma, mean_value) {
+  # calculate the back-transformed effect size
+  effect_original = (effect_sd * sigma) + mean_value
+  
+  # calculate the back-transformed lower and upper bounds
+  lb_original = (lb_sd * sigma) + mean_value
+  ub_original = (ub_sd * sigma) + mean_value
+  
+  # calculate the delta from mean for effect, lb and ub
+  delta_mean = mean_value - effect_original
+  delta_mean_lb = mean_value - lb_original
+  delta_mean_ub = mean_value - ub_original
+  
+  # create a list to store the results
+  result <- list(
+    effect_original = effect_original,
+    lb_original = lb_original,
+    ub_original = ub_original,
+    delta_mean = delta_mean,
+    delta_mean_lb = delta_mean_lb,
+    delta_mean_ub = delta_mean_ub
+  )
+  
+  return(result)
+}
+
+# function to back-transform log SD effect sizes and confidence intervals
+
+
+# example usage
+log_effect = 0.074
+log_lb = 0.007
+log_ub = 0.142
+
+
+
+
+# function to back-transform log mean and log sd to the original scale
+back_transform_logmean_logsd <- function(log_mean, log_sd) {
+  mean_original = exp(log_mean) - 1
+  sd_original = exp(log_mean + 0.5 * log_sd^2) - exp(log_mean)
+  
+  # create a list to store the results
+  result <- list(
+    mean_original = mean_original,
+    sd_original = sd_original
+  )
+  
+  return(result)
+}
+
+# example usage
+log_mean = mean_log_exercise
+log_sd = sigma_log_exercise
+
+back_transformed_result <- back_transform_logmean_logsd(log_mean, log_sd)
+
+
+
+
+# function to transform log SD units to original scale
+log_sd_to_original <- function(log_sd_result, original_mean, original_sd) {
+  
+  # 1. back-transform the log SD result to log units
+  log_result = log_sd_result * original_sd
+  
+  # 2. back-transform to the original scale
+  original_result = (exp(log_result) - 1)
+  
+  # 3. Convert to the original unit (minutes)
+  original_result_minutes = original_result * 60
+  
+  return(original_result_minutes)
+}
+
+# example usage
+log_sd_result = 0.074  # the log SD result you obtained
+original_mean_hours = back_transformed_result$mean_original
+
+original_sd = back_transformed_result$sd_original  # the original standard deviation in hours
+
+result_minutes_exercise = log_sd_to_original(log_sd_result, original_mean_hours, original_sd)
+#print(result_minutes)
+
+result_minutes_sleep <- result_back_transform_minutes$delta_mean_minutes
+# result_back_transform_generic <- back_transform_generic(effect_sd, lb_sd, ub_sd,sigma = sigma, mean_value = mean_hours)
+# print(result_back_transform_generic)
+
+
+# example usage
+#sigma = 1.5  # replace with actual standard deviation of 'hours of sleep' from your data
+
+
+# 
+# sigma<- sd(dat_sd_tranform$hlth_sleep_hours, na.rm = TRUE)
+# sigma_sleep<- sd(dat_sd_tranform$hlth_sleep_hours, na.rm = TRUE)
+# 
+# mean_hours <- mean(dat_sd_tranform$hlth_sleep_hours, na.rm = TRUE)
+# mean_hours
+# 
+# effect_sd = -0.057
+# lb_sd = -0.096
+# ub_sd = -0.018
+# 
+# 
+# back_transformed_result <- back_transform_generic(effect_sd, lb_sd, ub_sd, sigma_sleep, mean_hours)
+# print(back_transformed_result)
+
+
+# 
+# result_minutes_sleep
+# result_minutes_exercise
+# health tranform for cats
+
+```
+
+### Summary of Key Findings
+
+The expected diminution of sleep resulting from cat ownership in the general population is estimated to be about four minutes per night This appears modest, but the level of confidence in this finding is relatively high. In contrast, the expected augmentation in exercise from dog ownership is about then minutes per week. The size of this effect may appear modest but is backed by relatively strong evidence.
+
+
+Note further that the modest effect sizes found in our analyses, particularly a loss of about ten minutes of sleep per week for cat owners and an increase of approximately four minutes of exercise per night for dog owners, should be interpreted with caution. Our study sets a high bar for evidence, relying on robust statistical methods that control for confounding variables and strive for generalisability. However, the Population Average Treatment Effects (PATE) reported are just that—averages across the population contrasting ownership with what would have been observed, on average, had there been no shift in ownership.
 
 ### Assumptions and Limitations
 
+1. **Causality and confounding**: we employs rigorous causal inference techniques, but these are contingent on the assumption of no unmeasured confounding. (Say more about E-values)
+   
+2. **Measurement error**: the variables under consideration—exercise and sleep—are self-reported, which might introduce both systematic and random measurement errors. It should be specifically noted that the apparent modesty of the practical effects could arise, in part, to measurement inaccuracy. Given the limitations of self-report measures, the true effect sizes may differ from those estimated. Therefore, while the evidence does suggest a modest impact, the actual real-world effects may be either smaller or larger than the estimates suggest. 
 
-### Theoretical Relevance
+Given the modest effect sizes and the limitations of self-report measures, future research should explore the use of more objective measures for variables like exercise and sleep. (... etc.)
 
-This study is important both for its methods and findings.
-
-
-### Future Research
+3. **Generalisability and transportability**: our findings should be interpreted within the context of the New Zealand population from which the data were sourced. Although the results may have broader relevance, direct extrapolation to different populations or sociocultural settings should be undertaken cautiously.
 
 
-### Real-world Implications
+### Theoretical and Practical relevance
 
+This study contributes to an emerging but still limited body of scholarly work on the causal impacts of pet ownership on various dimensions of human well-being. Notably, the study employs advanced causal inference methods, offering a potential methodological framework for future investigations in this area.
+
+Although the observed effect sizes are modest, they are not necessary trivial. Decisions around pet ownership should consider the full range of potential impacts, both positive and negative, on well-being -- and of course, on the animals themselves.  However, it would be premature to recommend pet ownership as a strategy for large improvements in well-being, based on the current evidence.
 
 ### Ethics Approval Details
 
@@ -672,14 +1259,21 @@ The NZAVS is reviewed every three years by the University of Auckland Human Part
 
 The New Zealand Attitudes and Values Study is supported by a grant from the TempletoReligion Trust (TRT0196; TRT0418). JB received support from the Max Planck Institute for the Science of Human History. The funders had no role in preparing the manuscript or the decision to publish.
 
+
+### Author statement
+
+TBA
+
+
+
 {{< pagebreak >}}
 
 ## Appendix A. Measures
 
-### Baseline confounding control
+### Baseline confounding control cats
 
 ```{r}
-#| label: baseline_table
+#| label: baseline-table-cats
 #| eval: false
 #| echo: false
 #| include: false
@@ -845,6 +1439,28 @@ The New Zealand Attitudes and Values Study is supported by a grant from the Temp
 |Mean (SD)                     |0.861 (0.346)      |
 
 : Summary of baseline descriptive statistics for participants in the cat ownership study {#tbl-baseline-cats}
+
+
+{{< pagebreak >}}
+
+### Baseline confounding control: cats
+
+
+
+```{r}
+#| label: baseline-table-dogs
+#| eval: true
+#| echo: false
+#| include: true
+
+table_baseline_dogs
+```
+
+
+
+: Summary of baseline descriptive statistics for participants in the cat ownership study {#tbl-baseline-table-dogs}
+
+
 
 
 
