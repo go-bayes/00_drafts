@@ -232,10 +232,11 @@ Whether pets benefit their owners is a question of perennial fascination
 and debate. Research abounds on the physical and psychological effects
 of pet ownership, often highlighting benefits such as reduced stress
 levels, increased physical activity, and better overall well-being.
-However, the majority of these studies, including our own previous work,
-rely heavily on correlational analyses. Thus, questions concerning the
-causal impact of pet ownership on human health and psychological
-well-being remain unanswered.
+However, the majority of these studies, including our own previous work
+(\citeproc{ref-fraser}{Fraser \emph{et al.} n.d.}), rely heavily on
+correlational analyses. Thus, questions concerning the causal impact of
+pet ownership on human health and psychological well-being remain
+unanswered.
 
 Traditional studies, even those of longitudinal design, have been
 limited in establishing causality for several reasons:
@@ -252,10 +253,11 @@ may introduce bias, making it challenging to isolate the specific
 effects of pet ownership.
 
 Third, large scale panel datasets are rare; where they exist, they have
-yet to be employed to address causality. These opportunities await.
+yet to be employed to address causality. Opportunities for causal
+analysis await.
 
-To address these limitations and offer a robust methodological framework
-for causal inference, our study adopts the following strategies:
+Here, to address these limitations and provide a robust methodological
+framework for causal inference, we adopt the following strategies:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -277,7 +279,7 @@ for causal inference, our study adopts the following strategies:
   2015 of the New Zealand Attitudes and Values Study (NZAVS), who may
   have acquired or lost pets in the next available wave for which the
   NZAVS has measures of pet ownership: NZAVS wave 2019. We measure the
-  outcomesas ``intention-to-treat'' effects in NZAVS wave 2020, and
+  outcomes as ``intention-to-treat'' effects in NZAVS wave 2020, and
   apply population weights from the New Zealand Census for year wave
   2020 to obtain valid estimates for the New Zealand population in
   2020-2021.
@@ -293,10 +295,12 @@ for causal inference, our study adopts the following strategies:
   \textbf{Balance confounders}: once the temporal structure is set, we
   adjust for confounders that could distort the causal link between pet
   ownership and well-being. We employ doubly-robust methods using the
-  \texttt{lmtp} package in R (CITE\_. These methods amalgamate targeted
-  machine learning models for both the treatment and the outcome
-  variables. Being doubly robust, the analysis can recover consistent
-  causal estimates even if either model is misspecified.
+  \texttt{lmtp} package in R (\citeproc{ref-williams2021}{Williams and
+  Díaz 2021}). These methods amalgamate targeted machine learning models
+  for both the treatment and the outcome variables. Being doubly robust,
+  the analysis can recover consistent causal estimates even if either
+  model is misspecified (\citeproc{ref-hoffman2023}{Hoffman \emph{et
+  al.} 2023}).
 \item
   \textbf{Include of baseline measures of the treatment and outcome}:
   after confounder adjustment, we introduce baseline measures for both
@@ -331,23 +335,25 @@ for causal inference, our study adopts the following strategies:
   learning}: to address the intrinsic limitations of non-randomised pet
   ownership, our study employs Targeted Maximum Likelihood Estimation
   (TMLE) coupled with machine learning techniques (the
-  \texttt{superlearner} library in R). These advanced methodological
-  enhancement offer the following benefits. First, our approach
-  \emph{reduces model dependence}: TMLE allows for doubly-robust causal
-  inference, reducing reliance on correct model specification. The
-  method is robust even if either the treatment model (i.e., pet
-  ownership) or the outcome model (i.e., well-being indicators) is
-  incorrectly specified. Second, \emph{machine Learning for confounder
-  balancing improves precision} further refines our ability to balance
-  confounders, particularly when these are high-dimensional or interact
-  in complex ways. Flexible estimation of parameters that are of no
-  intrinsic interest (the control variables) protects inference from
-  model mis-specificatoin.
+  `\texttt{SuperLearner\textasciigrave{}} library in R
+  (\citeproc{ref-polley2023}{Polley \emph{et al.} 2023})). These
+  advanced methodological enhancement offer the following benefits.
+  First, our approach \emph{reduces model dependence}: TMLE allows for
+  doubly-robust causal inference, reducing reliance on correct model
+  specification. The method is robust even if either the treatment model
+  (i.e., pet ownership) or the outcome model (i.e., well-being
+  indicators) is incorrectly specified. Second, \emph{machine Learning
+  for confounder balancing improves precision} further refines our
+  ability to balance confounders, particularly when these are
+  high-dimensional or interact in complex ways. Flexible semi-parametric
+  estimation of parameters that are of no intrinsic interest (the
+  control variables) protects inference from model mis-specification
+  (\citeproc{ref-duxedaz2021}{Díaz \emph{et al.} 2021}).
 \end{enumerate}
 
-Thesase featurs help us to contribute to a deeper, more rigorous
-understanding of the causal relationship between cat and dog ownership
-and human well-being.
+Collectively, this approach help us to contribute to a deeper, more
+rigorous understanding of the causal relationship between cat or dog
+ownership and human well-being.
 
 \subsection{Method}\label{method}
 
@@ -374,26 +380,21 @@ The sample consisted of respondents to NZAVS waves 2015 (baseline), 2019
 (exposure wave), and 2020 (outcome wave) (years 2015-2021) (See Appendix
 A.)
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Included: full information provided about pets at baseline and the
-  exposure wave (wave 2019)
-\item
-  Included: missing data for all variables at baseline tolerated:
-  missing data were multiply imputed through the \texttt{mice} package.
-\item
-  Included: those without pets at baseline or those with cats
-\item
-  Included: those without pets at the exposure wave or those with cats.
-\item
-  Excluded: those who had any other pets at baseline or the exposure
-  wave other than cats.
-\item
-  Allowed: loss-to-follow up in wave 2020 (the outcome wave). Missing
-  values and non-response were were handled using censoring weights.
-\end{enumerate}
+\subsubsection{Inclusion Criteria}\label{inclusion-criteria}
+
+\begin{verbatim}
+- Participants who provided full information provided about pets at baseline and the exposure wave (NZAVS wave 2019)
+- Participants with missing data for all variables at baseline were allowed. Missing data were multiply imputed through the `mice` package [@vanbuuren2018].
+- Those without pets at baseline or those with cats
+- Those without pets or those with cats at the exposure wave (NZAVS wave 2019)
+\end{verbatim}
+
+\subsubsection{Exclusion Criteria}\label{exclusion-criteria}
+
+\begin{verbatim}
+- those who had any other pets at baseline (wave 2015) or the exposure wave (NZAVS wave 2019) other than cats.
+- allowed loss-to-follow up in the outcome wave (NZAVS wave 2020); missing values owing to attrition and non-response were were handled using censoring weights (see details of the `lmtp` package [@williams2021]).
+\end{verbatim}
 
 There were 5376 NZAVS participants who met these criteria.
 
@@ -436,28 +437,9 @@ The sample consisted of respondents to NZAVS waves 2015 (baseline), 2019
 (exposure wave), and 2020 (outcome wave) (years 2015-2021) (See Appendix
 A.)
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Included: full information provided about pets at baseline and the
-  exposure wave (wave 2019)
-\item
-  Included: missing data for all variables at baseline tolerated:
-  missing data were multiply imputed through the \texttt{mice} package.
-\item
-  Included: those without pets at baseline or those with dogs
-\item
-  Included: those without pets at the exposure wave or those with dogs
-\item
-  Excluded: those who had any other pets at baseline or the exposure
-  wave other than dogs
-\item
-  Allowed: loss-to-follow up in wave 2020 (the outcome wave). Missing
-  values and non-response were were handled using censoring weights.
-\end{enumerate}
-
-There were 4132 NZAVS participants who met these criteria.
+Inclusion criteria for the cats an dogs analysis were the same as for
+the cats analysis, replacing ``dogs'' for ``cats''. There were 4132
+NZAVS participants who met these criteria.
 
 \subsubsection{The exposure: cat
 ownership}\label{the-exposure-cat-ownership-1}
@@ -508,9 +490,6 @@ well-being into larger dimensions of interest. Here, we identify
 five-domains: health, embodied well-being, practical well-being,
 reflective well-being, and social well-being (see Appendix A.)
 
-\subsubsection{Baseline confounders, exposure, and outcome
-measures}\label{baseline-confounders-exposure-and-outcome-measures}
-
 \subsubsection{Assumptions for causal
 inference}\label{assumptions-for-causal-inference}
 
@@ -560,7 +539,7 @@ to learn about the intervention's overall effect, even though we cannot
 directly observe what would have happened without it.
 
 \subsubsection{Causal identification
-Strategy}\label{causal-identification-strategy}
+strategy}\label{causal-identification-strategy}
 
 Effects must follow causes. To avoid the problems of reverse causation,
 we measured outcomes during the year following the exposure (NZAVS wave
@@ -618,11 +597,13 @@ modified disjunctive cause criterion which states:
 \end{enumerate}
 
 To avoid bias, we must also handle missing data arising from
-non-response or panel attrition (loss-to-follow up). To address
-selection bias at basekube we imputated missingness using the
+non-response or panel attrition (loss-to-follow up). Again, to address
+selection bias at baseline we imputated missing values using the
 \texttt{mice} package in R (\citeproc{ref-vanbuuren2018}{Van Buuren
 2018}). To handling non-response/ missingness at follow-up we used
-censoring weights (see details of the \texttt{lmtp}package)
+censoring weights, which were passed to the semi-parametric models.
+Valid inferences for the New Zealand population were obtained by passing
+post-stratification census weights (Age, European Ethnicity, Gender).
 
 \newpage{}
 
@@ -690,12 +671,39 @@ misspecification.
 The integration of TMLE and machine learning mitigates reliance on
 stringent modelling assumptions and adds an extra layer of robustness,
 making this a particularly rigorous approach for causal inference in the
-study of pet ownership and human well-being.
+study of pet ownership and human well-being. (For further details see
+(\citeproc{ref-duxedaz2021}{Díaz \emph{et al.} 2021};
+\citeproc{ref-hoffman2022}{Hoffman \emph{et al.} 2022},
+\citeproc{ref-hoffman2023}{2023})
 
 \subsubsection{Shift estimand}\label{shift-estimand}
 
-Comparison of ``gain'' of pet compared to population as it would have
-been \ldots. Policy intervention\ldots{}
+In the present study, we employ a ``shift'' estimand, a distinct
+alternative to traditional causal estimands that typically compare the
+impact of setting everyone to one exposure level against
+another(\citeproc{ref-duxedaz2021}{Díaz \emph{et al.} 2021}). The shift
+estimand facilitates clearer comparisons of hypothetical interventions
+required for causal inference. Here, we examine the effect of universal
+pet ownership - cats in Study 1 an and dogs in Study 2 -- against the
+natural course of either owning or not owning a pet. This approach is
+operationalised through the \texttt{lmtp} package in R
+(\citeproc{ref-williams2021}{Williams and Díaz 2021}). One of the
+primary merits of using a shift estimand is its potential to yield more
+actionable policy insights. Specifically, it enables us to address
+questions such as, ``What would occur if everyone were to adopt pet
+ownership?'' without necessitating a strong counterfactual scenario
+where all individuals are forced to relinquish pet ownership for the
+sake of causal contrast.
+
+Furthermore, the shift approach alleviates some of the stringency
+associated with positivity assumptions. Enacting an intervention to
+compel people to give up their pets might not be plausible, either
+ethically or logistically. The shift estimand, therefore, offers a more
+reasonable and achievable analytical frame. Additionally, as
+demonstrated in Appendix XX, the shift estimand exhibits greater
+conservatism in estimates. This feature adds an additional layer of
+robustness to our findings, making them more reliable for policy
+considerations.
 
 \newpage{}
 
@@ -711,8 +719,7 @@ been \ldots. Policy intervention\ldots{}
 
 }
 
-\caption{\label{fig-results-health-cats}Causal effects on embodied
-well-being}
+\caption{\label{fig-results-health-cats}Causal effects on health}
 
 \end{figure}%
 
@@ -968,8 +975,8 @@ weak.
 
 \newpage{}
 
-\subsubsection{Effects social
-well-being}\label{effects-social-well-being}
+\subsubsection{Effects on social
+well-being}\label{effects-on-social-well-being}
 
 \begin{figure}
 
@@ -1044,8 +1051,9 @@ For the outcome `Social support', the PATE causal contrast is -0.024.
 The confidence interval ranges from -0.058 to 0.01. The E-value for this
 outcome is 1.171, indicating no reliable evidence for causality.
 
-\subsubsection{Discussion of Results: Cat
-Ownership}\label{discussion-of-results-cat-ownership}
+\subsubsection{Discussion: Causal effects of cat ownership on
+multi-dimensional
+well-being}\label{discussion-causal-effects-of-cat-ownership-on-multi-dimensional-well-being}
 
 Our analyses reveals little evidence to support strong causal claims
 about the impact of owning a cat, for those who previously did not own
@@ -1085,6 +1093,8 @@ to corroborate or refute these preliminary findings.
 \newpage{}
 
 \subsection{Study 2. Dog Ownership}\label{study-2.-dog-ownership}
+
+\subsubsection{Effects on Health}\label{effects-on-health-1}
 
 \begin{figure}
 
@@ -1346,8 +1356,8 @@ outcome is 1.299, indicating no reliable evidence for causality.
 
 \newpage{}
 
-\subsubsection{Effects social
-well-being}\label{effects-social-well-being-1}
+\subsubsection{Effects on social
+well-being}\label{effects-on-social-well-being-1}
 
 \begin{figure}
 
@@ -1423,8 +1433,9 @@ For the outcome `Social support', the PATE causal contrast is -0.064.
 The confidence interval ranges from -0.128 to 0.001. The E-value for
 this outcome is 1.311, indicating no reliable evidence for causality.
 
-\subsection{Discussion of Dog ownership
-results}\label{discussion-of-dog-ownership-results}
+\subsubsection{Discussion: Causal effects of dog ownership on
+multi-dimensional
+well-being}\label{discussion-causal-effects-of-dog-ownership-on-multi-dimensional-well-being}
 
 Among the array of outcomes studied in relation to acquiring a dog, only
 one indicator provided reliable evidence for a causal effect---exercise.
@@ -1446,14 +1457,15 @@ restricted to exercise levels.
 
 \subsection{General Discussion}\label{general-discussion}
 
-\subsubsection{Summary of Key Findings}\label{summary-of-key-findings}
+\subsubsection{Summary of findings}\label{summary-of-findings}
 
 The expected diminution of sleep resulting from cat ownership in the
-general population is estimated to be about four minutes per night This
-appears modest, but the level of confidence in this finding is
-relatively high. In contrast, the expected augmentation in exercise from
-dog ownership is about then minutes per week. The size of this effect
-may appear modest but is backed by relatively strong evidence.
+general population is estimated to be about \emph{four minutes} per
+night This appears modest, but the level of confidence in this finding
+is relatively high. In contrast, the expected augmentation in exercise
+from dog ownership is about \emph{ten minutes} per week. The size of
+this effect may appear modest but is backed by relatively strong
+evidence.
 
 Note further that the modest effect sizes found in our analyses,
 particularly a loss of about ten minutes of sleep per week for cat
@@ -1467,7 +1479,7 @@ what would have been observed, on average, had there been no shift in
 ownership.
 
 \subsubsection{Assumptions and
-Limitations}\label{assumptions-and-limitations}
+limitations}\label{assumptions-and-limitations}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1484,17 +1496,10 @@ Limitations}\label{assumptions-and-limitations}
   of self-report measures, the true effect sizes may differ from those
   estimated. Therefore, while the evidence does suggest a modest impact,
   the actual real-world effects may be either smaller or larger than the
-  estimates suggest.
-\end{enumerate}
-
-Given the modest effect sizes and the limitations of self-report
-measures, future research should explore the use of more objective
-measures for variables like exercise and sleep. (\ldots{} etc.)
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\setcounter{enumi}{2}
-\tightlist
+  estimates suggest. Given the modest effect sizes and the limitations
+  of self-report measures, future research should explore the use of
+  more objective measures for variables like exercise and sleep.
+  (\ldots{} etc.)
 \item
   \textbf{Generalisability and transportability}: our findings should be
   interpreted within the context of the New Zealand population from
@@ -1503,7 +1508,7 @@ measures for variables like exercise and sleep. (\ldots{} etc.)
   sociocultural settings should be undertaken cautiously.
 \end{enumerate}
 
-\subsubsection{Theoretical and Practical
+\subsubsection{Theoretical and practical
 relevance}\label{theoretical-and-practical-relevance}
 
 This study contributes to an emerging but still limited body of
@@ -1518,6 +1523,8 @@ of potential impacts, both positive and negative, on well-being -- and
 of course, on the animals themselves. However, it would be premature to
 recommend pet ownership as a strategy for large improvements in
 well-being, based on the current evidence.
+
+\newpage{}
 
 \subsubsection{Ethics Approval Details}\label{ethics-approval-details}
 
@@ -2359,12 +2366,8 @@ responses to this item.
 
 \newpage{}
 
-APPENDIX B. Sample \{.appendix\}
-
-\newpage{}
-
-\subsection{Appendix E. Population Average Treatment
-Effect}\label{appendix-e.-population-average-treatment-effect}
+\subsubsection{Appendix B. Population Average Treatment
+Effect}\label{appendix-b.-population-average-treatment-effect}
 
 As indicated in the main manuscript, the Average Treatment Effects is
 obtained by contrasting the expected outcome when a population sampled
@@ -2397,6 +2400,35 @@ causal contrasts. Because the NZAVS is national probability sample,
 i.e.~inverse probability of being sampled 1. However, to incorporate
 gender, age, and ethnic differences we include post-stratification
 weight into our outcome wide models.
+
+\newpage{}
+
+\subsubsection{Appendix C. Comparison of Shift Estimand with Traditional
+Causal
+Contrast}\label{appendix-c.-comparison-of-shift-estimand-with-traditional-causal-contrast}
+
+Focussing on the effect of cat ownership on sleep, the traditional
+causal estimand in which we contrast everyone getting cats verses no-one
+getting cats is -0.0833, -0.1431, -0.0236, 1.3702, 1.1708 (outcomes are
+measured in standard deviation units). The shift estimand in which
+contrast everyone getting cats with the natural state in which cat
+ownership does or does not occure is -0.0573, -0.0963, -0.0183, 1.291,
+1.1478. As expected given the shift estimand proposes a less intrusive
+counterfactual intervention, we find the shift estimand provides is more
+conservative than the traditional all-or-nothing estimand.
+
+Focussing on the effect of dog ownership on exercise, the traditional
+causal estimand in which we contrast everyone gets dogs verses no-one
+gets dogs is 0.0979, 0.013, 0.1828, 1.4123, 1.1227 (outcomes are again
+measured in standard deviation units of log-dog ownership). The shift
+estimand in which contrast everyone getting cats with the natural state
+in which dog ownership does or does not occur is 0.0742, 0.0068, 0.1417,
+1.3432, 1.086. Again, as expected given the shift estimand proposes a
+less intrusive counterfactual intervention, we find the shift estimand
+provides is more conservative than the traditional all-or-nothing
+estimand.
+
+\newpage{}
 
 \subsection*{References}\label{references}
 \addcontentsline{toc}{subsection}{References}
@@ -2439,6 +2471,12 @@ research from a meta-analysis of statins. \emph{American Journal of
 Epidemiology}, \textbf{175}(4), 250--262.
 doi:\href{https://doi.org/10.1093/aje/kwr301}{10.1093/aje/kwr301}.
 
+\bibitem[\citeproctext]{ref-duxedaz2021}
+Díaz, I, Williams, N, Hoffman, KL, and Schenck, EJ (2021) Non-parametric
+causal effects based on longitudinal modified treatment policies.
+\emph{Journal of the American Statistical Association}.
+doi:\href{https://doi.org/10.1080/01621459.2021.1955691}{10.1080/01621459.2021.1955691}.
+
 \bibitem[\citeproctext]{ref-diener1985}
 Diener, E, Emmons, RA, Larsen, RJ, and Griffin, S (1985) The
 Satisfaction With Life Scale. \emph{Journal of Personality Assessment},
@@ -2456,6 +2494,11 @@ national sample. \emph{The Journal of Sex Research}, \textbf{57}(8),
 979--986.
 doi:\href{https://doi.org/10.1080/00224499.2019.1687640}{10.1080/00224499.2019.1687640}.
 
+\bibitem[\citeproctext]{ref-fraser}
+Fraser, G, Huang, Y, Robinson, K, Wilson, MS, J., and Sibley, CG (n.d.)
+New zealand pet owners{'} demographic characteristics, personality, and
+health and wellbeing: More than just a fluff piece. \emph{Anthrozoös}.
+
 \bibitem[\citeproctext]{ref-hagerty1995}
 Hagerty, BMK, and Patusky, K (1995) Developing a Measure Of Sense of
 Belonging: \emph{Nursing Research}, \textbf{44}(1), 9--13.
@@ -2469,6 +2512,19 @@ Health, M of (2013) \emph{The new zealand health survey: Content guide
 Hernan, MA, and Robins, JM (2023) \emph{Causal inference}, Taylor \&
 Francis. Retrieved from
 \url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}
+
+\bibitem[\citeproctext]{ref-hoffman2023}
+Hoffman, KL, Salazar-Barreto, D, Rudolph, KE, and Díaz, I (2023)
+Introducing longitudinal modified treatment policies: A unified
+framework for studying complex exposures.
+doi:\href{https://doi.org/10.48550/arXiv.2304.09460}{10.48550/arXiv.2304.09460}.
+
+\bibitem[\citeproctext]{ref-hoffman2022}
+Hoffman, KL, Schenck, EJ, Satlin, MJ, \ldots{} Díaz, I (2022) Comparison
+of a target trial emulation framework vs cox regression to estimate the
+association of corticosteroids with COVID-19 mortality. \emph{JAMA
+Network Open}, \textbf{5}(10), e2234425.
+doi:\href{https://doi.org/10.1001/jamanetworkopen.2022.34425}{10.1001/jamanetworkopen.2022.34425}.
 
 \bibitem[\citeproctext]{ref-jost_end_2006-1}
 Jost, JT (2006) The end of the end of ideology. \emph{American
@@ -2495,6 +2551,11 @@ Muriwai, E, Houkamau, CA, and Sibley, CG (2018) Looking like a smoker, a
 smokescreen to racism? Māori perceived appearance linked to smoking
 status. \emph{Ethnicity \& Health}, \textbf{23}(4), 353--366.
 doi:\href{https://doi.org/10.1080/13557858.2016.1263288}{10.1080/13557858.2016.1263288}.
+
+\bibitem[\citeproctext]{ref-polley2023}
+Polley, E, LeDell, E, Kennedy, C, and Laan, M van der (2023)
+\emph{SuperLearner: Super learner prediction}. Retrieved from
+\url{https://CRAN.R-project.org/package=SuperLearner}
 
 \bibitem[\citeproctext]{ref-prochaska2012}
 Prochaska, JJ, Sung, H-Y, Max, W, Shi, Y, and Ong, M (2012) Validity
@@ -2540,6 +2601,11 @@ Williams, KD, Cheung, CKT, and Choi, W (2000) Cyberostracism: Effects of
 being ignored over the internet. \emph{Journal of Personality and Social
 Psychology}, \textbf{79}(5), 748--762.
 doi:\href{https://doi.org/10.1037/0022-3514.79.5.748}{10.1037/0022-3514.79.5.748}.
+
+\bibitem[\citeproctext]{ref-williams2021}
+Williams, NT, and Díaz, I (2021) \emph{Lmtp: Non-parametric causal
+effects of feasible interventions based on modified treatment policies}.
+doi:\href{https://doi.org/10.5281/zenodo.3874931}{10.5281/zenodo.3874931}.
 
 \end{CSLReferences}
 
