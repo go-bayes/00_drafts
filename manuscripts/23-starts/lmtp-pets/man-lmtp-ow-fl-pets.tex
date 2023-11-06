@@ -77,38 +77,28 @@
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
-% definitions for citeproc citations
-\NewDocumentCommand\citeproctext{}{}
-\NewDocumentCommand\citeproc{mm}{%
-  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
-\makeatletter
- % allow citations to break across lines
- \let\@cite@ofmt\@firstofone
- % avoid brackets around text for \cite:
- \def\@biblabel#1{}
- \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
-\makeatother
 \newlength{\cslhangindent}
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
- {\begin{list}{}{%
-  \setlength{\itemindent}{0pt}
-  \setlength{\leftmargin}{0pt}
-  \setlength{\parsep}{0pt}
+\newlength{\cslentryspacingunit} % times entry-spacing
+\setlength{\cslentryspacingunit}{\parskip}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
   % turn on hanging indent if param 1 is 1
   \ifodd #1
-   \setlength{\leftmargin}{\cslhangindent}
-   \setlength{\itemindent}{-1\cslhangindent}
+  \let\oldpar\par
+  \def\par{\hangindent=\cslhangindent\oldpar}
   \fi
   % set entry spacing
-  \setlength{\itemsep}{#2\baselineskip}}}
- {\end{list}}
+  \setlength{\parskip}{#2\cslentryspacingunit}
+ }%
+ {}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{\hfill\break#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{booktabs}
@@ -131,6 +121,10 @@
 \renewcommand*{\Authand}{, }
 \renewcommand*{\Authands}{, }
 \renewcommand\Affilfont{\small}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -167,10 +161,10 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
-\makeatother
-\makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
@@ -233,7 +227,7 @@ and debate. Research abounds on the physical and psychological effects
 of pet ownership, often highlighting benefits such as reduced stress
 levels, increased physical activity, and better overall well-being.
 However, the majority of these studies, including our own previous work
-(\citeproc{ref-fraser2020}{Fraser \emph{et al.} 2020b}), rely heavily on
+(\hyperref[ref-fraser2020]{Fraser \emph{et al.} 2020b}), rely heavily on
 correlational analyses. Thus, questions concerning the causal impact of
 pet ownership on human health and psychological well-being remain
 unanswered.
@@ -295,11 +289,11 @@ framework for causal inference, we adopt the following strategies:
   \textbf{Balance confounders}: once the temporal structure is set, we
   adjust for confounders that could distort the causal link between pet
   ownership and well-being. We employ doubly-robust methods using the
-  \texttt{lmtp} package in R (\citeproc{ref-williams2021}{Williams and
+  \texttt{lmtp} package in R (\hyperref[ref-williams2021]{Williams and
   Díaz 2021}). These methods amalgamate targeted machine learning models
   for both the treatment and the outcome variables. Being doubly robust,
   the analysis can recover consistent causal estimates even if either
-  model is misspecified (\citeproc{ref-hoffman2023}{Hoffman \emph{et
+  model is misspecified (\hyperref[ref-hoffman2023]{Hoffman \emph{et
   al.} 2023}).
 \item
   \textbf{Include of baseline measures of the treatment and outcome}:
@@ -313,7 +307,7 @@ framework for causal inference, we adopt the following strategies:
   well-being among those who were not pet owners at the baseline.
 \item
   \textbf{Assess multiple dimensions of well-being}: we use an
-  outcomewide approach (\citeproc{ref-vanderweele2020}{VanderWeele
+  outcomewide approach (\hyperref[ref-vanderweele2020]{VanderWeele
   \emph{et al.} 2020}) to assess well-being effects across multiple
   dimensions within the same study. This approach has several benefits.
   First we obtain \emph{contextualised effects}: each outcome is
@@ -335,7 +329,7 @@ framework for causal inference, we adopt the following strategies:
   learning}: to address the intrinsic limitations of non-randomised pet
   ownership, our study employs Targeted Maximum Likelihood Estimation
   (TMLE) coupled with machine learning techniques (the
-  \texttt{SuperLearner} library in R (\citeproc{ref-polley2023}{Polley
+  \texttt{SuperLearner} library in R (\hyperref[ref-polley2023]{Polley
   \emph{et al.} 2023})). These advanced methodological enhancement offer
   the following benefits. First, our approach \emph{reduces model
   dependence}: TMLE allows for doubly-robust causal inference, reducing
@@ -347,7 +341,7 @@ framework for causal inference, we adopt the following strategies:
   these are high-dimensional or interact in complex ways. Flexible
   semi-parametric estimation of parameters that are of no intrinsic
   interest (the control variables) protects inference from model
-  mis-specification (\citeproc{ref-duxedaz2021}{Díaz \emph{et al.}
+  mis-specification (\hyperref[ref-duxedaz2021]{Díaz \emph{et al.}
   2021}).
 \end{enumerate}
 
@@ -428,7 +422,7 @@ Effects must follow causes. To avoid the problems of reverse causation,
 we measured outcomes during the year following the exposure (NZAVS wave
 2020). The causal graph presented in Figure~\ref{fig-outcomewide-dag}
 describes our method for confouding control. We follow VanderWeele
-\emph{et al.} (\citeproc{ref-vanderweele2020}{2020}) in adopting a
+\emph{et al.} (\hyperref[ref-vanderweele2020]{2020}) in adopting a
 modified disjunctive cause criterion which states:
 
 \begin{enumerate}
@@ -454,8 +448,8 @@ modified disjunctive cause criterion which states:
   \textbf{Control for prior exposure}: Controlling for prior exposure
   assesses the effects of ``incident exposure'' rather than ``prevalent
   exposure'' - and is a critical step in causal
-  inference(\citeproc{ref-danaei2012}{Danaei \emph{et al.} 2012};
-  \citeproc{ref-hernan2023}{Hernan and Robins 2023}). By including prior
+  inference(\hyperref[ref-danaei2012]{Danaei \emph{et al.} 2012};
+  \hyperref[ref-hernan2023]{Hernan and Robins 2023}). By including prior
   exposure in the analysis, we can more effectively emulate a controlled
   trial. This approach not only helps interpret the effect of exposure
   changes but also strengthens confounding control. It aids in avoiding
@@ -476,13 +470,13 @@ modified disjunctive cause criterion which states:
   control assumption as plausible as possible. It is often the strongest
   confounder affecting both the exposure and subsequent outcome. (For a
   detailed account of confounding control in three-wave panel designs
-  see VanderWeele \emph{et al.} (\citeproc{ref-vanderweele2020}{2020}))
+  see VanderWeele \emph{et al.} (\hyperref[ref-vanderweele2020]{2020}))
 \end{enumerate}
 
 To avoid bias, we must also handle missing data arising from
 non-response or panel attrition (loss-to-follow up). Again, to address
 selection bias at baseline we imputated missing values using the
-\texttt{mice} package in R (\citeproc{ref-vanbuuren2018}{Van Buuren
+\texttt{mice} package in R (\hyperref[ref-vanbuuren2018]{Van Buuren
 2018}). To handling non-response/ missingness at follow-up we used
 censoring weights, which were passed to the semi-parametric models.
 Valid inferences for the New Zealand population were obtained by passing
@@ -506,7 +500,7 @@ A.)
 \item
   Participants with missing data for all variables at baseline were
   allowed. Missing data were multiply imputed through the \texttt{mice}
-  package (\citeproc{ref-vanbuuren2018}{Van Buuren 2018}).
+  package (\hyperref[ref-vanbuuren2018]{Van Buuren 2018}).
 \item
   Participants without pets at baseline or those with cats.
 \item
@@ -525,7 +519,7 @@ A.)
   We allowed loss-to-follow up in the outcome wave (NZAVS wave 2020);
   missing values owing to attrition and non-response were were handled
   using censoring weights (see details of the \texttt{lmtp} package
-  (\citeproc{ref-williams2021}{Williams and Díaz 2021})).
+  (\hyperref[ref-williams2021]{Williams and Díaz 2021})).
 \end{itemize}
 
 There were 5376 NZAVS participants who met these criteria.
@@ -545,9 +539,10 @@ state. We find evidence for both change in the exposure between the
 baseline wave and the exposure wave (wave 18) among the 5376
 participants, thus satisifying the positivity assumpition (see below).
 
+\hypertarget{tbl-transition}{}
 \begin{longtable}[]{@{}ccc@{}}
-\caption{Transition matrix for change in cat ownership from baseline to
-to the exposure wave}\label{tbl-transition}\tabularnewline
+\caption{\label{tbl-transition}Transition matrix for change in cat
+ownership from baseline to to the exposure wave}\tabularnewline
 \toprule\noalign{}
 From & No Cats & Cats \\
 \midrule\noalign{}
@@ -589,9 +584,10 @@ first state. We find evidence for both change in the exposure between
 the baseline wave and the exposure wave (wave 18) among the 5376
 participants, thus satisifying the positivity assumpition (see below).
 
+\hypertarget{tbl-transition-dogs}{}
 \begin{longtable}[]{@{}ccc@{}}
-\caption{Transition matrix for change in cat ownership from baseline to
-to the exposure wave}\label{tbl-transition-dogs}\tabularnewline
+\caption{\label{tbl-transition-dogs}Transition matrix for change in cat
+ownership from baseline to to the exposure wave}\tabularnewline
 \toprule\noalign{}
 From & No Dogs & Dogs \\
 \midrule\noalign{}
@@ -610,12 +606,12 @@ Dogs & 215 & 953 \\
 well-being}\label{multi-dimensional-indicators-of-well-being}
 
 We assessed well-being following VanderWeele \emph{et al.}
-(\citeproc{ref-vanderweele2020}{2020}) outcome-wide template.
+(\hyperref[ref-vanderweele2020]{2020}) outcome-wide template.
 Outcomewide studies argue that, rather than cherry-picking one or
 several domains of well-being, science may advance more rapidly, and
 with greater hope for replication, by assess well-being across as many
 range of indicators the data may afford. To assist with interpretation,
-VanderWeele \emph{et al.} (\citeproc{ref-vanderweele2020}{2020}) groups
+VanderWeele \emph{et al.} (\hyperref[ref-vanderweele2020]{2020}) groups
 well-being into larger dimensions of interest. Here, we identify
 five-domains: health, embodied well-being, practical well-being,
 reflective well-being, and social well-being (see Appendix A.)
@@ -624,9 +620,7 @@ reflective well-being, and social well-being (see Appendix A.)
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{man-lmtp-ow-fl-pets_files/figure-pdf/fig-outcomewide-dag-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{man-lmtp-ow-fl-pets_files/figure-pdf/fig-outcomewide-dag-1.pdf}
 
 }
 
@@ -640,7 +634,7 @@ perform sensitivity analysis. These allow us to ask, how strong would
 the unmeasured confounder need to be in its association with the
 treatment and the outcome to explain away the observed association.}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
@@ -694,9 +688,9 @@ The integration of TMLE and machine learning mitigates reliance on
 stringent modelling assumptions and adds an extra layer of robustness,
 making this a particularly rigorous approach for causal inference in the
 study of pet ownership and human well-being. (For further details see
-(\citeproc{ref-duxedaz2021}{Díaz \emph{et al.} 2021};
-\citeproc{ref-hoffman2022}{Hoffman \emph{et al.} 2022},
-\citeproc{ref-hoffman2023}{2023})
+(\hyperref[ref-duxedaz2021]{Díaz \emph{et al.} 2021};
+\hyperref[ref-hoffman2022]{Hoffman \emph{et al.} 2022},
+\hyperref[ref-hoffman2023]{2023})
 
 \subsubsection{Shift estimand for Longitudional Modified Treatment
 Strategies}\label{shift-estimand-for-longitudional-modified-treatment-strategies}
@@ -704,13 +698,13 @@ Strategies}\label{shift-estimand-for-longitudional-modified-treatment-strategies
 Here, we employ a ``shift'' estimand, a distinct alternative to
 traditional causal estimands that typically compare the impact of
 setting everyone to one exposure level against
-another(\citeproc{ref-duxedaz2021}{Díaz \emph{et al.} 2021}). The shift
+another(\hyperref[ref-duxedaz2021]{Díaz \emph{et al.} 2021}). The shift
 estimand facilitates clearer comparisons of hypothetical interventions
 required for causal inference. Here, we examine the effect of universal
 pet ownership - cats in Study 1 an and dogs in Study 2 -- against the
 natural course of either owning or not owning a pet. We operationalise
 this approach using the \texttt{lmtp} package in R
-(\citeproc{ref-williams2021}{Williams and Díaz 2021}). One of the merits
+(\hyperref[ref-williams2021]{Williams and Díaz 2021}). One of the merits
 of using a shift estimand is its potential to yield more actionable
 policy insights. Specifically, it enables us to address questions such
 as, ``What would occur if everyone were to adopt pet ownership?''
@@ -737,25 +731,17 @@ Ownership}\label{study-1-results-cat-ownership}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-health-cats-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-health-cats-1.pdf}
 
 }
 
 \caption{\label{fig-results-health-cats}Causal effects on health}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-health-cats}Table of results for the health
-domain}
-
-\centering{
-
+\hypertarget{tbl-results-health-cats}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3735}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1928}}
@@ -763,6 +749,23 @@ domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0964}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0964}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1446}}@{}}
+\caption{\label{tbl-results-health-cats}Table of results for the health
+domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -788,12 +791,6 @@ Alcohol intensity & -0.0014 & -0.0352 & 0.0325 & 1.0370 & 1.0000 \\
 Hours sleep & -0.0573 & -0.0963 & -0.0183 & 1.2910 & 1.1478 \\
 BMI & 0.0064 & -0.0130 & 0.0258 & 1.0825 & 1.0000 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Table~\ref{tbl-results-health-cats} and
 Table~\ref{tbl-results-health-cats} presents the Population Average
@@ -833,26 +830,18 @@ well-being}\label{effects-on-embodied-well-being}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-embodied-cats-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-embodied-cats-1.pdf}
 
 }
 
 \caption{\label{fig-results-embodied-cats}Causal effects on embodied
 well-being}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-embodied-cats}Table of results for the
-embodied well-being domain}
-
-\centering{
-
+\hypertarget{tbl-results-embodied-cats}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2714}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2286}}
@@ -860,6 +849,23 @@ embodied well-being domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1000}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1143}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1714}}@{}}
+\caption{\label{tbl-results-embodied-cats}Table of results for the
+embodied well-being domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -881,12 +887,6 @@ Body satisfaction & -0.0254 & -0.0609 & 0.0101 & 1.1781 & 1 \\
 Kessler 6 distress & 0.0016 & -0.0291 & 0.0323 & 1.0397 & 1 \\
 Fatigue & 0.0219 & -0.0150 & 0.0588 & 1.1634 & 1 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Figure~\ref{fig-results-embodied-cats} and
 Table~\ref{tbl-results-embodied-cats} presents the Population Average
@@ -911,26 +911,18 @@ well-being}\label{effects-on-reflective-well-being}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-reflective-well-being-cats-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-reflective-well-being-cats-1.pdf}
 
 }
 
 \caption{\label{fig-results-reflective-well-being-cats}Causal effects on
 reflective well-being}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-reflective-cats}Table of results for the
-reflective well-being domain}
-
-\centering{
-
+\hypertarget{tbl-results-reflective-cats}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3247}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2078}}
@@ -938,6 +930,23 @@ reflective well-being domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1039}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1039}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1558}}@{}}
+\caption{\label{tbl-results-reflective-cats}Table of results for the
+reflective well-being domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -964,12 +973,6 @@ PWB your relationships & -0.0384 & -0.0757 & -0.0011 & 1.2275 &
 PWB your standard living & -0.0018 & -0.0400 & 0.0365 & 1.0422 &
 1.0000 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Figure~\ref{fig-results-reflective-well-being-cats} and
 Table~\ref{tbl-results-reflective-cats} presents the Population Average
@@ -1004,26 +1007,18 @@ well-being}\label{effects-on-social-well-being}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-social-wellbeing-cats-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-social-wellbeing-cats-1.pdf}
 
 }
 
 \caption{\label{fig-results-social-wellbeing-cats}Causal effects on
 social well-being}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-social-cats}Table of results for the
-reflective well-being domain}
-
-\centering{
-
+\hypertarget{tbl-results-social-cats}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3200}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2133}}
@@ -1031,6 +1026,23 @@ reflective well-being domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0933}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1067}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1600}}@{}}
+\caption{\label{tbl-results-social-cats}Table of results for the
+reflective well-being domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -1052,12 +1064,6 @@ Social support & -0.0236 & -0.0576 & 0.0104 & 1.1706 & 1 \\
 Neighbourhood community & 0.0091 & -0.0284 & 0.0465 & 1.0999 & 1 \\
 Social belonging & -0.0113 & -0.0435 & 0.0209 & 1.1125 & 1 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Figure~\ref{fig-results-social-wellbeing-cats} and
 Table~\ref{tbl-results-social-cats} present the results of the social
@@ -1123,26 +1129,18 @@ Ownership}\label{study-2-results-dog-ownership}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-health-dogs-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-health-dogs-1.pdf}
 
 }
 
 \caption{\label{fig-results-health-dogs}Causal effects on embodied
 well-being}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-health-dogs}Table of results for the health
-domain}
-
-\centering{
-
+\hypertarget{tbl-results-health-dogs}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3780}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1951}}
@@ -1150,6 +1148,23 @@ domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0854}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0976}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1463}}@{}}
+\caption{\label{tbl-results-health-dogs}Table of results for the health
+domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -1175,12 +1190,6 @@ Alcohol intensity & 0.0222 & -0.0321 & 0.0764 & 1.1647 & 1.000 \\
 Hours sleep & -0.0355 & -0.1005 & 0.0296 & 1.2170 & 1.000 \\
 BMI & 0.0162 & -0.0185 & 0.0510 & 1.1376 & 1.000 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Figure~\ref{fig-results-health-dogs} and
 Table~\ref{tbl-results-health-dogs} presents the Population Average
@@ -1220,26 +1229,18 @@ well-being}\label{effects-on-embodied-well-being-1}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-embodied-dogs-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-embodied-dogs-1.pdf}
 
 }
 
 \caption{\label{fig-results-embodied-dogs}Causal effects on embodied
 well-being}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-embodied-dogs}Table of results for the
-embodied well-being domain}
-
-\centering{
-
+\hypertarget{tbl-results-embodied-dogs}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2714}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2286}}
@@ -1247,6 +1248,23 @@ embodied well-being domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1000}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1143}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1714}}@{}}
+\caption{\label{tbl-results-embodied-dogs}Table of results for the
+embodied well-being domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -1268,12 +1286,6 @@ Body satisfaction & -0.0310 & -0.0943 & 0.0323 & 1.2002 & 1 \\
 Kessler 6 distress & 0.0281 & -0.0291 & 0.0852 & 1.1889 & 1 \\
 Fatigue & 0.0317 & -0.0344 & 0.0977 & 1.2028 & 1 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Figure~\ref{fig-results-embodied-dogs} and
 Table~\ref{tbl-results-embodied-dogs} presents the Population Average
@@ -1298,26 +1310,18 @@ well-being}\label{effects-on-reflective-well-being-1}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-reflective-well-being-dogs-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-reflective-well-being-dogs-1.pdf}
 
 }
 
 \caption{\label{fig-results-reflective-well-being-dogs}Causal effects on
 reflective well-being}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-reflective-dogs}Table of results for the
-reflective well-being domain}
-
-\centering{
-
+\hypertarget{tbl-results-reflective-dogs}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3289}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2105}}
@@ -1325,6 +1329,23 @@ reflective well-being domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0921}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1053}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1579}}@{}}
+\caption{\label{tbl-results-reflective-dogs}Table of results for the
+reflective well-being domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -1348,12 +1369,6 @@ PWB your future security & -0.0597 & -0.1305 & 0.0110 & 1.2986 & 1 \\
 PWB your relationships & -0.0127 & -0.0749 & 0.0496 & 1.1201 & 1 \\
 PWB your standard living & 0.0333 & -0.0301 & 0.0968 & 1.2088 & 1 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Figure~\ref{fig-results-reflective-well-being-dogs} and
 Table~\ref{tbl-results-reflective-dogs} presents the Population Average
@@ -1386,26 +1401,18 @@ well-being}\label{effects-on-social-well-being-1}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-social-wellbeing-dogs-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-results-social-wellbeing-dogs-1.pdf}
 
 }
 
 \caption{\label{fig-results-social-wellbeing-dogs}Causal effects on
 social well-being}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-results-social-dogs}Table of results for the
-reflective well-being domain}
-
-\centering{
-
+\hypertarget{tbl-results-social-dogs}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3200}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2133}}
@@ -1413,6 +1420,23 @@ reflective well-being domain}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0933}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1067}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1600}}@{}}
+\caption{\label{tbl-results-social-dogs}Table of results for the
+reflective well-being domain}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -1434,12 +1458,6 @@ Social support & -0.0637 & -0.1284 & 0.0011 & 1.3112 & 1 \\
 Neighbourhood community & 0.0209 & -0.0381 & 0.0798 & 1.1591 & 1 \\
 Social belonging & -0.0153 & -0.0708 & 0.0403 & 1.1333 & 1 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Figure~\ref{fig-results-social-wellbeing-dogs} and
 Table~\ref{tbl-results-social-dogs} present the population average
@@ -1583,7 +1601,7 @@ age?'' or ``What is your date of birth'').
 \paragraph{Disability (waves: 5-15)}\label{disability-waves-5-15}
 
 We assessed disability with a one item indicator adapted from Verbrugge
-(\citeproc{ref-verbrugge1997}{1997}), that asks ``Do you have a health
+(\hyperref[ref-verbrugge1997]{1997}), that asks ``Do you have a health
 condition or disability that limits you, and that has lasted for 6+
 months?'' (1 = Yes, 0 = No).
 
@@ -1626,7 +1644,7 @@ open-ended measure).
 We asked participants' gender in an open-ended question: ``what is your
 gender?'' or ``Are you male or female?'' (waves: 1-5). Female was coded
 as 0, Male was coded as 1, and gender diverse coded as 3
-(\citeproc{ref-fraser_coding_2020}{Fraser \emph{et al.} 2020a}). (or 0.5
+(\hyperref[ref-fraser_coding_2020]{Fraser \emph{et al.} 2020a}). (or 0.5
 = neither female nor male)
 
 \paragraph{Income (waves: 1-3, 4-15)}\label{income-waves-1-3-4-15}
@@ -1640,7 +1658,7 @@ standardised the log-transformed indicator.
 4-15)}\label{number-of-children-waves-1-3-4-15}
 
 We measured number of children using one item from Bulbulia
-(\citeproc{ref-Bulbulia_2015}{2015}). We asked participants ``How many
+(\hyperref[ref-Bulbulia_2015]{2015}). We asked participants ``How many
 children have you given birth to, fathered, or adopted. How many
 children have you given birth to, fathered, or adopted?'' or ````How
 many children have you given birth to, fathered, or adopted. How many
@@ -1650,7 +1668,7 @@ children have you given birth to, fathered, and/or parented?'' (waves:
 \paragraph{Political Orientation}\label{political-orientation}
 
 We measured participants' political orientation using a single item
-adapted from Jost (\citeproc{ref-jost_end_2006-1}{2006}).
+adapted from Jost (\hyperref[ref-jost_end_2006-1]{2006}).
 
 ``Please rate how politically liberal versus conservative you see
 yourself as being.''
@@ -1660,7 +1678,7 @@ yourself as being.''
 \paragraph{NZSEI-13 (waves: 8-15)}\label{nzsei-13-waves-8-15}
 
 We assessed occupational prestige and status using the New Zealand
-Socio-economic Index 13 (NZSEI-13) (\citeproc{ref-fahy2017}{Fahy
+Socio-economic Index 13 (NZSEI-13) (\hyperref[ref-fahy2017]{Fahy
 \emph{et al.} 2017}). This index uses the income, age, and education of
 a reference group, in this case the 2013 New Zealand census, to
 calculate an score for each occupational group. Scores range from 10
@@ -1689,7 +1707,7 @@ We coded whether they are living in an urban or rural area (1 = Urban, 0
 1-15)}\label{nz-deprivation-index-waves-1-15}
 
 We used the NZ Deprivation Index to assign each participant a score
-based on where they live (\citeproc{ref-atkinson2019}{Atkinson \emph{et
+based on where they live (\hyperref[ref-atkinson2019]{Atkinson \emph{et
 al.} 2019}). This score combines data such as income, home ownership,
 employment, qualifications, family structure, housing, and access to
 transport and communication for an area into one deprivation score.
@@ -1704,7 +1722,7 @@ were you born? (please be specific, e.g., which town/city?)'' (waves:
 1-3,4-15)}\label{mini-ipip-6-waves-1-34-15}
 
 We measured participants personality with the Mini International
-Personality Item Pool 6 (Mini-IPIP6) (\citeproc{ref-sibley2011}{Sibley
+Personality Item Pool 6 (Mini-IPIP6) (\hyperref[ref-sibley2011]{Sibley
 \emph{et al.} 2011}) which consists of six dimensions and each
 dimensions is measured with four items:
 
@@ -1812,8 +1830,8 @@ accuracy of each item as it applies to them from 1 (Very Inaccurate) to
 
 Participants indicated the extent to which they agree with the following
 four statements from Campbell \emph{et al.}
-(\citeproc{ref-campbell2004}{2004}) , and Sibley \emph{et al.}
-(\citeproc{ref-sibley2011}{2011}) (1 = Strongly Disagree to 7 = Strongly
+(\hyperref[ref-campbell2004]{2004}) , and Sibley \emph{et al.}
+(\hyperref[ref-sibley2011]{2011}) (1 = Strongly Disagree to 7 = Strongly
 Agree)
 
 \begin{verbatim}
@@ -1834,7 +1852,7 @@ outcomes}\label{health-well-being-outcomes}
 6-15)}\label{alcohol-frequency-waves-6-15}
 
 We measured participants' frequency of drinking alcohol using one item
-adapted from Health (\citeproc{ref-Ministry_of_Health_2013}{2013}) .
+adapted from Health (\hyperref[ref-Ministry_of_Health_2013]{2013}) .
 Participants were asked ``How often do you have a drink containing
 alcohol?'' (1 = Never - I don't drink, 2 = Monthly or less, 3 = Up to 4
 times a month, 4 = Up to 3 times a week, 5 = 4 or more times a week, 6 =
@@ -1844,7 +1862,7 @@ Don't know).
 6-15)}\label{alcohol-intensity-waves-6-15}
 
 We measured participants' intensity of drinking alcohol using one item
-adapted from (\citeproc{ref-Ministry_of_Health_2013}{Health 2013}).
+adapted from (\hyperref[ref-Ministry_of_Health_2013]{Health 2013}).
 Participants were asked ``How many drinks containing alcohol do you have
 on a typical day when drinking alcohol? (number of drinks on a typical
 day when drinking)''
@@ -1862,7 +1880,7 @@ the square of the height in meters.
 
 Participants' subjective health was assessed by three items selected
 from the MOS 36-item short-form health survey
-(\citeproc{ref-warejr1992}{Ware Jr and Sherbourne 1992}). The items were
+(\hyperref[ref-warejr1992]{Ware Jr and Sherbourne 1992}). The items were
 
 \begin{verbatim}
 1.  "In general, would you say your health is...";
@@ -1877,7 +1895,7 @@ responses.
 4-15)}\label{hours-of-exercise-waves-1-4-15}
 
 We measured hours of exercising using one item from Sibley \emph{et al.}
-(\citeproc{ref-sibley2011}{2011}). We asked participants to estimate and
+(\hyperref[ref-sibley2011]{2011}). We asked participants to estimate and
 report how many hours they spend in exercise/physical activity last
 week. To stablise this indicator, we first took the natural log of the
 response + 1, and then centred and standardised the log-transformed
@@ -1894,7 +1912,7 @@ hours of \emph{actual sleep} did you get per night''.
 We asked participants whether they are currently smoking or not (1 = Yes
 or 0 = No), using a single item: ``Do you currently smoke?'' or ``Do you
 currently smoke tobacco cigarettes?'' (waves: 10-15) from Muriwai
-\emph{et al.} (\citeproc{ref-muriwai_looking_2018}{2018}).
+\emph{et al.} (\hyperref[ref-muriwai_looking_2018]{2018}).
 
 \subsubsection{Embodied well-being
 outcomes}\label{embodied-well-being-outcomes}
@@ -1902,11 +1920,11 @@ outcomes}\label{embodied-well-being-outcomes}
 \paragraph{Kessler-6 (waves: 2-3,4-15)}\label{kessler-6-waves-2-34-15}
 
 We measured psychological distress using the Kessler-6 scale
-(\citeproc{ref-kessler2002}{Kessler \emph{et al.} 2002}), which exhibits
+(\hyperref[ref-kessler2002]{Kessler \emph{et al.} 2002}), which exhibits
 strong diagnostic concordance for moderate and severe psychological
 distress in large, cross-cultural samples
-(\citeproc{ref-kessler2010}{Kessler \emph{et al.} 2010};
-\citeproc{ref-prochaska2012}{Prochaska \emph{et al.} 2012}).
+(\hyperref[ref-kessler2010]{Kessler \emph{et al.} 2010};
+\hyperref[ref-prochaska2012]{Prochaska \emph{et al.} 2012}).
 Participants rated during the past 30 days, how often did\ldots{} (
 
 \begin{verbatim}
@@ -1944,7 +1962,7 @@ Ordinal response options for the Kessler-6 are: ``None of the time'';
 1-3,4-15)}\label{satisfaction-with-life-waves-1-34-15}
 
 We measured life satisfaction with two items adapted from the
-Satisfaction with Life Scale (\citeproc{ref-diener1985}{Diener \emph{et
+Satisfaction with Life Scale (\hyperref[ref-diener1985]{Diener \emph{et
 al.} 1985}):
 
 \begin{verbatim}
@@ -1960,7 +1978,7 @@ Participants responded on a scale from 1 (Strongly Disagree) to 7
 
 We measured participants' subjective wellbeing using three items from
 the Australian Unity Wellbeing Index
-(\citeproc{ref-cummins_developing_2003}{Cummins \emph{et al.} 2003}):
+(\hyperref[ref-cummins_developing_2003]{Cummins \emph{et al.} 2003}):
 
 \begin{verbatim}
 1.  Your health;
@@ -1977,7 +1995,7 @@ those items (0 = Completely Dissatisfied to 10 = Completely Satisfied).
 
 We measured participants' satisfaction with their standard of living
 using an item from the Australian Unity Wellbeing Index
-(\citeproc{ref-cummins_developing_2003}{Cummins \emph{et al.} 2003}).
+(\hyperref[ref-cummins_developing_2003]{Cummins \emph{et al.} 2003}).
 Participants read an instruction (``Please rate your level of
 satisfaction with the following aspects of your life and New Zealand.'')
 and responded to an item
@@ -1996,7 +2014,7 @@ outcomes}\label{social-well-being-outcomes}
 4-15)}\label{felt-belongingness-waves-1-3-4-15}
 
 We assessed felt belongingness with three items adapted from the Sense
-of Belonging Instrument (\citeproc{ref-hagerty1995}{Hagerty and Patusky
+of Belonging Instrument (\hyperref[ref-hagerty1995]{Hagerty and Patusky
 1995}):
 
 \begin{verbatim}
@@ -2019,15 +2037,15 @@ Accurate). The second item was reversely coded.
 6-15)}\label{sense-of-community-waves-6-15}
 
 We measured sense of community with a single item from Sengupta \emph{et
-al.} (\citeproc{ref-sengupta2013}{2013}): ``I feel a sense of community
+al.} (\hyperref[ref-sengupta2013]{2013}): ``I feel a sense of community
 with others in my local neighbourhood.'' Participants answered on a
 scale of 1 (strongly disagree) to 7 (strongly agree).
 
 \paragraph{Support (waves: 1-3, 4-15)}\label{support-waves-1-3-4-15}
 
 Participants' perceived social support was measured using three items
-from Cutrona and Russell (\citeproc{ref-cutrona1987}{1987}) and Williams
-\emph{et al.} (\citeproc{ref-williams_cyberostracism_2000}{2000}):
+from Cutrona and Russell (\hyperref[ref-cutrona1987]{1987}) and Williams
+\emph{et al.} (\hyperref[ref-williams_cyberostracism_2000]{2000}):
 
 \begin{verbatim}
 1.  "There are people I can depend on to help me if I really need it";
@@ -2049,14 +2067,14 @@ Statistics}\label{appendix-b.-descriptive-statistics}
 \paragraph{Study 1: baseline exposure, demographics and
 personality}\label{study-1-baseline-exposure-demographics-and-personality}
 
-\begin{table}
-
-\caption{\label{tbl-table\_demographic\_vars\_cats}Baseline outcome and
-democgraphic statistics for cat ownership study}
-
-\centering{
-
+\hypertarget{tbl-table_demographic_vars_cats}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_demographic_vars_cats}Baseline outcome and
+democgraphic statistics for cat ownership study}\tabularnewline
+\toprule\noalign{}
+\textbf{Exposure + Demographic Variables} & \textbf{N = 5,376} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Exposure + Demographic Variables} & \textbf{N = 5,376} \\
 \midrule\noalign{}
@@ -2098,20 +2116,14 @@ asian & 227 (4.2\%) \\
 \textbf{Urban} & 4,393 (86\%) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_confounding\_control\_vars\_cats}Additional
-confounding control variables for cat ownership study}
-
-\centering{
-
+\hypertarget{tbl-table_confounding_control_vars_cats}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_confounding_control_vars_cats}Additional
+confounding control variables for cat ownership study}\tabularnewline
+\toprule\noalign{}
+\textbf{Confounding Control Variables} & \textbf{N = 5,376} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Confounding Control Variables} & \textbf{N = 5,376} \\
 \midrule\noalign{}
@@ -2155,20 +2167,14 @@ confounding control variables for cat ownership study}
 5-6-7 & 1,753 (33\%) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_baseline\_personality\_cats}Personality
-variables for cat ownership study}
-
-\centering{
-
+\hypertarget{tbl-table_baseline_personality_cats}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_baseline_personality_cats}Personality
+variables for cat ownership study}\tabularnewline
+\toprule\noalign{}
+\textbf{Personality Variables} & \textbf{N = 5,376} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Personality Variables} & \textbf{N = 5,376} \\
 \midrule\noalign{}
@@ -2183,12 +2189,6 @@ variables for cat ownership study}
 \textbf{Honesty Humility} & 5.50 (4.75, 6.50) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
 Table~\ref{tbl-table_confounding_control_vars_cats}
 Table~\ref{tbl-table_confounding_control_vars_cats} and
 Table~\ref{tbl-table_baseline_personality_cats} presents sample
@@ -2200,14 +2200,14 @@ of the outcomes.
 \paragraph{Study 1: Well-being outcome
 domains}\label{study-1-well-being-outcome-domains}
 
-\begin{table}
-
-\caption{\label{tbl-table\_health\_vars\_cats}Health outcomes measured
-at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_health_vars_cats}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_health_vars_cats}Health outcomes measured at
+baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Health Variables} & \textbf{N = 5,376} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Health Variables} & \textbf{N = 5,376} \\
 \midrule\noalign{}
@@ -2236,20 +2236,14 @@ at baseline}
 \textbf{Smoker} & 341 (6.5\%) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_embody\_vars\_cats}Embodied well-being
-outcomes measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_embody_vars_cats}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_embody_vars_cats}Embodied well-being outcomes
+measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Embodied Well-Being Variables} & \textbf{N = 5,376} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Embodied Well-Being Variables} & \textbf{N = 5,376} \\
 \midrule\noalign{}
@@ -2273,20 +2267,14 @@ outcomes measured at baseline}
 \textbf{Kessler6 Sum} & 4 (2, 6) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_reflective\_vars\_cats}Reflective well-being
-outcomes measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_reflective_vars_cats}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_reflective_vars_cats}Reflective well-being
+outcomes measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Reflective Well-Being Variables} & \textbf{N = 5,376} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Reflective Well-Being Variables} & \textbf{N = 5,376} \\
 \midrule\noalign{}
@@ -2301,20 +2289,14 @@ outcomes measured at baseline}
 \textbf{Self Esteem} & 5.67 (4.67, 6.33) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_social\_vars\_cats}Social well-being outcomes
-measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_social_vars_cats}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_social_vars_cats}Social well-being outcomes
+measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Social Well-Being Outcomes} & \textbf{N = 5,376} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Social Well-Being Outcomes} & \textbf{N = 5,376} \\
 \midrule\noalign{}
@@ -2333,23 +2315,17 @@ measured at baseline}
 \textbf{Support} & 6.33 (5.67, 7.00) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
 \paragraph{Study 2: baseline exposure, demographics and
 personality}\label{study-2-baseline-exposure-demographics-and-personality}
 
-\begin{table}
-
-\caption{\label{tbl-table\_demographic\_vars\_dogs}Exposure and
-demographic variables measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_demographic_vars_dogs}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_demographic_vars_dogs}Exposure and demographic
+variables measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Exposure + Demographic Variables} & \textbf{N = 4,132} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Exposure + Demographic Variables} & \textbf{N = 4,132} \\
 \midrule\noalign{}
@@ -2393,20 +2369,14 @@ demographic variables measured at baseline}
 \textbf{Urban} & 3,295 (84\%) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_confounding\_control\_vars\_dogs}Additional
-confounding control variables measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_confounding_control_vars_dogs}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_confounding_control_vars_dogs}Additional
+confounding control variables measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Confounding Control Variables} & \textbf{N = 4,132} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Confounding Control Variables} & \textbf{N = 4,132} \\
 \midrule\noalign{}
@@ -2450,20 +2420,14 @@ confounding control variables measured at baseline}
 5-6-7 & 1,348 (33\%) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_baseline\_personality\_dogs}Personality
-variables measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_baseline_personality_dogs}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_baseline_personality_dogs}Personality
+variables measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Personality Variables} & \textbf{N = 4,132} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Personality Variables} & \textbf{N = 4,132} \\
 \midrule\noalign{}
@@ -2478,12 +2442,6 @@ variables measured at baseline}
 \textbf{Honesty Humility} & 5.75 (4.75, 6.50) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
 Table~\ref{tbl-table_confounding_control_vars_dogs}
 Table~\ref{tbl-table_confounding_control_vars_dogs} and
 Table~\ref{tbl-table_baseline_personality_dogs} presents sample
@@ -2495,14 +2453,14 @@ of the outcomes.
 \paragraph{Study 2: Well-being outcome
 domains}\label{study-2-well-being-outcome-domains}
 
-\begin{table}
-
-\caption{\label{tbl-table\_health\_vars\_dogs}Health outcomes measured
-at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_health_vars_dogs}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_health_vars_dogs}Health outcomes measured at
+baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Health Variables} & \textbf{N = 4,132} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Health Variables} & \textbf{N = 4,132} \\
 \midrule\noalign{}
@@ -2531,20 +2489,14 @@ at baseline}
 \textbf{Smoker} & 253 (6.2\%) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_embody\_vars\_dogs}Embodied well-being
-variables measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_embody_vars_dogs}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_embody_vars_dogs}Embodied well-being variables
+measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Embodied Well-Being Variables} & \textbf{N = 4,132} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Embodied Well-Being Variables} & \textbf{N = 4,132} \\
 \midrule\noalign{}
@@ -2568,20 +2520,14 @@ variables measured at baseline}
 \textbf{Kessler6 Sum} & 4 (2, 6) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_reflective\_vars\_dogs}Reflective well-being
-variables measured at baseliney}
-
-\centering{
-
+\hypertarget{tbl-table_reflective_vars_dogs}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_reflective_vars_dogs}Reflective well-being
+variables measured at baseliney}\tabularnewline
+\toprule\noalign{}
+\textbf{Reflective Well-Being Variables} & \textbf{N = 4,132} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Reflective Well-Being Variables} & \textbf{N = 4,132} \\
 \midrule\noalign{}
@@ -2596,20 +2542,14 @@ variables measured at baseliney}
 \textbf{Self Esteem} & 5.67 (4.67, 6.33) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
-\begin{table}
-
-\caption{\label{tbl-table\_social\_vars\_dogs}Social well-being
-variables measured at baseline}
-
-\centering{
-
+\hypertarget{tbl-table_social_vars_dogs}{}
 \begin{longtable}[]{@{}lc@{}}
+\caption{\label{tbl-table_social_vars_dogs}Social well-being variables
+measured at baseline}\tabularnewline
+\toprule\noalign{}
+\textbf{Social Well-Being Outcomes} & \textbf{N = 4,132} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \textbf{Social Well-Being Outcomes} & \textbf{N = 4,132} \\
 \midrule\noalign{}
@@ -2628,21 +2568,13 @@ variables measured at baseline}
 \textbf{Support} & 6.33 (5.67, 7.00) \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
 \subsubsection{Appendix C. Comparison of Shift Estimand with Traditional
 Causal
 Contrast}\label{appendix-c.-comparison-of-shift-estimand-with-traditional-causal-contrast}
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-comparative-graph-cats-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-comparative-graph-cats-1.pdf}
 
 }
 
@@ -2650,18 +2582,11 @@ Contrast}\label{appendix-c.-comparison-of-shift-estimand-with-traditional-causal
 causal estimand with the shift estimand employed in this study: cats and
 sleep}
 
-\end{figure}%
+\end{figure}
 
 \newpage{}
 
-\begin{table}
-
-\caption{\label{tbl-comparative-graph-cats}A comparison of the classical
-causal estimand with the shift estimand employed in this study: cats and
-sleep}
-
-\centering{
-
+\hypertarget{tbl-comparative-graph-cats}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.4157}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1798}}
@@ -2669,6 +2594,24 @@ sleep}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0899}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0899}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1348}}@{}}
+\caption{\label{tbl-comparative-graph-cats}A comparison of the classical
+causal estimand with the shift estimand employed in this study: cats and
+sleep}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -2692,12 +2635,6 @@ Hours sleep (SD): trational estimand & -0.0833 & -0.1431 & -0.0236 &
 1.3702 & 1.1708 \\
 \end{longtable}
 
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
-
 \newpage{}
 
 Here, we consider two distinct types of estimands: the shift estimand
@@ -2720,9 +2657,7 @@ and greater data dependency for exposure balance.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-comparative-graph-dogs-1.pdf}
+{\centering \includegraphics{man-lmtp-ow-fl-pets_files/figure-pdf/fig-comparative-graph-dogs-1.pdf}
 
 }
 
@@ -2730,16 +2665,9 @@ and greater data dependency for exposure balance.
 causal estimand with the shift estimand employed in this study: dogs and
 exercise}
 
-\end{figure}%
+\end{figure}
 
-\begin{table}
-
-\caption{\label{tbl-comparative-graph-dogs}A comparison of the classical
-causal estimand with the shift estimand employed in this study: dogs and
-exercise}
-
-\centering{
-
+\hypertarget{tbl-comparative-graph-dogs}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.4624}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1720}}
@@ -2747,6 +2675,24 @@ exercise}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0753}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0860}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1290}}@{}}
+\caption{\label{tbl-comparative-graph-dogs}A comparison of the classical
+causal estimand with the shift estimand employed in this study: dogs and
+exercise}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E{[}Y(1){]}-E{[}Y(0){]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+2.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+97.5 \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E\_Val\_bound
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -2769,12 +2715,6 @@ Hours excercise (SD): shift estimand & 0.0742 & 0.0068 & 0.1417 & 1.3432
 Hours excercise (SD): traditional estimand & 0.0979 & 0.0130 & 0.1828 &
 1.4123 & 1.1227 \\
 \end{longtable}
-
-\addtocounter{table}{-1}
-
-}
-
-\end{table}%
 
 Study 2 examined a effect of dog ownership on exercise across the
 population were everyone to own dogs. The contrast condition for this
@@ -2837,113 +2777,113 @@ weight into our outcome wide models.
 \subsection*{References}\label{references}
 \addcontentsline{toc}{subsection}{References}
 
-\phantomsection\label{refs}
+\hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
-\bibitem[\citeproctext]{ref-atkinson2019}
+\leavevmode\vadjust pre{\hypertarget{ref-atkinson2019}{}}%
 Atkinson, J, Salmond, C, and Crampton, P (2019) \emph{NZDep2018 index of
 deprivation, user{'}s manual.}, Wellington.
 
-\bibitem[\citeproctext]{ref-Bulbulia_2015}
+\leavevmode\vadjust pre{\hypertarget{ref-Bulbulia_2015}{}}%
 Bulbulia, S, J. A. (2015) Religion and parental cooperation: An
 empirical test of slone's sexual signaling model. In \&. V. S. J. Slone
 D., ed., \emph{The attraction of religion: A sexual selectionist
 account}, Bloomsbury Press, 29--62.
 
-\bibitem[\citeproctext]{ref-campbell2004}
+\leavevmode\vadjust pre{\hypertarget{ref-campbell2004}{}}%
 Campbell, WK, Bonacci, AM, Shelton, J, Exline, JJ, and Bushman, BJ
 (2004) Psychological entitlement: interpersonal consequences and
 validation of a self-report measure. \emph{Journal of Personality
 Assessment}, \textbf{83}(1), 29--45.
 doi:\href{https://doi.org/10.1207/s15327752jpa8301_04}{10.1207/s15327752jpa8301\_04}.
 
-\bibitem[\citeproctext]{ref-cummins_developing_2003}
+\leavevmode\vadjust pre{\hypertarget{ref-cummins_developing_2003}{}}%
 Cummins, RA, Eckersley, R, Pallant, J, Vugt, J van, and Misajon, R
 (2003) Developing a national index of subjective wellbeing: The
 australian unity wellbeing index. \emph{Social Indicators Research},
 \textbf{64}(2), 159--190.
 doi:\href{https://doi.org/10.1023/A:1024704320683}{10.1023/A:1024704320683}.
 
-\bibitem[\citeproctext]{ref-cutrona1987}
+\leavevmode\vadjust pre{\hypertarget{ref-cutrona1987}{}}%
 Cutrona, CE, and Russell, DW (1987) The provisions of social
 relationships and adaptation to stress. \emph{Advances in Personal
 Relationships}, \textbf{1}, 37--67.
 
-\bibitem[\citeproctext]{ref-danaei2012}
+\leavevmode\vadjust pre{\hypertarget{ref-danaei2012}{}}%
 Danaei, G, Tavakkoli, M, and Hernán, MA (2012) Bias in observational
 studies of prevalent users: lessons for comparative effectiveness
 research from a meta-analysis of statins. \emph{American Journal of
 Epidemiology}, \textbf{175}(4), 250--262.
 doi:\href{https://doi.org/10.1093/aje/kwr301}{10.1093/aje/kwr301}.
 
-\bibitem[\citeproctext]{ref-duxedaz2021}
+\leavevmode\vadjust pre{\hypertarget{ref-duxedaz2021}{}}%
 Díaz, I, Williams, N, Hoffman, KL, and Schenck, EJ (2021) Non-parametric
 causal effects based on longitudinal modified treatment policies.
 \emph{Journal of the American Statistical Association}.
 doi:\href{https://doi.org/10.1080/01621459.2021.1955691}{10.1080/01621459.2021.1955691}.
 
-\bibitem[\citeproctext]{ref-diener1985}
+\leavevmode\vadjust pre{\hypertarget{ref-diener1985}{}}%
 Diener, E, Emmons, RA, Larsen, RJ, and Griffin, S (1985) The
 Satisfaction With Life Scale. \emph{Journal of Personality Assessment},
 \textbf{49}(1), 71--75.
 
-\bibitem[\citeproctext]{ref-fahy2017}
+\leavevmode\vadjust pre{\hypertarget{ref-fahy2017}{}}%
 Fahy, KM, Lee, A, and Milne, BJ (2017) \emph{New Zealand socio-economic
 index 2013}, Wellington, New Zealand: Statistics New Zealand-Tatauranga
 Aotearoa.
 
-\bibitem[\citeproctext]{ref-fraser_coding_2020}
+\leavevmode\vadjust pre{\hypertarget{ref-fraser_coding_2020}{}}%
 Fraser, G, Bulbulia, J, Greaves, LM, Wilson, MS, and Sibley, CG (2020a)
 Coding responses to an open-ended gender measure in a new zealand
 national sample. \emph{The Journal of Sex Research}, \textbf{57}(8),
 979--986.
 doi:\href{https://doi.org/10.1080/00224499.2019.1687640}{10.1080/00224499.2019.1687640}.
 
-\bibitem[\citeproctext]{ref-fraser2020}
+\leavevmode\vadjust pre{\hypertarget{ref-fraser2020}{}}%
 Fraser, G, Huang, Y, Robinson, K, Wilson, MS, Bulbulia, J, and Sibley,
 CG (2020b) New zealand pet owners{'} demographic characteristics,
 personality, and health and wellbeing: More than just a fluff piece.
 \emph{Anthrozoös}, \textbf{33}(4), 561578.
 
-\bibitem[\citeproctext]{ref-hagerty1995}
+\leavevmode\vadjust pre{\hypertarget{ref-hagerty1995}{}}%
 Hagerty, BMK, and Patusky, K (1995) Developing a Measure Of Sense of
 Belonging: \emph{Nursing Research}, \textbf{44}(1), 9--13.
 doi:\href{https://doi.org/10.1097/00006199-199501000-00003}{10.1097/00006199-199501000-00003}.
 
-\bibitem[\citeproctext]{ref-Ministry_of_Health_2013}
+\leavevmode\vadjust pre{\hypertarget{ref-Ministry_of_Health_2013}{}}%
 Health, M of (2013) \emph{The new zealand health survey: Content guide
 2012-2013}, Princeton University Press.
 
-\bibitem[\citeproctext]{ref-hernan2023}
+\leavevmode\vadjust pre{\hypertarget{ref-hernan2023}{}}%
 Hernan, MA, and Robins, JM (2023) \emph{Causal inference}, Taylor \&
 Francis. Retrieved from
 \url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}
 
-\bibitem[\citeproctext]{ref-hoffman2023}
+\leavevmode\vadjust pre{\hypertarget{ref-hoffman2023}{}}%
 Hoffman, KL, Salazar-Barreto, D, Rudolph, KE, and Díaz, I (2023)
 Introducing longitudinal modified treatment policies: A unified
 framework for studying complex exposures.
 doi:\href{https://doi.org/10.48550/arXiv.2304.09460}{10.48550/arXiv.2304.09460}.
 
-\bibitem[\citeproctext]{ref-hoffman2022}
+\leavevmode\vadjust pre{\hypertarget{ref-hoffman2022}{}}%
 Hoffman, KL, Schenck, EJ, Satlin, MJ, \ldots{} Díaz, I (2022) Comparison
 of a target trial emulation framework vs cox regression to estimate the
 association of corticosteroids with COVID-19 mortality. \emph{JAMA
 Network Open}, \textbf{5}(10), e2234425.
 doi:\href{https://doi.org/10.1001/jamanetworkopen.2022.34425}{10.1001/jamanetworkopen.2022.34425}.
 
-\bibitem[\citeproctext]{ref-jost_end_2006-1}
+\leavevmode\vadjust pre{\hypertarget{ref-jost_end_2006-1}{}}%
 Jost, JT (2006) The end of the end of ideology. \emph{American
 Psychologist}, \textbf{61}(7), 651--670.
 doi:\href{https://doi.org/10.1037/0003-066X.61.7.651}{10.1037/0003-066X.61.7.651}.
 
-\bibitem[\citeproctext]{ref-kessler2002}
+\leavevmode\vadjust pre{\hypertarget{ref-kessler2002}{}}%
 Kessler, R~C, Andrews, G, Colpe, L~J, \ldots{} Zaslavsky, A~M (2002)
 Short screening scales to monitor population prevalences and trends in
 non-specific psychological distress. \emph{Psychological Medicine},
 \textbf{32}(6), 959--976.
 doi:\href{https://doi.org/10.1017/S0033291702006074}{10.1017/S0033291702006074}.
 
-\bibitem[\citeproctext]{ref-kessler2010}
+\leavevmode\vadjust pre{\hypertarget{ref-kessler2010}{}}%
 Kessler, RC, Green, JG, Gruber, MJ, \ldots{} Zaslavsky, AM (2010)
 Screening for serious mental illness in the general population with the
 K6 screening scale: results from the WHO World Mental Health (WMH)
@@ -2951,18 +2891,18 @@ survey initiative. \emph{International Journal of Methods in Psychiatric
 Research}, \textbf{19}(S1), 4--22.
 doi:\href{https://doi.org/10.1002/mpr.310}{10.1002/mpr.310}.
 
-\bibitem[\citeproctext]{ref-muriwai_looking_2018}
+\leavevmode\vadjust pre{\hypertarget{ref-muriwai_looking_2018}{}}%
 Muriwai, E, Houkamau, CA, and Sibley, CG (2018) Looking like a smoker, a
 smokescreen to racism? Māori perceived appearance linked to smoking
 status. \emph{Ethnicity \& Health}, \textbf{23}(4), 353--366.
 doi:\href{https://doi.org/10.1080/13557858.2016.1263288}{10.1080/13557858.2016.1263288}.
 
-\bibitem[\citeproctext]{ref-polley2023}
+\leavevmode\vadjust pre{\hypertarget{ref-polley2023}{}}%
 Polley, E, LeDell, E, Kennedy, C, and Laan, M van der (2023)
 \emph{SuperLearner: Super learner prediction}. Retrieved from
 \url{https://CRAN.R-project.org/package=SuperLearner}
 
-\bibitem[\citeproctext]{ref-prochaska2012}
+\leavevmode\vadjust pre{\hypertarget{ref-prochaska2012}{}}%
 Prochaska, JJ, Sung, H-Y, Max, W, Shi, Y, and Ong, M (2012) Validity
 study of the K6 scale as a measure of moderate mental distress based on
 mental health treatment need and utilization: The K6 as a measure of
@@ -2970,44 +2910,44 @@ moderate mental distress. \emph{International Journal of Methods in
 Psychiatric Research}, \textbf{21}(2), 88--97.
 doi:\href{https://doi.org/10.1002/mpr.1349}{10.1002/mpr.1349}.
 
-\bibitem[\citeproctext]{ref-sengupta2013}
+\leavevmode\vadjust pre{\hypertarget{ref-sengupta2013}{}}%
 Sengupta, NK, Luyten, N, Greaves, LM, \ldots{} Sibley, CG (2013) Sense
 of Community in New Zealand Neighbourhoods: A Multi-Level Model
 Predicting Social Capital. \emph{New Zealand Journal of Psychology},
 \textbf{42}(1), 36--45.
 
-\bibitem[\citeproctext]{ref-sibley2011}
+\leavevmode\vadjust pre{\hypertarget{ref-sibley2011}{}}%
 Sibley, CG, Luyten, N, Purnomo, M, \ldots{} Robertson, A (2011) The
 Mini-IPIP6: Validation and extension of a short measure of the Big-Six
 factors of personality in New Zealand. \emph{New Zealand Journal of
 Psychology}, \textbf{40}(3), 142--159.
 
-\bibitem[\citeproctext]{ref-vanbuuren2018}
+\leavevmode\vadjust pre{\hypertarget{ref-vanbuuren2018}{}}%
 Van Buuren, S (2018) \emph{Flexible imputation of missing data}, CRC
 press.
 
-\bibitem[\citeproctext]{ref-vanderweele2020}
+\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2020}{}}%
 VanderWeele, TJ, Mathur, MB, and Chen, Y (2020) Outcome-wide
 longitudinal designs for causal inference: A new template for empirical
 studies. \emph{Statistical Science}, \textbf{35}(3), 437466.
 
-\bibitem[\citeproctext]{ref-verbrugge1997}
+\leavevmode\vadjust pre{\hypertarget{ref-verbrugge1997}{}}%
 Verbrugge, LM (1997) A global disability indicator. \emph{Journal of
 Aging Studies}, \textbf{11}(4), 337--362.
 doi:\href{https://doi.org/10.1016/S0890-4065(97)90026-8}{10.1016/S0890-4065(97)90026-8}.
 
-\bibitem[\citeproctext]{ref-warejr1992}
+\leavevmode\vadjust pre{\hypertarget{ref-warejr1992}{}}%
 Ware Jr, JE, and Sherbourne, CD (1992) The MOS 36-item short-form health
 survey (SF-36): I. Conceptual framework and item selection.
 \emph{Medical Care}, 473483.
 
-\bibitem[\citeproctext]{ref-williams_cyberostracism_2000}
+\leavevmode\vadjust pre{\hypertarget{ref-williams_cyberostracism_2000}{}}%
 Williams, KD, Cheung, CKT, and Choi, W (2000) Cyberostracism: Effects of
 being ignored over the internet. \emph{Journal of Personality and Social
 Psychology}, \textbf{79}(5), 748--762.
 doi:\href{https://doi.org/10.1037/0022-3514.79.5.748}{10.1037/0022-3514.79.5.748}.
 
-\bibitem[\citeproctext]{ref-williams2021}
+\leavevmode\vadjust pre{\hypertarget{ref-williams2021}{}}%
 Williams, NT, and Díaz, I (2021) \emph{Lmtp: Non-parametric causal
 effects of feasible interventions based on modified treatment policies}.
 doi:\href{https://doi.org/10.5281/zenodo.3874931}{10.5281/zenodo.3874931}.
