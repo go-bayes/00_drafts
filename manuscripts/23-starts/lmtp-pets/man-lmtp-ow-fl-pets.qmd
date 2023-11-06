@@ -225,7 +225,7 @@ First, pet ownership cannot be randomised. For example ethical considerations pr
 
 Second, and relatedly, there are numerous confounding variables that can affect both pet ownership and the outcomes under study, such as socio-economic status, lifestyle, and health status. Such confounders may introduce bias, making it challenging to isolate the specific effects of pet ownership.
 
-Third, large scale panel datasets are rare; where they exist, they have yet to be employed to address causality. Opportunities for causal analysis await.
+Third, large scale panel datasets are rare; where they exist, they have yet to be employed to address causality. Thus, opportunities for causal analysis in this area await.
 
 Here, to address these limitations and provide a robust methodological framework for causal inference, we adopt the following strategies:
 
@@ -243,7 +243,7 @@ Here, to address these limitations and provide a robust methodological framework
 
 7.  **Obtain methodological precision through TMLE and machine learning**: to address the intrinsic limitations of non-randomised pet ownership, our study employs Targeted Maximum Likelihood Estimation (TMLE) coupled with machine learning techniques (the `SuperLearner` library in R [@polley2023]). These advanced methodological enhancement offer the following benefits. First, our approach *reduces model dependence*: TMLE allows for doubly-robust causal inference, reducing reliance on correct model specification. The method is robust even if either the treatment model (i.e., pet ownership) or the outcome model (i.e., well-being indicators) is incorrectly specified. Second, *machine Learning for confounder balancing improves precision* further refines our ability to balance confounders, particularly when these are high-dimensional or interact in complex ways. Flexible semi-parametric estimation of parameters that are of no intrinsic interest (the control variables) protects inference from model mis-specification [@díaz2021].
 
-Collectively, this approach help us to contribute to a deeper, more rigorous understanding of the causal relationship between cat or dog ownership and human well-being.
+Collectively, this approach help us to contribute to a deeper, more rigorous understanding of the causal relationship between cat or dog ownership and human well-being.(For further discussions of our approach, see: [@bulbulia2023a; @bulbulia2023; @bulbulia2022; @vanderweele2015; @hernan2023])
 
 ## Method
 
@@ -251,35 +251,38 @@ Collectively, this approach help us to contribute to a deeper, more rigorous und
 
 Data were collected as part of The New Zealand Attitudes and Values Study (NZAVS) is an annual longitudinal national probability panel study of social attitudes, personality, ideology and health outcomes. The NZAVS began in 2009. It includes questionnaire responses from more almost 70,000 New Zealand residents. The study includes researchers from many New Zealand universities, including the University of Auckland, Victoria University of Wellington, the University of Canterbury, the University of Otago, and Waikato University. Because the survey asks the same people to respond each year, it can track subtle change in attitudes and values over time, and is an important resource for researchers both in New Zealand and around the world. The NZAVS is university-based, not- for-profit and independent of political or corporate funding.https://doi.org/10.17605/OSF.IO/75SNB
 
-### Assumptions for causal inference
+### Assumptions Underlying Causal Inference
 
-In this study, we aim to find out if changing one thing (an intervention) would cause a different outcome. However, in reality, we can only observe what happens when we intervene, not what would have happened if we did not, or vice versa. So we face a fundamental problem in showing cause and effect directly. To get around this, we estimate a population aaverage treatment effect (PATE), which compares the average outcomes of those who received the intervention and those who did not.
+The objective of this study is to ascertain whether an intervention engenders a distinct outcome. Given the observational limitations, we cannot directly examine both the factual and counterfactual states. To circumvent this obstacle, we estimate the population average treatment effect (PATE) by contrasting the mean outcomes of the treated and untreated groups.
 
-For us to say something is a cause, we rely on three important assumptions:
+Three pivotal assumptions are requisite for causal attribution:
 
-1.  **Causal consistency**: this means we expect the outcome we see to match what would have happened if the intervention was given. We also presume there is no interference between individual cases, meaning each person's outcome only depends on whether they received the intervention or not. This assumption might not hold if our intervention is not well-defined or its meaning is unclear.
+1.  **Causal Consistency**: We assume that the observed outcomes align with those that would have materialised under the intervention. Furthermore, we assume non-interference between individual units; each subject's outcome solely hinges on their treatment status. This assumption may be violated if the intervention lacks precise definition.
 
-2.  **Exchangability**: this involves us assuming that whether or not someone received the intervention does not affect their potential outcomes, once we consider certain observed factors. This is akin to how psychologists would randomly assign people to experimental conditions. When using real-world data, we mimic this random assignment by considering factors that could link the intervention and the outcome without any causal relation.
+2.  **Exchangeability**: We postulate that, given specific observed covariates, the treatment assignment is independent of potential outcomes. In psychological research, this resembles random assignment to experimental conditions. In observational settings, we simulate this through controlling for confounding variables that might spuriously link the treatment to the outcome.
 
-3.  **Positivity**: This refers to our expectation that there is always a chance for someone to receive or not receive the intervention, regardless of other factors. There are two ways this can be violated *Random non-positivity* happens when we think there's a causal effect for an observation that is missing, which we can check using the data. *Deterministic non-positivity* occurs when a causal effect is unthinkable. For example, it is generally impossible to consider the causal effect of a procedure like a hysterectomy for biological males.
+3.  **Positivity**: The assumption here is that every subject has a non-zero probability of receiving the treatment, irrespective of covariates. Two scenarios can undermine positivity:
 
-These assumptions help us build a fair and meaningful comparison between those who received the intervention and those who did not. The goal is to learn about the intervention's overall effect, even though we cannot directly observe what would have happened without it.
+-   *Random non-positivity*: Occurs when a supposed causal effect pertains to unobserved instances. Data can be employed to validate this.
+-   *Deterministic non-positivity*: Arises when a causal effect is fundamentally implausible, such as considering the causal impact of a hysterectomy on biological males [@hernan2023].
+
+These assumptions facilitate a rigorous and meaningful comparison between treated and untreated subjects. They enable us to infer the global impact of the intervention, notwithstanding the inability to observe counterfactual outcomes directly.
 
 ### Causal identification strategy
 
-Effects must follow causes. To avoid the problems of reverse causation, we measured outcomes during the year following the exposure (NZAVS wave 2020). The causal graph presented in @fig-outcomewide-dag describes our method for confouding control. We follow @vanderweele2020 in adopting a modified disjunctive cause criterion which states:
+Effects should temporally succeed their causes. To circumvent reverse causation issues, outcomes were assessed in the year succeeding exposure, specifically the 2020 wave of the NZAVS. The causal diagram in @fig-outcomewide-dag outlines our approach to confounding control. We align with @vanderweele2020 in employing a *modified disjunctive cause criterion*, articulated as follows:
 
-1.  **Identify all relevant factors**: first, find every covariates that can influence either the exposure or the outcomes (across the five domains), or both. These factors are any variable that can have an impact on the exposure or outcome, are that might be the effect of such a factor.
+1.  **Identify all relevant factors**: initially, enumerate all covariates affecting either the exposure or the outcomes across five domains, or both. These factors encompass variables influencing exposure or outcome and variables that could be consequences of such factors
 
-2.  **Remove instrumental variables**: next, take out any factors that are known to be 'instrumental variables'. These are factors that cause the exposure but do not affect the outcome. Including instrumental variables reduces efficiency.
+2.  **Remove instrumental variables**: subsequently, remove any factors identified as instrumental variables—factors influencing the exposure but not the outcome. The inclusion of instrumental variables diminishes efficiency.
 
-3.  **Include proxy variables for unmeasured common causes**: if there are any unmeasured factors that influence both the exposure and outcome, but we don not have direct measurements for them, we should try to include a proxy for these. A proxy is an effect of the variable.
+3.  **Include proxy variables for unmeasured common causes**: for unmeasured variables affecting both exposure and outcome, attempt to include a proxy variable. A proxy serves as a consequent of the unmeasured variable.
 
-4.  **Control for prior exposure**: Controlling for prior exposure assesses the effects of "incident exposure" rather than "prevalent exposure" - and is a critical step in causal inference[@danaei2012; @hernan2023]. By including prior exposure in the analysis, we can more effectively emulate a controlled trial. This approach not only helps interpret the effect of exposure changes but also strengthens confounding control. It aids in avoiding reverse causation and managing other forms of unmeasured confounding. This setup ensures that any unmeasured confounder would have to influence both the outcome and initial exposure, irrespective of previous exposure levels, to explain an observed exposure-outcome association.
+4.  **Control for previous exposure**: Accounting for prior exposure is imperative for assessing incident exposure as opposed to prevalent exposure. This step enhances confounding control and aids in sidestepping reverse causation and other unmeasured confounders. It ensures that any unmeasured confounder would need to affect both the outcome and the initial exposure, regardless of prior exposure levels, to account for an observed exposure-outcome association [@danaei2012; @hernan2023].
 
-5.  **Control for prior outcome**: It is also vital to control for the outcome measured at baseline -- the 'baseline outcome'. This tactic aims to rule out reverse causation by ensuring that the cause-effect relationship follows the right temporal order. Even though it does not eliminate the possibility of reverse causation, controlling for the baseline outcome helps mitigate its effects. Hence, along with a rich set of covariates, the baseline outcome should be included in the covariate set to make the confounding control assumption as plausible as possible. It is often the strongest confounder affecting both the exposure and subsequent outcome. (For a detailed account of confounding control in three-wave panel designs see @vanderweele2020)
+5.  **Control for baseline outcome**:Controlling for the outcome at baseline is crucial for ruling out reverse causation. While this does not fully preclude reverse causation, it minimises its impact. Therefore, the baseline outcome, along with a comprehensive set of covariates, should be part of the model to render the confounding control assumption plausible. The baseline outcome often serves as the most potent confounder affecting both the exposure and subsequent outcome [@vanderweele2020].
 
-To avoid bias, we must also handle missing data arising from non-response or panel attrition (loss-to-follow up). Again, to address selection bias at baseline we imputated missing values using the `mice` package in R [@vanbuuren2018]. To handling non-response/ missingness at follow-up we used censoring weights, which were passed to the semi-parametric models. Valid inferences for the New Zealand population were obtained by passing post-stratification census weights (Age, European Ethnicity, Gender).
+To mitigate bias from missing data due to non-response or panel attrition, we imputed missing values using the mice package in R [@vanbuuren2018]. To address non-response or missingness at follow-up, we employed censoring weights, integrated into our semi-parametric models. Valid inferences for the New Zealand population were secured by applying post-stratification census weights for age, European ethnicity, and gender.
 
 ### Study 1: eligibility criteria for inclusion in the causal effects of cat ownership
 
@@ -346,7 +349,7 @@ Inclusion criteria for the cats an dogs analysis were the same as for the cats a
 
 ### Multi-dimensional indicators of well-being
 
-We assessed well-being following @vanderweele2020 outcome-wide template. Outcomewide studies argue that, rather than cherry-picking one or several domains of well-being, science may advance more rapidly, and with greater hope for replication, by assess well-being across as many range of indicators the data may afford. To assist with interpretation, @vanderweele2020 groups well-being into larger dimensions of interest. Here, we identify five-domains: health, embodied well-being, practical well-being, reflective well-being, and social well-being (see Appendix A.)
+We assessed well-being following @vanderweele2020 outcome-wide template. Outcomewide studies argue that, rather than cherry-picking one or several domains of well-being, science may advance more rapidly, and with greater hope for replication, by assess well-being across as many range of indicators the data may afford. To assist with interpretation, @vanderweele2020 groups well-being into larger dimensions of interest. Here, we identify five-domains: health, embodied well-being, practical well-being, reflective well-being, and social well-being (see Appendix C.)
 
 {{< pagebreak >}}
 
@@ -397,25 +400,37 @@ We assessed well-being following @vanderweele2020 outcome-wide template. Outcome
 
 ### Statistical Estimation: Targeted Maximum Likelihood and Longitudinal Modified Treatment Policies
 
-To assess the causal impact of pet ownership on well-being, our analysis employs Targeted Maximum Likelihood Estimation (TMLE) for doubly-robust causal inference. This method integrates both treatment models and outcome models, enhancing the study's resilience against model misspecification.
+To consistently compute the causal relationship between pet ownership and well-being, we employ Targeted Maximum Likelihood Estimation (TMLE) for doubly-robust causal inference. This methodology synthesises treatment and outcome models, thereby fortifying the study against potential model misspecification.
 
-1.  **Treatment model with propensity scores**: The initial step in our analytical pipeline involves the calculation of propensity scores for each participant. These scores represent the likelihood of an individual acquiring a pet, conditioned on their covariates. We derive these scores from a targeted machine learning model, which incorporates high-dimensional confounders to estimate the likelihood of treatment assignment (i.e., pet ownership).
 
-2.  **Weighting via propensity scores**: Post-calculation of propensity scores, each individual in the dataset is assigned a weight. These weights are inverse probability weights and serve to balance the distribution of observed covariates between treated and untreated groups, thereby reducing the bias in causal estimates.
+### Definitions
 
-3.  **Outcome models focused on well-being**: Subsequently, we develop a second targeted machine learning model concentrating on the outcome variables, which encompass approximately 15 measures of well-being across five domains. This model incorporates both the treatment status (pet ownership) and the aforementioned weights, refining our ability to make causal inferences.
+**Treatment Model**: in the context of causal inference, a treatment model estimates the likelihood of receiving the treatment—here, pet ownership—based on observed characteristics (covariates). In ordinary regression, this would be akin to the predictor variables in the model, but modelling the treatment, in this case pet ownership.
 
-4.  **Counterfactual contrasts**: Central to TMLE is the prediction of counterfactual outcomes. Utilising the estimates from both treatment and outcome models, TMLE facilitates the prediction of what the well-being measures would have been for each individual under both treatment conditions---owning a pet and not owning a pet.
+**Outcome Model**: this estimates the potential outcomes of interest, here, measures of well-being, conditional on treatment status and other covariates. In traditional regression settings, this model is what you typically fit to understand how predictors influence the outcome. 
 
-5.  **Effect estimation**: Finally, we compute the average treatment effect by contrasting these counterfactual outcomes. Specifically, we calculate the difference in predicted well-being between the two treatment levels---having a pet versus not having one.
+By using TMLE to combine both a treatment and outcome model, we can better identify the specific effect of pet ownership on multi-dimensional well-being. Here are the steps: 
 
-The integration of TMLE and machine learning mitigates reliance on stringent modelling assumptions and adds an extra layer of robustness, making this a particularly rigorous approach for causal inference in the study of pet ownership and human well-being. (For further details see [@hoffman2022; @hoffman2023; @díaz2021]
+1.  **Treatment model with propensity scores**: the initial phase of our analysis consists of generating propensity scores for the exposure for each participant. These scores quantify the probability of an individual becoming a pet owner, conditional on their set of covariates. The scores emerge from a targeted machine learning model that accounts for high-dimensional confounders to estimate treatment assignment probabilities, namely pet ownership. **In plain terms,** we first calculate a score for each person that indicates how likely they are to own a pet based on various characteristics.This step is like determining each person's odds of having a pet, given their particular life circumstances.
+
+2.  **Weighting via propensity scores**: upon computing the propensity scores, we assign an inverse probability weight to each dataset entry. These weights serve to equilibrate the distribution of observed covariates between the treated and untreated cohorts, thus attenuating the bias in the causal estimates. **In plain terms,** we use propensity scores to make the contrasts groups more comparable in a manner that emulates randomisation in experiments.
+
+3.  **Outcome models focused on well-being**: a second targeted machine learning model focuses on the outcome variables, encompassing 18 measures of well-being distributed across four domains. This model incorporates both the individual treatment statuses and the previously calculated weights, enhancing our capacity for causal inference. **In plain terms** we create a model that tries to predict well-being levels based on whether someone owns a pet, while also considering the balancing weights.
+Put differently: this stage is about linking pet ownership to well-being, but with the added advantage of using balanced groups for a more credible result.
+
+4.  **Counterfactual contrasts**: a core component of TMLE is the projection of counterfactual outcomes. By combining estimates from the treatment and outcome models, TMLE enables the computation of potential well-being levels for each individual under dual treatment conditions—both with and without pet ownership. **In plain terms:** we use the models to estimate what someone's well-being would likely be in both scenarios: owning a pet and not owning one. Note that our shift estimand, described below, helps to make the assumptions required for such contrasts more credible.  We will contrast the average population outcome if all were to own pets with the naturally occurring from the distribution of pet ownership in the treatment year (NZAVS wave 2019)
+
+5.  **Effect estimation**: the final analytical stage involves determining the average treatment effect by contrasting the estimated counterfactual outcomes. We specifically gauge the differential impact on predicted well-being between the contrasting treatment states—possession and absence of a pet. Thus we calculate the average difference in well-being that owning a pet makes if everyone were to own pets. **In plain terms**, this last step boils down to measuring how much better or worse people are likely to feel if they own a pet.
+
+Each of these steps contributes to a robust methodology for examining the *causal* relationship between pet ownership and well-being. The marriage of TMLE and machine learning technologies reduces the dependence on restrictive modelling assumptions and introduces an additional layer of robustness. This integration serves as a particularly robust analytical framework for causal inference in examining the relationship between pet ownership and human well-being. For an extended discussion, refer to(For further details see [@hoffman2022; @hoffman2023; @díaz2021]
 
 ### Shift estimand for Longitudional Modified Treatment Strategies
 
-Here, we employ a "shift" estimand, a distinct alternative to traditional causal estimands that typically compare the impact of setting everyone to one exposure level against another[@díaz2021]. The shift estimand facilitates clearer comparisons of hypothetical interventions required for causal inference. Here, we examine the effect of universal pet ownership - cats in Study 1 an and dogs in Study 2 -- against the natural course of either owning or not owning a pet. We operationalise this approach using the `lmtp` package in R [@williams2021]. One of the merits of using a shift estimand is its potential to yield more actionable policy insights. Specifically, it enables us to address questions such as, "What would occur if everyone were to adopt pet ownership?" without necessitating a strong counterfactual scenario where all individuals are forced to relinquish pet ownership for the sake of causal contrast.
+Here, we adopt a "shift" estimand, an alternative to conventional causal estimands that often compare full exposure levels against one another[@díaz2021]. This estimand allows for nuanced comparisons of hypothetical interventions, enhancing causal inference. In our case, we evaluate the effect of universal pet ownership—cats in Study 1 and dogs in Study 2—relative to the natural state of owning or not owning a pet. This methodology is implemented using the `lmtp` package in R [@williams2021].
 
-Furthermore, the shift approach alleviates some of the stringency associated with positivity assumptions. Enacting an intervention to compel people to give up their pets might not be plausible, either ethically or logistically. The shift estimand, therefore, offers a more reasonable and achievable analytical frame. Additionally, as demonstrated in Appendix C, the shift estimand exhibits marginally greater conservatism in estimates. This feature adds an additional layer of robustness to our findings, making them more reliable for policy considerations.
+One key advantage of the shift estimand is its capacity for generating actionable policy insights. It allows us to address questions like, "What would happen if everyone owned a pet?" without requiring an extreme counterfactual where everyone is forced to forego pet ownership for comparison.
+
+The shift estimand also eases the demands related to positivity assumptions. Enforcing an intervention where people must relinquish their pets may not be feasible, either ethically or practically. Hence, the shift estimand provides a more attainable and sensible analytical framework. Moreover, as indicated in Appendix C, the shift estimand tends to produce slightly more conservative estimates, which adds an extra layer of robustness to our findings, enhancing their reliability for policy implications.
 
 {{< pagebreak >}}
 
@@ -738,23 +753,23 @@ For the outcome 'Social belonging', the PATE causal contrast is -0.011. The conf
 
 For the outcome 'Social support', the PATE causal contrast is -0.024. The confidence interval ranges from -0.058 to 0.01. The E-value for this outcome is 1.171, indicating no reliable evidence for causality.
 
-### Discussion: Causal effects of cat ownership on multi-dimensional well-being
+### Discussion Study 1: causal effects of cat ownership on multi-dimensional well-being
 
 Our analyses reveals little evidence to support strong causal claims about the impact of owning a cat, for those who previously did not own cats, on multiple dimensions of well-being. The Population Average Treatment Effects (PATE) across outcomes largely hovered around zero, with confidence intervals spanning both sides of the null.
 
--   **General Trends**: across domains such as alcohol consumption, body mass index, exercise, and psychological well-being, PATE causal contrasts were small and accompanied by E-values that suggest no reliable evidence for causality. This held true for outcomes like alcohol frequency, BMI, exercise hours, and several facets of psychological well-being.
+**General trends**: across domains such as alcohol consumption, body mass index, exercise, and psychological well-being, PATE causal contrasts were small and accompanied by E-values that suggest no reliable evidence for causality. This held true for outcomes like alcohol frequency, BMI, exercise hours, and several facets of psychological well-being.
 
--   **Sleep**: the outcome that stood apart was 'Hours sleep: Gain cat if not have pets'. Here, the PATE causal contrast was -0.057 with a confidence interval ranging from -0.096 to -0.018. The associated E-value of 1.291 suggests that there is reliable evidence for causality. However, the evidence only provisionally supports the notion that gaining a cat may lead to a reduction in sleep hours, and even here the effect size is modest.
+**Sleep**: the outcome that stood apart was 'Hours sleep'. Here, the PATE causal contrast was -0.057 with a confidence interval ranging from -0.096 to -0.018. The associated E-value of 1.291 suggests that there is reliable evidence for causality. However, the evidence only provisionally supports the notion that gaining a cat may lead to a reduction in sleep hours, and even here the effect size is modest.
 
--   **Outliers**: another outcome worth noting is 'PWB your relationships: Gain cat if not have pets', which had a PATE causal contrast of -0.038. Though the E-value of 1.228 indicates weak evidence for causality, this could be an area for further investigation.
+**Outliers**: another outcome worth noting is 'PWB your relationships', which had a PATE causal contrast of -0.038. Though the E-value of 1.228 indicates weak evidence for causality, this could be an area for further investigation.
 
-The results thus prompt caution in making substantive claims about the causal impacts of pet ownership, particularly in gaining a cat, on well-being for the New Zealand population. Further research is warranted to corroborate or refute these preliminary findings.
+The results thus prompt caution in making substantive claims about the causal impacts of pet ownership, particularly in gaining a cat, on well-being for the New Zealand population. 
 
 {{< pagebreak >}}
 
-## Study 2 Results Dog Ownership
+## Study 2 Results: Dog Ownership
 
-### Effects on Health
+### Effects on health
 
 ```{r}
 #| label: fig-results-health-dogs
@@ -1064,13 +1079,13 @@ For the outcome 'Social belonging', the PATE causal contrast is -0.015. The conf
 
 For the outcome 'Social support', the PATE causal contrast is -0.064. The confidence interval ranges from -0.128 to 0.001. The E-value for this outcome is 1.311, indicating no reliable evidence for causality.
 
-### Discussion: Causal effects of dog ownership on multi-dimensional well-being
+### Discussion Study 2: causal effects of dog ownership on multi-dimensional well-being
 
 Among the array of outcomes studied in relation to acquiring a dog, only one indicator provided reliable evidence for a causal effect---exercise. Specifically, the Population Average Treatment Effect (PATE) for 'Hours exercise' was 0.074, with a confidence interval ranging from 0.007 to 0.142 and an E-value of 1.343. This suggests that gaining a dog leads to a modest but statistically significant increase in exercise for individuals who socialise at least two hours per week.
 
 For all other outcomes examined---ranging from body mass index (BMI) and alcohol consumption to various psychological well-being markers---there was no reliable evidence supporting a causal relationship. Confidence intervals for these outcomes generally crossed zero, and E-values fell short of indicating strong evidence for causality.
 
-In summary, our study provides limited support for the proposition that acquiring a dog causally affects human well-being, with evidence restricted to exercise levels.
+Thus, we find limited support for the proposition that acquiring a dog causally affects human well-being, with evidence restricted to exercise levels.
 
 ## General Discussion
 
@@ -1266,7 +1281,7 @@ Note further that the modest effect sizes found in our analyses, particularly a 
 
 ### Assumptions and limitations
 
-1.  **Causality and confounding**: we employs rigorous causal inference techniques, but these are contingent on the assumption of no unmeasured confounding. (Say more about E-values)
+1.  **Causality and confounding**: we employs rigorous causal inference techniques, but these are contingent on the assumption of no unmeasured confounding. (Say more about E-values...)
 
 2.  **Measurement error**: the variables under consideration---exercise and sleep---are self-reported, which might introduce both systematic and random measurement errors. It should be specifically noted that the apparent modesty of the practical effects could arise, in part, to measurement inaccuracy. Given the limitations of self-report measures, the true effect sizes may differ from those estimated. Therefore, while the evidence does suggest a modest impact, the actual real-world effects may be either smaller or larger than the estimates suggest. Given the modest effect sizes and the limitations of self-report measures, future research should explore the use of more objective measures for variables like exercise and sleep. (... etc.)
 
@@ -1280,7 +1295,7 @@ Although the observed effect sizes are modest, they are not necessary trivial. D
 
 {{< pagebreak >}}
 
-### Ethics Statement
+### Ethics
 
 The NZAVS is reviewed every three years by the University of Auckland Human Participants Ethics Committee. Our most recent ethics approval statement is as follows: The New Zealand Attitudes and Values Study was approved by the University of Auckland Human Participants Ethics Committee on 26/05/2021 for six years until 26/05/2027, Reference Number UAHPEC22576.
 
@@ -1656,45 +1671,150 @@ The second item was negatively-worded, so we reversely recorded the responses to
 
 ### Appendix B. Descriptive Statistics
 
+<<<<<<< HEAD
 #### Study 1: baseline exposure, demographics and personality
+=======
+#### Study 1: Baseline exposure, demographics and personality
+>>>>>>> main
 
 ```{r}
 #| label: tbl-table_demographic_vars_cats 
 #| tbl-cap: "Baseline outcome and democgraphic statistics for cat ownership study"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
-
-table_demographic_vars_cats |> as_kable(format = "markdown")
+table_demographic_vars_cats |>  kbl(format = "markdown")
 
 
 ```
+
+| **Exposure + Demographic Variables** | **N = 5,376**        |
+|:-------------------------------------|:---------------------|
+| **Only Cat**                         | 2,308 (43%)          |
+| **Age**                              | 55 (44, 63)          |
+| **Born Nz**                          | 4,294 (80%)          |
+| **Children Num**                     | 2.00 (0.00, 3.00)    |
+| **Education Level Coarsen**          | NA                   |
+| 1                                    | 134 (2.5%)           |
+| 2                                    | 1,751 (33%)          |
+| 3                                    | 810 (15%)            |
+| 4                                    | 1,367 (25%)          |
+| 5                                    | 638 (12%)            |
+| 6                                    | 525 (9.8%)           |
+| 7                                    | 137 (2.6%)           |
+| **Eth Cat**                          | NA                   |
+| euro                                 | 4,338 (81%)          |
+| maori                                | 652 (12%)            |
+| pacific                              | 144 (2.7%)           |
+| asian                                | 227 (4.2%)           |
+| **Hlth Disability**                  | 1,577 (29%)          |
+| **Household Inc log**                | 11.35 (10.82, 11.81) |
+| **Male**                             | 3,309 (62%)          |
+| **Nz Dep2018**                       | 4.00 (2.00, 7.00)    |
+| **Nzsei13**                          | 56 (44, 69)          |
+| **Partner**                          | 3,827 (71%)          |
+| **Total Siblings Factor**            | NA                   |
+| 0                                    | 269 (5.4%)           |
+| 1                                    | 1,232 (25%)          |
+| 2                                    | 1,398 (28%)          |
+| 3                                    | 926 (19%)            |
+| 4                                    | 520 (11%)            |
+| 5                                    | 274 (5.5%)           |
+| 6                                    | 126 (2.5%)           |
+| 7                                    | 198 (4.0%)           |
+| **Urban**                            | 4,393 (86%)          |
+
+: Baseline outcome and democgraphic statistics for cat ownership study {#tbl-table_demographic_vars_cats-m}
+
+{{< pagebreak >}}
 
 ```{r}
 #| label: tbl-table_confounding_control_vars_cats
 #| tbl-cap: "Additional confounding control variables for cat ownership study"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_confounding_control_vars_cats  |>  as_kable(format = "markdown")
 ```
 
+<<<<<<< HEAD
+=======
+| **Confounding Control Variables** |   **N = 5,376**   |
+|:----------------------------------|:-----------------:|
+| **Hours Children log**            | 0.00 (0.00, 2.08) |
+| **Hours Exercise log**            | 1.61 (1.10, 2.08) |
+| **Hours Housework log**           | 2.20 (1.79, 2.71) |
+| **Hours Work log**                | 3.43 (0.00, 3.71) |
+| **Political Conservative**        |                   |
+| 1                                 |    273 (5.2%)     |
+| 2                                 |    1,016 (20%)    |
+| 3                                 |    1,128 (22%)    |
+| 4                                 |    1,596 (31%)    |
+| 5                                 |     806 (15%)     |
+| 6                                 |    325 (6.2%)     |
+| 7                                 |     62 (1.2%)     |
+| **Religion Church Round**         |                   |
+| 0                                 |    4,300 (80%)    |
+| 1                                 |    167 (3.1%)     |
+| 2                                 |    152 (2.8%)     |
+| 3                                 |    140 (2.6%)     |
+| 4                                 |    316 (5.9%)     |
+| 5                                 |     77 (1.4%)     |
+| 6                                 |     51 (1.0%)     |
+| 7                                 |     23 (0.4%)     |
+| 8                                 |    129 (2.4%)     |
+| **Religion Identification Level** |                   |
+| 1                                 |    3,251 (61%)    |
+| 2                                 |    237 (4.4%)     |
+| 3                                 |    187 (3.5%)     |
+| 4                                 |    381 (7.1%)     |
+| 5                                 |    326 (6.1%)     |
+| 6                                 |    346 (6.5%)     |
+| 7                                 |     623 (12%)     |
+| **Sample Origin**                 |                   |
+| 1-2                               |    1,303 (24%)    |
+| 3-3.5                             |    1,108 (21%)    |
+| 4                                 |    1,212 (23%)    |
+| 5-6-7                             |    1,753 (33%)    |
+
+: Additional confounding control variables for cat ownership study {#tbl-table_confounding_control_vars_cats-m}
+
+{{< pagebreak >}}
+
+>>>>>>> main
 ```{r}
 #| label: tbl-table_baseline_personality_cats
 #| tbl-cap: "Personality variables for cat ownership study"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_baseline_personality_cats |>  as_kable(format = "markdown")
 
-
 ```
 
+<<<<<<< HEAD
 @tbl-table_confounding_control_vars_cats @tbl-table_confounding_control_vars_cats and @tbl-table_baseline_personality_cats presents sample statistics for baseline responses in Study 1. Baseline variables were included to limit confounding of the the treatment/outcome effect. We additionally included the baseline response for the exposure and for all of the outcomes.
 
+=======
+| **Personality Variables** |   **N = 5,376**   |
+|:--------------------------|:-----------------:|
+| **Agreeableness**         | 5.50 (4.75, 6.00) |
+| **Conscientiousness**     | 5.25 (4.50, 6.00) |
+| **Extraversion**          | 3.75 (3.00, 4.75) |
+| **Neuroticism**           | 3.25 (2.50, 4.00) |
+| **Openness**              | 5.00 (4.25, 5.75) |
+| **Honesty Humility**      | 5.50 (4.75, 6.50) |
+
+: Personality variables for cat ownership study {#tbl-table_baseline_personality_cats-m}
+
+@tbl-table_confounding_control_vars_cats-m @tbl-table_confounding_control_vars_cats-m and @tbl-table_baseline_personality_cats-m presents sample statistics for baseline responses in Study 1. Baseline variables were included to limit confounding of the the treatment/outcome effect. We additionally included the baseline response for the exposure and for all of the outcomes.
+
+{{< pagebreak >}}
+
+>>>>>>> main
 #### Study 1: Well-being outcome domains
 
 ```{r}
@@ -1702,51 +1822,133 @@ table_baseline_personality_cats |>  as_kable(format = "markdown")
 #| tbl-cap: "Health outcomes measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
-table_health_vars_cats|>  as_kable(format = "markdown")
+table_health_vars_cats |> as_kable(format = "markdown")
+
 ```
+
+| **Health Variables**     |   **N = 5,376**   |
+|:-------------------------|:-----------------:|
+| **Alcohol Frequency**    |                   |
+| 0                        |     751 (14%)     |
+| 1                        |    1,007 (19%)    |
+| 2                        |     967 (18%)     |
+| 3                        |    1,204 (23%)    |
+| 4                        |    1,292 (25%)    |
+| 5                        |     16 (0.3%)     |
+| **Alcohol Intensity**    | 2.00 (1.00, 2.00) |
+| **Hlth Bmi**             | 26.2 (23.3, 30.0) |
+| **Hlth Sleep Hours**     | 7.00 (6.00, 8.00) |
+| **Hours Exercise log**   | 1.61 (1.10, 2.08) |
+| **Sfhealth your Health** |                   |
+| 1                        |     32 (0.6%)     |
+| 2                        |     93 (1.8%)     |
+| 3                        |    335 (6.4%)     |
+| 4                        |     627 (12%)     |
+| 5                        |    1,337 (26%)    |
+| 6                        |    2,066 (39%)    |
+| 7                        |     752 (14%)     |
+| **Smoker**               |    341 (6.5%)     |
+
+: Health variables for the cat ownership study measured at baseline {#tbl-table_health_vars_cats-m}
 
 ```{r}
 #| label: tbl-table_embody_vars_cats
 #| tbl-cap: "Embodied well-being outcomes measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_embody_vars_cats |>  as_kable(format = "markdown")
 
 ```
 
+<<<<<<< HEAD
+=======
+| **Embodied Well-Being Variables** | **N = 5,376** |
+|:----------------------------------|:-------------:|
+| **Bodysat**                       |               |
+| 1                                 |  280 (5.2%)   |
+| 2                                 |  517 (9.7%)   |
+| 3                                 |   913 (17%)   |
+| 4                                 |   919 (17%)   |
+| 5                                 |  1,140 (21%)  |
+| 6                                 |  1,239 (23%)  |
+| 7                                 |  347 (6.5%)   |
+| **Hlth Fatigue**                  |               |
+| 0                                 |   896 (17%)   |
+| 1                                 |  2,031 (38%)  |
+| 2                                 |  1,639 (31%)  |
+| 3                                 |   625 (12%)   |
+| 4                                 |  163 (3.0%)   |
+| **Kessler6 Sum**                  |   4 (2, 6)    |
+
+: Embodied well-being variables for the cat ownership study measured at baseline {#tbl-table_embody_vars_cats-m}
+
+>>>>>>> main
 ```{r}
 #| label: tbl-table_reflective_vars_cats
 #| tbl-cap: "Reflective well-being outcomes measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_reflective_vars_cats |>  as_kable(format = "markdown")
 ```
+
+| **Reflective Well-Being Variables** |   **N = 5,376**   |
+|:------------------------------------|:-----------------:|
+| **Lifesat**                         | 5.50 (4.50, 6.00) |
+| **Pwb Standard Living**             | 8.00 (7.00, 9.00) |
+| **Pwb your Future Security**        | 7.00 (5.00, 8.00) |
+| **Pwb your Health**                 | 7.00 (6.00, 9.00) |
+| **Pwb your Relationships**          | 8.00 (7.00, 9.00) |
+| **Self Esteem**                     | 5.67 (4.67, 6.33) |
+
+: Reflective well-being variables for the cat ownership study measured at baseline {#tbl-table_reflective_vars_cats-m}
 
 ```{r}
 #| label: tbl-table_social_vars_cats
 #| tbl-cap: "Social well-being outcomes measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_social_vars_cats |> as_kable(format = "markdown")
 
 ```
 
+<<<<<<< HEAD
+=======
+| **Social Well-Being Outcomes** |   **N = 5,376**   |
+|:-------------------------------|:-----------------:|
+| **Belong**                     | 5.33 (4.67, 6.00) |
+| **Neighbourhood Community**    |                   |
+| 1                              |    135 (2.6%)     |
+| 2                              |    346 (6.6%)     |
+| 3                              |    513 (9.8%)     |
+| 4                              |     928 (18%)     |
+| 5                              |    1,428 (27%)    |
+| 6                              |    1,408 (27%)    |
+| 7                              |    497 (9.5%)     |
+| **Support**                    | 6.33 (5.67, 7.00) |
+
+: Social well-being variables for the cat ownership study measured at baseline {#tbl-table_social_vars_cats-m}
+
+@tbl-table_health_vars_cats-m @tbl-table_embody_vars_cats-m @tbl-table_reflective_vars_cats-m and @tbl-table_social_vars_cats-m present the outcome variables measured at baseline. Note that all baseline measures of the outcomes were included as controls in each causal effect estimate, along with the baseline exposure.
+
+{{< pagebreak >}}
+
+>>>>>>> main
 #### Study 2: baseline exposure, demographics and personality
 
 ```{r}
-#| label: tbl-table_demographic_vars_dogs 
+#| label: tbl-table_demographic_vars_dogs
 #| tbl-cap: "Exposure and demographic variables measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 
 table_demographic_vars_dogs |>  as_kable(format = "markdown")
@@ -1754,74 +1956,256 @@ table_demographic_vars_dogs |>  as_kable(format = "markdown")
 
 ```
 
+| **Exposure + Demographic Variables** |    **N = 4,132**     |
+|:-------------------------------------|:--------------------:|
+| **Only Dog**                         |     1,168 (28%)      |
+| **Age**                              |     56 (45, 64)      |
+| **Born Nz**                          |     3,218 (78%)      |
+| **Children Num**                     |  2.00 (0.00, 3.00)   |
+| **Education Level Coarsen**          |                      |
+| 1                                    |      117 (2.8%)      |
+| 2                                    |     1,345 (33%)      |
+| 3                                    |      588 (14%)       |
+| 4                                    |     1,094 (27%)      |
+| 5                                    |      471 (11%)       |
+| 6                                    |      405 (9.8%)      |
+| 7                                    |      105 (2.5%)      |
+| **Eth Cat**                          |                      |
+| 1                                    |     3,305 (80%)      |
+| 2                                    |      502 (12%)       |
+| 3                                    |      116 (2.8%)      |
+| 4                                    |      194 (4.7%)      |
+| **Hlth Disability**                  |     1,250 (30%)      |
+| **Household Inc log**                | 11.39 (10.82, 11.85) |
+| **Male**                             |                      |
+| -1                                   |     1,694 (41%)      |
+| 0                                    |     2,438 (59%)      |
+| **Nz Dep2018**                       |  4.00 (2.00, 7.00)   |
+| **Nzsei13**                          |     57 (45, 69)      |
+| **Partner**                          |     2,979 (72%)      |
+| **Total Siblings Factor**            |                      |
+| 0                                    |      205 (5.4%)      |
+| 1                                    |      892 (24%)       |
+| 2                                    |     1,065 (28%)      |
+| 3                                    |      740 (20%)       |
+| 4                                    |      402 (11%)       |
+| 5                                    |      209 (5.5%)      |
+| 6                                    |      91 (2.4%)       |
+| 7                                    |      182 (4.8%)      |
+| **Urban**                            |     3,295 (84%)      |
+
+: Baseline outcome and demographic statistics for dog ownership study {#tbl-table_demographic_vars_dogs-m}
+
+{{< pagebreak >}}
+
 ```{r}
-#| label: tbl-table_confounding_control_vars_dogs 
+#| label: tbl-table_confounding_control_vars_dogs
 #| tbl-cap: "Additional confounding control variables measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_confounding_control_vars_dogs |>  as_kable(format = "markdown")
 ```
 
+<<<<<<< HEAD
+=======
+| **Confounding Control Variables** |   **N = 4,132**   |
+|:----------------------------------|:-----------------:|
+| **Hours Children log**            | 0.00 (0.00, 1.79) |
+| **Hours Exercise log**            | 1.79 (1.10, 2.08) |
+| **Hours Housework log**           | 2.30 (1.79, 2.71) |
+| **Hours Work log**                | 3.43 (0.00, 3.71) |
+| **Political Conservative**        |                   |
+| 1                                 |    195 (4.9%)     |
+| 2                                 |     760 (19%)     |
+| 3                                 |     886 (22%)     |
+| 4                                 |    1,231 (31%)    |
+| 5                                 |     609 (15%)     |
+| 6                                 |    278 (6.9%)     |
+| 7                                 |     51 (1.3%)     |
+| **Religion Church Round**         |                   |
+| 0                                 |    3,283 (80%)    |
+| 1                                 |    145 (3.5%)     |
+| 2                                 |    106 (2.6%)     |
+| 3                                 |     99 (2.4%)     |
+| 4                                 |    258 (6.3%)     |
+| 5                                 |     60 (1.5%)     |
+| 6                                 |     44 (1.1%)     |
+| 7                                 |     23 (0.6%)     |
+| 8                                 |    103 (2.5%)     |
+| **Religion Identification Level** |                   |
+| 1                                 |    2,457 (60%)    |
+| 2                                 |    181 (4.4%)     |
+| 3                                 |    142 (3.5%)     |
+| 4                                 |    281 (6.8%)     |
+| 5                                 |    266 (6.5%)     |
+| 6                                 |    248 (6.0%)     |
+| 7                                 |     532 (13%)     |
+| **Sample Origin**                 |                   |
+| 1-2                               |    1,041 (25%)    |
+| 3-3.5                             |     849 (21%)     |
+| 4                                 |     894 (22%)     |
+
+: Additional confounding control variables for the dog ownership study {#tbl-table_confounding_control_vars_dogs-m}
+
+>>>>>>> main
 ```{r}
-#| label: tbl-table_baseline_personality_dogs 
+#| label: tbl-table_baseline_personality_dogs
 #| tbl-cap: "Personality variables measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_baseline_personality_dogs |>  as_kable(format = "markdown")
 
 
 ```
 
+<<<<<<< HEAD
 @tbl-table_confounding_control_vars_dogs @tbl-table_confounding_control_vars_dogs and @tbl-table_baseline_personality_dogs presents sample statistics for baseline responses in Study 2. Baseline variables were included to limit confounding of the the treatment/outcome effect. We additionally included the baseline response for the exposure and for all of the outcomes.
 
+=======
+| **Personality Variables** |   **N = 4,132**   |
+|:--------------------------|:-----------------:|
+| **Agreeableness**         | 5.50 (4.75, 6.00) |
+| **Conscientiousness**     | 5.25 (4.50, 6.00) |
+| **Extraversion**          | 3.75 (3.00, 4.75) |
+| **Neuroticism**           | 3.25 (2.50, 4.00) |
+| **Openness**              | 5.00 (4.25, 5.75) |
+| **Honesty Humility**      | 5.75 (4.75, 6.50) |
+
+: Personality variables for the dog ownership study {#tbl-table_baseline_personality_dogs-m}
+
+@tbl-table_confounding_control_vars_dogs-m @tbl-table_confounding_control_vars_dogs-m and @tbl-table_baseline_personality_dogs-m presents sample statistics for baseline responses in Study 2. Baseline variables were included to limit confounding of the the treatment/outcome effect. We additionally included the baseline response for the exposure and for all of the outcomes.
+
+{{< pagebreak >}}
+
+>>>>>>> main
 #### Study 2: Well-being outcome domains
 
 ```{r}
-#| label: tbl-table_health_vars_dogs 
+#| label: tbl-table_health_vars_dogs
 #| tbl-cap: "Health outcomes measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false 
 
 table_health_vars_dogs  |>  as_kable(format = "markdown")
 ```
 
+| **Health Variables**     |   **N = 4,132**   |
+|:-------------------------|:-----------------:|
+| **Alcohol Frequency**    |                   |
+| 0                        |     565 (14%)     |
+| 1                        |     779 (19%)     |
+| 2                        |     718 (18%)     |
+| 3                        |     902 (22%)     |
+| 4                        |    1,044 (26%)    |
+| 5                        |     13 (0.3%)     |
+| **Alcohol Intensity**    | 2.00 (1.00, 2.00) |
+| **Hlth Bmi**             | 26.1 (23.3, 29.6) |
+| **Hlth Sleep Hours**     | 7.00 (6.00, 8.00) |
+| **Hours Exercise log**   | 1.79 (1.10, 2.08) |
+| **Sfhealth your Health** |                   |
+| 1                        |     23 (0.6%)     |
+| 2                        |     74 (1.8%)     |
+| 3                        |    250 (6.2%)     |
+| 4                        |     484 (12%)     |
+| 5                        |    1,034 (26%)    |
+| 6                        |    1,531 (38%)    |
+| 7                        |     623 (16%)     |
+| **Smoker**               |    253 (6.2%)     |
+
+: Health outcomes measured at baseline for the dog ownership study {#tbl-table_health_vars_dogs-m}
+
 ```{r}
-#| label: tbl-table_embody_vars_dogs 
-#| tbl-cap: "Embodied well-being variables measured at baseline" 
+#| label: tbl-table_embody_vars_dogs
+#| tbl-cap: "Embodied well-being variables measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_embody_vars_dogs   |>  as_kable(format = "markdown")
 
 ```
 
+<<<<<<< HEAD
+=======
+| **Embodied Well-Being Variables** | **N = 4,132** |
+|:----------------------------------|:-------------:|
+| **Bodysat**                       |               |
+| 1                                 |  218 (5.3%)   |
+| 2                                 |  355 (8.6%)   |
+| 3                                 |   662 (16%)   |
+| 4                                 |   730 (18%)   |
+| 5                                 |   867 (21%)   |
+| 6                                 |  1,023 (25%)  |
+| 7                                 |  262 (6.4%)   |
+| **Hlth Fatigue**                  |               |
+| 0                                 |   711 (17%)   |
+| 1                                 |  1,614 (39%)  |
+| 2                                 |  1,216 (30%)  |
+| 3                                 |   459 (11%)   |
+| 4                                 |  118 (2.9%)   |
+
+: Embodied well-being outcomes measured at baseline for the dog ownership study {#tbl-table_embody_vars_dogs-m}
+
+>>>>>>> main
 ```{r}
-#| label: tbl-table_reflective_vars_dogs 
+#| label: tbl-table_reflective_vars_dogs
 #| tbl-cap: "Reflective well-being variables measured at baseliney"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_reflective_vars_dogs  |>  as_kable(format = "markdown")
 ```
 
+| **Reflective Well-Being Variables** |   **N = 4,132**   |
+|:------------------------------------|:-----------------:|
+| **Lifesat**                         | 5.50 (5.00, 6.00) |
+| **Pwb Standard Living**             | 8.00 (7.00, 9.00) |
+| **Pwb your Future Security**        | 7.00 (5.00, 8.00) |
+| **Pwb your Health**                 | 8.00 (6.00, 9.00) |
+| **Pwb your Relationships**          | 9.00 (7.00, 9.00) |
+| **Self Esteem**                     | 5.67 (4.67, 6.33) |
+
+: Reflective well-being outcomes measured at baseline for the dog ownership study {#tbl-table_reflective_vars_dogs-m}
+
 ```{r}
-#| label: tbl-table_social_vars_dogs 
+#| label: tbl-table_social_vars_dogs
 #| tbl-cap: "Social well-being variables measured at baseline"
 #| eval: true
 #| echo: false
-#| include: true
+#| include: false
 
 table_social_vars_dogs  |>  as_kable(format = "markdown")
 
 ```
 
+<<<<<<< HEAD
+=======
+| **Social Well-Being Outcomes** |   **N = 4,132**   |
+|:-------------------------------|:-----------------:|
+| **Belong**                     | 5.33 (4.67, 6.00) |
+| **Neighbourhood Community**    |                   |
+| 1                              |    107 (2.6%)     |
+| 2                              |    259 (6.4%)     |
+| 3                              |    390 (9.7%)     |
+| 4                              |     722 (18%)     |
+| 5                              |    1,068 (26%)    |
+| 6                              |    1,088 (27%)    |
+| 7                              |     407 (10%)     |
+| **Support**                    | 6.33 (5.67, 7.00) |
+
+: Social well-being outcomes measured at baseline for the dog ownership study {#tbl-table_social_vars_dogs-m}
+
+@tbl-table_health_vars_dogs-m @tbl-table_embody_vars_dogs-m @tbl-table_reflective_vars_dogs-m and @tbl-table_social_vars_dogs-m present the outcome variables measured at baseline. Note that all baseline measures of the outcomes were included as controls in each causal effect estimate, along with the baseline exposure.
+
+{{< pagebreak >}}
+
+>>>>>>> main
 ### Appendix C. Comparison of Shift Estimand with Traditional Causal Contrast {.appendix}
 
 ```{r}
@@ -1846,11 +2230,11 @@ plot_group_tab_compare_cats_sleep <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.0,
   point_size = .5,
-  title_size = 15,
-  subtitle_size = 11,
+  title_size = 12,
+  subtitle_size = 10,
   legend_text_size = 8,
   legend_title_size = 10,
   x_offset = -1,
@@ -1859,6 +2243,19 @@ plot_group_tab_compare_cats_sleep <- margot_plot(
 )
 
 plot_group_tab_compare_cats_sleep
+
+
+# ggsave(
+#   plot_group_tab_compare_cats_sleep,
+#   path = here::here(here::here(push_mods, "plot_group_tab_compare_cats_sleep")),
+#   width = 12,
+#   height = 8,
+#   units = "in",
+#   filename = "plot_group_tab_compare_cats_sleep.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+#  )
 
 ```
 
@@ -1878,7 +2275,7 @@ compare_cats_sleep |> kbl(format = "markdown", booktabs = TRUE)
 
 Here, we consider two distinct types of estimands: the shift estimand and the traditional all-or-nothing estimand. The shift estimand aims to quantify the change in expected well-being when individuals transition from non-ownership to pet ownership, set against the current distribution of pet owners and non-owners in the population. In contrast, the traditional all-or-nothing estimand compares expected well-being under conditions of universal pet ownership versus no pet ownership at all.
 
-n Study 1, we observed an effect of cat ownership on sleep. For comparative insights, one may ask: What would the traditional estimand reveal? Refer to @fig-comparative-graph-cat and @tbl-comparative-graph-cats. These show that the traditional estimand, although less precise, reveals the traditional intervention would have stronger effects than the shift estimand. This is expected given the traditional estimand requires a more substantial intervention and greater data dependency for exposure balance.
+n Study 1, we observed an effect of cat ownership on sleep. For comparative insights, one may ask: What would the traditional estimand reveal? Refer to @fig-comparative-graph-cats and @tbl-comparative-graph-cats. These show that the traditional estimand, although less precise, reveals the traditional intervention would have stronger effects than the shift estimand. This is expected given the traditional estimand requires a more substantial intervention and greater data dependency for exposure balance.
 
 ```{r}
 #| label: fig-comparative-graph-dogs
@@ -1904,21 +2301,36 @@ plot_group_compare_dogs_excercise<- margot_plot(
   type = "RD",
   title = "Health effects",
   subtitle = sub_title_dogs,
-  xlab = "",
-  ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.0,
   point_size = .5,
-  title_size = 15,
-  subtitle_size = 11,
+  title_size = 12,
+  subtitle_size = 10,
   legend_text_size = 8,
   legend_title_size = 10,
   x_offset = -1,
   x_lim_lo = -1,
-  x_lim_hi =  .5
+  x_lim_hi = .5
 )
 plot_group_compare_dogs_excercise
+
+
+
+# ggsave(
+#   plot_group_compare_dogs_excercise,
+#   path = here::here(here::here(push_mods, "plot_group_compare_dogs_excercise")),
+#   width = 12,
+#   height = 8,
+#   units = "in",
+#   filename = "plot_group_compare_dogs_excercise.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+#  )
+
+
+
 ```
 
 ```{r}
