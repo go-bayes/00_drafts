@@ -1,0 +1,386 @@
+---
+title: "Considerations of Selection Bias in the Design of Longitudinal Panel Studies"
+abstract: | 
+ This article explains the concept of selection bias, clarifying how it differs from confounding bias. Our aim is to improve research design in evolutionary human science, particularly in longitudinal ethnography. Selection bias arises when the sample used in a study does not accurately represent the target population, leading to skewed or ungeneralisable findings. Unlike confounding bias, which results from unaccounted variables that influence both the treatment and the outcome, selection bias stems from the process of choosing the study sample, or from attrition of a study sample. This distinction is crucial for researchers in evolutionary human sciences, where longitudinal ethnographies often rely on specific, sometimes limited, populations. We discuss strategies to identify, mitigate, and account for selection bias, aiming to improve the validity and reliability of research findings in this field. The article provides insights into the application of these concepts in practical research scenarios, emphasising the importance of careful study design and analysis in overcoming the challenges posed by selection biases.
+author: 
+  - name: Joseph A. Bulbulia
+    affiliation: Victoria University of Wellington, New Zealand
+    orcid_id: 0000-0002-5861-2056
+    email: joseph.bulbulia@vuw.ac.nz
+    department: Psychology/Centre for Applied Cross-Cultural Research
+    city: Wellington
+    country: New Zealand
+    url: www.wgtn.ac.nz/cacr 
+    corresponding: yes
+  - name: Etsuji Suzuki  
+    orcid: xxx-xxx-xxx-xxx
+    department: Okayama University
+    url: https://www.hsph.harvard.edu/profile/etsuji-suzuki/
+execute:
+  warning: false
+  eval: true
+  echo: false
+  include: true
+keywords:
+  - DAGS (Directed Acyclic Graphs)
+  - Causal Inference
+  - Confounding
+  - History
+  - Psychology
+  - Panel
+format:
+  docx
+
+date: last-modified
+bibliography: references.bib
+csl: camb-a.csl
+---
+```{r}
+#| label: load-libraries
+#| echo: false
+#| include: false
+#| eval: false
+
+#   html:
+#    html-math-method: katex
+
+# Include in YAML for Latex
+# sanitize: true
+# keep-tex: true
+# include-in-header:
+#       - text: |
+#           \usepackage{cancel}
+
+
+# for making graphs
+library("tinytex")
+library(extrafont)
+loadfonts(device = "all")
+
+#quarto install tinytex --update-path
+
+# libraries for jb (when internet is not accessible)
+# read libraries
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+# read functions
+source("/Users/joseph/GIT/templates/functions/funs.R")
+
+# read data/ set to path in your computer
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
+  )
+
+# for saving models. # set path fo your computer
+push_mods <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-causal-dags"
+  )
+
+
+# keywords: potential outcomes, DAGs, causal inference, evolution, religion, measurement, tutorial
+# 10.31234/osf.io/b23k7
+
+#20012 words
+# 75 refs
+# 32 figs
+```
+
+### Introduction to selection bias
+
+In evolutionary human sciences, especially in longitudinal ethnography, understanding selection bias is crucial for ensuring the validity and generalisability of research outcomes. If not properly addressed, selection bias can lead to significant distortions in study results. To understand selection bias, it is essential to understand the concepts of "source" and "target" populations, as well as the concepts of "generalisability" and "transportability."
+
+1. **Source Population**: The group from which we collect our data. Think of it as the subset of individuals we are directly studying.
+
+2. **Target Population**: The larger group we want to understand better through our study. The more similar the source population is to the target population in characteristics relevant to our study, the more confidently we can apply our findings to the target population.
+
+3. **Generalisability**: This term pertains to how well the findings from our source population can be applied to the target population. If the effects we observe in our study group also hold true for the larger group, we say our findings are generalisable. We use the term $PATE$ to define the Population Average Treatment Effect in the target population and $ATE_{\text{source}}$ to define the Average Treatment Effect in the source population. If there is a set of characteristics $W$ on which the source and target populations differ, we can model a relationship between the two populations if there is a function such that:
+
+   $$PATE = f(ATE_{\text{source}}, W)$$
+
+4. **Transportability**: This concept is an extension of the concept of generalisability. It pertains to how well our study's findings can be applied to different settings or groups that were not part of the original study. Our results are transportable if there is a function such that:
+
+   $$ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)$$
+
+   Here, $T$ represents the variables on which the source and target populations differ. 
+
+In plain terms, selection bias occurs when our study group (source population) does not accurately represent the group we are ultimately interested in (target population) [@hernán2017]. Understanding this bias is crucial for ensuring our research findings are valid and applicable beyond our immediate study.
+
+### A Structural Approach to Selection Bias
+
+<!-- To understand the relationship of selection bias to confounding bias, it is useful to consider the following topology of confounding developed by Suzuki and colleagues [@suzuki2016; @suzuki2014; @suzuki2020].[^18] -->
+
+<!-- [^18]: This typology builds on VanderWeele's work [@vanderweele2012]. -->
+
+<!-- 1.  **Confounding in distribution**: if the sample exposed to each level of exposure is representative of the target population, we say there is no confounding in the distribution of the exposure's effect on the outcome. -->
+
+<!-- 2.  **Confounding in expectation**: if the exposure assignment mechanism balances the confounders across each level of contrast in the exposure, we say there is no confounding in the expectation of the exposure's effect on the outcome. -->
+
+<!-- 3.  **Confounding in measure**: if a specific measure of interest matches the corresponding causal measure in the target population, we say there is no confounding in the measure of the exposure's effect on the outcome. As discussed previously concerning interaction, our inference of a causal effect can depend on the scale of the causal effect measure. -->
+
+<!-- 4.  **Realised confounding**: if a specific exposure assignment leads to balance, irrespective of the exposure assignment mechanism, we say there is no realised confounding of the exposure's effect on the outcome. This concept is essential because, even in randomised experiments, randomisation might not eliminate chance imbalances in the distributions of confounders across the exposures. -->
+
+<!-- Each of these four concepts plays a role in "confounding" discussions, and all are crucial when evaluating a study's scientific merit. However, each concept highlights different issues. -->
+
+Consider @fig-1, which presents a scenario in which there is no marginal causal effect of exposure on the outcome, yet a degree of selection into the study. We will assume randomisation succeeded so there are no arrows into $A$. As @fig-1 shows, randomising from a selected group does not result in confounding bias. Despite selection, the null effect in the source population is not biased for the target population [@hernán2004; @greenland1977].[^1]  Here, selection does not induce "confounding in expectation" [@suzuki2016; @suzuki2014; @suzuki2020]. 
+
+[^1]: Note we use the term "null effect" as a structural concept. There are no statistical "null effects." Instead there are reliable or unreliable statistical effect estimates according to some measure of evidence and arbitrary threshold [@bulbulia2021].
+
+```{tikz}
+#| label: fig-1
+#| fig-cap: "Selection under the null. An unmeasured variable affects the selection for the study and the outcome. D-separation is preserved; there is no confounding in expectation."
+#| out-width: 60%
+#| echo: false
+#| 
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (S) at (2, 0) {S};
+\node [rectangle, draw=white] (A) at (4, 0) {A};
+\node [rectangle, draw=white] (Y) at (6, 0) {Y};
+
+\draw [-latex, draw=black, bend left=30] (U) to (Y);
+\draw [-latex, draw=black] (U) to (S);
+
+\end{tikzpicture}
+
+```
+
+@fig-2 presents a different scenario in which there is selection bias for the population parameter: the association in the population of selected individuals differs from the causal association for the target population. Hernán calls this scenario "selection bias off the null" [@hernán2017]. Lu et al. call this scenario "Type 2 selection bias" [@lu2022]. Such bias occurs because the selection into the study occurs on an effect modifier for the effect of the exposure on the outcome. Note that although the causal effect of $A\to Y$ is unbiased for the exposed and unexposed in the source population, the effect estimate does not generalise to the exposed and unexposed in the target population: $PATE \cancel{\approx} ATE_{\text{selected sample}}$. Although there is no "confounding in expectation" however there is "confounding in distribution," in the sense that causal inferences in this scenario do not generalise as we might hope [@suzuki2016; @suzuki2014; @suzuki2020]. 
+
+```{tikz}
+#| label: fig-2
+#| fig-cap: "Selection off the null: an unmeasured variable affects selection into the study and the outcome. Here the exposure affects the outcome. Selection, then, is an effect modifier. Although d-separation is preserved, there is confounding in distribution."
+#| out-width: 60%
+#| echo: false
+#| 
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (S) at (2, 0) {S};
+\node [rectangle, draw=white] (A) at (4, 0) {A};
+\node [rectangle, draw=white] (Y) at (6, 0) {Y};
+
+\draw [-latex, draw=black, bend left=30] (U) to (Y);
+\draw [-latex, draw=black] (U) to (S);
+\draw [-latex, draw=black] (A) to (Y);
+
+\end{tikzpicture}
+```
+
+There has been considerable technical research investigating the conditions under which causal estimates for a target population may be identified when the source population differs from the target population (see: [@lu2022]). There has also been considerable technical research investigating the conditions in which results might transport to populations that systematically differ from the source population (see: [@bareinboim2022; @pearl2022; @deffner2022]).
+
+
+
+### Selection bias in which both the exposure and outcome affect censoring
+
+In panel designs, there is a constant threat of selection occurring *after* enrolment into the study. Panel attrition can be viewed as a special case of selection bias because the participants who continue in a longitudinal study may differ from those who drop out in ways that generate structural biases. We next consider how selection may arise in a three-wave longitudinal panel design. To address Type 2 selection bias in a three-wave panel, we must accurately measure and adjust for a sufficient set of covariates that affect selection $\framebox{S}$ [@lu2022].[^2] 
+
+[^2]: Note that when drawing causal diagrams, it is vital to present confounding as it is assumed to exist in the target population, not the source population (see @suzuki2020, especially their examples in the supplement.) Practically speaking, where census data are available these should be collected for constructing survey weights (see: [@pishgar2021; @stuart2015]).
+
+
+@fig-3 describes a scenario in which both the exposure and the true outcome affect panel attrition, biasing the observed association between the exposure and the measured outcome in the remaining sample. The problem of selection here is a problem of collider stratification bias. We can equivalently view the problem as one of directed measurement error, described in in @fig-3. Either way, restricting the analysis to the retained sample introduces bias in the causal effect estimate by opening a backdoor path from the exposure to the outcome. @lu2022 call this form of bias: "Type 1 selection bias" and distinguishes between scenarios when causal effects that generalise are recoverable (Type 1a selection bias) and not recoverable (Type 1b selection bias). In both cases, we must develop strategies to evaluate whether we may recover from the subset of the source population that has been censored, causal effect estimates that generalise to a clearly defined target population.
+
+```{tikz}
+#| label: fig-3
+#| fig-cap: "Causal diagram in which outcome and exposure affect attrition. Dashed red path shows correlation of A an Y in the absence of causation."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+\node [rectangle, draw=white] (A) at (0, 0) {A$_{1}$};
+\node [ellipse, draw=white] (Y) at (3, 0) {Y$_{2}$};
+\node [rectangle, draw=black] (S) at (6, 0) {S};
+
+\draw [-latex, bend left=80, draw=black] (A) to (S);
+\draw [-latex, draw=black] (Y) to (S);
+\draw [cor, draw=red, dashed] (A) to (Y);
+
+
+
+\end{tikzpicture}
+
+```
+
+### Example of selection bias in a three-wave panel were there are systematic differences between the source population at baseline and at follow up.
+
+@fig-4 shows selection bias manifest in a three-wave panel design when loss-to-follow-up results in a systematic disparity between the baseline and follow-up source populations. The red dashed lines in the diagram represent an open backdoor path, revealing a potential indirect association between the exposure and the outcome. Upon considering only the selected sample (i.e., when we condition on the selected sample $\framebox{S}$), we may create or obscure associations not evident in the source population at baseline.
+
+```{tikz}
+#| label: fig-4
+#| fig-cap: "Causal diagram of a three-wave panel design with selection bias. Red paths reveal the open backdoor path induced by conditioning on the selected sample."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+
+\node [rectangle, draw=black, align=left] (L) at (2, 0) {L$_{t0}$ \\A$_{t0}$ \\Y$_{t0}$};
+
+\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
+
+\node [ellipse, draw=white] (US) at (4, -2) {U};
+
+\node [rectangle, draw=black](S) at (6, 0) {S};
+
+\node [ellipse, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+
+\draw [-latex, draw=black] (U) to (L);
+
+\draw [-latex, draw=black] (L) to (A);
+
+\draw [-latex, bend left=50, draw=black] (L) to (Y);
+
+\draw [-latex, bend right=50, draw=black, dotted] (U) to (Y);
+
+\draw [-latex, bend left=50, draw=black, dotted] (U) to (A);
+
+\draw [-latex, draw=red] (A) to (S);
+
+\draw [-latex, draw=red] (US) to (S);
+
+\draw [-latex, draw=red] (US) to (Y);
+
+\draw [cor, draw=red, bend right=20, dashed] (A) to (US);
+
+\end{tikzpicture}
+
+```
+
+### Unmeasured confounder affects outcome and variable that affects attrition
+
+@fig-5 presents another problem of selection bias in a three-wave panel design. This diagram shows how an unmeasured confounder, U$_S$, can simultaneously influence the outcome variable Y$_{t2}$ and another variable, L$_{t2}$, responsible for attrition (i.e., the drop-out rate, denoted as $\framebox{S}$). Here we present a scenario in which the exposure variable $A_{t1}$ can impact a post-treatment confounder L$_{t2}$, which subsequently affects attrition, $\framebox{S}$. If the study's selected sample descends from L${t2}$, the selection effectively conditions on L$_{t2}$, potentially introducing bias into the analysis. @fig-5 marks this biasing pathway with red-dashed lines. 
+
+```{tikz}
+#| label: fig-5
+#| fig-cap: "Causal diagram of a three-wave panel design with selection bias: Unmeasured confounder U_S, is a cause of both of the outcome Y_t2 and of a variable, L_t2 that affects attrition, S.  The exposure A affects this cause L_t2 of attrition, S. The selected sample is a descendent of Lt2. Hence selection is a form of conditioning on L_t2. Such conditioning opens a biasing path, indicated by the red-dashed lines."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black, align=left] (L) at (2, 0) {L$_{t0}$ \\A$_{t0}$ \\Y$_{t0}$};
+\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [ellipse, draw=white] (US) at (4, -2) {U$_S$};
+\node [rectangle, draw=white](L2) at (6, 0) {L$_{t2}$};
+\node [rectangle, draw=black](S) at (8, 0) {S};
+\node [ellipse, draw=white] (Y) at (10, 0) {Y$_{t2}$};
+
+\draw [-latex, draw=black] (U) to (L);
+\draw [-latex, draw=black] (L) to (A);
+\draw [-latex, bend left=50, draw=black] (L) to (Y);
+\draw [-latex, bend right=50, draw=black, dotted] (U) to (Y);
+\draw [-latex, bend left=50, draw=black, dotted] (U) to (A);
+\draw [-latex, draw=red] (A) to (L2);
+\draw [-latex, draw=red] (L2) to (S);
+\draw [-latex, draw=red] (US) to (L2);
+\draw [-latex, draw=red, bend right=40] (US) to (Y);
+
+\draw [cor, draw=red, bend right=20, dashed] (A) to (US);
+
+
+\end{tikzpicture}
+
+
+```
+
+### Why regression adjustment fails to address select bias from attrition
+
+We cannot address selection bias from attrition using regressions. Suppose that sicker individuals or those with less successful outcomes are more likely to drop out of the study. If this occurs, the remaining sample will not represent the original population; it will over-represent healthier individuals or those with more successful outcomes.
+
+What to do?
+
+1.  **Retain sample**: the best way to deal with missing data is to prevent it in the first place. Maintain regular contact with study participants, using incentives for continued participation, making follow-ups as convenient as possible, and tracking participant details from multiple sources (email, phone, secondary contacts).
+
+2.  **Missing data imputation**: this requires predicting the missing values based on our data, assuming that the missingness is random conditional on baseline measures. Note that this missingness should be predicted separately within strata of the exposed and unexposed in the previous wave (see: [@westreich2015; @zhang2023]). Imputation methods typically assume that data are missing conditional on a correctly specified model and information obtained at baseline.
+
+3.  **Inverse probability weighting with censoring weights**: this requires weighting the values of each participant in the study by the inverse of the probability of their observed pattern of missingness (censoring weights)[@leyrat2019; @cole2008]. In this approach, the sample gives more weight to under-represented individuals owing to drop-out. As with missing data imputation, IPW with censoring weights also assumes that we can correctly model the missingness from the observed data [@shiba2021].
+
+4.  **Sensitivity analysis**: as with nearly all causal inference, we should quantitatively evaluate how sensitive results are to different assumptions and methods for handling censoring events [@shi2021].
+
+
+### Integrating Strategies for Addressing Selection Bias in Evolutionary Human Sciences
+
+In addressing the challenge of selection bias in evolutionary human sciences, particularly arising from attrition in longitudinal studies, it is crucial to adopt a multifaceted and vigilent approach. This approach should not only incorporate strategies to mitigate selection bias but also ensure these strategies are seamlessly integrated into both the design and analysis phases of research. The key lies in harmonizing proactive measures with analytical techniques to create a robust research methodology.
+
+#### Recommended Approach to Study Design and Analysis
+
+1. **Enhancing sample representation**: begin with a broad and diverse sampling strategy. This ensures the representativeness of the target population in the study, addressing potential selection biases from the onset. 
+
+2. **Precise measurement and covariate adjustment**: use precise measurements and adjust for covariates (CITE). This step is crucial in controlling for Type 2 selection bias and ensuring that the results are reflective of the true relationships within the target population.
+
+3. **Causal diagrams reflecting target population structure**: develop causal diagrams that accurately represent the confounding structure as it exists in the target population. This helps in identifying potential sources of bias and in designing appropriate strategies to address them.
+
+4. **Focus on participant retention**: Implement strategies to maximize participant retention, such as regular communication, incentives, and multiple contact methods. High retention rates reduce the risk of attrition-related biases significantly.
+
+5. **Adopt appropriate analytical methods**: in cases where attrition is unavoidable, employ advanced analytical methods like multiple imputation or inverse probability weighting with censoring weights. These methods help in adjusting for the biases introduced by missing data.
+
+6. **Conduct sensitivity analysis for robustness**: conduct sensitivity analyses to assess how different assumptions about missing data and other factors impact the study's findings. This is a critical step in ensuring the validity and reliability of the research conclusions.
+
+
+#### Summary
+
+By integrating these strategies into both the design and analysis phases of research, we can effectively address the challenges posed by selection bias, particularly in the context of evolutionary human sciences. This comprehensive approach not only enhances the accuracy and applicability of the findings but also contributes to the overall robustness and credibility of the research.
+
+
+## References
+
+

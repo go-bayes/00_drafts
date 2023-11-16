@@ -39,6 +39,8 @@ format:
     include-in-header:
        - text: |
            \usepackage{cancel}
+bibliography: references.bib
+csl: camb-a.csl
 ---
 
 ```{r}
@@ -122,6 +124,153 @@ push_mods <-
 \end{tikzpicture}
 
 ```
+
+
+```{tikz}
+#| label: fig-dag-dep-u-effect-selection
+#| fig-cap: "This figrue illustrates the introduction of measurement bias in comparative cross-cultural research. Selection at the baseline stage induces correlations in the exposure and outcome measurement errors, shown by red paths. The figure underscores the importance of clearly defining the source populationand the target population; in many comparative studies, the source population cannot coherently map onto any coherent targe population. Reserachers will often do better to restrict generalisations within cultures."
+#| out-width: 100%
+#| echo: false
+#| 
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=black] (S) at (0, 2) {S};
+\node [rectangle, draw=white] (UAY) at (2, 2) {U$_{AY}$};
+\node [rectangle, draw=white] (UA) at (4, 1) {U$_A$};
+\node [rectangle, draw=white] (UY) at (4, 3) {U$_Y$};
+
+\node [rectangle, draw=white] (A1) at (6, 1) {$A^{\prime}_{1}$};
+\node [rectangle, draw=white] (Y2) at (8, 1) {$Y^{\prime}_{2}$};
+\node [rectangle, draw=white] (Aeta1) at (6, 0) {$A_{1}$};
+\node [rectangle, draw=white] (Yeta2) at (8, 0) {$Y_{2}$};
+
+
+\draw [-latex, draw=red] (UAY) to (UA);
+\draw [-latex, draw=red] (UAY) to (UY);
+\draw [-latex, draw=red] (UA) to (A1);
+\draw [-latex, draw=red, bend left=30] (UY) to (Y2);
+\draw [-latex, draw=red] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+\draw [cor, draw=red, bend left] (Aeta1) to (UA);
+\draw [-latex, draw=black] (S) to (UAY);
+
+\end{tikzpicture}
+
+```
+
+### Using time-ordered causal diagrams to understand how post-outcome adjustment may diminish threats of directed measurement error in cultural evolutionary research
+
+Figure @fig-dag-measure-selection-0 illustrates a situation often encountered in the evolutionary science of historical cultures. Let us assume that there is no relationship between the actual exposure, $A$, and actual outcome, $Y$. Further, suppose that the outcome influences the measurement error of the exposure, denoted as $UA$. This influence is assumed to be directional, opening a backdoor path between the measured exposure, $A^{\prime}$, and the measured outcome, $Y'$. (For simplicity, we will not consider that the outcome is measured with error; this assumption does not alter the problem's structure.) Scenarios akin to that shown in @fig-dag-measure-selection-0 frequently emerge in historical evolutionary human science because history written by victors.
+
+```{tikz}
+#| label: fig-dag-measure-selection-0
+#| fig-cap: "The figure illustrates the bias arising measurement error of A' caused by Y. Although A and Y are independent, their measured counterparts, A' and Y', are not. The systematic error introduced by changes in Y opens a biasing path, signified in red."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (A) at (0, 0) {$A$};
+\node [rectangle, draw=white] (Y) at (2, 0) {$Y$};
+\node [rectangle, draw=white] (UA) at (5, 0) {$UA$};
+
+\node [rectangle, draw=white] (Ap) at (8, 0) {$A^\prime$};
+\node [rectangle, draw=white] (Yp) at (10, 0) {$Y^\prime$};
+
+
+\draw [-latex, draw=red, bend left] (Y) to (Yp);
+\draw [-latex, draw=red] (Y) to (UA);
+
+\draw [-latex, draw=black, bend right] (A) to (Ap);
+
+\draw [-latex, draw=red] (UA) to (Ap);
+
+\draw [-latex, draw=red, dotted] (UA) to (Ap);
+
+%\draw [cor, draw=red] (Ap) to (Yp);
+\draw [cor,  draw=red ] (Ap) to (Yp);
+
+
+\end{tikzpicture}
+
+```
+
+@fig-dag-measure-selection exposes the structure of bias where post-outcome adjustment is necessary to mitigate or eliminate measurement bias instigated by the outcome itself. Assume our interest lies in quantifying the influence of belief in Big gods on social complexity. We assumed that highly complex societies amend history, eliminating traces of beliefs in lesser gods. If traces of beliefs in lesser gods were recoverable through sources such as language, cultural evolutoinary researchers would obtain better effect estimates. @fig-dag-measure-selection clarifies the intuition that recovering echoes of the silenced is worthwhile for enhancing the accuracy of our causal effect estimates.
+
+
+
+
+
+
+```{tikz}
+#| label: fig-structural-assumptions-reflective-model
+#| fig-cap: "Structural assumptions of the reflective model imply a univariate reality causes the outcome. These assumptions are strong because they exclude multivariate causes of the indicators for constructs, as well as independent effects of the indicators on outcomes. Blue line indicates assumed causal path. The figure is adapted from VanderWeele 2022."
+#| out-width: 80%
+#| echo: false
+
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+\node [draw=white] (eta1) at (0, 1) {$\eta_1$};
+\node [rectangle, draw=white] (eta2) at (0, 0) {$\vdots$};
+\node [rectangle, draw=white] (etan) at (0, -1) {$\eta_n$};
+\node [rectangle, draw=white] (X1) at (2, 1) {X$_1$};
+\node [rectangle, draw=white] (X2) at (2, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (2, -1 ) {X$_n$};
+\node [rectangle, draw=white] (A) at (4, 0 ) {A};
+\node [rectangle, draw=white] (Y) at (6, 0 ) {Y};
+
+
+
+\draw [-latex, draw=black] (eta1) to (X1);
+\draw [-latex, draw=black] (eta2) to (X2);
+\draw [-latex, draw=black] (etan) to (Xn);
+
+\draw [-latex, draw=black] (X1) to (A);
+\draw [-latex, draw=black] (X2) to (A);
+\draw [-latex, draw=black] (Xn) to (A);
+\draw [-latex, bend left=80, draw=blue] (eta1) to (Y);
+\draw [-latex, bend right=80, draw=blue] (etan) to (Y);
+
+\end{tikzpicture}
+```
+
+
+However, VanderWeele notes that the statistical model is consistent with multiple causal models. The presumption that a univariate latent reality underlies the reflective (and formative) latent factor models is a stronger assumption than previously acknowledged. For example, an alternative structural model equally compatible with the data is presented in @fig-dag_multivariate_reality_again. Here, multivariate reality gives rise to the indicators from which we draw our measures. Indeed, for specific widely used measures, the assumption of a univariate reality is so strong that they make testable assumptions. VanderWeele and Vansteeland test the empirical examination assumptions of widely used depression scales and find the assumptions fail [@vanderweele2022b]. Although we cannot generally determine which structural models are accurate, the data rule out the univariate model in the case that @vanderweele2022b examine.
+
+
+
+
 
 <!-- ```{tikz} -->
 
