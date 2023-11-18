@@ -188,35 +188,54 @@ Human Scientists}
                   Research
               }
       
-\date{2023-11-16}
+\date{2023-11-17}
 \begin{document}
 \maketitle
 \begin{abstract}
-This article explains the concept of measurement bias.
+This article investigates the impact of measurement error on causal
+inference in research, employing causal diagrams to elucidate its
+distinct pathways and effects. Unlike confounding and selection biases,
+measurement error bias stems from inaccuracies in the measurement or
+categorization of variables. We explore four types of measurement
+error---uncorrelated non-differential, uncorrelated differential,
+correlated non-differential, and correlated differential---each with
+unique implications for research design and analysis. Through practical
+examples and detailed illustrations, we demonstrate how these errors can
+skew causal effect estimates, emphasizing the importance of accurate
+measurement, especially of confounders, and the necessity of conducting
+sensitivity analyses. The article also discusses the challenges and
+biases in comparative cultural research and the structural assumptions
+underlying latent factor models in panel designs. By highlighting these
+biases and offering guidance on addressing them, we aim to enhance the
+rigor and reliability of causal inference research.
 \end{abstract}
-In this article, we use causal diagrams to illustrate the distinct
-pathway of bias introduced by measurement error and discuss its
-implications for research design. Unlike confounding bias (CITE), which
-arises from the presence of a common cause of both the exposure and the
+The integrity and accuracy of our measurements is paramount in every
+science. This article focuses on the problems that measurement error
+brings to causal estimatio. Unlike confounding bias (CITE), which arises
+from the presence of a common cause of both the exposure and the
 outcome, and selection bias, which arises from the participant selection
-process or dropout rate (CITE), measurement bias arises from how
-variables are measured or categorised.
+process or dropout rate (CITE), measurement bias arises from error in
+the measurements or categorisation of variables, often subtly yet
+significantly skewing research findings. Here, we employ causal diagrams
+to examine distinct pathways by which measurement error may affect
+causal inference and propose methods to mitigate their effects.
 
 \subsubsection{Measurement Error in the
 Confounder}\label{measurement-error-in-the-confounder}
 
-Measurement error pervades all human research. Figure
-Figure~\ref{fig-dag-measure-confounder} demonstrates that even
-error-free measurements of the exposure and outcome cannot counteract
-the bias in causal effect estimates introduced by measurement error in
-the confounders. Accurate measurement of confounders mitigates threats
-to confounding. Once more, conducting a sensitivity analysis is
-essential to evaluate the potential impact of this threat.\footnote{A
-  simple yet powerful form of sensitivity analysis involves the
-  computation of E-Values. E-Values calculate the minimal strength of
-  association that an unmeasured confounder would require with both the
-  exposure and outcome, beyond the measured confounders, to negate the
-  observed exposure-outcome association (refer to the R package
+Measurement error is an inescapable aspect of human research,
+influencing even the most meticulously designed studies. To illustrate
+this, consider Figure Figure~\ref{fig-1} which depicts how even flawless
+measurements of exposure and outcome are vulnerable to bias introduced
+by measurement errors in confounders. Accurately measuring confounders
+is critical for limiting bias in in confounding control. Moreover,
+sensitivity analysis becomes an indispensable tool in evaluating the
+potential impact of these errors.\footnote{A simple yet powerful form of
+  sensitivity analysis involves the computation of E-Values. E-Values
+  calculate the minimal strength of association that an unmeasured
+  confounder would require with both the exposure and outcome, beyond
+  the measured confounders, to negate the observed exposure-outcome
+  association (refer to the R package
   \texttt{EValue}:(\citeproc{ref-mathur2018}{Mathur \emph{et al.}
   2018})).}
 
@@ -224,16 +243,15 @@ essential to evaluate the potential impact of this threat.\footnote{A
 
 \centering{
 
-\includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-measure-confounder-1.pdf}
+\includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-1-1.pdf}
 
 }
 
-\caption{\label{fig-dag-measure-confounder}Causal diagram showing a
-confounder, L, measured with error, L'. Despite perfect measurements of
-the exposure, A, and the outcome, Y, a bias-inducing (backdoor) path
-opens between A - L - Y, highlighted in red. Given the ubiquity of
-measurement error, it is imperative to minimise such errors and conduct
-sensitivity analyses to assess the risk of unmeasured confounding.}
+\caption{\label{fig-1}Causal Diagram Illustrating Measurement Error in
+Confounders Note: The figure demonstrates that measurement errors in
+confounders can open bias-inducing paths between exposure and outcome,
+even with perfect measurements of these two variables. The biasing path
+is highlighted in red.}
 
 \end{figure}%
 
@@ -251,46 +269,56 @@ A deeper understanding of these concepts (developed in
 equip us to better manage and account for assessing bias from
 measurement error in causal inference.
 
-\subsubsection{1. Uncorrelated non-differential (undirected) measurement
+\subsubsection{Uncorrelated non-differential (undirected) measurement
 error}\label{uncorrelated-non-differential-undirected-measurement-error}
 
-As shown in Figure~\ref{fig-dag-uu-null}, an uncorrelated
-non-differential measurement error occurs when the errors in the
-measurement of the exposure and outcome are not related.
+One of the fundamental types of measurement error in causal research is
+the uncorrelated non-differential (or undirected) measurement error.
+This form of error occurs when the inaccuracies in measuring exposure
+and outcome are unrelated to each other.
 
-To clarify, consider again the task of estimating the causal effect of
-beliefs in Big Gods on social complexity. Suppose ancient societies
-randomly omitted or recorded details about both beliefs in Big Gods and
+\paragraph{Example}\label{example}
+
+To contextualize this concept, consider the hypothetical task of
+estimating the causal effect of belief in Big Gods on social complexity
+in ancient societies. Imagine if these societies randomly omitted or
+inaccurately recorded details about their beliefs in Big Gods and
 indicators of social complexity in their records. Alternatively, suppose
-that such records were not preserved equally across cultures for reasons
-unrelated to these parameters. In this case, errors in the documentation
-of both variables would be random. The errors would not be related to
-the intensity of the beliefs in Big Gods or the level of social
-complexity. The structure of this example of uncorrelated and
-non-differential error is presented in Figure~\ref{fig-dag-uu-null}.
-
-Uncorrelated non-differential measurement error does not create bias
-under the null. As evident from Figure~\ref{fig-dag-uu-null},
-d-separation is preserved. Equivalently, there are no open backdoor
-paths on the graph. However, when there is an actual effect of the
-exposure on the outcome, non-differential measurement error generally
-leads to attenuated effect estimates. For this reason, uncorrelated
-non-differential measurement error can be problematic for causal
-inference even though they do not induce structural bias under the null.
+the preservation of such records varied across cultures for reasons
+unrelated to these beliefs or social complexities. In these scenarios,
+the errors in documenting beliefs and social complexity are random and
+not interconnected. These examples embody settings in which measurement
+errors are uncorrelated non-differential in respect of the treatments
+and outcomes.
 
 \begin{figure}
 
 \centering{
 
-\includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-uu-null-1.pdf}
+\includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-2-1.pdf}
 
 }
 
-\caption{\label{fig-dag-uu-null}Uncorrelated non-differential
-measurement error does not bias estimates under the null, however may
-attenuate true effects.}
+\caption{\label{fig-2}Causal Diagram of Uncorrelated Non-Differential
+Measurement Error: The figure illustrates that this type of measurement
+error does not bias estimates under null conditions but can attenuate
+true effects in the presence of an actual exposure-outcome effect.}
 
 \end{figure}%
+
+\paragraph{Impact on Causal Inference}\label{impact-on-causal-inference}
+
+Interestingly, this type of measurement error does not induce bias under
+null conditions, meaning when there is no actual effect of exposure on
+the outcome. This is evident in our causal diagram Figure~\ref{fig-2},
+where d-separation is maintained, and no backdoor paths are opened from
+the measurement errors. However, in scenarios where the exposure affects
+the outcome, such non-differential measurement errors can lead to
+attenuated causal effect estimates. Therefore, while uncorrelated
+non-differential (undirected) measurement errors do not structurally
+bias results under null conditions, their presence can still pose
+significant challenges to valid causal inference in the presence of true
+causal effects.
 
 \subsubsection{2. Uncorrelated differential (directed) measurement
 error}\label{uncorrelated-differential-directed-measurement-error}
@@ -498,7 +526,7 @@ To comprehend the structural features that might undermine causal
 inferences in comparative cultural research, consider a simplified
 scenario. Imagine that before conducting cultural comparisons, the
 measurement errors of the exposure and outcome variables are
-uncorrelated, as illustrated in Figure~\ref{fig-dag-uu-null}. While
+uncorrelated, as illustrated in \textbf{?@fig-dag-uu-null}. While
 measurement error can lead to a downward bias off the null, under the
 null, no bias occurs.
 
@@ -506,7 +534,7 @@ However, when selecting study participants from different cultures --
 cultures that inherently vary in interpretations and behaviours --- an
 unmeasured bias under the null can occur, as shown in
 Figure~\ref{fig-dag-dep-u-effect-selection}. To highlight this issue, we
-modify the causal diagram in Figure~\ref{fig-dag-uu-null} to include
+modify the causal diagram in \textbf{?@fig-dag-uu-null} to include
 participant selection. This act of comparative selection creates a new
 study population in which the error terms of measures become associated.
 We cannot condition on cultural membership to block these associations,
@@ -515,7 +543,7 @@ population.
 
 If we did not undertake comparative sampling, the exposure and outcome
 would be d-separated under the given scenario, yielding no bias for
-separate studies, as shown in Figure~\ref{fig-dag-uu-null}. We cannot
+separate studies, as shown in \textbf{?@fig-dag-uu-null}. We cannot
 resort to stratifying on culture to address this bias, as it is the act
 of stratifying on culture that gives rise to correlated measurement
 errors. Conducting separate analyses by culture precludes

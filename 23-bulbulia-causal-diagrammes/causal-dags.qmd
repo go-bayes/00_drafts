@@ -1,7 +1,7 @@
 ---
-title: "Chronologically Ordered Causal Diagrams for the Evolutionary Human Sciences: A Practical Guide"
+title: "Causal Diagrams for the Evolutionary Human Sciences: A Practical Guide"
 abstract: | 
-  This article provides practical advice for creating causal diagrams. It recommends aligning a graph's spatial layout with causation's temporal order. We begin by reviewing assumptions foundational to causal inference. We then explain how causal diagrams may be used to uncover structurally sources of bias. We conclude by using  chronologically ordered diagrams to clarify widely misunderstood concepts causal interaction, mediation, and longitudinal growth models with dynamic feedback. Overall, this guide hopes to equipevolutionary human scientists with tools to enhance the rigour and clarity of their causal inferences.
+  This article provides practical advice for creating causal diagrams. It recommends aligning a graph's spatial layout with causation's temporal order. I begin by reviewing assumptions foundational to causal inference. I then explain how causal diagrams may be used to uncover structurally sources of bias. I conclude by using chronologically ordered diagrams to clarify widely misunderstood concepts causal interaction, mediation, and dynamic longitudinal growth. Overall, this guide hopes to equip evolutionary human scientists with tools and understanding to enhance the rigour and clarity of their causal inferences.
 author: 
   name: Joseph A. Bulbulia
   orcid: 0000-0002-5861-2056
@@ -18,11 +18,13 @@ execute:
   echo: false
   include: true
 keywords:
-  - DAGS (Directed Acyclic Graphs)
+  - Directed Acyclic Graph
   - Causal Inference
   - Confounding
-  - History
-  - Psychology
+  - Feedback
+  - Interaction
+  - Mediation
+  - Moderation
   - Panel
 format:
   pdf:
@@ -100,30 +102,28 @@ push_mods <-
 
 ## Introduction
 
-Correlation does not equate to causation. It is widely known that direction of causation frequently runs opposite to the direction of manifest correlations. Nevertheless, many human scientists report manifest correlations for using hedging language that may suggest causation. Moreover, widely adopted strategies for confounding control, such as regression adjustment, often enhance the bias in manifest correlations [@mcelreath2020]. However, across many human sciences, persistent confusion in the analysis and reporting of correlations has limited scientific progress. The magnitude of such confusion suggest a "causality crisis" [@bulbulia2022]. Addressing this causality crisis is among the human science's most pressing tasks.
+It is widely known that correlation does not imply causation. Nevertheless, many human scientists report manifest correlations and use hedging language that suggests causation. However, such reporting lacks justification. Making matters worse, widely adopted strategies for confounding control, such as regression adjustment, often enhance bias [@mcelreath2020]. Across many human sciences, persistent confusion in the analysis and reporting of correlations has greatly impeded scientific progress -- a causality crisis [@bulbulia2022].
 
-Incorporating causal diagrams, or "directed acyclic graphs", into methodologically sound workflows can enhance the clarity of causal effect estimations from assumed data relationships [^1]. These diagrams are grounded in a system of formal mathematical proofs. This foundation instils a sense of reliability.Their use does not rely on extensive mathematical training, making them broadly accessible and user-friendly.
+Incorporating causal diagrams, or "directed acyclic graphs", into methodologically sound workflows can help to address the causality crisis.[^1]. Causal diagrams are grounded in a system of formal mathematical proofs. However they do not require extensive mathematical training. Causal diagrams are broadly accessible and user-friendly.
 
 [^1]: It is important to note that not every directed acyclic graph represents a causal structure. To qualify as such, a graph must meet specific criteria, including the Markov factorisation conditions, which are further elaborated in Part 2 of this discussion.
 
-Yet, it is critical to recognise that causal inference is inherently assumption-based. Causal diagrams are specifically designed to represent these assumptions visually. However, if the underlying assumptions are flawed or overly optimistic, causal diagrams can lead researchers false confidence about erroneous conclusions. A typical scenario is when researchers, in the absence of time-series data, make causal inferences. In such cases, researchers operate with strong and often unjustified assumptions. Relying solely on causal diagrams in these situations can result in misplaced confidence.
+Yet, causal inference differs from traditional data science by operating within a theoretical framework focused on estimating counterfactual contrasts—hypothetical outcomes under different scenarios. This approach, termed 'counterfactual data science', is grounded in specific assumptions. Causal diagrams operate within this theoretical framework. They clarify structural sources of bias and assist in understanding conditions in which causal effects may be uniquely inferred from observational data, based on the causal model and its assumptions. The effectiveness of causal diagrams depends on the validity of these assumptions; flawed or overly optimistic assumptions may lead to misplaced confidence in causal inferences. The simplicity and accessibility of causal diagrams make it tempting to use them to mask unwarrented inferences. Causal diagrams are designed to clarify structural sources of bias. However, if the underlying assumptions are flawed or overly optimistic, causal diagrams may result in misplaced confidence. Ideally, causal diagrams would discourage their users from over-reaching.
 
-Ideally, causal diagrams should function more as safeguards that alertresearchers to potential overreaches in their assumptions and conclusions.
 
-This article offers detailed guidance on creating causal diagrams, particularly emphasizing *chronologically ordered causal diagrams*. In these diagrams, the spatial configuration and the labelling of nodes are aligned with the temporal sequence of presumed causal events. As we will demonstrate, this temporal structuring in our causal diagrams substantially improves the precision and reliability of data collection and analysis processes.
-
-There are many excellent introductions to causal diagrams [@rohrer2018; @hernán2023; @cinelli2022; @barrett2021; @mcelreath2020; @greenland1999; @suzuki2020; @pearl2009].[^2] One may reasonably ask whether another introduction adds clutter. The approach I present here hopes to add value in five ways.
+There are many excellent introductions to causal diagrams [@rohrer2018; @hernán2023; @cinelli2022; @barrett2021; @mcelreath2020; @greenland1999; @suzuki2020; @pearl2009].[^2] Here, I promote *chronologically ordered causal diagrams*, in which the spatial configuration and the labelling of nodes are aligned with the temporal sequence of presumed causal events. By aligning the spatial arrangement and labelling of nodes with the temporal sequence of causatation, causal diagrams better mitigate the risk of overreaching. They serve as a guide for researchers in both collecting appropriate data and planning analyses that are congruent with the temporal dynamics of the causal processes under study.  A second benefit of this guide is that it begins with an in-depth examination of the framework of assumptions fundamental to counterfactual data science. This context is crucial  -- it is only with this setting that causal diagrams acquire their utility. A third benefit is the application of causal diagrams to clarifying widespread confusions in the analysis of multivariate time-series data, where there is presently great confusion. 
 
 [^2]: An excellent resource is Miguel Hernan's free online course, here: <https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions>.
 
-**Part 1** introduces the counterfactual framework for causal inference as the appropriate theoretical setting for developing causal diagrams. An understanding of these assumptions is a prerequisite for effectively using causal diagrams, and therefore, they are thoroughly discussed here.
 
-**Part 2** examines the structures of *confounding bias*. In this part, the use of chronologically ordered causal diagrams is introduced. Here, we find that chronological ordering not only clarifies structural sources of bias and strategies that may adjust for it, but also provides directives for data collection.  
+**Part 1** introduces the counterfactual framework for causal inference as the appropriate theoretical setting for developing causal diagrams. An understanding of these assumptions is a prerequisite for effectively using causal diagrams. Before introducing causal diagrams, it is vital to understand their role in this larger conceptual framework. This framework, which I may be called "counterfactual data science," differs from standard data science. 
 
-**Part 3** employs chronologically ordered causal diagrams to clarify widely misunderstood concepts of causal interaction, mediation, and longitudinal growth modelling. Again we find the benefit of attending to chronology in the spatial layout of the graph. 
+**Part 2** examines the structures of *confounding bias*. In this part, the use of chronologically ordered causal diagrams is introduced. Here, we find that chronological ordering not only clarifies structural sources of bias and strategies that may adjust for it, but also provides directives for data collection, revealing the importance of collecting repeated measures on units over a time.   
+
+**Part 3** employs chronologically ordered causal diagrams to clarify widely misunderstood concepts of causal interaction, mediation, and longitudinal growth modelling. Here again, we find the benefit of attending to chronology in the spatial layout of the graph. 
 
 
-## Part 1. The Three Fundamental Identifiability Assumptions of Causal Inference
+## Part 1. Causal Inference as Counterfactual Data Science
 
 Understanding how to frame causal questions is essential before attempting to answer them [@hernán2016]. This section reviews the three core identification assumptions necessary for causal inference.
 
