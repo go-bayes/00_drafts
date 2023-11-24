@@ -44,7 +44,7 @@ format:
        - text: |
            \usepackage{cancel}
 date: last-modified
-bibliography: references.bib
+bibliography: ../references.bib
 csl: camb-a.csl
 ---
 
@@ -95,7 +95,7 @@ push_mods <-
 # keywords: potential outcomes, DAGs, causal inference, evolution, religion, measurement, tutorial
 # 10.31234/osf.io/b23k7
 
-#20012 words
+#xxx words
 # 75 refs
 # 32 figs
 ```
@@ -302,7 +302,7 @@ We furthermore noted that numerous practical considerations influence our confid
 
 Within the workflows of causal data science, we noted that causal diagrams find their primary utility in helping researchers to identify structural sources of bias that may compromise the conditional exchangeability assumption.
 
-It should be clear that the demands of causal data science differ from the familiar methodologies of standard data science. Because causal data science must quantitatively estimate contrasts for unobserved counterfactuals, it is not sufficient to commence with causal diagrams and proceed directly to modelling patterns in the observed data. Instead, causal inference demands a meticulous, multi-step workflow. While causal diagrams are indeed valuable tools, their utility is fully realised only when they are integrated into this comprehensive and methodical workflow. Having described essential features of this workflow, we are now ready to show how causal diagrams may be used to clarify structural sources of bias.
+It should be clear that the demands of causal data science differ from the familiar methodologies of standard data science. Because causal data science must quantitatively estimate contrasts for unobserved counterfactuals, it is not sufficient to commence with causal diagrams and proceed directly to modelling patterns in the observed data. Instead, causal data science demands a meticulous, multi-step workflow. While causal diagrams are indeed valuable tools, their utility is fully realised only when they are integrated into this comprehensive and methodical workflow. Having described essential features of this workflow, we are now ready to show how causal diagrams may be used to clarify structural sources of bias.
 
 ## Part 2. Applications of Chronologically Ordered Causal Diagrams for Understanding Confounding Bias
 
@@ -390,11 +390,17 @@ Consider an example where smoking is a common cause ($L$) that leads to both yel
 ```
 
 
-### Advice: Consider the Temporal Sequence of All Measured Variables
+### Advice: attend to the temporal order of all measured variables
 
 To address confounding by a common cause, one should adjust for it, effectively blocking the backdoor path from the exposure to the outcome. Essentially, conditioning on $L$ separates $A$ and $Y$ in terms of dependency. Standard methods for this adjustment include regression, matching, inverse probability of treatment weighting, and G-methods, as detailed in [@hernán2023]. @fig-dag-common-cause-solution highlights the necessity for any confounder, as a common cause of both $A$ and $Y$, to precede $A$ chronologically, as causes precede their effects.
 
-After we have time-indexing the nodes on the graph it becomes evident that **control of confounding generally requires time-series data repeatedly measured on the units for which causal inferences apply.** Our causal diagram is a circuit breaker that casts doubt on attempts for causal inference in settings where researchers lack time series data.
+To manage the issue of confounding by a common cause, it is crucial to maintain the correct temporal order:
+
+1. Measure all confounders $L_{t0}$, which are common causes of both the exposure $A_{t1}$ and the outcome $Y_{t2}$.
+2. Ensure that $L_{t0}$ is measured before $A_{t1}$ occurs.
+2. Ensure that $A_{t1}$ is measured before $Y_{t2}$ occurs.
+
+After we have time-indexing the nodes on the graph it becomes evident that **control of confounding generally requires time-series data repeatedly measured on the units for which causal inferences apply.** Our chronologically ordered causal diagram serves as a circuit breaker for causal inferences in settings where researchers lack time series data.
 
 
 ```{tikz}
@@ -426,7 +432,7 @@ After we have time-indexing the nodes on the graph it becomes evident that **con
 
 
 
-### 2. Confounding by Collider Stratification (Conditioning on a Common Effect)
+### 2. Confounding by Conditioning on a Common Effect (Collider Stratification)
 
 When conditioning on a common effect, we consider a scenario where a variable $L$ is influenced by both a treatment $A$ and an outcome $Y$. 
 
@@ -462,13 +468,13 @@ In mathematical terms, when $A$ and $Y$ are independent, their joint probability
 
 ```
 
-### Advice: attend to the temporal order of all measured variables
+### Advice: again, attend to the temporal order of all measured variables
 
-
-To manage the issue of conditioning on a common effect, it is crucial to maintain the correct temporal order:
+To manage the issue of conditioning on a common effect, it is again crucial to maintain the correct temporal order:
 
 1. Measure all confounders $L_{t0}$, which are common causes of both the exposure $A_{t1}$ and the outcome $Y_{t2}$.
-2. Ensure that $A_{t1}$ is measured before $Y_{t2}$.
+2. Ensure that $L_{t0}$ is measured before $A_{t1}$ occurs.
+2. Ensure that $A_{t1}$ is measured before $Y_{t2}$ occurs.
 
 Adhering to this temporal sequence precludes $L$ from being an effect of either $A$ or $Y$.^[7]: In our example of beliefs and social complexity, this typically necessitates time-series data with precise measurements. Additionally, a sufficiently large sample of cultures undergoing transitions in religious beliefs, with pre- and post-transition measurements of social complexity, is needed. The cultures in the dataset should also be independent of each other. That is, each element of our causal inferential workflow must cohere.[^8]
 
@@ -504,7 +510,197 @@ Adhering to this temporal sequence precludes $L$ from being an effect of either 
 
 ```
 
-### M-bias: Conditioning on a Collider Before the Exposure May Introduce Bias
+### 3. Mediator Bias
+
+Mediator bias occurs when conditioning on a mediator, a variable that is part of the causal pathway between the treatment and the outcome, distorts the total effect of the treatment on the outcome. 
+
+Consider "beliefs in Big Gods" as the treatment $A_{t0}$, "social complexity" as the outcome $Y_{t2}$, and "economic trade" as the mediator $L_{t1}$.
+
+In this example, beliefs in Big Gods $A_{t0}$ directly influence economic trade $L_{t1}$, which then affects social complexity $Y_{t2}$. Conditioning on economic trade $L_{t1}$ can lead to biased estimates of the overall effect of beliefs in Big Gods $A$ on social complexity $Y_{t2}$. This bias arises because conditioning on $L$ might minimize the direct effect of $A_{t0}$ on $Y_{t1}$, blocking the pathway through $L_{t1}$. This is known as mediator bias, illustrated in @fig-dag-mediator.
+
+It might seem that conditioning on a mediator under a null hypothesis (where $A$ does not cause $Y$) would not introduce bias. However, consider a situation where $L_{t1}$ is affected by both the exposure $A_{t0}$ and an unmeasured variable $U$ that is related to the outcome $Y_{t2}$. In this case, including $L_{t1}$ in the analysis might exaggerate the association between $A_{t0}$ and $Y_{t2}$, even if there is no actual association between them and $U$ does not cause $A_{t0}$. This scenario is depicted in @fig-dag-descendent.
+
+Therefore, unless specifically conducting mediation analysis, it is generally inadvisable to condition on a post-treatment variable like $L_{t1}$. Attending to the temporal order in data collection is crucial. If we cannot ensure that $L$ is measured before $A$, and if $A$ can influence $L$, including $L$ in our model could lead to mediator bias. This scenario is represented in @fig-dag-descendent.
+
+You ask: "What if $L$ is a confounder of $A$ and $Y$?" We have already considered this problem, and its solution. The problem was presented in @fig-dag-common-cause. Our chronlogically ordered causal diagram @fig-dag-common-cause-solution directs us to the solution: *If $L$ is a common cause of $A$ and $Y$ we must ensure that our measurement of $L$ occurs before our measurement of $A$ and that our measurement of $Y$ occurs after our measurement of $A$.* 
+
+
+### Advice: again, attend to the temporal order of all measured variables
+
+To manage the issue of conditioning on a mediator, it is, yet again, crucial to maintain the correct temporal order:
+
+1. Measure all confounders $L_{t0}$, which are common causes of both the exposure $A_{t1}$ and the outcome $Y_{t2}$.
+2. Ensure that $L_{t0}$ is measured before $A_{t1}$ occurs.
+2. Ensure that $A_{t1}$ is measured before $Y_{t2}$ occurs.
+
+For we will only control for confounding if we have obtained $L_{t0}$,  $A_{t1}$, and  $Y_{t2}$, in the correct temporal sequence, and not otherwise.  Our graph again reveals demands not merely on the analysis of data, but also of its collection. 
+
+```{tikz}
+#| label: fig-dag-mediator
+#| fig-cap: "Confounding by conditioning on a mediator. The dashed black arrow indicates bias arising from partially blocking the path between A and Y. Here, the true effect of A on Y is attenuated."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [ellipse, draw=white] (A) at (0, 0) {A$_{t0}$};
+\node [rectangle, draw=black] (L) at (4, 0) {L$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, bend left, draw=black, dotted] (A) to (Y);
+\draw [-latex, draw =black] (L) to (Y);
+\draw [-latex, black] (A) to (L);
+\end{tikzpicture}
+```
+
+### Advice: attend to the temporal order of all measured variables
+
+One should only condition on a mediator if our interest pre-specified causal question requires a causal mediation model (The assumptions of causal mediation are discussed in Section 3). Generally, we may avoid mediation bias by ensuring that $L$ is measured before the treatment $A$ and the outcome $Y$. There are two exceptions to this rule. If $L$ were associated with $Y$ and could not be caused by $A$, then conditioning on $L$ would typically enhance the precision of the causal effect estimate of $A \to Y$. This precision enhancement holds even if $L$ occurs *after* $A$. A second a counter-example is presented in @fig-dag-descendent-solution-2 and developed in the next section. However, when conditioning on a post-treatment variable the onus is always on the researcher to explain why the post-treatment variable cannot be affected by the exposure. Here again, we discover the importance of explicitly stating the temporal ordering of our variables in our graph.[^10]  Doing so directs us the data we need to answer our causal question, and greatly diminishes the threat of unwittingly introducing mediation bias. 
+
+```{tikz}
+#| label: fig-dag-mediator-solution
+#| fig-cap: "Solution: do not condition on a mediator. The implication: by ensuring temporal order in data collection we diminish the probabilty of mistaking an effect of an exposure for its confounder."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=black] (L) at (0, 0) {L$_{t0}$};
+\node [ellipse, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, draw=black] (A) to (Y);
+\draw [-latex, bend left, draw =black] (L) to (Y);
+\draw [-latex, black] (L) to (A);
+\end{tikzpicture}
+```
+
+### 4. Conditioning on a descendant
+
+#### Case when conditioning on a descendant augments bias
+
+Suppose a variable $L$ is a cause of another variable $L^\prime$. Here,  $L^\prime$ is a descendant of  $L$. According to Markov factorisation (see Appendix 2), if we were to condition on $L\prime$, we would also partially condition on $L$.
+
+Consider how conditioning on $L\prime$ might imperil causal estimation. Suppose there is a confounder $L^\prime$ that is caused by an unobserved variable $U$, and is affected by the treatment $A$. Suppose further that $U$ causes the outcome $Y$. In this scenario, as described in @fig-dag-descendent, conditioning on $L^\prime$, which is a descendant of $A$ and $U$, can lead to a spurious association between $A$ and $Y$ through the path $A \to L^\prime \to U \to Y$.
+
+```{tikz}
+#| label: fig-dag-descendent
+#| fig-cap: "Confounding by descent: the red  path illustrates the introduction of bias by conditioning on the descendant of a confounder that is affected by the exposure, thus opening a path between the exposure, A, and the outcome, Y."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [ellipse, draw=white] (A) at (2, 0) {$A_{t0}$};
+\node [rectangle, draw=black](L) at (4, 0) {$L^\prime_{t1}$};
+\node [ellipse, draw=white] (Y) at (6, 0) {$Y_{t2}$};
+
+\draw [-latex, bend right=50, draw = red] (U) to (L);
+\draw [-latex, bend left, draw=red] (U) to (Y);
+\draw [-latex,draw=red] (A) to (L);
+\draw [-latex, draw=black] (U) to (A);
+
+\end{tikzpicture}
+```
+
+### Solution to the problem of augmenting bias by conditioning on a descendant
+
+Again, the strategy for avoiding the problem of augmented bias by conditioning on a descendant is evident from the chronology of the graph. If we wish to reduce confounding we must ensure that $L^\prime$ is measured before the exposure $A$. This strategy is presented in @fig-dag-descendent-solution.
+
+
+```{tikz}
+#| label: fig-dag-descendent-solution
+#| fig-cap: "Solution: measure L before A. Note, L need not affect Y to be a confounder (i.e. a member of a confounder set)."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (L) at (2, 0) {$L^{\prime}_{t0}$};
+\node [rectangle, draw=white](A) at (4, 0) {$A_{t1}$};
+\node [ellipse, draw=white] (Y) at (6, 0) {$Y_{t2}$};
+
+\draw [-latex, draw=black] (U) to (L);
+\draw [-latex, draw=black] (L) to (A);
+\draw [-latex, bend right=50, draw =black] (U) to (Y);
+
+
+\end{tikzpicture}
+
+```
+
+#### Case when conditioning on a descendant reduces bias
+
+Next consider a case in which we may use a post-treatment descendent to reduce bias. Suppose an unmeasured confounder $U$ affects $A$, $Y$, and $L^\prime$ in an effect of $U$ that occurs after $A$ and $Y$. In this scenario adjusting for $L^\prime$ may help to reduce confounding caused by the unmeasured confounder $U$. This strategy follows from the modified disjunctive cause criterion for confounding control, we recommends that we "include as a covariate any proxy for an unmeasured variable that is a common cause of both the exposure and the outcome" [@vanderweele2019]. As shown in @fig-dag-descendent-solution-2, although $L^\prime$ occurs *after* the exposure, and indeed occur *after* the outcome, coniditioning on it will reduce confounding. How might this work? Consider a genetic factor that affects the exposure and the outcome early in life but which is expressed later later in life. Adjusting for such an expression of the genetic factor that expresses later in life would help use to control for the unmeasured confounding by common cause from the genetic factors influence on $A$ and $Y$, which again are imagined to occur before $L'$. Here conditioning on $L'$ is sensible, and provides an example of post-outcome confounding control. This scenario is presented in @fig-dag-descendent-solution-2.
+
+**This scenario reveals that thoughlessly following a simple rule that requires us to condition only on pre-exposure (and indeed pre-outcome) variables would be hasty.** More generally, demonstrates the imperative for thinking carefully about data collection. Each problem must be approached anew. Here we find that causal diagrams are a great benefit. For if we are able to provide a structural representation of confounding, we merely need to inspect the graph to ensure that all backdoor paths are closed.
+
+
+```{tikz}
+#| label: fig-dag-descendent-solution-2
+#| fig-cap: "Solution: conditioning on a confounder that occurs after the exposure and the outcome might address a problem of unmeasured confounding if the confounder is a descendent of a prior common cause of the exposure and outcome. The dotted paths denote that the effect of U on A and Y is partially blocked by conditioning on L', even though L' occurs after the outcome. The paths are dotted to represent a reduction of bias by conditioning on the post-outcome descendent of an unmeasured common cause of the exposure and outcome."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (L) at (6, -1) {$L^{\prime}_{t3}$};
+\node [rectangle, draw=white](A) at (2, 0) {A$_{t1}$};
+\node [ellipse, draw=white] (Y) at (4, 0) {Y$_{t2}$};
+
+\draw [-latex, bend right = 10, draw=black] (U) to (L);
+\draw [-latex, draw=black, dotted] (A) to (Y);
+\draw [-latex, bend right=20, draw =black, dotted] (U) to (Y);
+\draw [-latex, draw =black, dotted] (U) to (A);
+
+\end{tikzpicture}
+
+```
+
+### M-bias: Conditioning on an Instrumental Variable Before the Exposure May Introduce Bias
 
 While it is generally advisable to include indicators for confounders that are measured before their corresponding exposures, there are caveats. One must be cautious not to over-condition on pre-exposure variables that are not associated with both the exposure and confounder. Such over-conditioning may inadvertently induce confounding, known as "M-bias."
 
@@ -576,184 +772,9 @@ c. Define an instrumental variable as one associated with the exposure but not i
 Determining which variables belong in the confounder set can be challenging. Specialist knowledge often plays a key role here, as the data alone may not provide clear guidance. For more discussion of the modified disjunctive cause criterion see: @vanderweele2020 and @vanderweele2019.
 
 
-### 3. Mediator Bias
-
-Mediator bias occurs when conditioning on a mediator, a variable that is part of the causal pathway between the treatment and the outcome, distorts the total effect of the treatment on the outcome. 
-
-Consider "beliefs in Big Gods" as the treatment $A_{t0}$, "social complexity" as the outcome $Y_{t2}$, and "economic trade" as the mediator $L_{t1}$.
-
-In this example, beliefs in Big Gods $A_{t0}$ directly influence economic trade $L_{t1}$, which then affects social complexity $Y_{t2}$. Conditioning on economic trade $L_{t1}$ can lead to biased estimates of the overall effect of beliefs in Big Gods $A$ on social complexity $Y_{t2}$. This bias arises because conditioning on $L$ might minimize the direct effect of $A_{t0}$ on $Y_{t1}$, blocking the pathway through $L_{t1}$. This is known as mediator bias, illustrated in @fig-dag-mediator.
-
-It might seem that conditioning on a mediator under a null hypothesis (where $A$ does not cause $Y$) would not introduce bias. However, consider a situation where $L_{t1}$ is affected by both the exposure $A_{t0}$ and an unmeasured variable $U$ that is related to the outcome $Y_{t2}$. In this case, including $L_{t1}$ in the analysis might exaggerate the association between $A_{t0}$ and $Y_{t2}$, even if there is no actual association between them and $U$ does not cause $A_{t0}$. This scenario is depicted in @fig-dag-descendent.
-
-Therefore, unless specifically conducting mediation analysis, it is generally inadvisable to condition on a post-treatment variable like $L_{t1}$. Attending to the temporal order in data collection is crucial. If we cannot ensure that $L$ is measured before $A$, and if $A$ can influence $L$, including $L$ in our model could lead to mediator bias. This scenario is represented in @fig-dag-descendent.
-
-You ask: "What if $L$ is a confounder of $A$ and $Y$?" We have already considered this problem, and its solution. The problem was presented in @fig-dag-common-cause. Our chronlogically ordered causal diagram @fig-dag-common-cause-solution directs us to the solution: *If $L$ is a common cause of $A$ and $Y$ we must ensure that our measurement of $L$ occurs before our measurement of $A$ and that our measurement of $Y$ occurs after our measurement of $A$.* For we will only control for confounding if we have obtained $L_{t0}$,  $A_{t1}$, and  $Y_{t2}$, and not otherwise.
 
 
-```{tikz}
-#| label: fig-dag-mediator
-#| fig-cap: "Confounding by conditioning on a mediator. The dashed black arrow indicates bias arising from partially blocking the path between A and Y. Here, the true effect of A on Y is attenuated."
-#| out-width: 80%
-#| echo: false
 
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-
-% Define a simple decoration
-\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-\node [ellipse, draw=white] (A) at (0, 0) {A$_{t0}$};
-\node [rectangle, draw=black] (L) at (4, 0) {L$_{t1}$};
-\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
-\draw [-latex, bend left, draw=black, dotted] (A) to (Y);
-\draw [-latex, draw =black] (L) to (Y);
-\draw [-latex, black] (A) to (L);
-\end{tikzpicture}
-```
-
-### Advice: attend to the temporal order of all measured variables
-
-One should only condition on a mediator if our interest pre-specified causal question requires a causal mediation model (The assumptions of causal mediation are discussed in Section 3). Generally, we may avoid mediation bias by ensuring that $L$ is measured before the treatment $A$ and the outcome $Y$. There are two exceptions to this rule. If $L$ were associated with $Y$ and could not be caused by $A$, then conditioning on $L$ would typically enhance the precision of the causal effect estimate of $A \to Y$. This precision enhancement holds even if $L$ occurs *after* $A$. A second a counter-example is presented in @fig-dag-descendent-solution-2 and developed in the next section. However, when conditioning on a post-treatment variable the onus is always on the researcher to explain why the post-treatment variable cannot be affected by the exposure. Here again, we discover the importance of explicitly stating the temporal ordering of our variables in our graph.[^10]  Doing so directs us the data we need to answer our causal question, and greatly diminishes the threat of unwittingly introducing mediation bias. 
-
-```{tikz}
-#| label: fig-dag-mediator-solution
-#| fig-cap: "Solution: do not condition on a mediator. The implication: by ensuring temporal order in data collection we diminish the probabilty of mistaking an effect of an exposure for its confounder."
-#| out-width: 80%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-% Define a simple decoration
-\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-\node [rectangle, draw=black] (L) at (0, 0) {L$_{t0}$};
-\node [ellipse, draw=white] (A) at (4, 0) {A$_{t1}$};
-\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
-\draw [-latex, draw=black] (A) to (Y);
-\draw [-latex, bend left, draw =black] (L) to (Y);
-\draw [-latex, black] (L) to (A);
-\end{tikzpicture}
-```
-
-### 4. Conditioning on a descendant
-
-
-#### Case when conditioning on a descendant augments bias
-
-Suppose a variable $L$ is a cause of another variable $L^\prime$. Here,  $L^\prime$ is a descendant of  $L$. According to Markov factorisation (see Appendix 2), if we were to condition on $L\prime$, we would also partially condition on $L$.
-
-Consider how conditioning on $L\prime$ might imperil causal estimation. Suppose there is a confounder $L^\prime$ that is caused by an unobserved variable $U$, and is affected by the treatment $A$. Suppose further that $U$ causes the outcome $Y$. In this scenario, as described in @fig-dag-descendent, conditioning on $L^\prime$, which is a descendant of $A$ and $U$, can lead to a spurious association between $A$ and $Y$ through the path $A \to L^\prime \to U \to Y$.
-
-```{tikz}
-#| label: fig-dag-descendent
-#| fig-cap: "Confounding by descent: the red  path illustrates the introduction of bias by conditioning on the descendant of a confounder that is affected by the exposure, thus opening a path between the exposure, A, and the outcome, Y."
-#| out-width: 80%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-% Define a simple decoration
-\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
-
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-
-\node [rectangle, draw=white] (U) at (0, 0) {U};
-\node [ellipse, draw=white] (A) at (2, 0) {$A_{t0}$};
-\node [rectangle, draw=black](L) at (4, 0) {$L^\prime_{t1}$};
-\node [ellipse, draw=white] (Y) at (6, 0) {$Y_{t2}$};
-
-\draw [-latex, bend right=50, draw = red] (U) to (L);
-\draw [-latex, bend left, draw=red] (U) to (Y);
-\draw [-latex,draw=red] (A) to (L);
-\draw [-latex, draw=black] (U) to (A);
-
-\end{tikzpicture}
-```
-### Solution to the problem of augmenting bias by conditioning on a descendant
-
-Again, the strategy for avoiding the problem of augmented bias by conditioning on a descendant is evident from the chronology of the graph. If we wish to reduce confounding we must ensure that $L^\prime$ is measured before the exposure $A$. This strategy is presented in @fig-dag-descendent-solution.
-
-
-```{tikz}
-#| label: fig-dag-descendent-solution
-#| fig-cap: "Solution: measure L before A. Note, L need not affect Y to be a confounder (i.e. a member of a confounder set)."
-#| out-width: 80%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-
-\node [rectangle, draw=white] (U) at (0, 0) {U};
-\node [rectangle, draw=black] (L) at (2, 0) {$L^{\prime}_{t0}$};
-\node [rectangle, draw=white](A) at (4, 0) {$A_{t1}$};
-\node [ellipse, draw=white] (Y) at (6, 0) {$Y_{t2}$};
-
-\draw [-latex, draw=black] (U) to (L);
-\draw [-latex, draw=black] (L) to (A);
-\draw [-latex, bend right=50, draw =black] (U) to (Y);
-
-
-\end{tikzpicture}
-
-```
-
-#### Case when conditioning on a descendant reduces bias
-
-Next consider a case in which we may use a post-treatment descendent to reduce bias. Suppose an unmeasured confounder $U$ affects $A$, $Y$, and $L^\prime$ in an effect of $U$ that occurs after $A$ and $Y$. In this scenario adjusting for $L^\prime$ may help to reduce confounding caused by the unmeasured confounder $U$. This strategy follows from the modified disjunctive cause criterion for confounding control, we recommends that we "include as a covariate any proxy for an unmeasured variable that is a common cause of both the exposure and the outcome" [@vanderweele2019]. As shown in @fig-dag-descendent-solution-2, although $L^\prime$ occurs *after* the exposure, and indeed occur *after* the outcome, coniditioning on it will reduce confounding. How might this work? Consider a genetic factor that affects the exposure and the outcome early in life but which is expressed later later in life. Adjusting for such an expression of the genetic factor that expresses later in life would help use to control for the unmeasured confounding by common cause from the genetic factors influence on $A$ and $Y$, which again are imagined to occur before $L'$. Here conditioning on $L'$ is sensible, and provides an example of post-outcome confounding control. This scenario is presented in @fig-dag-descendent-solution-2.
-
-**This scenario reveals that thoughlessly following a simple rule that requires us to condition only on pre-exposure (and indeed pre-outcome) variables would be hasty.** More generally, demonstrates the imperative for thinking carefully about data collection. Each problem must be approached anew.
-
-```{tikz}
-#| label: fig-dag-descendent-solution-2
-#| fig-cap: "Solution: conditioning on a confounder that occurs after the exposure and the outcome might address a problem of unmeasured confounding if the confounder is a descendent of a prior common cause of the exposure and outcome. The dotted paths denote that the effect of U on A and Y is partially blocked by conditioning on L', even though L' occurs after the outcome. The paths are dotted to represent a reduction of bias by conditioning on the post-outcome descendent of an unmeasured common cause of the exposure and outcome."
-#| out-width: 80%
-#| echo: false
-
-\usetikzlibrary{positioning}
-\usetikzlibrary{shapes.geometric}
-\usetikzlibrary{arrows}
-\usetikzlibrary{decorations}
-\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
-\tikzset{>=latex}
-
-
-\begin{tikzpicture}[{every node/.append style}=draw]
-
-\node [rectangle, draw=white] (U) at (0, 0) {U};
-\node [rectangle, draw=black] (L) at (6, -1) {$L^{\prime}_{t3}$};
-\node [rectangle, draw=white](A) at (2, 0) {A$_{t1}$};
-\node [ellipse, draw=white] (Y) at (4, 0) {Y$_{t2}$};
-
-\draw [-latex, bend right = 10, draw=black] (U) to (L);
-\draw [-latex, draw=black, dotted] (A) to (Y);
-\draw [-latex, bend right=20, draw =black, dotted] (U) to (Y);
-\draw [-latex, draw =black, dotted] (U) to (A);
-
-\end{tikzpicture}
-
-```
 
 ## Part 3. Application of Causal Diagrams for Clarifying Moderation (Interaction), Mediation, and Longitudinal Feedback
 
@@ -1077,7 +1098,7 @@ A similar problem arises when a time-varying exposure and time-varying confounde
 \end{tikzpicture}
 ```
 
-The potential for confounding increases when the exposure $A_{t1}$ affects the outcome $Y_{t4}$. For example, since $L_{t2}$ is on the path from $A_{t1}$ to $Y_{t4}$, conditioning on $L_{t2}$ partially blocks the relation between the exposure and the outcome, triggering collider stratification bias and mediator bias. However, to close the open backdoor path from $L_{t2}$ to $Y_{t4}$, it becomes necessary to condition on $L_{t2}$. Paradoxically, we have just stated that conditioning should be avoided! This broader dilemma of exposure-confounder feedback is thoroughly explored in [@hernán2023]. Treatment confounder feedback is particularly challenging for evolutionary human science, yet its handling is beyond the capabilities of conventional regression-based methods, including multi-level models [@hernán2006; @robins1999; @robins1986]. As mentioned previously, G-methods encompass models appropriate for investigating the causal effects of both time-fixed and time-varying exposures [@naimi2017; @chatton2020; @hernán2006]. Despite significant recent advancements in the health sciences [@williams2021; @díaz2021; @breskin2020], these methods have not been widely embraced in the field of human evolutionary sciences [^15]
+The potential for confounding increases when the exposure $A_{t1}$ affects the outcome $Y_{t4}$. For example, since $L_{t2}$ is on the path from $A_{t1}$ to $Y_{t4}$, conditioning on $L_{t2}$ partially blocks the relation between the exposure and the outcome, triggering collider stratification bias and mediator bias. However, to close the open backdoor path from $L_{t2}$ to $Y_{t4}$, it becomes necessary to condition on $L_{t2}$. Paradoxically, we have just stated that conditioning should be avoided! This broader dilemma of exposure-confounder feedback is thoroughly explored in [@hernán2023]. Treatment confounder feedback is particularly challenging for evolutionary human science, yet its handling is beyond the capabilities of conventional regression-based methods, including multi-level models [@hernán2006; @robins1999; @robins1986]. As mentioned previously, G-methods encompass models appropriate for investigating the causal effects of both time-fixed and time-varying exposures [@naimi2017; @chatton2020; @hernán2006]. Despite significant recent advancements in the health sciences [@williams2021; @díaz2021; @breskin2021], these methods have not been widely embraced in the field of human evolutionary sciences [^15]
 
 [^15]: It is worth noting that the identification of controlled effect estimates can be enhanced by graphical methods such as "Single World Intervention Graphs" (SWIGs), which represent counterfactual outcomes in the diagrams. However, SWIGs are more accurately considered templates rather than causal diagrams in their general form. The use of SWIGs extends beyond the scope of this tutorial. For more information, see @richardson2013.
 
