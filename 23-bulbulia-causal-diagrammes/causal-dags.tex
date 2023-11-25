@@ -192,17 +192,18 @@ Guide}
 \begin{abstract}
 This article offers practical advice for creating causal diagrams. It
 recommends aligning a graph's spatial layout with causation's temporal
-order. Because causal graphs only have utility as part of the framework
-of theory and assumptions that define causal data science, I begin by
+order. Because causal graphs only have utility within the framework of
+theories and assumptions that define causal data science, I begin by
 reviewing this framework. I then consider how, within this framework,
-causal diagrams may be used to uncover structural sources of bias,
-focussing on confounding bias, and illustrating the benefits of
-chronological hygiene in one's graph. I conclude by using causal
-diagrams to elucidate the widely misunderstood concepts causal
-interaction, mediation, and dynamic longitudinal feedback, again
-focussing on the benefits of chronological ordering. Overall, this guide
-hopes to better equip evolutionary human scientists with understanding
-at skills to enhance the rigour and clarity of their causal inferences.
+causal diagrams may be used to uncover structural sources of bias. I
+focus on confounding bias, and illustrate the benefits of chronological
+hygiene in one's graph, not only for data analysis but also for data
+collection. I conclude by using causal diagrams to elucidate the widely
+misunderstood concepts causal interaction, mediation, and dynamic
+longitudinal feedback, again focussing on the benefits of chronological
+ordering for data analysis and collection. Overall, this guide hopes to
+better equip evolutionary human scientists with understanding and skills
+to enhance the rigour and clarity of their causal inferences.
 \end{abstract}
 \subsection{Introduction}\label{introduction}
 
@@ -211,63 +212,55 @@ Nevertheless, many human scientists report manifest correlations and use
 hedging language that implies causation. I have been guilty. However,
 such reporting typically lacks justification. Making matters worse,
 widely adopted strategies for confounding control such as indiscriminate
-co-variate adjustment will often enhance bias
+co-variate adjustment are known to enhance bias
 (\citeproc{ref-mcelreath2020}{McElreath 2020}). Across many human
 sciences, including the evolutionary human sciences, persistent
 confusion in the analysis and reporting of correlations has greatly
-impeded scientific progress (\citeproc{ref-bulbulia2022}{Bulbulia
-2022}).
+impeded scientific progress, what might be described as a `causality
+crisis' (\citeproc{ref-bulbulia2022}{Bulbulia 2022}).
 
-There is hope. First, the advances of the open science movement have
-demonstrated that greater attention to the `replication crisis' across
-the experimental human sciences can bring considerable improvements to
-the quality and integrity of experimental research. Many corrective
-practices in that movement have become normative. Second, several
-decades of intensive research in the health sciences, computer science,
-and economics have yielded conceptual clarifications and rigorous
-analytic toolkits for causal inference in observational settings.
-Although these fields are still evolving, a substantial foundation for
-causal data science already exists.\footnote{foundations} Given these
-precedents, we should be optimistic that rapid progress in causal
-inference across all the human sciences is a feasible and achievable
-goal. The articles in this special issue of \emph{Evolutionary Human
-Sciences} are offer testimony for this hope.
+There is hope. First, the open science movement has demonstrated that
+greater attention to the `replication crisis' in the experimental human
+sciences can bring considerable improvements within a relatively short
+span of time. Although much remains to be done still, many corrective
+practices in open science have become normative. Second, several decades
+of development in causal data science in the health sciences, computer
+sciences, economics, and some social sciences have yielded both
+considerable conceptual clarifications and rigorous analytic toolkits
+for inference (\citeproc{ref-hernan2023}{Hernan and Robins 2023};
+\citeproc{ref-neyman1923}{Neyman 1923}; \citeproc{ref-pearl2009a}{Pearl
+2009b}; \citeproc{ref-pearl1995}{Pearl and Robins 1995a};
+\citeproc{ref-robins1986}{Robins 1986}; \citeproc{ref-rubin1976}{Rubin
+1976}; \citeproc{ref-vanderweele2015}{VanderWeele 2015}). Although
+causal data science is still evolving (\citeproc{ref-duxedaz2021}{Díaz
+\emph{et al.} 2021}; \citeproc{ref-hoffman2023}{Hoffman \emph{et al.}
+2023}; \citeproc{ref-vansteelandt2022}{Vansteelandt and Dukes 2022}) , a
+substantial foundation for causal data science already exists. Given
+these precedents, we should be optimistic that rapid uptake of causal
+data science in those fields where causal confusion currently holds sway
+is a feasible and achievable goal. The articles in this special issue of
+\emph{Evolutionary Human Sciences} offer testimony to this hope.
 
-{[}foundations{]}: This foundational work, initiated by Neyman Neyman
-(\citeproc{ref-neyman1923}{1923}), was further developed by Rubin,
-Robins, Pearl, and their students, and provides a robust basis for
-future advancements (\citeproc{ref-hernuxe1n2023}{Hernán and Monge
-2023}; \citeproc{ref-pearl1995}{Pearl and Robins 1995};
-\citeproc{ref-rubin1976}{Rubin 1976};
-\citeproc{ref-robins1986}{\textbf{robins1986?}}).
-
-Causal diagrams, known as `directed acyclic graphs' or `DAGs,' are
-indispensable inferential tools in the methodologies of causal
-inference. These tools rest on a robust system of formal mathematical
-proofs, instilling confidence in their use. However, they do not require
-mathematical training. The tool is broadly accessible (for the sighted).
-They serve several purposes: first, by making causal assumptions
-explicit, they enhance the transparency of the analysis; second, they
-help in identifying structural sources of bias that can undermine
-inference; third, they provide valuable guidance on data collection
-requirements.
-
-Causal diagrams only acquire their significance when integrated within
-the broader theoretical frameworks and workflows of Causal Data Science.
-This discipline distinguishes itself from traditional data science by
-focusing the tasks of estimating of pre-specified counterfactual
-contrasts, or `estimands.' In this approach, counterfactual scenarios
-are simulated from data under explicit assumptions and then
-quantitatively compared. Therefore, Causal Data Science can be viewed as
-a form of `counterfactual data science' or `full data science' ---
-`full' in the sense that the data we observe provide only partial
-insights into the targeted causal quantities and uncertainties
-researchers hope to consistently quantify (reference:
-(\citeproc{ref-bulbulia2023}{Bulbulia 2023}); see also:
-(\citeproc{ref-ogburn2021}{Ogburn and Shpitser 2021})). Using causal
-diagrams without a thorough understanding of their role in Causal Data
-Science could inadvertently worsen the causality crisis by fostering
-misguided confidence where none is due.
+Causal diagrams, also known as `directed acyclic graphs' or `DAGs,' are
+powerful inferential tools in the workflows of causal data science.
+These tools rest on a robust system of formal mathematical proofs,
+instilling confidence in their use. However, they do not require
+mathematical training. As such, causal diagrams are broadly accessible,
+for the sighted. However, causal diagrams only acquire their
+significance when integrated within the broader theoretical frameworks
+causal data science, which distinguishes itself from traditional data
+science by attempting to estimate pre-specified counterfactual
+contrasts, or `estimands'. In this approach, counterfactual scenarios
+are simulated from data under explicit expert assumptions and then
+quantitatively compared. Causal Data Science can be viewed as a form of
+`counterfactual data science' or `full data science' --- `full' in the
+sense that the data we observe provide only partial insights into the
+targeted causal quantities and uncertainties researchers hope to
+consistently estimate (reference: (\citeproc{ref-bulbulia2023}{Bulbulia
+2023}); see also: (\citeproc{ref-ogburn2021}{Ogburn and Shpitser
+2021})). Using causal diagrams without a thorough understanding of their
+role in Causal Data Science risks inadvertently worsen the causality
+crisis by fostering misguided confidence where none is due.
 
 In this work, I aim to offer readers of \emph{Evolutionary Human
 Science} practical guidance on creating causal diagrams in ways that
@@ -278,7 +271,8 @@ emphasising the fundamental assumptions necessary for obtaining valid
 causal inferences from observational data. Although this overview is
 brief, it is vital for researchers using causal diagrams to familiarise
 themselves with these foundational concepts (see also other references
-in this issue).
+in this issue), and to understand the place of causal diagrams within
+wider systematic workflows.
 
 \textbf{Part 2} introduces \textbf{chronologically ordered causal
 diagrams} and their applications in addressing confounding bias. We
@@ -294,40 +288,54 @@ we consider demonstrate their advantages in common scenarios.
 \textbf{Part 3} uses chronologically ordered causal diagrams to
 demystify complex concepts such as causal interaction, mediation, and
 longitudinal data analysis. Here, attention to chronological sequencing
-in the diagram's layout, coupled with a clear understanding of the
-targeted fcausal estimands, may greatly advances scientific
-comprehension. This approach enables us to more effectively formulate
-and address causal questions in areas where confusing statistical
-traditions like structural equation modelling presently hold sway.
+in the diagram's layout scientific comprehension. This approach enables
+us to more effectively formulate and address causal questions in areas
+where standard data science traditions such structural equation
+modelling continue to perpetuate confusions. We again observe that
+attention to chronological hygiene enhances the transparency of the
+analysis and, even equally fundamental, directs focus on absolute
+requirements for ensuring clear measurements for the timing of events in
+data collection.
 
-There are numerous outstanding resources on causal diagrams available,
-which I highly recommend to readers (\citeproc{ref-barrett2021}{Barrett
-2021}; \citeproc{ref-cinelli2022}{Cinelli \emph{et al.} 2022};
+There are numerous excellent resources available for learning causal
+diagrams, which I highly recommend to readers
+(\citeproc{ref-barrett2021}{Barrett 2021};
+\citeproc{ref-cinelli2022}{Cinelli \emph{et al.} 2022};
 \citeproc{ref-greenland1999}{Greenland \emph{et al.} 1999a};
 \citeproc{ref-hernuxe1n2023}{Hernán and Monge 2023};
 \citeproc{ref-mcelreath2020}{McElreath 2020};
-\citeproc{ref-pearl2009}{Pearl 2009}; \citeproc{ref-rohrer2018}{Rohrer
-2018}; \citeproc{ref-suzuki2020}{Suzuki \emph{et al.} 2020}).\footnote{An
-  excellent resource is Miguel Hernán's free online course, here:
+\citeproc{ref-pearl2009}{Pearl 2009a}; \citeproc{ref-rohrer2018}{Rohrer
+2018}; \citeproc{ref-suzuki2020}{Suzuki \emph{et al.}
+2020a}).\footnote{An excellent resource is Miguel Hernán's free online
+  course, here:
   \url{https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions}.}
-This article aims to build upon these previous works by providing
-additional conceptual context and underscoring the importance of
-chronological hygiene in pinpointing structural sources of confounding
-bias. It also seeks to clarify common misunderstandings within the
-evolutionary sciences regarding `interaction', `mediation', and the
-analysis of complex longitudinal data.
+Here, I build on this this work by providing additional conceptual
+orientation to the frameworks of Causal Data Science in which causal
+diagrams have their place, and by underscoring the importance of
+chronological hygiene for pinpointing structural sources of confounding
+bias and for ensuring accurate timing of the sequence of events recorded
+in researchers datasets. Finally, this guide integrates the knowledge
+about the frameworks of Causal Data Science with chronologically ordered
+causal diagrams to shed light on the concepts of interaction, mediation,
+and longitudinal feedback, about which there remains considerable
+confusion in the sub-fields that inform the evolutionary human sciences,
+particularly those that developed under the influence of structural
+equation modelling.
 
 \subsection{Part 1. Overview of Causal Data
 Science}\label{part-1.-overview-of-causal-data-science}
 
-The critical first step in causal inference is formulating a
-well-defined causal question(\citeproc{ref-hernuxe1n2016}{Hernán
-\emph{et al.} 2016}). Causal diagrams appear later in our analytic
-workflow, when we consider whether and how the data enable inference
-about the pre-specified causal question. This section introduces
-fundamental concepts in Causal Data Science, and locates the place of
-causal diagrams within a larger workflow that moves from stating a
-causal question to answering it with data.
+The critical first step in causal inference is to formulate a
+well-defined causal question (\citeproc{ref-hernuxe1n2016}{Hernán
+\emph{et al.} 2016}). First, we must consider the specific treatments or
+interventions of interest, the specific outcomes we seek to contrast and
+their timing, the scale on which the causal contrasts will be made, and
+the populations of units to which we hope our inferences to generalise.
+Causal diagrams come later, as we consider which forms of data might
+enable us to address our pre-specified causal questions. This section
+introduces fundamental concepts in Causal Data Science, and locates the
+place of causal diagrams within a larger workflow that moves from
+stating a causal question to answering it with data.
 
 \subsubsection{The Fundamental Problem of Causal
 Inference}\label{the-fundamental-problem-of-causal-inference}
@@ -338,75 +346,73 @@ Consider an intervention, \(A\), and its effect, \(Y\). We say that
 1973}). If altering \(A\) would not lead to a change in \(Y\), then we
 say that \(A\) has no causal effect on \(Y\).
 
-The objective in causal inference is to measure the difference in a
-specifically defined outcome \(Y\) when subjected to different levels of
-a clearly defined intervention \(A\). Commonly, we refer to these
-interventions as `exposures' or `treatments;' we refer to the resulting
-effects as `potential outcomes.'
+The objective in causal inference is to measure obtain a contrast at
+some scale, such as the difference scale, in a well-defined outcome
+\(Y\) when subjected to different levels of a well-defined intervention
+\(A\). Commonly, we refer to such interventions as `exposures' or
+`treatments;' we refer to the possible effects of interventions as
+`potential outcomes.'
 
-Let us assume that \(A\) can exist in only two states: \(A = 0\) or
-\(A = 1\). We denote the potential outcome when \(A\) is set to 0 as
-\(Y(0)\) and when \(A\) is set to 1 as \(Y(1)\).\footnote{There are
-  various conventions for representing potential outcomes, such as
-  \(Y^a\) and \(Y_a\). To simplify, we omit subscripts, using
-  \(Y|A = 0\) or \(Y|A = 1\) instead of \(Y_i|A_i = 0\) or
-  \(Y_i|A_i = 1\). Additionally, we omit an implicit time subscript; for
-  a time index \(t\), the notation would be \(Y_{i,t+1}|A_{i,t} = 0\) or
-  \(Y_{i,t+1}|A_{i,t} = 1\). We employ this simplified notation for
-  legibility, opting for more precise notation when the context demands
-  clarity.}
+Let us assume that \(A\) exists in two states: \(A = 0\) or \(A = 1\).
+We denote the potential outcome when \(A\) is set to \(0\) as \(Y(0)\)
+and when \(A\) is set to 1 as \(Y(1)\).\footnote{There are different
+  conventions for representing potential outcomes under different
+  interventions, such as \(Y^a\) and \(Y_a\). To simplify, except where
+  context demands clarity, we omit subscripts, using for example
+  \(Y(1) - Y(0)\) in place of \(Y_i(1) - Y_i(0)\) when indexing causal
+  effects to an individual. We follow this convention for realised
+  outcomes, preferring \(Y|A = 0\) or \(Y|A = 1\) to \(Y_i|A_i = 0\) or
+  \(Y_i|A_i = 1\), except when clarity demands. Additionally, except
+  when clarity demands, we omit the implicit time subscripts; for a time
+  index \(t\), allowing our simplified convention to stand in place of
+  \(Y_{i,t+1}|A_{i,t} = 0\) and \(Y_{i,t+1}|A_{i,t} = 1\). We employ
+  this simplified notation for legibility, and, when discussing
+  potential outcomes, for accuracy. Potential outcomes are not random
+  realisations of distribution but rather fixed features of reality, see
+  (\citeproc{ref-hernan2023}{Hernan and Robins 2023 p. 6} note). To
+  invoke the \emph{Wizard of Oz}, Causal Data Science does not begin its
+  journey in the ``Kansas'' of ordinary statistical science. It rather
+  begins its journey in a counterfactual OZ. The meaning of this
+  reference will become concrete below. Indeed any who have conducted
+  experiments will be familiar with it.}
 
-To quantitatively evaluate whether the altering \(A\) makes a difference
-to the outcome \(Y\), we must compute contrasts for the potential
-outcomes under different exposures. For instance, \(Y(1) - Y(0)\)
-calculates this contrast under a binary exposure on the difference
-scale, while \(\frac{Y(1)}{Y(0)}\) does so on the ratio scale. To
-quantitatively evaluate evidence for causality requires specifying an
-intervention, here a binary exposure \(A \in \{0,1\}\); specifying an
-the potential outcome under different realisations of the intervention,
-here: \(Y(0)\) and \(Y(1)\); and specifying a scale of contrast, such as
-the difference scale or the ratio scale. Importantly, we must specify
-some unit or set of units on which the interventions to be evaluated
-occur, and are to be measured. Doing so reveals that causal data science
-cannot rely on ordinary data science.
-
-History is characterised by its unidirectional progression, a
-fundamental aspect of physics that presents a significant challenge in
-causal data science. At any given moment, for any unit under
-consideration, only one level of an exposure can be realised. Consider
-hypothetical questions such as `What if Isaac Newton had not observed
-the falling apple?' or `What if Leonardo da Vinci had never pursued
-art?' or `What if Archduke Ferdinand had not been assassinated?' These
-questions underscore our inability to access alternate realities where
-these events unfolded differently. This limitation applies to all
-individual units experiencing any level of an exposure; each unit can
-either experience \(Y|A = 1\) or \(Y|A = 0\), but never both
-simultaneously. As a result, we cannot directly calculate the difference
-between \(Y(1)\) and \(Y(0)\), or their ratio, from our available data.
-In every case, at least one of the outcomes necessary to determine a
-causal effect at the individual level remains counterfactual. This
-situation gives rise to what is known as the `fundamental problem of
-causal inference': our constraint to observing only one treatment state
-for each individual at a time (\citeproc{ref-holland1986}{Holland 1986};
-\citeproc{ref-rubin1976}{Rubin 1976}). Consequently, causal data science
-faces a unique type of missing data problem, where the `full data'
-needed for causal contrasts are inherently incomplete, missing at least
-half of their values (\citeproc{ref-edwards2015}{Edwards \emph{et al.}
-2015}; \citeproc{ref-westreich2015}{Westreich \emph{et al.} 2015}). This
-challenge is distinct from typical missing data scenarios where the data
+At any given moment, for any unit under consideration, only one level of
+an exposure can be realised. Consider hypothetical questions such as
+`What if Isaac Newton had not observed the falling apple?' or `What if
+Leonardo da Vinci had never pursued art?' or `What if Archduke Ferdinand
+had not been assassinated?' Unfortunately, we cannot observe what would
+have happened had history been different. The physics of middle-sized
+dry goods that applies to persons and cultures prevents this. History is
+characterised by a unidirectional progression. Suppose we have specified
+a well-defined exposure and outcome. Each unit can either experience
+\(Y|A = 1\) or \(Y|A = 0\), but never both simultaneously. As a result,
+we cannot directly calculate a contrast between \(Y(1)\) and \(Y(0)\)
+from our available data. In every case, at least one of the outcomes
+necessary to determine a causal effect at the individual level remains
+counterfactual. The inaccessibility of at least one of the potential
+outcomes we require to compute a causal contrast from data is known as
+the `fundamental problem of causal inference'
+(\citeproc{ref-holland1986}{Holland 1986};
+\citeproc{ref-rubin1976}{Rubin 1976}). What applies to one unit applies
+to all units. Causal data science faces a unique type of missing data
+problem in which the `full data' needed to compute any causal contrast
+is missing at least half of its values
+(\citeproc{ref-edwards2015}{Edwards \emph{et al.} 2015};
+\citeproc{ref-westreich2015}{Westreich \emph{et al.} 2015}). This
+challenge is distinct from typical missing data scenarios where data
 could have been recorded but were not. The missing information crucial
 for computing causal contrasts is intrinsically linked to the
 irreversible nature of time.
 
-\subsubsection{Specifying Causal
-Effects}\label{specifying-causal-effects}
+\subsubsection{Obtaining Average Causal Effects From
+Observations}\label{obtaining-average-causal-effects-from-observations}
 
 In typical scenarios, computing individual causal effects is not
 feasible. However, under certain assumptions, it is possible to credibly
-calculate average causal effects. We may obtain average treatment
-effects by contrasting groups that have received different levels of a
-treatment. The average treatment effect (ATE) on a difference scale is
-represented as:
+calculate average causal effects. That is, we may obtain average
+treatment effects by contrasting groups that have received different
+levels of a treatment. The average treatment effect (ATE) on a
+difference scale is represented as:
 
 \[
 ATE  = \mathbb{E}[Y(1)] - \mathbb{E}[Y(0)]
@@ -417,50 +423,72 @@ within an exposure group, and \(Y(1)\) and \(Y(0)\) represent the
 potential outcomes under interventions \(A = 1\) and \(A = 0\),
 respectively.
 
-It is important to note that simply aggregating across groups that
-received different interventions and calculating the difference in their
-average outcomes does not fully address the fundamental problem of
-causal inference.The fundamental missing data challenge persists. We can
-expand our calculation of the average treatment effect (ATE) to reveal
-the missing data challenge
+How might we obtain average causal effects when individual causal
+effects are not observable? It is helpful to consider how randomised
+experiments obtain such contrasts.
+
+First, let us state the problem in terms of the `full data' we would
+need were we to base these contrasts on observations. Where ATE denotes
+the ``Average Treatment Effect'':
 
 \[
-ATE = \underbrace{\big(\mathbb{E}[Y(1)|A = 1]\big)}_{\text{observed}}  + \underbrace{\big(\mathbb{E}[Y(1)|A = 0]\big)}_{\text{unobserved}} - \underbrace{\big(\mathbb{E}[Y(0)|A = 0]\big)}_{\text{observed}} - \underbrace{\big(\mathbb{E}[Y(0)|A = 1]\big)}_{\text{unobserved}}
+ATE = \left(\underbrace{\underbrace{\mathbb{E}[Y(1)|A = 1]}_{\text{observed for } A = 1} + \underbrace{\mathbb{E}[Y(1)|A = 0]}_{\text{unobserved for } A = 0}}_{\text{effect among treated}}\right) - \left(\underbrace{\underbrace{\mathbb{E}[Y(0)|A = 0]}_{\text{observed for } A = 0} + \underbrace{\mathbb{E}[Y(0)|A = 1]}_{\text{unobserved for } A = 1}}_{\text{effect among untreated}}\right)
 \]
 
-The ATE must combine observable outcomes with hypothetical
-outcomes---those that would have occurred under a different exposure,
-and these exposures are never directly observed.
+In each treatment condition, we do not observe the potential outcome for
+every unit that did not receive the opposite level of treatment they in
+fact received. However, when researchers randomise units into treatments
+conditions, then the distribution of variables that might affect each
+potential outcome independently of the exposure cancel each other out
+when averaging over the groups. When treatments are randomly assigned,
+and randomisation is effective, the outcomes under different treatment
+conditions should, in theory, be identical on average.
 
-To understand how causal data science can derive valid inferences
-without directly observing counterfactuals, consider the benefits of
-randomised experiments. When treatments are randomly assigned, and
-randomisation is effective, the outcomes under different treatment
-conditions should, in theory, be identical. If there are differences in
-average outcomes between treated and untreated groups in a randomized
-setup, these differences can be attributed to the treatment itself. That
-is, randomisation allows us to infer that the treatment averages by
-group would have been identical. Although randomisation can fail, it
-provides a means to identify group-level causal effects by eliminating
-other potential explanations for the observed differences. For this
-reason, we should prefer experiments for addressing scientific questions
-that can be addressed by them.
+\[
+ E[Y(0) | A = 1] = E[Y(0) | A = 0] 
+\]
+
+\[
+E[Y(1) | A = 1] = E[Y(1) | A = 0] 
+\]
+
+And thus,
+
+\[
+  \widehat{ATE} = \mathbb{E}[Y | A = 1] - \mathbb{E}[Y | A = 0]
+\]
+
+Where \(\widehat{ATE}\) is the predicted average treatment effect.
+
+Although randomisation can fail, it provides a means to identify
+group-level causal effects by eliminating other potential explanations
+for the observed differences. Like Sherlock Holmes, any observed
+difference between the treatment groups may be attributable to the
+treatment because successful randomisation exhausts every other
+explanation. By randomisation, the distribution of potential outcomes is
+the same across treatment groups. For this reason, we should prefer
+experiments for addressing scientific questions that can be addressed by
+them.
 
 Regrettably, many scientific questions, particularly those in the
 evolutionary human sciences, cannot be addressed through experimental
 means. This limitation is acutely felt when researchers confront `what
-if?' scenarios rooted in the unidirectional nature of human history. In
-observational settings, where the random assignment of individuals to
-groups is not feasible, achieving a balance across variables that might
-account for treatment-level differences presents a significant
-challenge. We next consider fundamental assumptions essential for
-deriving valid group-level causal contrasts from data, noting where
-causal diagrams appear within a workflow that proceeds from asking a
-pre-specified causal question to answering it. We will assume that we
-have stated a clear causal question, for which there is a well-defined
-exposure and outcome, and a clearly identified population for which the
-question is targeted. Before attempting any statistical models, we must
-satisfy ourselves that the following assumptions are not violated.
+if?' scenarios rooted in the unidirectional nature of human history.
+However, understanding how radomisation obtains missing counterfactual
+outcomes clarifies the tasks of causal data science in observational
+settings (\citeproc{ref-hernuxe1n2008a}{Hernán \emph{et al.} 2008};
+\citeproc{ref-hernuxe1n2022}{Hernán \emph{et al.} 2022a};
+\citeproc{ref-hernuxe1n2006}{Hernán and Robins 2006}). We must obtain
+balance across variables that might account for treatment-level
+differences. This task presents a significant challenge. Observations
+typically cannot in themselves verify no-unmeasured confounding.
+Moreover, we must satisfy ourselves of additional assumptions, which are
+nearly automatic in randomised experimental settings but which cannot be
+taken for granted elsewhere. We group these assumption into two
+categories: (1) Fundamental identification assumptions; (2) Data and
+modelling assumptions. We next consider these assumptions, clarifying
+where in the workflow causal diagrams help causal data scientists to
+satisfy them.
 
 \subsubsection{Fundamental Identification
 Assumptions}\label{fundamental-identification-assumptions}
@@ -474,11 +502,12 @@ Heterogeneity}\label{fundamental-identification-assumption-1-causal-consistency-
 
 The causal consistency assumption posits that for any given level of
 exposure, \(A=a\), the observed outcome, \(Y|A=a\), is interchangeable
-with the counterfactual outcome. To illustrate,let \(i\) represent an
-individual. The observed outcome when treatment is \(A_i = a\) is
-denoted as \(Y_i^{observed}|A_i = a\). Under causal consistency, this
-observed outcome corresponds to one of the counterfactual outcomes
-necessary for causal analysis:
+with the counterfactual outcome: \(Y(a)|A = a\). To illustrate, we will
+use the subscript \(i\) to represent an individual. The observed outcome
+when treatment is \(A_i = a\) is denoted as \(Y_i^{observed}|A_i = a\).
+When the causal consistency assumption is satisfied, the observed
+outcome for each individual \(i...N\) corresponds to one of the
+counterfactual outcomes necessary for calculating a causal contrast:
 
 \[
 Y_i^{observed}|A_i = 
@@ -492,43 +521,51 @@ This assumption implies that the observed outcome at a specific exposure
 level mirrors the counterfactual outcome for that individual. Although
 it might seem straightforward to equate an individual's observed outcome
 with their counterfactual outcome, in observational studies, treatment
-effects often vary, presenting challenges in satisfying this assumption.
+effects often vary, posing considerable challenges in satisfying this
+assumption.
 
 Consider the question of whether a society's beliefs in Big Gods affects
-its development of Social Complexity. Historians anthropologists report
-that such beliefs vary over time and across cultures in their intensity,
-interpretations, institutional management, and ritual embodiments. Such
-variation in content and setting may significantly influence social
-complexity. Moreover the treatments as they are realised in one society
-might affect the treatments realised in other societies. However, to
-apply the causal consistency assumption such treatments must be
-independent. Such variation underscores the need for careful
-consideration of treatment heterogeneity.
+its development of Social Complexity {[}CITE{]}. Historians and
+anthropologists report that such beliefs vary over time and across
+cultures in their intensity, interpretations, institutional management,
+and ritual embodiments {[}CITE{]}. Such variation in content and setting
+may significantly influence social complexity. Moreover the treatments
+as they are realised in one society might affect the treatments realised
+in other societies. Often, it may be unclear how we can address the
+treatment independence assumption using a conditioning strategy. I
+review additional problems in Appendix 1. For now, the manifest
+variation in treatments we should assume to hold in this setting
+underscores the need for careful consideration whether \emph{treatment
+heterogeneity} allows us to assume conditional exchangeability.
 
-The theory of causal inference under multiple versions of treatment
-addresses the challenge of treatment heterogeneity
-(\citeproc{ref-vanderweele2009}{VanderWeele 2009a},
-\citeproc{ref-vanderweele2018}{2018};
-\citeproc{ref-vanderweele2013}{VanderWeele and Hernan 2013}). It
-formally proves that if the treatment variations (\(K\)) are
+The theory of causal inference under multiple versions of treatment,
+developed by VanderWeele and Hernán, formally addresses the challenge of
+treatment heterogeneity (\citeproc{ref-vanderweele2009}{VanderWeele
+2009a}, \citeproc{ref-vanderweele2018}{2018};
+\citeproc{ref-vanderweele2013}{VanderWeele and Hernan 2013}). The
+authors proved that if the treatment variations (\(K\)) are
 conditionally independent of the outcome \(Y(k)\) given covariates
-\(L\). Where \(\coprod\) denotes independence, if
+\(L\), then conditioning on \(L\) allows us to consistently estimate a
+causal contrast over the heterogeneous treatments.
+
+Where \(\coprod\) denotes independence, causal consistency is formally
+preserved if
 
 \[
 K \coprod Y(k) | L
 \]
 
-Then we may consistently estimate of causal effects even with varied
-treatments. In such settings, we may think of \(K\) acts as a
-``coarsened indicator'' for \(A\) such that we obtain an average effect
-estimate for the multiple treatment versions \(K\) on \(Y(k)\).
+Under the theory of causal inference under multiple versions of
+treatment, we think of \(K\) as a ``coarsened indicator'' for \(A\).
+That is, we obtain an average effect estimate for the multiple treatment
+versions \(K\) on \(Y(k)\).
 
-While the theory of causal inference under multiple versions of
+Although the theory of causal inference under multiple versions of
 treatment provides a formal solution to the problem of treatment effect
 heterogeneity, interpreting the resulting causal effect estimates under
-this theory can be challenging. A common example in the health sciences
-involves interpreting the causal effects of change in Body Mass Index
-(BMI) on health. Notably, weight loss can occur through various methods,
+this theory can be challenging. Consider the question of whether Body
+Mass Index (BMI) affects health (\citeproc{ref-hernuxe1n2008}{Hernán and
+Taubman 2008}). Notably, weight loss can occur through various methods,
 each with different health implications. Some methods, such as regular
 exercise or a calorie-reduced diet, are generally beneficial for health.
 However, weight loss might also result from adverse conditions such as
@@ -543,9 +580,9 @@ specifically through aerobic exercise over a period of at least five
 years, compared with no weight loss. This level of specificity in our
 exposure and outcomes helps ensure that the causal estimates we obtain
 are not only statistically sound but also interpretable (for discussion
-see: (\citeproc{ref-hernuxe1n2022a}{Hernán \emph{et al.} 2022};
+see: (\citeproc{ref-hernuxe1n2022a}{Hernán \emph{et al.} 2022b};
 \citeproc{ref-hernuxe1n2008}{Hernán and Taubman 2008};
-\citeproc{ref-murray2021a}{\textbf{murray2021a?}}).
+\citeproc{ref-murray2021a}{Murray \emph{et al.} 2021}).
 
 Beyond interpretation, there is the additional problem that we cannot
 really know whether the measured covariates \(L\) suffice to render the
@@ -556,22 +593,21 @@ distribution of treatment-effects in a population {[}CITE{]}. For this
 reason, causal data science must rely heavily on sensitivity analyses
 (VanderWeele (\citeproc{ref-vanderweele2019}{2019});).
 
-In summary, what seemed initially to be a near truism -- that each units
+Thus, what seemed initially to be a near truism -- that each units
 observed outcome may be assumed to correspond to that unit's
 counterfactual outcome -- turns out to be a strong assumption. In many
 settings, causal consistency should be presumed unrealistic until proven
-tenable.
+tenable. For now, we note that the causal consistency assumption
+provides a theoretical starting point for recovering the missing
+counterfactuals essential for computing causal contrasts. It achieves
+this by identifying half of these counterfactuals directly from observed
+data. The concept of exchangeability, which we will explore next, offers
+a means to derive the remaining half of the missing counterfactuals we
+require to consistently compute causal contrasts.
 
-For now, we note that the causal consistency assumption provides a
-starting point for recovering the missing counterfactuals essential for
-computing causal contrasts. It achieves this by identifying half of
-these counterfactuals directly from observed data. The concept of
-exchangeability, which we will explore next, offers a means to derive
-the remaining half.
-
-\subsubsection{Fundamental Identification Assumtion 2: Conditional
+\paragraph{Fundamental Identification Assumption 2: Conditional
 Exchangeability (No Unmeasured
-Confounding)}\label{fundamental-identification-assumtion-2-conditional-exchangeability-no-unmeasured-confounding}
+Confounding)}\label{fundamental-identification-assumption-2-conditional-exchangeability-no-unmeasured-confounding}
 
 We satisfy conditional exchangeability when the treatment groups are
 equivalent in variables that could affect potential outcomes. In
@@ -617,21 +653,21 @@ confounding.'} A common mistake when creating a causal diagram is to
 provide too much detail, obscuring rather than clarifying structural
 sources of bias. Please keep your graph minimal.
 
-\subsubsection{Fundamental Identification Assumption 3:
+\paragraph{Fundamental Identification Assumption 3:
 Positivity}\label{fundamental-identification-assumption-3-positivity}
 
-The positivity assumption is met when there exists a non-zero
+We may say the positivity assumption is met when there exists a non-zero
 probability for each level of exposure within every level of covariates
 needed to ensure conditional exchangeability. This implies that for each
-stratification of every covariate, the likelihood of each exposure value
-must exceed zero. Where \(A\) is the exposure and \(L\) a vector of
-covariates, positivity is achieved only if:
+stratification of every covariate, the probability that for each level
+of exposure value must exceed zero. Where \(A\) is the exposure and
+\(L\) a vector of covariates, positivity is only achieved if
 
 \[
 0 < \Pr(A = a | L = l) < 1, ~ \forall a \in A, ~ \forall l \in L
 \]
 
-Two forms of positivity violations exist:
+There are two types of positivity violation:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -646,38 +682,83 @@ Two forms of positivity violations exist:
   males would appear biologically implausible.
 \end{enumerate}
 
-Ensuring positivity often presents practical challenges. Consider
-estimating the effects of church attendance on charity. The objective is
-to assess the one-year impact on charitable donations following a shift
-from no church attendance to weekly attendance. Assume access to
-extensive panel data, tracking 20,000 individuals over three years. If
-the natural transition rate from no attendance to weekly attendance is
-one in a thousand annually, the effective sample for the treatment
-condition dwindles to 20. Despite abundant data, random non-positivity
-can significantly hinder valid inference.
+Satisfying the positivity assumption may present considerable data
+challenges within the workflows of causal data science
+(\citeproc{ref-westreich2010}{Westreich and Cole 2010}). Consider
+estimating the effects of church attendance on charity. Suppose our
+objective is to assess the one-year effect on charitable donations
+following a shift from no church attendance to weekly attendance. Assume
+we have access to extensive panel data that has tracked 20,000
+individuals over three years. Consider, the natural transition rate from
+no attendance to weekly attendance in many human populations will be
+quite low. Suppose it is one in a thousand annually. In that case, the
+effective sample for the treatment condition dwindles to 20. Despite
+abundant data, attention to the positivity assumptions reveals the data
+required for valid contrasts is sparse.
 
 Note that where positivity is violated, causal diagrams offer limited
 assistance to causal inference because causal inference is not supported
 by the data.
 
-\subsubsection{Data and Model Considerations in Causal
-Inference}\label{data-and-model-considerations-in-causal-inference}
+\subsubsection{Practical Considerations}\label{practical-considerations}
 
 Beyond the three fundamental identification assumptions that must be
 satisfied to estimate causal effects with data, there are numerous
 practical consideration that enter into any causal inference workflow.
 
-\paragraph{Measurement error}\label{measurement-error}
+\paragraph{Overly ambitious estimands}\label{overly-ambitious-estimands}
+
+In causal inference, the notion of assessing Average Treatment Effects
+(ATE) through \(E[Y(1) - Y(0)|L]\) is often flawed, particularly in the
+context of continuous exposures. This approach simplifies the complexity
+of real-world phenomena by forcing a binary framework on continuous
+variables, which is inherently problematic. For example, categorising
+continuous exposures into quartiles and comparing, say, the lowest with
+the third quartile, grossly oversimplifies the phenomena under study.
+This method not only stretches the positivity assumption to its breaking
+point, but it also frequently breaches it. The real-world simply does
+not operate in such neatly defined exposure levels, rendering these
+comparisons artificial and potentially misleading.
+
+Moreover, the assumption of a monotonic relationship between treatment
+and effect is equally naive. Real-life treatment effects are rarely
+linear or straightforward. By comparing arbitrary points on a continuous
+scale, we risk drawing erroneous conclusions about the treatment's
+overall impact. This approach is a shortcut that distorts the true
+nature of the treatments effect.
+
+Focusing on ATE also masks the vital heterogeneity in treatment effects.
+This heterogeneity is not just a statistical nuisance; it is the essence
+of understanding causal mechanisms. Average effects blur the variations
+and nuances that are critical for informed decision-making. Recognising
+and elucidating this heterogeneity should be a primary goal, yet current
+methods fall short. The field is evolving (see: Tchetgen and VanderWeele
+(\citeproc{ref-tchetgen2012}{2012}); Wager and Athey
+(\citeproc{ref-wager2018}{2018}); Cui \emph{et al.}
+(\citeproc{ref-cui2020}{2020}), Vansteelandt and Dukes
+(\citeproc{ref-vansteelandt2022}{2022})). These emerging methodologies,
+while promising, are still in their infancy and are not yet capable of
+fully addressing the complex nature of heterogeneous treatment effects
+in continuous exposure settings. Such limitations must be clarified at
+the outset of inquiry.
+
+\paragraph{Consideration of measurement error
+bias}\label{consideration-of-measurement-error-bias}
 
 Measurement error refers to the discrepancy between the true value of a
 variable and the value that is observed or recorded. This error can
-arise from a variety of sources, including instrument calibration
-issues, respondent misreporting, or coding errors. It is essential to
-understand and address measurement error as it can significantly distort
-the analysis and lead to misleading conclusions.
+arise from a variety of sources, including instrument calibration,
+respondent misreporting, or coding errors. Unfortunately, measurement
+error is both commonplace, and capable of significantly distorting
+causal inferences.
 
-Measurement error can be classified into two main types: systematic (or
-biased) and random (or unbiased).
+Briefly, measurement error confounding can be classified into two main
+types: systematic (directed) and uncorrelated (undirected).
+
+\textbf{Systematic measurement error:} occurs when the measurements
+deviate from the true value in a consistent direction. Systematic errors
+can lead to biased estimates of causal effects, as they consistently
+overestimate or underestimate true causal magnitudes.
 
 \textbf{Random measurement error:} occurs when fluctuations in the
 measurement process and do not consistently bias the data in one
@@ -688,219 +769,260 @@ However, random measurement error can attenuate bias when there are true
 causal effects, where the estimated effect of an exposure on an outcome
 is systematically weakened.
 
-\textbf{Systematic measurement error:} occurs when the measurements
-deviate from the true value in a consistent direction. Systematic errors
-can lead to biased estimates of causal effects, as they consistently
-overestimate or underestimate true causal magnitudes. Here again causal
-diagrams can be useful {[}CITE OTHER PAPER{]}
-
 To handle measurement error the best approach is to improving data
 quality; this is not always possible, and so we must perform sensitivity
-analyses {[}CITE{]}
+analyses.
 
-In other work, I describe how to use causal diagrams to examine the
-structural sources of bias that may arise from different forms of
-measurement error {[}CITE{]}. We will not consider this use here {[}CITE
-OTHER PAPER{]}. For now, it is important to emphasise that the simple
-causal diagrams with arrows between variables typically abstract away
-from biases that arise from measurement error, and such simplicity can
-be a source of false confidence.\footnote{The careful reader will note a
-  tension. Addressing structural sources of bias requires simple causal
-  diagrams. Such diagrams do not capture the threats to inference
-  arising from measurement, which requires more complicated causal
-  diagrams. I follow Hernán and Robins in advising a two step approach
-  in which authors draft separate diagrams to handle separate threats to
-  valid causal inference (\citeproc{ref-hernuxe1n2023}{Hernán and Monge
-  2023}).}
+Causal diagrams may be powerful aids for evaluating structural sources
+of bias that may arise from different forms of measurement error
+(\citeproc{ref-hernan2023}{Hernan and Robins 2023};
+\citeproc{ref-hernuxe1n2009}{Hernán and Cole 2009};
+\citeproc{ref-vanderweele2012a}{VanderWeele and Hernán 2012}). We will
+not consider this use here {[}CITE OTHER PAPER{]}. For now, it is
+important to emphasise that the simple causal diagrams with arrows
+between variables typically abstract away from biases that arise from
+measurement error, and such simplicity can be a source of false
+confidence.\footnote{The careful reader will note a tension. Addressing
+  structural sources of bias requires simple causal diagrams. Such
+  diagrams do not capture the threats to inference arising from
+  measurement, which requires more complicated causal diagrams. Hernán
+  and Robins advise a two step approach in which authors draft separate
+  diagrams to handle separate threats to valid causal inference
+  (\citeproc{ref-hernuxe1n2023}{Hernán and Monge 2023}).}
 
-\paragraph{Considerations of Selection
-Bias}\label{considerations-of-selection-bias}
+\paragraph{Consideration of selection
+bias}\label{consideration-of-selection-bias}
 
 Selection bias arises when the sample that is observed is not
 representative of the population for which causal inference is intended.
 There are two primary forms: bias arising to initial selection and bias
-resulting from attrition or non-response.
+resulting from attrition or non-response
+(\citeproc{ref-bareinboim2022a}{Bareinboim \emph{et al.} 2022};
+\citeproc{ref-hernuxe1n2004a}{Hernán \emph{et al.} 2004};
+\citeproc{ref-hernuxe1n2017}{Hernán 2017}; \citeproc{ref-lu2022}{Lu
+\emph{et al.} 2022}; \citeproc{ref-suzuki2020a}{Suzuki \emph{et al.}
+2020b}).\footnote{It is important to note that the term ``selection on
+  observables'' is used differently in economics compared to
+  epidemiology and public health, as I am using the term here. In
+  economics, ``selection on observables'' typically refers to the
+  non-random treatment assignments in observational data. In this
+  context, if all variables that influence both the selection process
+  and the outcome are observed and accounted for, the resulting bias can
+  be controlled for in the analysis. Terminological differences abound
+  in casual data science. It is crucial to be aware of these
+  distinctions and clarify the specific usage within the context of
+  one's study to avoid confusion and ensure accurate communication.}
 
-\textbf{Selection prior to observation:} occurs when the process of
-choosing individuals or units for the study leads to a sample that is
-not representative of the target population. It may occur due to
-specific inclusion or exclusion criteria or through non-random selection
-methods. This form of bias can introduce systematic differences between
-the treatment and control groups, affecting generalisability. In this
-setting, the quantities we obtain from causal data science might not not
-apply as we think.
+\textbf{Selection prior to observation:} the bias when the process of
+selecting individuals or units for the study leads to a
+non-representative sample of the target population. This bias may arise
+from specific inclusion or exclusion criteria or through non-random
+selection methods. Such bias can introduce systematic differences
+between treatment and control groups, affecting the generalizability of
+results. Consequently, the estimates obtained might not accurately
+reflect the causal effects in the intended population.
 
-\textbf{Attrition/non-response bias:} occurs post-selection, often
-during the course of a study. Attrition bias arises when participants or
-unit drop out of the study, and their dropout is related to both the
-treatment and the outcome. Non-response bias, similarly, occurs when
-certain subjects do not respond to surveys or follow-up, and this
-non-response is correlated with the treatment and outcome. Both forms of
-bias can lead to skewed results, as the final sample may differ
-significantly from the initial sample in crucial aspects related to the
-study's focus. This bias cannot be addressed by conditioning directly on
-\(L\).
+\textbf{Attrition/non-response bias:} this bias occurs after selection
+when participants or units drop out of the study, and their dropout
+opens a path to the treatment and the outcome, or otherwise compromises
+generalisation. Non-response bias occurs when certain subjects do not
+respond to surveys or follow-ups, and this non-response is correlated
+with the treatment and outcome. Such bias can skew results, as the final
+sample may differs from the initial sample in aspects crucial to the
+study's focus. Unlike common-or-garden confounding bias, selection bias
+cannot be addressed by simply conditioning on a set of baseline
+covariates \(L\).
 
 Causal diagrams can be useful in diagnosing sources of selection bias
-{[}CITE OTHER WORK{]}. Here we limit the application of causal diagrams
-for understanding confounding bias. However, it is imperative to
-recognise that, similar to measurement error, selection bias can
-substantially distort causal inference.
+and describing its features (\citeproc{ref-hernuxe1n2017}{Hernán 2017}).
+Below, we limit the application of causal diagrams for understanding the
+primary structural sources of confounding bias. However, it is
+imperative to recognise that, similar to measurement error bias,
+selection bias can substantially distort causal inferences.
 
-\paragraph{Modelling Assumptions}\label{modelling-assumptions}
+\paragraph{Considerations of modelling assumptions (``regularisation
+bias'')}\label{considerations-of-modelling-assumptions-regularisation-bias}
 
-After we have satisfied the fundamental and practical assumptions
-required for valid causal inference, we must eventually derive a
-estimate of our pre-specified causal contrasts from data. In statistical
-analysis, human scientists predominantly use parametric models,
-characterised by predetermined functional forms and distributional
-assumptions. This reliance creates susceptibility to model
-misspecification, which can manifest in various detrimental ways:
+After meeting the essential and practical assumptions necessary for
+valid causal inference, the next step involves deriving an estimate of
+our pre-defined causal contrasts from the data. In statistical analysis,
+human scientists predominantly utilize parametric models, which are
+defined by pre-set functional forms and distributional assumptions.
+However, this reliance on parametric models introduces the risk of
+biased inferences due to model misspecification. The adverse impacts of
+model misspecification manifest in several important ways:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  \textbf{Introduction of bias:} inaccurate specifications in parametric
-  models can lead to biased causal effect estimates. Such bias emerges
-  when the actual inter-variable relationships are more intricate or
-  divergent than the model's assumptions.
+  \textbf{Introduction of bias:} Inaccurate model specifications can
+  result in biased estimates of causal effects, especially when the true
+  inter-variable relationships are more complex or divergent than those
+  assumed in the model (\citeproc{ref-vansteelandt2022}{Vansteelandt and
+  Dukes 2022}; \citeproc{ref-wager2018}{Wager and Athey 2018}).
 \item
-  \textbf{Overstated precision:} a misaligned model might suggest
-  unwarranted precision, typically by miscalculating parameter standard
-  errors, leading to misplaced confidence in the findings.
+  \textbf{Overstated precision:} A misaligned model may falsely suggest
+  a level of precision, typically by misestimating parameter standard
+  errors, leading to unwarranted confidence in the findings
+  (\citeproc{ref-duxedaz2021}{Díaz \emph{et al.} 2021}).
 \item
-  \textbf{Concealment of Underlying Flaws:} model misspecification can
-  deceptively align well with data, yet fail to truly represent the
-  causal framework. This highlights the limitations of heavily relying
-  on goodness-of-fit metrics and the importance of more comprehensive
-  evaluations.
+  \textbf{Concealment of underlying flaws:} Even when a model seemingly
+  fits the data well, it might fail to accurately capture the causal
+  framework, highlighting the limitations of relying solely on
+  goodness-of-fit metrics and underscoring the need for more
+  comprehensive evaluations
+  (\citeproc{ref-vansteelandt2022}{Vansteelandt and Dukes 2022}).
+\item
+  \textbf{Uncertainty in model convergence:} When a model is
+  misspecified, it becomes unclear what the model is converging towards.
+  This uncertainty raises concerns about the validity of the model's
+  estimates, as we cannot be sure if the model is capturing the intended
+  causal relationships or some spurious pattern in the data.
 \end{enumerate}
 
-To mitigate these issues, several strategies are advisable. Rigorous
-diagnostic checks are essential to identify breaches in model
-assumptions, encompassing tests for linearity, homoscedasticity, and
-outlier presence. Furthermore, when data structures are ambiguous,
-adopting non-parametric or semi-parametric methods can be more
-effective, as these allow for greater adaptability to the complexities
-of causal relationships. The ongoing evolution of machine learning
-algorithms and doubly robust estimators, which model both the exposure
-and outcome, offers promise. These methods can yield valid estimates
-even if only one of the models is accurate. However, sensitivity
-analyses remain critical for verifying inference robustness under
-various model assumptions. Nonetheless, despite all efforts for
-robustness, risks of invalidity persist (see discussions in Hoffman
-\emph{et al.} (\citeproc{ref-hoffman2022}{2022}); Vansteelandt and Dukes
-(\citeproc{ref-vansteelandt2022}{2022}); Muñoz and Laan
-(\citeproc{ref-muuxf1oz2012}{2012}); Díaz \emph{et al.}
-(\citeproc{ref-duxedaz2021}{2021}); Williams and Díaz
-(\citeproc{ref-williams2021}{2021}); Wager and Athey
-(\citeproc{ref-wager2018}{2018}); Cui \emph{et al.}
-(\citeproc{ref-cui2020}{2020})).
+The rapid development of machine learning algorithms in causal data
+science, particularly doubly robust estimators that model both exposure
+and outcome, offers some promise. These methods can provide valid
+estimates even if only one of the models is correctly specified. Yet,
+sensitivity analyses are vital for confirming the robustness of
+inferences under varying model assumptions. Despite these efforts to
+ensure robustness, the risk of invalid conclusions persists, as
+extensively discussed in the literature (\citeproc{ref-cui2020}{Cui
+\emph{et al.} 2020}; \citeproc{ref-duxedaz2021}{Díaz \emph{et al.}
+2021}; \citeproc{ref-hoffman2022}{Hoffman \emph{et al.} 2022};
+\citeproc{ref-muuxf1oz2012}{Muñoz and Laan 2012};
+\citeproc{ref-vansteelandt2022}{Vansteelandt and Dukes 2022};
+\citeproc{ref-wager2018}{Wager and Athey 2018};
+\citeproc{ref-williams2021}{Williams and Díaz 2021}).
 
-The critical takeaway is that even effective causal diagrams do not
+The critical takeaway here that even effective causal diagrams do not
 guarantee immunity to model misspecification. Ensuring correct model
 specification remains a significant challenge in robust causal
-inference. or deeper scrutiny.
+inference.
 
-\subsection{Summary of Part 1: Causal Data Science in Causal
-Inference}\label{summary-of-part-1-causal-data-science-in-causal-inference}
+\subsubsection{Summary of Part 1}\label{summary-of-part-1}
 
-Causal inference in data science commences with a clearly defined causal
-question. We use causal diagrams as part of an analytic workflow to
-enable data-based inference afor a pre-specified causal question. This
-workflow starts by posing a clearly defined causal question
+In data science, causal inference begins with defining a precise causal
+question. Typically, this involves quantifying the impact of an
+intervention (exposure or treatment) \(A\), expressed as a contrast
+between potential outcomes, such as \(Y(a^*) - Y(a)\). The central
+challenge arises from the inherent limitation of observing for each unit
+observed at most only one of the potential outcomes required to compute
+this contrast.
 
-When posing a causal question, we typically seek to measure the effect
-of an intervention (exposure or treatment) \(A\) on an outcome \(Y\).
-The central challenge, called the `fundamental problem of causal
-inference,' arises from the inherent limitation of observing only one
-treatment state per individual at any given time. It is thus typically
-not possible to directly observe all potential outcomes needed to
-estimate individual-level causal effects directly from data.
+Reflecting on randomised experiments as an ideal model, we recognise
+that while individual causal effects are largely elusive, estimates of
+average causal effects within exposure levels can be derived under
+specific assumptions. These assumptions are almost inherently met in
+well-conducted randomized experiments.
 
-Although individual causal effects are challenging to compute, average
-causal effect estimates within levels exposures may be obtained when
-certain assumptions are satisfied. For examples, the average treatment
-effect (ATE) is a measure used to contrast groups with different
-treatment levels. However, this approach still encounters the
-fundamental missing data challenge, necessitating the combination of
-observed and hypothetical outcomes.
+The three cardinal assumptions for causal inference include causal
+consistency (ensuring outcomes at a specific exposure level align with
+their counterfactual counterparts), conditional exchangeability (absence
+of unmeasured confounding), and positivity (existence of a non-zero
+probability for each exposure level across all covariate
+stratifications). Fulfilling these assumptions is crucial for valid
+causal inference. Primarily, causal diagrams have been instrumental in
+assisting researchers to assess the assumption of no unmeasured
+confounding.
 
-Three key assumptions must be met for credible causal inference: causal
-consistency (outcomes at a given exposure level match counterfactual
-outcomes), conditional exchangeability (no unmeasured confounding), and
-positivity (non-zero probability of each exposure level across every
-covariate stratification). Each assumption must be satisfied to ensure
-valid causal inference.
+Furthermore, we explored practical considerations that might undermine
+confidence in causal inferences, such as measurement error, selection
+bias, and model misspecification. Causal diagrams are particularly
+helpful in addressing the first two biases, given their structural
+characteristics. However, model misspecification can profoundly alter
+both the precision and relevance of our causal conclusions. Thus, it is
+imperative to scrutinize measurement errors, ensure sample
+representativeness, manage attrition and loss-to-follow-up effectively,
+utilize robust statistical models and sensitivity analyses, among other
+considerations, depending on the specific scientific context and
+objectives.
 
-We furthermore noted that numerous practical considerations influence
-our confidence in our causal inference, including the prospects of
-measurement error, selection bias, and model misspecification. These
-factors can also dramatically afffect the accuracy and applicability of
-our causal conclusions. Addressing these issues involves understanding
-the nature of the errors, ensuring representativeness of the sample, and
-employing robust statistical models and sensitivity analyses.
+It is evident that causal data science imposes unique and strong
+demands, distinct from those of traditional data science. Although both
+ultimately rely on statistical models, causal data science requires a
+more intricate, multi-step workflow to estimate contrasts for unobserved
+counterfactuals. This process extends beyond simply creating causal
+diagrams and analysing patterns in observed data.
 
-Within the workflows of causal data science, we noted that causal
-diagrams find their primary utility in helping researchers to identify
-structural sources of bias that may compromise the conditional
-exchangeability assumption.
+Having outlined the crucial aspects of this workflow, we are now
+positioned to demonstrate the application of causal diagrams in
+elucidating structural sources of confounding bias.
 
-It should be clear that the demands of causal data science differ from
-the familiar methodologies of standard data science. Because causal data
-science must quantitatively estimate contrasts for unobserved
-counterfactuals, it is not sufficient to commence with causal diagrams
-and proceed directly to modelling patterns in the observed data.
-Instead, causal data science demands a meticulous, multi-step workflow.
-While causal diagrams are indeed valuable tools, their utility is fully
-realised only when they are integrated into this comprehensive and
-methodical workflow. Having described essential features of this
-workflow, we are now ready to show how causal diagrams may be used to
-clarify structural sources of bias.
+\textbf{Within the workflows of causal data science, we noted that
+causal diagrams find their primary utility in helping researchers to
+identify structural sources of bias that may compromise the conditional
+exchangeability assumption.}
+
+Having described essential features of this workflow, we are now ready
+to show how causal diagrams may be used to clarify structural sources of
+confounding bias.
 
 \subsection{Part 2. Applications of Chronologically Ordered Causal
 Diagrams for Understanding Confounding
 Bias}\label{part-2.-applications-of-chronologically-ordered-causal-diagrams-for-understanding-confounding-bias}
 
-In this section, I review the application of chronologically ordered
-causal diagrams to assessing structural sources of confounding bias in
-causal inference (\citeproc{ref-greenland1999}{Greenland \emph{et al.}
-1999a}; \citeproc{ref-pearl2009}{Pearl 2009};
-\citeproc{ref-pearl1995}{Pearl and Robins 1995}). Causal diagrams are
-powerful tools for identifying the conditions under which causal effects
-can be reliably estimated from data. Moreover organising them
-chronologically helps to avoid inferential over-reaching by making the
-sources of bias clearer, and by providing clear directives for data
-collection. We begin with essential terminology (Appendix 2 contains a
-longer list of terms).
+This section focuses on the application of chronologically ordered
+causal diagrams for isolating confounding bias in causal inference,
+grounded in seminal works by Pearl, Greenland, and others
+(\citeproc{ref-greenland1999}{Greenland \emph{et al.} 1999a};
+\citeproc{ref-pearl2009}{Pearl 2009a}; \citeproc{ref-pearl1995}{Pearl
+and Robins 1995a}). Causal diagrams are powerful tools for discerning
+conditions under which data can yield reliable causal effect estimates.
+Organizing these diagrams chronologically mitigates the risk of
+inferential errors, enhances the visibility of bias sources, and
+provides strategic direction for data collection (See Appendix 2 for a
+more detailed explanation). \#\#\# Conventions
 
-\textbf{Nodes}: represent variables or events in a causal diagram. These
-will be depicted using circles.
+\textbf{Nodes}: denote variables or events in causal diagrams. A boxed
+node indicates conditioning on that variable. Nodes included should be
+pivotal for elucidating bias structures, avoiding unnecessary
+complexity. For instance, a composite variable \(L\) is preferable to a
+list of confounders for brevity and interpretability. Although the
+formal structure is unaffected by the inclusion of complete lists, the
+primary objective remains the diagram's legibility.
 
-\textbf{Arrows}: represent assumed directions of influence or causation
-between variables. An arrow pointing from one node to another implies
-that the former influences or causes the latter.
+\textbf{Arrows}: denote the direction of assumed causal influence.
+Ambiguous edges, suggesting uncertain causation, are typically
+unhelpful. Instead, depicting unmeasured causes explicitly (e.g.,
+\(U \to A, U \to Y\)) is more effective. Chronological structuring
+guards against fallacies like \(Y_{t2} \to A_{t1}\), common in
+cross-sectional data, by reinforcing the principle that causation
+follows temporal order.
 
-\textbf{Red Arrows}: below, I use a red arrow to describe a path that
-leading to bias in the exposure \(\to\) outcome relationship.
+\subsubsection{Local Conventions}\label{local-conventions}
 
-\textbf{Dashed Arrows}: below, I use a dashed black arrow to describe a
-path whose bias has been reduced by a conditioning strategy but which
-nevertheless remains open.
+Beyond the general meanings of nodes, arrows, and boxes, specific
+conventions can be employed for additional clarity. These should be
+clearly defined. In this analysis, the conventions used are:
 
-\textbf{Variable Naming Conventions}: In the context of this discussion,
-we use the following notation to denote different elements of causal
+\textbf{Red arrows}: denote open paths between exposure and outcome due
+to suboptimal conditioning strategies.
+
+\textbf{Dashed arrows}: denote paths where confounding bias has been
+mitigated. Complete elimination of confounding is often unfeasible,
+especially in observational studies. Hence, the focus is on bias
+reduction, supplemented by sensitivity analyses to test the resilience
+of findings against unmeasured confounders. It is important to note that
+software tools like \texttt{Dagitty} and \texttt{ggdag}, though
+beneficial, may overlook optimal strategies involving open paths
+(\citeproc{ref-barrett2021}{Barrett 2021};
+\citeproc{ref-textor2011}{Textor \emph{et al.} 2011}). Therefore,
+reliance on these tools should be balanced with independent diagram
+interpretation skills.
+
+\textbf{Variable Naming Conventions}: in the context of this discussion,
+I use the following notation to denote different elements of causal
 diagrams:
 
 \begin{itemize}
 \tightlist
 \item
-  \(L\): denotes variables that may potentially lead to confounding
-  bias.
+  \(L\): denotes variables that may potentially lead to denotes bias.
 \item
   \(A\): represents the treatment or intervention of interest studied.
 \item
-  \(Y\): signifies the outcome of interest.
+  \(Y\): denotes the outcome of interest.
 \item
   \(U\): denotes an unmeasured confounder.
 \end{itemize}
@@ -908,7 +1030,7 @@ diagrams:
 \textbf{Adjustment set}: a collection of variables that we either
 condition upon or deliberately avoid conditioning upon to block all
 paths between the exposure and the outcome in the causal diagram
-(\citeproc{ref-pearl2009}{Pearl 2009}).
+(\citeproc{ref-pearl2009}{Pearl 2009a}).
 
 \textbf{Confounder}: a member of an adjustment set. Importantly, a
 variable is a ``confounder'' in relation to a specific adjustment set.
@@ -961,61 +1083,53 @@ can only rarely confidently eliminate all confounding. Pragmatically,
 our task is to reduce confounding where possible and perform sensitivity
 analyses that clarify the magnitude of risks the nearly inevitable
 failure of our models to confidently satisfy the ``no-unmeasured
-confounding'' assumption.
+confounding'' assumption. \#\#\# Chronological Hygiene in Diagram Design
 
-\subsubsection{Chronological Ordering in Causal
-Diagrams}\label{chronological-ordering-in-causal-diagrams}
-
-Recall that the purpose of a causal diagram is to parsimoniously present
-structural sources of bias. The structure of our graph rarely be
-verified by data. For this reason, we say a causal diagram is
-`structural' (\citeproc{ref-bulbulia2021}{Bulbulia \emph{et al.} 2021};
-\citeproc{ref-greenland1999c}{Greenland \emph{et al.} 1999b};
-\citeproc{ref-hernuxe1n2023}{Hernán and Monge 2023};
-\citeproc{ref-pearl2009a}{\textbf{pearl2009a?}}). It is not a
-statistical representation of the data, and thus differs from the graphs
-commonly employed in the structural equation modelling tradition. The
-failure to appreciate the distinction between structural and statistical
-models has led to much confusion
+Itis imperative to recognize that a causal diagram is intended to
+succinctly depict structural sources of bias, rather than to
+statistically represent data. This distinction is fundamental because
+the structure suggested by a causal diagram is often not verifiable by
+data, making it `structural' in nature, as distinct from the graphs used
+in structural equation modeling (\citeproc{ref-bulbulia2021}{Bulbulia
+\emph{et al.} 2021}; \citeproc{ref-greenland1999c}{Greenland \emph{et
+al.} 1999b}; \citeproc{ref-hernuxe1n2023}{Hernán and Monge 2023};
+\citeproc{ref-pearl2009a}{Pearl 2009b}). Misunderstanding this
+difference between structural and statistical models has led to
+considerable confusion across the human sciences
 (\citeproc{ref-vanderweele2015}{VanderWeele 2015};
 \citeproc{ref-vanderweele2022}{VanderWeele 2022};
 \citeproc{ref-vanderweele2022b}{VanderWeele and Vansteelandt 2022}).
 
-A chronological ordered in causal diagram is mathematically equivalent
-to one that lacks such order. However, what might be called
-``chronological hygiene'' in the layout of a graph can often greatly
-enhance understanding of the causal relationships among variables. A
-graph is chronologically hygienic if the arrangement of nodes and arrows
-in the diagram follow the assumed temporal sequence of causation. Here,
-I adopt the following conventions for chronological hygiene.
+Although a chronologically ordered causal diagram is mathematically
+identical to a non-chronological one, practicing what can be termed
+``chronological hygiene'' in graph layout can considerably enhance the
+understanding of causal relationships. A chronologically hygienic graph
+aligns the arrangement of nodes and arrows to reflect the assumed
+temporal sequence of events. The conventions I adopt for maintaining
+chronological hygiene are:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  \textbf{Left-to-Right temporal flow}: this spatial arrangement mirrors
-  the temporal progression of events or variables, with events appearing
-  to the left occurring earlier and events occurring on the right
-  appearing later.
+  \textbf{Left-to-right temporal flow}: this format mimics the temporal
+  progression of events, with earlier events positioned to the left and
+  later events to the right. It provides an intuitive visual
+  representation of how one event precedes another in time.
 \item
-  \textbf{Time-indexing of nodes}: to further enhance clarity and
-  precision, I index nodes on diagram by their relative occurrence in
-  time. Such indexing explicitly denotes the relative time point at
-  which each variable or event occurs or is measured relative to the
-  others
+  \textbf{Time-indexing of nodes}: nodes are indexed according to their
+  occurrence or measurement in time. This explicit indexing helps in
+  demarcating the temporal relationship between variables, adding
+  precision to the diagram, with the organisation:
 \end{enumerate}
-
-For example, suppose we are interested in the question of whether
-beliefs in Big Gods (\$A\$) affect Social Complexity (\$Y\$). Suppose
-further that we believe social factors (\$L\$) influence beliefs in Big
-Gods. We would then arrange the nodes such that:
 
 \[L_{t0} \to A_{t1} \to Y_{t2}\]
 
-We are now ready to apply chronologically ordered diagrams to the tasks
-of confounding control.
+This arrangement clearly illustrates the temporal sequence of these
+variables, setting the stage for effectively applying chronologically
+ordered diagrams in confounding control.
 
-\subsubsection{Elemental Confounds and Their
-Solutions}\label{elemental-confounds-and-their-solutions}
+\subsubsection{Elemental confounds and their
+solutions}\label{elemental-confounds-and-their-solutions}
 
 We begin by reviewing the ``four fundamental confounders'' described in
 McElreath (\citeproc{ref-mcelreath2020}{2020}) p.185.
@@ -1095,13 +1209,13 @@ ensure the confounder occurs before the exposure.}
 
 \end{figure}
 
-\subsubsection{2. Confounding by Conditioning on a Common Effect
+\subsubsection{2. Confounding by conditioning on a common effect
 (Collider
 Stratification)}\label{confounding-by-conditioning-on-a-common-effect-collider-stratification}
 
 When conditioning on a common effect, we consider a scenario where a
 variable \(L\) is influenced by both a treatment \(A\) and an outcome
-\(Y\).
+\(Y\) (\citeproc{ref-cole2010}{Cole \emph{et al.} 2010}).
 
 Imagine \(A\) represents the level of belief in Big Gods, and \(Y\)
 denotes social complexity, with \(L\) being economic trade. Initially,
@@ -1155,7 +1269,7 @@ crucial to maintain the correct temporal order:
 \end{enumerate}
 
 Adhering to this temporal sequence precludes \(L\) from being an effect
-of either \(A\) or \(Y\).\footnote{7}: In our example of beliefs and
+of either \(A\) or \(Y\).\footnote{7} In our example of beliefs and
 social complexity, this typically necessitates time-series data with
 precise measurements. Additionally, a sufficiently large sample of
 cultures undergoing transitions in religious beliefs, with pre- and
@@ -1229,10 +1343,10 @@ You ask: ``What if \(L\) is a confounder of \(A\) and \(Y\)?'' We have
 already considered this problem, and its solution. The problem was
 presented in Figure~\ref{fig-dag-common-cause}. Our chronlogically
 ordered causal diagram Figure~\ref{fig-dag-common-cause-solution}
-directs us to the solution: \emph{If \(L\) is a common cause of \(A\)
+directs us to the solution: \emph{If} \(L\) is a common cause of \(A\)
 and \(Y\) we must ensure that our measurement of \(L\) occurs before our
 measurement of \(A\) and that our measurement of \(Y\) occurs after our
-measurement of \(A\).}
+measurement of \(A\).
 
 \subsubsection{Advice: again, attend to the temporal order of all
 measured
@@ -1437,9 +1551,8 @@ Note that when the path is ordered chronologically from left to right,
 the ``M'' shape, giving M-bias its name, changes to an ``E'' shape.
 However, the term ``M-bias'' is retained.
 
-\subsubsection{Advice: Adopt the Modified Disjunctive Cause Criterion
-for Confounding
-Control}\label{advice-adopt-the-modified-disjunctive-cause-criterion-for-confounding-control}
+\subsubsection{Advice: Adopt the Modified Disjunctive Cause
+Criterion}\label{advice-adopt-the-modified-disjunctive-cause-criterion}
 
 The modified disjunctive cause criterion offers a strategy to satisfy
 the backdoor criterion and reduce bias:
@@ -1507,7 +1620,7 @@ to prevent confounding.}
 
 \subsubsection{Advice: Adopt the Modified Disjunctive Cause Criterion
 for Confounding
-Control}\label{advice-adopt-the-modified-disjunctive-cause-criterion-for-confounding-control-1}
+Control}\label{advice-adopt-the-modified-disjunctive-cause-criterion-for-confounding-control}
 
 The modified disjunctive cause criterion offers a strategy to satisfy
 the backdoor criterion and reduce bias:
@@ -1646,40 +1759,55 @@ we do not treat the effect modifier as an intervention. Rather, we wish
 to investigate whether geography is a parameter that may alter the
 exposure's effect on an outcome.
 
-For clarity, consider comparing two exposure levels, represented as
-\(A = a\) and \(A= a^*\). Further, assume that \(G\) represents two
-levels of effect-modification, represented as \(g\) and \(g'\).
+FFor clarity, let's consider two exposure levels, denoted as \(A = a\)
+and \(A = a^*\). Additionally, assume that \(G\) represents two distinct
+groups, such as \(g\) and \(g'\), where these groups could be based on
+different geographical characteristics.
 
-Then, the expected outcome when exposure is at level \(A=a\) among
-individuals in group \(G=g\) is expressed
+The expected outcome when the exposure is at level \(A = a\) among
+individuals in group \(G = g\) is expressed as:
 
 \[\hat{E}[Y(a)|G=g]\]
 
-The expected outcome when exposure is at level \(A=a^*\) among
-individuals in group \(G=g\) is expressed
+This represents the average outcome under exposure \(a\) for group
+\(g\).
+
+Similarly, the expected outcome for exposure level \(A = a^*\) among
+individuals in the same group (\(G = g\)) is:
 
 \[\hat{E}[Y(a^*)|G=g]\]
 
 The causal effect of shifting the exposure level from \(a^*\) to \(a\)
-in group \(g\) is expressed
+within group \(g\) is then given by:
 
-\[\hat{\delta}_g = \hat{\mathbb{E}}[Y(a)|G=g] - \hat{\mathbb{E}}[Y(a^*)|G=g]\]
+\[\hat{\delta}_g = \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^*)|G=g]\]
+
+This measures the change in the expected outcome due to altering the
+exposure from \(a^*\) to \(a\) within group \(g\).
 
 Likewise, the causal effect of changing the exposure from \(a^*\) to
-\(a\) in group \(g'\) is expressed.
+\(a\) within group \(g'\) is expressed as:
 
-\[\hat{\delta}_{g'} = \hat{\mathbb{E}}[Y(a)|G=g'] - \hat{\mathbb{E}}[Y(a^*)|G=g']\]
+\[\hat{\delta}_{g'} = \hat{E}[Y(a)|G=g'] - \hat{E}[Y(a^*)|G=g']\]
 
-We compare the causal effect on the difference scale in these two groups
-by computing
+Here, \(\hat{\delta}_{g'}\) captures the analogous effect in group
+\(g'\).
+
+To compare the causal effect on a difference scale between these two
+groups, we calculate:
 
 \[\hat{\gamma} = \hat{\delta}_g - \hat{\delta}_{g'}\]
 
-The value of \(\hat{\gamma}\) quantifies how the effect of shifting the
-exposure from \(a^*\) to \(a\) differs between groups \(g\) and \(g'\).
-
-If \(\hat{\gamma}\neq 0\), then there is evidence for effect
-modification. We may infer the exposure's effect varies by geography.
+The value of \(\hat{\gamma}\) quantifies the differential effect of
+shifting the exposure from \(a^*\) to \(a\) between groups \(g\) and
+\(g'\). A non-zero \(\hat{\gamma}\) indicates evidence of effect
+modification, suggesting that the impact of changing the exposure varies
+based on group characteristics. If \(G\) represents a geographic
+distinction, then \(\hat{\gamma} \neq 0\) would suggest geographical
+variation in the exposure effect. However, if \(G\) denotes other types
+of groups, \(\hat{\gamma}\) reflects effect modification according to
+those specific group characteristics, in this example, geographical
+characteristics.
 
 Again, remember that causal diagrams are non-parametric. More
 fundamental, causal diagrams function to identify structural sources of
@@ -1843,7 +1971,7 @@ but these models remain widely favoured.}
 
 \end{figure}
 
-\subsubsection{Case 3: Confounder-Treatment Feedback: Longitudinal
+\subsubsection{Case 3: Confounder-treatment feedback: longitudinal
 ``growth'' is not
 causation}\label{case-3-confounder-treatment-feedback-longitudinal-growth-is-not-causation}
 
@@ -2039,10 +2167,10 @@ confounder feedback is particularly challenging for evolutionary human
 science, yet its handling is beyond the capabilities of conventional
 regression-based methods, including multi-level models
 (\citeproc{ref-hernuxe1n2006}{Hernán and Robins 2006};
-\citeproc{ref-robins1999}{\textbf{robins1999?}};
-\citeproc{ref-robins1986}{\textbf{robins1986?}}). As mentioned
-previously, G-methods encompass models appropriate for investigating the
-causal effects of both time-fixed and time-varying exposures
+\citeproc{ref-robins1986}{Robins 1986}; \citeproc{ref-robins1999}{Robins
+\emph{et al.} 1999}). As mentioned previously, G-methods encompass
+models appropriate for investigating the causal effects of both
+time-fixed and time-varying exposures
 (\citeproc{ref-chatton2020}{Chatton \emph{et al.} 2020};
 \citeproc{ref-hernuxe1n2006}{Hernán and Robins 2006};
 \citeproc{ref-naimi2017}{Naimi \emph{et al.} 2017}). Despite significant
@@ -2253,6 +2381,12 @@ manuscript or the decision to publish it.
 \phantomsection\label{refs}
 \setlength{\cslentryspacing}{0em}
 \begin{CSLReferences}
+\bibitem[\citeproctext]{ref-bareinboim2022a}
+Bareinboim, E, Tian, J, and Pearl, J (2022) Recovering from selection
+bias in causal and statistical inference. In, 1st edn, Vol. 36, New
+York, NY, USA: Association for Computing Machinery, 433450. Retrieved
+from \url{https://doi.org/10.1145/3501714.3501740}
+
 \bibitem[\citeproctext]{ref-barrett2021}
 Barrett, M (2021) \emph{Ggdag: Analyze and create elegant directed
 acyclic graphs}. Retrieved from
@@ -2350,11 +2484,40 @@ Greenland, S, Pearl, J, and Robins, JM (1999b) Causal diagrams for
 epidemiologic research. \emph{Epidemiology (Cambridge, Mass.)},
 \textbf{10}(1), 37--48.
 
+\bibitem[\citeproctext]{ref-hernan2023}
+Hernan, MA, and Robins, JM (2023) \emph{Causal inference}, Taylor \&
+Francis. Retrieved from
+\url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}
+
 \bibitem[\citeproctext]{ref-hernuxe1n2004}
 Hernán, MA (2004) A definition of causal effect for epidemiological
 research. \emph{Journal of Epidemiology \& Community Health},
 \textbf{58}(4), 265--271.
 doi:\href{https://doi.org/10.1136/jech.2002.006361}{10.1136/jech.2002.006361}.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2017}
+Hernán, MA (2017) Invited commentary: Selection bias without colliders
+\textbar{} american journal of epidemiology \textbar{} oxford academic.
+\emph{American Journal of Epidemiology}, \textbf{185}(11), 10481050.
+Retrieved from \url{https://doi.org/10.1093/aje/kwx077}
+
+\bibitem[\citeproctext]{ref-hernuxe1n2008a}
+Hernán, MA, Alonso, A, Logan, R, \ldots{} Robins, JM (2008)
+Observational studies analyzed like randomized experiments: An
+application to postmenopausal hormone therapy and coronary heart
+disease. \emph{Epidemiology}, \textbf{19}(6), 766.
+doi:\href{https://doi.org/10.1097/EDE.0b013e3181875e61}{10.1097/EDE.0b013e3181875e61}.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2009}
+Hernán, MA, and Cole, SR (2009) Invited commentary: Causal diagrams and
+measurement bias. \emph{American Journal of Epidemiology},
+\textbf{170}(8), 959--962.
+doi:\href{https://doi.org/10.1093/aje/kwp293}{10.1093/aje/kwp293}.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2004a}
+Hernán, MA, Hernández-Díaz, S, and Robins, JM (2004) A structural
+approach to selection bias. \emph{Epidemiology}, \textbf{15}(5),
+615--625. Retrieved from \url{https://www.jstor.org/stable/20485961}
 
 \bibitem[\citeproctext]{ref-hernuxe1n2023}
 Hernán, MA, and Monge, S (2023) Selection bias due to conditioning on a
@@ -2380,8 +2543,14 @@ importance of well-defined interventions to answer causal questions.
 S8--14.
 doi:\href{https://doi.org/10.1038/ijo.2008.82}{10.1038/ijo.2008.82}.
 
+\bibitem[\citeproctext]{ref-hernuxe1n2022}
+Hernán, MA, Wang, W, and Leaf, DE (2022a) Target trial emulation: A
+framework for causal inference from observational data. \emph{JAMA},
+\textbf{328}(24), 2446--2447.
+doi:\href{https://doi.org/10.1001/jama.2022.21383}{10.1001/jama.2022.21383}.
+
 \bibitem[\citeproctext]{ref-hernuxe1n2022a}
-Hernán, MA, Wang, W, and Leaf, DE (2022) Target trial emulation: A
+Hernán, MA, Wang, W, and Leaf, DE (2022b) Target trial emulation: A
 framework for causal inference from observational data. \emph{JAMA},
 \textbf{328}(24), 2446--2447.
 doi:\href{https://doi.org/10.1001/jama.2022.21383}{10.1001/jama.2022.21383}.
@@ -2407,10 +2576,21 @@ American Statistical Association}, \textbf{81}(396), 945960.
 Hume, D (1902) \emph{Enquiries Concerning the Human Understanding: And
 Concerning the Principles of Morals}, Clarendon Press.
 
+\bibitem[\citeproctext]{ref-lauritzen1990}
+Lauritzen, SL, Dawid, AP, Larsen, BN, and Leimer, H-G (1990)
+Independence properties of directed markov fields. \emph{Networks},
+\textbf{20}(5), 491505.
+
 \bibitem[\citeproctext]{ref-lewis1973}
 Lewis, D (1973) Causation. \emph{The Journal of Philosophy},
 \textbf{70}(17), 556--567.
 doi:\href{https://doi.org/10.2307/2025310}{10.2307/2025310}.
+
+\bibitem[\citeproctext]{ref-lu2022}
+Lu, H, Cole, SR, Howe, CJ, and Westreich, D (2022) Toward a Clearer
+Definition of Selection Bias When Estimating Causal Effects.
+\emph{Epidemiology (Cambridge, Mass.)}, \textbf{33}(5), 699--706.
+doi:\href{https://doi.org/10.1097/EDE.0000000000001516}{10.1097/EDE.0000000000001516}.
 
 \bibitem[\citeproctext]{ref-mcelreath2020}
 McElreath, R (2020) \emph{Statistical rethinking: A bayesian course with
@@ -2421,6 +2601,12 @@ Muñoz, ID, and Laan, M van der (2012) Population intervention causal
 effects based on stochastic interventions. \emph{Biometrics},
 \textbf{68}(2), 541--549.
 doi:\href{https://doi.org/10.1111/j.1541-0420.2011.01685.x}{10.1111/j.1541-0420.2011.01685.x}.
+
+\bibitem[\citeproctext]{ref-murray2021a}
+Murray, EJ, Marshall, BDL, and Buchanan, AL (2021) Emulating target
+trials to improve causal inference from agent-based models.
+\emph{American Journal of Epidemiology}, \textbf{190}(8), 1652--1658.
+doi:\href{https://doi.org/10.1093/aje/kwab040}{10.1093/aje/kwab040}.
 
 \bibitem[\citeproctext]{ref-naimi2017}
 Naimi, AI, Cole, SR, and Kennedy, EH (2017) An introduction to g
@@ -2444,22 +2630,48 @@ Ogburn, EL, and Shpitser, I (2021) Causal modelling: The two cultures.
 \emph{Observational Studies}, \textbf{7}(1), 179--183.
 doi:\href{https://doi.org/10.1353/obs.2021.0006}{10.1353/obs.2021.0006}.
 
+\bibitem[\citeproctext]{ref-pearl1988}
+Pearl, J (1988) \emph{Probabilistic reasoning in intelligent systems:
+Networks of plausible inference}, Morgan kaufmann.
+
 \bibitem[\citeproctext]{ref-pearl2009}
-Pearl, J (2009) \emph{\href{https://doi.org/10.1214/09-SS057}{Causal
+Pearl, J (2009a) \emph{\href{https://doi.org/10.1214/09-SS057}{Causal
 inference in statistics: An overview}}.
+
+\bibitem[\citeproctext]{ref-pearl2009a}
+Pearl, J (2009b) \emph{Causality}, Cambridge University Press.
 
 \bibitem[\citeproctext]{ref-pearl2018}
 Pearl, J, and Mackenzie, D (2018) \emph{The book of why: The new science
 of cause and effect}, Basic books.
 
 \bibitem[\citeproctext]{ref-pearl1995}
-Pearl, J, and Robins, JM (1995) Probabilistic evaluation of sequential
+Pearl, J, and Robins, JM (1995a) Probabilistic evaluation of sequential
+plans from causal models with hidden variables. In, Vol. 95, Citeseer,
+444453.
+
+\bibitem[\citeproctext]{ref-pearl1995a}
+Pearl, J, and Robins, JM (1995b) Probabilistic evaluation of sequential
 plans from causal models with hidden variables. In, Vol. 95, Citeseer,
 444453.
 
 \bibitem[\citeproctext]{ref-richardson2013}
 Richardson, TS, and Robins, JM (2013) Single world intervention graphs:
 A primer. In, Citeseer.
+
+\bibitem[\citeproctext]{ref-robins1986}
+Robins, J (1986) A new approach to causal inference in mortality studies
+with a sustained exposure period{\textemdash}application to control of
+the healthy worker survivor effect. \emph{Mathematical Modelling},
+\textbf{7}(9), 1393--1512.
+doi:\href{https://doi.org/10.1016/0270-0255(86)90088-6}{10.1016/0270-0255(86)90088-6}.
+
+\bibitem[\citeproctext]{ref-robins1999}
+Robins, JM, Greenland, S, and Hu, F-C (1999) Estimation of the causal
+effect of a time-varying exposure on the marginal mean of a repeated
+binary outcome. \emph{Journal of the American Statistical Association},
+\textbf{94}(447), 687--700.
+doi:\href{https://doi.org/10.1080/01621459.1999.10474168}{10.1080/01621459.1999.10474168}.
 
 \bibitem[\citeproctext]{ref-rohrer2018}
 Rohrer, JM (2018) Thinking clearly about correlations and causation:
@@ -2488,7 +2700,13 @@ stdReg. \emph{European Journal of Epidemiology}, \textbf{31}(6),
 doi:\href{https://doi.org/10.1007/s10654-016-0157-3}{10.1007/s10654-016-0157-3}.
 
 \bibitem[\citeproctext]{ref-suzuki2020}
-Suzuki, E, Shinozaki, T, and Yamamoto, E (2020) Causal Diagrams:
+Suzuki, E, Shinozaki, T, and Yamamoto, E (2020a) Causal Diagrams:
+Pitfalls and Tips. \emph{Journal of Epidemiology}, \textbf{30}(4),
+153--162.
+doi:\href{https://doi.org/10.2188/jea.JE20190192}{10.2188/jea.JE20190192}.
+
+\bibitem[\citeproctext]{ref-suzuki2020a}
+Suzuki, E, Shinozaki, T, and Yamamoto, E (2020b) Causal Diagrams:
 Pitfalls and Tips. \emph{Journal of Epidemiology}, \textbf{30}(4),
 153--162.
 doi:\href{https://doi.org/10.2188/jea.JE20190192}{10.2188/jea.JE20190192}.
@@ -2501,6 +2719,15 @@ reformation.
 Swanson, GE (1971) Interpreting the reformation. \emph{The Journal of
 Interdisciplinary History}, \textbf{1}(3), 419446. Retrieved from
 \url{http://www.jstor.org/stable/202620}
+
+\bibitem[\citeproctext]{ref-tchetgen2012}
+Tchetgen, EJT, and VanderWeele, TJ (2012) On causal inference in the
+presence of interference. \emph{Statistical Methods in Medical
+Research}, \textbf{21}(1), 5575.
+
+\bibitem[\citeproctext]{ref-textor2011}
+Textor, J, Hardt, J, and Knüppel, S (2011) DAGitty: A graphical tool for
+analyzing causal diagrams. \emph{Epidemiology}, \textbf{22}(5), 745.
 
 \bibitem[\citeproctext]{ref-tripepi2007}
 Tripepi, G, Jager, KJ, Dekker, FW, Wanner, C, and Zoccali, C (2007)
@@ -2541,6 +2768,13 @@ doi:\href{https://doi.org/10.1097/EDE.0000000000001434}{10.1097/EDE.000000000000
 VanderWeele, TJ, and Hernan, MA (2013) Causal inference under multiple
 versions of treatment. \emph{Journal of Causal Inference},
 \textbf{1}(1), 120.
+
+\bibitem[\citeproctext]{ref-vanderweele2012a}
+VanderWeele, TJ, and Hernán, MA (2012) Results on differential and
+dependent measurement error of the exposure and the outcome using signed
+directed acyclic graphs. \emph{American Journal of Epidemiology},
+\textbf{175}(12), 1303--1310.
+doi:\href{https://doi.org/10.1093/aje/kwr458}{10.1093/aje/kwr458}.
 
 \bibitem[\citeproctext]{ref-vanderweele2014}
 VanderWeele, TJ, and Knol, MJ (2014) A tutorial on interaction.
@@ -2585,12 +2819,23 @@ Watts, J, Bulbulia, J. A., Gray, RD, and Atkinson, QD (2016) Clarity and
 causality needed in claims about big gods., \textbf{39}, 4142.
 doi:\href{https://doi.org/d4qp}{d4qp}.
 
+\bibitem[\citeproctext]{ref-watts2018}
+Watts, J, Sheehan, O, Bulbulia, Joseph A, Gray, RD, and Atkinson, QD
+(2018) Christianity spread faster in small, politically structured
+societies. \emph{Nature Human Behaviour}, \textbf{2}(8), 559564.
+doi:\href{https://doi.org/gdvnjn}{gdvnjn}.
+
 \bibitem[\citeproctext]{ref-weber1905}
 Weber, M (1905) \emph{The protestant ethic and the spirit of capitalism:
 And other writings}, Penguin.
 
 \bibitem[\citeproctext]{ref-weber1993}
 Weber, M (1993) \emph{The sociology of religion}, Beacon Press.
+
+\bibitem[\citeproctext]{ref-westreich2010}
+Westreich, D, and Cole, SR (2010) Invited commentary: positivity in
+practice. \emph{American Journal of Epidemiology}, \textbf{171}(6).
+doi:\href{https://doi.org/10.1093/aje/kwp436}{10.1093/aje/kwp436}.
 
 \bibitem[\citeproctext]{ref-westreich2015}
 Westreich, D, Edwards, JK, Cole, SR, Platt, RW, Mumford, SL, and
@@ -2608,6 +2853,12 @@ Edinburgh University Press. Retrieved from
 Williams, NT, and Díaz, I (2021) \emph{Lmtp: Non-parametric causal
 effects of feasible interventions based on modified treatment policies}.
 doi:\href{https://doi.org/10.5281/zenodo.3874931}{10.5281/zenodo.3874931}.
+
+\bibitem[\citeproctext]{ref-wright1920}
+Wright, S (1920) The relative importance of heredity and environment in
+determining the piebald pattern of guinea-pigs. \emph{Proceedings of the
+National Academy of Sciences of the United States of America},
+\textbf{6}(6), 320.
 
 \bibitem[\citeproctext]{ref-wright1923}
 Wright, S (1923) The theory of path coefficients a reply to niles's
@@ -2712,7 +2963,7 @@ would avoid the assumption of non-deterministic positivity for the
 untreated. However, whether matching is conceptually plausible remains
 debatable. Ostensibly, it would seem that assigning a religion to a
 culture a religion is not as easy as administering a pill
-(\citeproc{ref-watts2018}{\textbf{watts2018?}}).
+(\citeproc{ref-watts2018}{Watts \emph{et al.} 2018}).
 
 \subsection{Appendix 2: Additional Terminology For Causal
 Diagrams}\label{appendix-2-additional-terminology-for-causal-diagrams}
@@ -2775,7 +3026,7 @@ behavior'. Causal graphs visually present these assumed relationships.
   \textbf{D-separation}: a concept to understand whether two nodes are
   independent given another variable or set of variables. If all paths
   between two nodes are `blocked', they are independent in this sense
-  (\citeproc{ref-pearl2009}{Pearl 2009}). .
+  (\citeproc{ref-pearl2009}{Pearl 2009a}). .
 \item
   \textbf{D-separation Rules}:
 
@@ -2796,7 +3047,7 @@ behavior'. Causal graphs visually present these assumed relationships.
   \textbf{Adjustment set}: a collection of variables that we either
   condition upon or deliberately avoid conditioning upon to block all
   backdoor paths between the exposure and the outcome in the causal
-  diagram (\citeproc{ref-pearl2009}{Pearl 2009}).
+  diagram (\citeproc{ref-pearl2009}{Pearl 2009a}).
 \item
   \textbf{Confounders}: a member of an adjustment set. Importantly,
   \emph{we call a variable as a ``confounder'' in relation to a specific
@@ -2855,9 +3106,8 @@ behavior'. Causal graphs visually present these assumed relationships.
 \item
   \textbf{Compatibility and Faithfulness}: The idea that a dataset
   should reflect the conditional independencies suggested by a causal
-  diagram and vice
-  versa.(\citeproc{ref-pearl2009a}{\textbf{pearl2009a?}};
-  \citeproc{ref-pearl1995a}{\textbf{pearl1995a?}}).\footnote{Although
+  diagram and vice versa.(\citeproc{ref-pearl2009a}{Pearl 2009b};
+  \citeproc{ref-pearl1995a}{Pearl and Robins 1995b}).\footnote{Although
     the assumption of faithfulness or ``weak faithfulness'' allows for
     the possibility that some of the independences in the data might
     occur by coincidence (i.e., because of a cancellation of different
@@ -2889,17 +3139,17 @@ behavior'. Causal graphs visually present these assumed relationships.
     its parent variables and is independent of the others, thereby
     facilitating the graphical representation of complex relationships
     between multiple variables in a causal system
-    (\citeproc{ref-lauritzen1990}{\textbf{lauritzen1990?}};
-    \citeproc{ref-pearl1988}{\textbf{pearl1988?}}). The Causal Markov
-    assumption states that any given variable, when conditioned on its
-    direct antecedents, is rendered independent from all other variables
-    that it does not cause (\citeproc{ref-hernuxe1n2023}{Hernán and
-    Monge 2023}). In essence, once we account for a variable's immediate
+    (\citeproc{ref-lauritzen1990}{Lauritzen \emph{et al.} 1990};
+    \citeproc{ref-pearl1988}{Pearl 1988}). The Causal Markov assumption
+    states that any given variable, when conditioned on its direct
+    antecedents, is rendered independent from all other variables that
+    it does not cause (\citeproc{ref-hernuxe1n2023}{Hernán and Monge
+    2023}). In essence, once we account for a variable's immediate
     causes, it ceases to provide additional causal information about any
     other variables in the system, except for those it directly causes.
     This assumption allows for inferring the causal effects of
     interventions in systems, as represented by causal diagrams
-    (\citeproc{ref-pearl2009a}{\textbf{pearl2009a?}}).}
+    (\citeproc{ref-pearl2009a}{Pearl 2009b}).}
 \end{enumerate}
 
 \begin{enumerate}
@@ -2910,7 +3160,7 @@ behavior'. Causal graphs visually present these assumed relationships.
   \textbf{Backdoor Criterion}: Criteria to identify the correct set of
   variables to control for to estimate a causal effect. he backdoor
   criterion guides the selection of \textbf{adjustment sets}
-  (\citeproc{ref-pearl1995}{Pearl and Robins 1995}).\footnote{There is
+  (\citeproc{ref-pearl1995}{Pearl and Robins 1995a}).\footnote{There is
     also a Front-Door Criterion, which provides another way to estimate
     causal effects, even in the presence of unmeasured confounding
     variables. It relies on identifying a variable (or set of variables)
@@ -2954,16 +3204,16 @@ behavior'. Causal graphs visually present these assumed relationships.
   models can correspond to multiple causal structures}
   (\citeproc{ref-hernuxe1n2023}{Hernán and Monge 2023};
   \citeproc{ref-pearl2018}{Pearl and Mackenzie 2018};
-  \citeproc{ref-wright1923}{Wright 1923};
-  \citeproc{ref-wright1920}{\textbf{wright1920?}}). Causal diagrams
-  represent structural models. A structural model goes beyond a
-  statistical model by defining assumptions about causal relationships.
-  Although statistical models capture relationships among variables,
-  inferring causal relationships necessitates additional assumptions or
-  information. Causal diagrams serve to graphically encode these
-  assumptions, effectively representing the structural model
-  (\citeproc{ref-hernuxe1n2023}{Hernán and Monge 2023}). These
-  assumptions should be developed in consultation with experts.
+  \citeproc{ref-wright1920}{Wright 1920},
+  \citeproc{ref-wright1923}{1923}). Causal diagrams represent structural
+  models. A structural model goes beyond a statistical model by defining
+  assumptions about causal relationships. Although statistical models
+  capture relationships among variables, inferring causal relationships
+  necessitates additional assumptions or information. Causal diagrams
+  serve to graphically encode these assumptions, effectively
+  representing the structural model (\citeproc{ref-hernuxe1n2023}{Hernán
+  and Monge 2023}). These assumptions should be developed in
+  consultation with experts.
 \item
   \textbf{A Structural Classification of Bias}:
 \end{enumerate}
