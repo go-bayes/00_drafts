@@ -81,10 +81,8 @@
 \NewDocumentCommand\citeproctext{}{}
 \NewDocumentCommand\citeproc{mm}{%
   \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+% avoid brackets around text for \cite:
 \makeatletter
- % allow citations to break across lines
- \let\@cite@ofmt\@firstofone
- % avoid brackets around text for \cite:
  \def\@biblabel#1{}
  \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
 \makeatother
@@ -92,32 +90,33 @@
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
- {\begin{list}{}{%
-  \setlength{\itemindent}{0pt}
-  \setlength{\leftmargin}{0pt}
-  \setlength{\parsep}{0pt}
-  % turn on hanging indent if param 1 is 1
-  \ifodd #1
-   \setlength{\leftmargin}{\cslhangindent}
-   \setlength{\itemindent}{-1\cslhangindent}
-  \fi
-  % set entry spacing
-  \setlength{\itemsep}{#2\baselineskip}}}
- {\end{list}}
+\newlength{\cslentryspacing}
+\setlength{\cslentryspacing}{0em}
+\usepackage{enumitem}
+\newlist{CSLReferences}{itemize}{1}
+\setlist[CSLReferences]{label={},
+  leftmargin=\cslhangindent,
+  itemindent=-1\cslhangindent,
+  parsep=\parskip,
+  itemsep=\cslentryspacing}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{\hfill\break#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{cancel}
+\usepackage{xcolor}
 \usepackage[noblocks]{authblk}
 \renewcommand*{\Authsep}{, }
 \renewcommand*{\Authand}{, }
 \renewcommand*{\Authands}{, }
 \renewcommand\Affilfont{\small}
 \usepackage{cancel}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -154,10 +153,10 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
-\makeatother
-\makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
@@ -166,8 +165,8 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={Consideration of Selection Bias in the Design of Longitudinal Panel Studies},
-  pdfauthor={Joseph A. Bulbulia; Etsuji Suzuki},
+  pdftitle={Selection Bias: Key Conceptual Distinctions For Longitudinal Designs},
+  pdfauthor={Joseph A. Bulbulia},
   pdfkeywords={DAGS (Directed Acyclic Graphs), Causal
 Inference, Confounding, History, Psychology, Panel},
   colorlinks=true,
@@ -177,90 +176,83 @@ Inference, Confounding, History, Psychology, Panel},
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\title{Consideration of Selection Bias in the Design of Longitudinal
-Panel Studies}
+\title{Selection Bias: Key Conceptual Distinctions For Longitudinal
+Designs}
 
 
   \author{Joseph A. Bulbulia}
             \affil{%
                   Victoria University of Wellington, New Zealand
               }
-        \author{Etsuji Suzuki}
-  
-\date{2023-11-16}
+      
+\date{2023-11-27}
 \begin{document}
 \maketitle
 \begin{abstract}
-This article explains the concept of selection bias, clarifying how it
-differs from confounding bias. Our aim is to improve research design in
-evolutionary human science, particularly in longitudinal ethnography.
 Selection bias arises when the sample used in a study does not
-accurately represent the target population, leading to skewed or
-ungeneralisable findings. Unlike confounding bias, which results from
-unaccounted variables that influence both the treatment and the outcome,
-selection bias stems from the process of choosing the study sample, or
-from attrition of a study sample. This distinction is crucial for
-researchers in evolutionary human sciences, where longitudinal
-ethnographies often rely on specific, sometimes limited, populations. We
-discuss strategies to identify, mitigate, and account for selection
-bias, aiming to improve the validity and reliability of research
-findings in this field. The article provides insights into the
-application of these concepts in practical research scenarios,
-emphasising the importance of careful study design and analysis in
-overcoming the challenges posed by selection biases.
+accurately represent the target population, skewing causal inferences. I
+briefly review key concept of selection bias as it is used in the
+potential outcomes framework in causal data science, and explain their
+importance for evolutionary human scientists. Unlike confounding bias,
+which results from unaccounted variables that influence both the
+treatment and the outcome, selection bias stems from the process of
+choosing the units in a study sample, or from differential attrition of
+these units. I explain how these distinctions are useful for applied
+researchers in the evolutionary human scientists, focussing on research
+design, data collection, and data analysis in longitudinal (panel)
+studies.
 \end{abstract}
 \subsubsection{Introduction to selection
 bias}\label{introduction-to-selection-bias}
 
-In evolutionary human sciences, especially in longitudinal ethnography,
-understanding selection bias is crucial for ensuring the validity and
-generalisability of research outcomes. If not properly addressed,
-selection bias can lead to significant distortions in study results. To
-understand selection bias, it is essential to understand the concepts of
-``source'' and ``target'' populations, as well as the concepts of
-``generalisability'' and ``transportability.''
+Understanding selection bias is crucial for ensuring the validity and
+generalisability of our causal inferences. To understand selection bias,
+and now it differs from, and relates to structural confounding bias and
+structural measurement bias, it is essential to understand the concepts
+of `source' and `target' populations, as well as the concepts of
+`generalisability' and `transportability.'
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  \textbf{Source Population}: The group from which we collect our data.
-  Think of it as the subset of individuals we are directly studying.
+  \textbf{Source Population:} the population from which individuals are
+  sampled for a study.
 \item
-  \textbf{Target Population}: The larger group we want to understand
-  better through our study. The more similar the source population is to
-  the target population in characteristics relevant to our study, the
-  more confidently we can apply our findings to the target population.
+  \textbf{Target Population:} the population intended to be understood
+  through the study. The similarity of the source population to the
+  target population in study-relevant characteristics enhances the
+  applicability of the findings to the target population.
 \item
-  \textbf{Generalisability}: This term pertains to how well the findings
-  from our source population can be applied to the target population. If
-  the effects we observe in our study group also hold true for the
-  larger group, we say our findings are generalisable. We use the term
-  \(PATE\) to define the Population Average Treatment Effect in the
-  target population and \(ATE_{\text{source}}\) to define the Average
-  Treatment Effect in the source population. If there is a set of
-  characteristics \(W\) on which the source and target populations
-  differ, we can model a relationship between the two populations if
-  there is a function such that:
+  \textbf{Generalisability:} the extent to which findings from the
+  source population apply to the target population. Findings are
+  considered generalisable when the effects observed in the study group
+  are also valid in the larger target group. The term \(PATE\) denotes
+  the Population Average Treatment Effect in the target population, and
+  \(ATE_{\text{source}}\) signifies the Average Treatment Effect in the
+  source population. If there are characteristics \(W\) by which the
+  source and target populations differ, the relationship between the two
+  populations can be modeled as:
 
   \[PATE = f(ATE_{\text{source}}, W)\]
 \item
-  \textbf{Transportability}: This concept is an extension of the concept
-  of generalisability. It pertains to how well our study's findings can
-  be applied to different settings or groups that were not part of the
-  original study. Our results are transportable if there is a function
-  such that:
+  \textbf{Transportability:} An extension of generalisability, this
+  concept relates to the applicability of study findings to different
+  settings or groups not included in the original study. The findings
+  are transportable if there is a function such that:
 
   \[ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)\]
 
-  Here, \(T\) represents the variables on which the source and target
-  populations differ.
+  Here, \(T\) represents variables differentiating the source and target
+  populations.
 \end{enumerate}
 
-In plain terms, selection bias occurs when our study group (source
-population) does not accurately represent the group we are ultimately
-interested in (target population) (\citeproc{ref-hernuxe1n2017}{Hernán
-2017}). Understanding this bias is crucial for ensuring our research
-findings are valid and applicable beyond our immediate study.
+Selection bias occurs when the study group (source population) does not
+accurately represent the group of interest (target population).
+Understanding and addressing this bias is essential for ensuring the
+validity and applicability of research findings beyond the immediate
+study context (\citeproc{ref-hernuxe1n2017}{Hernán 2017}). Understanding
+this bias is crucial for ensuring our research findings are valid and
+applicable beyond our immediate study.
 
 \subsubsection{A Structural Approach to Selection
 Bias}\label{a-structural-approach-to-selection-bias}
@@ -271,22 +263,20 @@ selection into the study. We will assume randomisation succeeded so
 there are no arrows into \(A\). As Figure~\ref{fig-1} shows, randomising
 from a selected group does not result in confounding bias. Despite
 selection, the null effect in the source population is not biased for
-the target population (\citeproc{ref-greenland1977}{Greenland 1977};
-\citeproc{ref-hernuxe1n2004}{Hernán \emph{et al.} 2004}).\footnote{Note
-  we use the term ``null effect'' as a structural concept. There are no
-  statistical ``null effects.'' Instead there are reliable or unreliable
-  statistical effect estimates according to some measure of evidence and
-  arbitrary threshold (\citeproc{ref-bulbulia2021}{Bulbulia \emph{et
-  al.} 2021}).} Here, selection does not induce ``confounding in
-expectation'' (\citeproc{ref-suzuki2016}{Suzuki \emph{et al.} 2016};
+the target population (\citeproc{ref-greenland1977}{GREENLAND 1977};
+\citeproc{ref-hernuxe1n2004}{Hernán 2004}).\footnote{Note we use the
+  term ``null effect'' as a structural concept. There are no statistical
+  ``null effects.'' Instead there are reliable or unreliable statistical
+  effect estimates according to some measure of evidence and arbitrary
+  threshold (\citeproc{ref-bulbulia2021}{Bulbulia \emph{et al.} 2021}).}
+Under the null, selection does not induce ``confounding in expectation''
+(\citeproc{ref-suzuki2016}{Suzuki \emph{et al.} 2016};
 \citeproc{ref-suzuki2020}{Suzuki \emph{et al.} 2020};
 \citeproc{ref-suzuki2014}{Suzuki and Yamamoto 2014}).
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-1-1.pdf}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-1-1.pdf}
 
 }
 
@@ -294,7 +284,7 @@ expectation'' (\citeproc{ref-suzuki2016}{Suzuki \emph{et al.} 2016};
 affects the selection for the study and the outcome. D-separation is
 preserved; there is no confounding in expectation.}
 
-\end{figure}%
+\end{figure}
 
 Figure~\ref{fig-2} presents a different scenario in which there is
 selection bias for the population parameter: the association in the
@@ -309,26 +299,23 @@ of the exposure on the outcome. Note that although the causal effect of
 population, the effect estimate does not generalise to the exposed and
 unexposed in the target population:
 \(PATE \cancel{\approx} ATE_{\text{selected sample}}\). Although there
-is no ``confounding in expectation'' however there is ``confounding in
-distribution,'' in the sense that causal inferences in this scenario do
-not generalise as we might hope (\citeproc{ref-suzuki2016}{Suzuki
+is no ``confounding in expectation'' causal inferences in this scenario
+do not generalise as we might hope (\citeproc{ref-suzuki2016}{Suzuki
 \emph{et al.} 2016}; \citeproc{ref-suzuki2020}{Suzuki \emph{et al.}
 2020}; \citeproc{ref-suzuki2014}{Suzuki and Yamamoto 2014}).
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-2-1.pdf}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-2-1.pdf}
 
 }
 
 \caption{\label{fig-2}Selection off the null: an unmeasured variable
 affects selection into the study and the outcome. Here the exposure
 affects the outcome. Selection, then, is an effect modifier. Although
-d-separation is preserved, there is confounding in distribution.}
+d-separation is preserved.}
 
-\end{figure}%
+\end{figure}
 
 There has been considerable technical research investigating the
 conditions under which causal estimates for a target population may be
@@ -339,7 +326,8 @@ which results might transport to populations that systematically differ
 from the source population (see:
 (\citeproc{ref-bareinboim2022}{Bareinboim \emph{et al.} 2022};
 \citeproc{ref-deffner2022}{Deffner \emph{et al.} 2022};
-\citeproc{ref-pearl2022}{Pearl and Bareinboim 2022})).
+\citeproc{ref-pearl2022}{\textbf{pearl2022?}})). I briefly review key
+results.
 
 \subsubsection{Selection bias in which both the exposure and outcome
 affect
@@ -381,9 +369,7 @@ effect estimates that generalise to a clearly defined target population.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-3-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-3-1.pdf}
 
 }
 
@@ -391,7 +377,7 @@ effect estimates that generalise to a clearly defined target population.
 affect attrition. Dashed red path shows correlation of A an Y in the
 absence of causation.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{Example of selection bias in a three-wave panel were
 there are systematic differences between the source population at
@@ -409,9 +395,7 @@ not evident in the source population at baseline.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-4-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-4-1.pdf}
 
 }
 
@@ -419,7 +403,7 @@ not evident in the source population at baseline.
 selection bias. Red paths reveal the open backdoor path induced by
 conditioning on the selected sample.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{Unmeasured confounder affects outcome and variable that
 affects
@@ -427,21 +411,19 @@ attrition}\label{unmeasured-confounder-affects-outcome-and-variable-that-affects
 
 Figure~\ref{fig-5} presents another problem of selection bias in a
 three-wave panel design. This diagram shows how an unmeasured
-confounder, U\(_S\), can simultaneously influence the outcome variable
-Y\(_{t2}\) and another variable, L\(_{t2}\), responsible for attrition
+confounder, \(U_S\), can simultaneously influence the outcome variable
+\(Y_{t2}\) and another variable, \(L_{t2}\), responsible for attrition
 (i.e., the drop-out rate, denoted as \(\framebox{S}\)). Here we present
 a scenario in which the exposure variable \(A_{t1}\) can impact a
-post-treatment confounder L\(_{t2}\), which subsequently affects
+post-treatment confounder \(L_{t2}\), which subsequently affects
 attrition, \(\framebox{S}\). If the study's selected sample descends
-from L\({t2}\), the selection effectively conditions on L\(_{t2}\),
+from L\({t2}\), the selection effectively conditions on \(L_{t2}\),
 potentially introducing bias into the analysis. Figure~\ref{fig-5} marks
 this biasing pathway with red-dashed lines.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-5-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-5-1.pdf}
 
 }
 
@@ -453,7 +435,21 @@ is a descendent of Lt2. Hence selection is a form of conditioning on
 L\_t2. Such conditioning opens a biasing path, indicated by the
 red-dashed lines.}
 
-\end{figure}%
+\end{figure}
+
+\subsubsection{The outcome affects
+selection}\label{the-outcome-affects-selection}
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-6-1.pdf}
+
+}
+
+\caption{\label{fig-6}Y affects attrition, as does an unmeasured
+variable that also effects treatment.}
+
+\end{figure}
 
 \subsubsection{Why regression adjustment fails to address select bias
 from
@@ -489,13 +485,12 @@ What to do?
   \textbf{Inverse probability weighting with censoring weights}: this
   requires weighting the values of each participant in the study by the
   inverse of the probability of their observed pattern of missingness
-  (censoring weights)(\citeproc{ref-cole2008}{Cole and Hernán 2008};
-  \citeproc{ref-leyrat2019}{Leyrat \emph{et al.} 2019}). In this
-  approach, the sample gives more weight to under-represented
-  individuals owing to drop-out. As with missing data imputation, IPW
-  with censoring weights also assumes that we can correctly model the
-  missingness from the observed data (\citeproc{ref-shiba2021}{Shiba and
-  Kawahara 2021}).
+  (censoring weights)(\citeproc{ref-leyrat2019}{\textbf{leyrat2019?}};
+  \citeproc{ref-cole2008}{\textbf{cole2008?}}). In this approach, the
+  sample gives more weight to under-represented individuals owing to
+  drop-out. As with missing data imputation, IPW with censoring weights
+  also assumes that we can correctly model the missingness from the
+  observed data (\citeproc{ref-shiba2021}{Shiba and Kawahara 2021}).
 \item
   \textbf{Sensitivity analysis}: as with nearly all causal inference, we
   should quantitatively evaluate how sensitive results are to different
@@ -556,20 +551,23 @@ Analysis}\label{recommended-approach-to-study-design-and-analysis}
   conclusions.
 \end{enumerate}
 
-\paragraph{Summary}\label{summary}
+\subsubsection{Summary}\label{summary}
 
 By integrating these strategies into both the design and analysis phases
 of research, we can effectively address the challenges posed by
 selection bias, particularly in the context of evolutionary human
-sciences. This comprehensive approach not only enhances the accuracy and
+sciences. This approach will not only enhance the accuracy and
 applicability of the findings but also contributes to the overall
 robustness and credibility of the research.
+
+\subsubsection{Acknowledgements}\label{acknowledgements}
 
 \subsection*{References}\label{references}
 \addcontentsline{toc}{subsection}{References}
 
 \phantomsection\label{refs}
-\begin{CSLReferences}{1}{0}
+\setlength{\cslentryspacing}{0em}
+\begin{CSLReferences}
 \bibitem[\citeproctext]{ref-bareinboim2022}
 Bareinboim, E, Tian, J, and Pearl, J (2022) Recovering from selection
 bias in causal and statistical inference. In, 1st edn, Vol. 36, New
@@ -581,12 +579,6 @@ Bulbulia, J, Schjoedt, U, Shaver, JH, Sosis, R, and Wildman, WJ (2021)
 Causal inference in regression: Advice to authors. \emph{Religion, Brain
 \& Behavior}, \textbf{11}(4), 353360.
 
-\bibitem[\citeproctext]{ref-cole2008}
-Cole, SR, and Hernán, MA (2008) Constructing inverse probability weights
-for marginal structural models. \emph{American Journal of Epidemiology},
-\textbf{168}(6), 656--664.
-doi:\href{https://doi.org/10.1093/aje/kwn164}{10.1093/aje/kwn164}.
-
 \bibitem[\citeproctext]{ref-deffner2022}
 Deffner, D, Rohrer, JM, and McElreath, R (2022) A Causal Framework for
 Cross-Cultural Generalizability. \emph{Advances in Methods and Practices
@@ -594,9 +586,15 @@ in Psychological Science}, \textbf{5}(3), 25152459221106366.
 doi:\href{https://doi.org/10.1177/25152459221106366}{10.1177/25152459221106366}.
 
 \bibitem[\citeproctext]{ref-greenland1977}
-Greenland, S (1977) Response and follow-up bias in cohort studies.
+GREENLAND, S (1977) Response and follow-up bias in cohort studies.
 \emph{American Journal of Epidemiology}, \textbf{106}(3), 184--187.
 doi:\href{https://doi.org/10.1093/oxfordjournals.aje.a112451}{10.1093/oxfordjournals.aje.a112451}.
+
+\bibitem[\citeproctext]{ref-hernuxe1n2004}
+Hernán, MA (2004) A definition of causal effect for epidemiological
+research. \emph{Journal of Epidemiology \& Community Health},
+\textbf{58}(4), 265--271.
+doi:\href{https://doi.org/10.1136/jech.2002.006361}{10.1136/jech.2002.006361}.
 
 \bibitem[\citeproctext]{ref-hernuxe1n2017}
 Hernán, MA (2017) Invited commentary: Selection bias without colliders
@@ -604,28 +602,11 @@ Hernán, MA (2017) Invited commentary: Selection bias without colliders
 \emph{American Journal of Epidemiology}, \textbf{185}(11), 10481050.
 Retrieved from \url{https://doi.org/10.1093/aje/kwx077}
 
-\bibitem[\citeproctext]{ref-hernuxe1n2004}
-Hernán, MA, Hernández-Díaz, S, and Robins, JM (2004) A structural
-approach to selection bias. \emph{Epidemiology}, \textbf{15}(5),
-615--625. Retrieved from \url{https://www.jstor.org/stable/20485961}
-
-\bibitem[\citeproctext]{ref-leyrat2019}
-Leyrat, C, Seaman, SR, White, IR, \ldots{} Williamson, EJ (2019)
-Propensity score analysis with partially observed covariates: How should
-multiple imputation be used? \emph{Statistical Methods in Medical
-Research}, \textbf{28}(1), 319.
-
 \bibitem[\citeproctext]{ref-lu2022}
 Lu, H, Cole, SR, Howe, CJ, and Westreich, D (2022) Toward a Clearer
 Definition of Selection Bias When Estimating Causal Effects.
 \emph{Epidemiology (Cambridge, Mass.)}, \textbf{33}(5), 699--706.
 doi:\href{https://doi.org/10.1097/EDE.0000000000001516}{10.1097/EDE.0000000000001516}.
-
-\bibitem[\citeproctext]{ref-pearl2022}
-Pearl, J, and Bareinboim, E (2022) External validity: From do-calculus
-to transportability across populations. In, 1st edn, Vol. 36, New York,
-NY, USA: Association for Computing Machinery, 451482. Retrieved from
-\url{https://doi.org/10.1145/3501714.3501741}
 
 \bibitem[\citeproctext]{ref-pishgar2021}
 Pishgar, F, Greifer, N, Leyrat, C, and Stuart, E (2021) MatchThem::
