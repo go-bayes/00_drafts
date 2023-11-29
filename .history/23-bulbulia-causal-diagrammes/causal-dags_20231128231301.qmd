@@ -654,7 +654,7 @@ Again we find that adhering to assumed causal order in data collection and analy
 \node [rectangle, draw=black] (L) at (0, 0) {L$_{t0}$};
 \node [ellipse, draw=white] (A) at (4, 0) {A$_{t1}$};
 \node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
-\draw [-latex, draw=white] (A) to (Y);
+\draw [-latex, draw=blue] (A) to (Y);
 \draw [-latex, bend left, draw =black] (L) to (Y);
 \draw [-latex, black] (L) to (A);
 \end{tikzpicture}
@@ -1198,9 +1198,8 @@ A similar issue arises when a time-varying exposure and a time-varying confounde
 The complexity of confounding escalates when the exposure $A_{t1}$ impacts the outcome $Y_{t4}$. For example, $L_{t2}$, being on the pathway from $A_{t1}$ to $Y_{t4}$, means that conditioning on $L_{t2}$ partially obstructs the relationship between the exposure and the outcome. This introduces collider stratification bias and mediator bias. Yet, to shut the open backdoor path from $L_{t2}$ to $Y_{t4}$, we find ourselves compelled to condition on $L_{t2}$, creating a paradox given our earlier assertion that such conditioning should be avoided. This broader dilemma of exposure-confounder feedback is extensively discussed in [@hernán2023]. 
 
 
-The issue of treatment confounder feedback poses significant challenges in evolutionary human science and is not adequately addressed by conventional regression-based methods, including multi-level models [@hernán2006; @robins1999; @robins1986]. The failure of regression stems from the necessity to condition on downstream confounders, which opens the door to a mix of collider and mediation biases in our estimates. As previously noted, G-methods encompass models suitable for analyzing causal effects of both time-fixed and time-varying exposures [@naimi2017; @chatton2020; @hernán2006]. Recent advancements in targeted learning and other semi-parametric estimation methods also hold promise [@williams2021; @díaz2021; @breskin2021; @vanderlaan2018; @díaz2021; @wager2018; : @hernán2023 @díaz2021 @vanderweele2015 @hoffman2022 @hoffman2023 @chatton2020 @shiba2021; @sjölander2016; @breskin2020; @vanderweele2009a; @vansteelandt2012; @shi2021]; however, these have not yet gained widespread acceptance in human evolutionary sciences. I anticipate this will change, and I hope my work here helps stimulate interest in adopting more suitable tools for our causal inquiries. 
+The issue of treatment confounder feedback poses significant challenges in evolutionary human science and is not adequately addressed by conventional regression-based methods, including multi-level models [@hernán2006; @robins1999; @robins1986]. The failure of regression stems from the necessity to condition on downstream confounders, which opens the door to a mix of collider and mediation biases in our estimates. As previously noted, G-methods encompass models suitable for analyzing causal effects of both time-fixed and time-varying exposures [@naimi2017; @chatton2020; @hernán2006]. Recent advancements in targeted learning and other semi-parametric estimation methods also hold promise [@williams2021; @díaz2021; @breskin2021; @vanderlaan2018; @díaz2021; @wager2018]; however, these have not yet gained widespread acceptance in human evolutionary sciences. I anticipate this will change, and I hope my work here helps stimulate interest in adopting more suitable tools for our causal inquiries. 
 
-For good introductions see: @hernán2023 @díaz2021 @vanderweele2015 @hoffman2022 @hoffman2023 @chatton2020 @shiba2021 @sjölander2016 @breskin2020 @vanderweele2009a @vansteelandt2012 @shi2021.)
 
 [^15]: It is worth noting that the identification of controlled effect estimates can benefit from graphical methods like 'Single World Intervention Graphs'(SWIGs), which visually represent counterfactual outcomes. However, SWIGs should be seen more as templates rather than causal diagrams in their general form. Their use goes beyond the scope of this tutorial, but for those interested, more information can be found in @richardson2013.
 
@@ -1210,13 +1209,41 @@ For good introductions see: @hernán2023 @díaz2021 @vanderweele2015 @hoffman202
 
 To consistently estimate causal effects, we must contrast the world as it has been with the world as it might have been. For many questions in evolutionary human science, we have seen that confounder-treatment feedback leads to intractable causal identification problems. We have also seen that causal diagrams are helpful in clarifying these problems. Many self-inflicted injuries, such as mediator bias and post-stratification bias, could be avoided if confounders were measured prior to the exposures. Chronologically ordered causal diagrams aim to make this basis transparent. They function as circuit-breakers that may protect us from blowing up our causal inferences. More constructively, temporal order in the graph focusses attention on imperatives for data collection, offering guidance and hope.
 
+## Conclusions
+
+Chronologically ordered causal diagrams provide significant enrichment to causal inference endeavours. Their utility is not limited to just modelling; they serve as valuable guides for data collection. When used judiciously, within the frameworks of counterfactual data science that support causal inference, causal diagrams can substantially enhance the pursuit of accurate and robust causal understanding.
+
 <!-- Causal inference is essential for science because it offers a way to quantify the effects of interventions. However, it is only a small part of science. Particularly in the historical sciences, the fundamental assumptions of causal inference may not be applicable. We should not abandon sciences that do not quantify causal effect estimates. -->
 
 <!-- Many human scientists, including evolutionary human scientists, have yet to adopt causal inferential approaches. In most fields, the correlational methods that have held sway in the past still hold sway. We are a long way from overstating the importance of causal inference. -->
 
+### Pitfalls
 
+1.  Misunderstanding the role of causal diagrams within the framework of counter-factual data science.
 
+2.  The causal diagram contains variables without time indices. This omission may suggest that the researcher has not adequately considered the timing of events.
 
+3.  The graph has excessive nodes. No effort has been made to simplify the model by retaining only those nodes and edges essential for clarifying the identification problem.
+
+4.  The study is an experiment, but arrows are leading into the manipulation, revealing confusion.
+
+5.  Bias is incorrectly described. The exposure and outcome are d-separated, yet bias is claimed. This indicates a misunderstanding; the bias probably relates to generalisability or transportability, not to confounding.
+
+6.  Overlooking the representation of selection bias on the graph, particularly post-exposure selection bias from attrition or missingness.
+
+7.  Neglecting to use causal diagrams during the design phase of research before data collection.
+
+8.  Ignoring structural assumptions in classical measurement theory, such as in latent factor models, and blindly using construct measures derived from factor analysis.
+
+9.  Trying to represent interactions and non-linear dynamics on a causal diagram, which can lead to confusion about their purposes.
+
+10. Failing to realise that structural equation models are not structural models. They are tools for statistical analysis, better termed as "correlational equation models." Coefficients from these models often lack causal interpretations.
+
+11. Neglecting the fact that conventional models such as multi-level (or mixed effects) models are unsuitable when treatment-confounder feedback is present. Illustrating treatment-confounder feedback on a graph underscores this point.[^16]
+
+[^16]: G-methods are appropriate for causal estimation in dynamic longitudinal settings. Their effectiveness notwithstanding, many evolutionary human scientists have not adopted them.\[\^g-methods-cites\]
+
+For good introductions see: @hernán2023 @díaz2021 @vanderweele2015 @hoffman2022 @hoffman2023 @chatton2020 @shiba2021 @sjölander2016 @breskin2020 @vanderweele2009a @vansteelandt2012 @shi2021.)
 
 ### Concluding remarks
 
