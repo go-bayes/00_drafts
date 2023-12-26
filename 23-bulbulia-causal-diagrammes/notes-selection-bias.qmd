@@ -1,28 +1,40 @@
 ---
-title: "Selection Bias: A Brief Guide for the Perplexed"
-abstract: | 
- Selection bias arises when the sample used in a study does not accurately represent the target population, skewing causal inferences. I briefly review key concept of selection bias as it is used in the potential outcomes framework in causal data science, and explain their importance for evolutionary human scientists. Unlike confounding bias, which results from unaccounted variables that influence both the treatment and the outcome, selection bias stems from the process of choosing the units in a study sample, or from differential attrition of these units. I explain how these distinctions are useful for applied researchers in the evolutionary human scientists, focussing on research design, data collection, and data analysis in longitudinal studies.
+title: "Measurement Bias in Causal Inference: Advice for Evolutionary Human Scientists"
 author: 
-  - name: Joseph A. Bulbulia
-    affiliation: Victoria University of Wellington, New Zealand
-    orcid_id: 0000-0002-5861-2056
-    email: joseph.bulbulia@vuw.ac.nz
-    department: Psychology/Centre for Applied Cross-Cultural Research
-    city: Wellington
-    country: New Zealand
-    url: www.wgtn.ac.nz/cacr 
-    corresponding: yes
-execute:
+  name: Joseph A. Bulbulia
+  orcid: 0000-0002-5861-2056
+  email: joseph.bulbulia@vuw.ac.nz
+  affiliation: 
+    - name: Victoria University of Wellington, New Zealand, School of Psychology, Centre for Applied Cross-Cultural Research
+      department: Psychology/Centre for Applied Cross-Cultural Research
+      city: Wellington
+      country: New Zealand
+      url: www.wgtn.ac.nz/cacr
+abstract: > 
+  Measurement error stems from inaccuracies in the measurement or categorisation of variables. The
+  integrity of measurements is paramount to every science, yet measurement error is nearly inevitable.
+  This article reviews structural approaches to measurement error bias and uses causal diagrams to
+  elucidate distinct pathways and threats to causal inference. I consider four types of measurement error
+  — uncorrelated non-differential, uncorrelated differential, correlated non-differential, and correlated
+  differential — each with unique implications for research design and analysis. Examples illustrate the
+  challenges of measurement in comparative cultural research and the structural assumptions underlying
+  latent factor models in panel designs. These results suggust the threats of measurement bias to causal
+  inference are greater than has been appreciated, and underscore the importance of obtaining accurate
+  measurements, the inability in human research of standard psychometric models to very accuracy, and the
+  importance of conducting sensitivity analyses.
+  execute:
   warning: false
   eval: true
   echo: false
   include: true
 keywords:
-  - DAGS (Directed Acyclic Graphs)
+  - Directed Acyclic Graph
   - Causal Inference
   - Confounding
-  - History
-  - Psychology
+  - Feedback
+  - Interaction
+  - Mediation
+  - Moderation
   - Panel
 format:
   pdf:
@@ -41,8 +53,21 @@ format:
     include-in-header:
        - text: |
            \usepackage{cancel}
+           \usepackage{xcolor}
+           \usepackage[noblocks]{authblk}
+           \renewcommand*{\Authsep}{, }
+           \renewcommand*{\Authand}{, }
+           \renewcommand*{\Authands}{, }
+           \renewcommand\Affilfont{\small}
 date: last-modified
-csl: camb-a.csl
+execute:
+  echo: false
+  warning: false
+  include: false
+  eval: true
+fontfamily: libertinus
+bibliography: ../references.bib
+csl: ../camb-a.csl
 ---
 ```{r}
 #| label: load-libraries
@@ -98,10 +123,8 @@ push_mods <-
 
 ### Introduction to selection bias
 
-Terminology in causal inference can be a bit of a dog's breakfast. This is particularly apparent in the concept of 'selection bias,' where researchers are confronted with a confusing array of meanings and distinctions.
-
-In this research note, I will concentrate on a prevalent interpretation within the potential outcomes framework of causal data science. Grasping selection bias in this particular context is vital for ensuring the validity and generalisability of our causal inferences. Before we define selection bias, however, it is important to first define the equally jumbled concepts of 'source' and 'target' populations, as well as 'generalisability' and 'transportability'.
-
+Terminology in causal data science is a dog's breakfast. Researchers are confronted with a confusing array of meanings and distinctions. This is particularly apparent in the concept of 'selection bias.' In this research note, I examine selection bias as it is considered in the potential outcomes framework of causal data science. Understanding and addressing selection bias so conceived is essential for ensuring the validity and applicability of research findings beyond the immediate study context [@hernán2017].
+Before we define selection bias we require the following definitions:
 
 1. **Source Population:** the population from which individuals are sampled for a study.
 
@@ -124,32 +147,21 @@ L_{t0}\to A_{t1} \to Y_{t2}
 $$
 
 
-We are now ready to remove confusion from our definition of selection bias.
+We are now ready to define selection bias.
 
  **Selection bias** occurs when the study group (source population) does not accurately represent the group of interest (target population). There are two intervals in the temporal process that selection bias can affect the quality and bias of causal inferences: 
  
  (1) Selection bias during pre-randomisation; 
  (2) Selection bias post-randomisation. 
  
- By "randomisation", I include pseudo-randomisation of observational studies. [Cite other paper.]
+ By 'randomisation', I include the pseudo-randomisation of observational studies. [Cite other paper.]
  
- Understanding and addressing selection bias is essential for ensuring the validity and applicability of research findings beyond the immediate study context [@hernán2017].
 
 ### Selection Bias Post Randomisation 
 
 <!-- To understand the relationship of selection bias to confounding bias, it is useful to consider the following topology of confounding developed by Suzuki and colleagues [@suzuki2016; @suzuki2014; @suzuki2020].[^18] -->
 
 <!-- [^18]: This typology builds on VanderWeele's work [@vanderweele2012]. -->
-
-<!-- 1.  **Confounding in distribution**: if the sample exposed to each level of exposure is representative of the target population, we say there is no confounding in the distribution of the exposure's effect on the outcome. -->
-
-<!-- 2.  **Confounding in expectation**: if the exposure assignment mechanism balances the confounders across each level of contrast in the exposure, we say there is no confounding in the expectation of the exposure's effect on the outcome. -->
-
-<!-- 3.  **Confounding in measure**: if a specific measure of interest matches the corresponding causal measure in the target population, we say there is no confounding in the measure of the exposure's effect on the outcome. As discussed previously concerning interaction, our inference of a causal effect can depend on the scale of the causal effect measure. -->
-
-<!-- 4.  **Realised confounding**: if a specific exposure assignment leads to balance, irrespective of the exposure assignment mechanism, we say there is no realised confounding of the exposure's effect on the outcome. This concept is essential because, even in randomised experiments, randomisation might not eliminate chance imbalances in the distributions of confounders across the exposures. -->
-
-<!-- Each of these four concepts plays a role in "confounding" discussions, and all are crucial when evaluating a study's scientific merit. However, each concept highlights different issues. -->
 
 Consider @fig-1, which presents a scenario in which there is no marginal causal effect of exposure on the outcome, yet a degree of selection into the study. We will assume randomisation succeeded so there are no arrows into $A$. As @fig-1 shows, randomising from a selected group does not result in confounding bias. Despite selection, the null effect in the source population is not biased for the target population [@hernán2004; @greenland1977].[^1]  Under the null, selection does not induce "confounding in expectation" [@suzuki2016; @suzuki2014; @suzuki2020]. 
 
