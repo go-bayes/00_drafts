@@ -1,0 +1,717 @@
+---
+title: "Measurement Bias in Causal Inference: Advice for Evolutionary Human Scientists"
+abstract: | 
+Measurement error stems from inaccuracies in the measurement or categorisation of variables. The integrity of measurements is paramount to every science, yet measurement error is nearly inevitable. This article reviews structural approaches to measurement error bias and uses causal diagrams to elucidate distinct pathways and threats to causal inference. I consider four types of measurement error — uncorrelated non-differential, uncorrelated differential, correlated non-differential, and correlated differential — each with unique implications for research design and analysis. Examples illustrate the challenges of measurement in comparative cultural research and the structural assumptions underlying latent factor models in panel designs. These results suggust the threats of measurement bias to causal inference are greater than has been appreciated, and underscore the importance of obtaining accurate measurements, the inability in human research of standard psychometric models to very accuracy, and the importance of conducting sensitivity analyses.
+author: 
+  name: Joseph A. Bulbulia
+  orcid: 0000-0002-5861-2056
+  email: joseph.bulbulia@vuw.ac.nz
+  affiliation: 
+    - name: Victoria University of Wellington, New Zealand, School of Psychology, Centre for Applied Cross-Cultural Research
+      department: Psychology/Centre for Applied Cross-Cultural Research
+      city: Wellington
+      country: New Zealand
+      url: www.wgtn.ac.nz/cacr
+execute:
+  warning: false
+  eval: true
+  echo: false
+  include: true
+keywords:
+  - DAGS (Directed Acyclic Graphs)
+  - Causal Inference
+  - Confounding
+  - History
+  - Psychology
+  - Panel
+format:
+  pdf:
+    sanitize: true
+    keep-tex: true
+    link-citations: true
+    colorlinks: true
+    documentclass: article
+    classoption: [singlecolumn]
+    lof: false
+    lot: false
+    geometry:
+      - top=30mm
+      - left=20mm
+      - heightrounded
+    include-in-header:
+       - text: |
+           \usepackage{cancel}
+date: last-modified
+csl: camb-a.csl
+---
+
+
+```{r}
+#| label: load-libraries
+#| echo: false
+#| include: false
+#| eval: false
+
+#   html:
+#    html-math-method: katex
+
+# Include in YAML for Latex
+# sanitize: true
+# keep-tex: true
+# include-in-header:
+#       - text: |
+#           \usepackage{cancel}
+
+
+# for making graphs
+library("tinytex")
+library(extrafont)
+loadfonts(device = "all")
+
+#quarto install tinytex --update-path
+
+# libraries for jb (when internet is not accessible)
+# read libraries
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+# read functions
+source("/Users/joseph/GIT/templates/functions/funs.R")
+
+# read data/ set to path in your computer
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
+  )
+
+# for saving models. # set path fo your computer
+push_mods <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-causal-dags"
+  )
+
+
+# keywords: potential outcomes, DAGs, causal inference, evolution, religion, measurement, tutorial
+# 10.31234/osf.io/b23k7
+
+#20012 words
+# 75 refs
+# 32 figs
+```
+
+ Measurement error is inescapable, influencing even the most meticulously designed studies. This article focuses on the problems that measurement error brings to causal data science, using causal diagrams to examine distinct pathways by which measurement error spoils inference.  A structural approach reveals the need for vigilence in the formulation of measurement instruments under the guidance of domain experts, the inadequacy of standard statistical methods for validating measurements, the need to build and maintain  externally valided time-series data that minimises directed or correlated errors, and the need to conduct conduct causal sensitivity analyses.
+
+
+### Graphical conventions
+
+Here, I employ chronologically ordered causal diagrams to clarify structural sources of bias arising from variables measured with error. I adopt the following conventions: 
+
+**Nodes**:
+
+-   $A$: denotes the true treatment or intervention of interest.
+-   $Y$: denotes the true outcome of interest.
+-   $L$: denotes the true confounder or confounder set.
+-   $U$: denotes an unmeasured confounder.
+-   $A'$: denotes a descendant of the true treatment or intervention, including its measurement.
+-   $Y'$: denotes a descendant of the true outcome, including its measurement.
+-   $L'$: denotes a descendant of the true confounder or confounder set $L'$ or an unmeasured confounder $U$.
+
+**Arrow**: 
+- denotes a causal path
+
+**Red arrow**:
+- denotes an open path between exposure and outcome.
+
+**Task**
+-  The purpose of a graph is evaluate the identication problem: namely 
+
+
+### Measurement Error in the confounder
+
+@fig-1 reveals that flawless measurements of exposure and outcome are nevertheless vulnerable to confounding bias introduced by measurement errors in confounders. Accurately measuring confounders is critical for limiting bias in in confounding control. Moreover, sensitivity analysis becomes an indispensable tool in evaluating the potential impact of these errors.[^1]
+
+[^1]: A simple yet powerful form of sensitivity analysis involves the computation of E-Values. E-Values calculate the minimal strength of association that an unmeasured confounder would require with both the exposure and outcome, beyond the measured confounders, to negate the observed exposure-outcome association (refer to the R package `EValue`:[@mathur2018]).
+
+```{tikz}
+#| label: fig-1
+#| fig-cap: "Causal Diagram Illustrating Measurement Error in Confounders Note: The figure demonstrates that measurement errors in confounders can open bias-inducing paths between exposure and outcome, even with perfect measurements of these two variables. The biasing path is highlighted in red."
+#| out-width: 60%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (L) at (0, 0) {$L$};
+\node [rectangle, draw=black] (Lp) at (0, 1) {$L^\prime$};
+\node [rectangle, draw=white] (A) at (2, 0) {$A$};
+\node [rectangle, draw=white] (Y) at (4, 0) {$Y$};
+
+\draw [-latex, draw=black] (L) to (Lp);
+\draw [-latex, draw=red, bend right] (L) to (Y);
+\draw [-latex, draw=red] (L) to (A);
+
+
+
+\end{tikzpicture}
+
+```
+
+Acknowledging the pervasiveness of measurement error and its potential influence on our research, we will further explore how structural approaches to understanding measurement error clarify the nature of the problem, methods for adjustment, and the unceasing need for sensitivity analyses.
+
+Following @hernán2009, we define structural concepts of measurement error and utilise causal diagrams to understand how such errors may bias causal effect estimates. A deeper understanding of these concepts (developed in [@vanderweele2012]) will equip us to better manage and account for assessing bias from measurement error in causal inference.
+
+### Uncorrelated non-differential (undirected) measurement error
+
+One of the fundamental types of measurement error in causal research is the uncorrelated non-differential (or undirected) measurement error. This form of error occurs when the inaccuracies in measuring exposure and outcome are unrelated to each other.
+
+#### Example
+
+Consider the hypothetical task of estimating the causal effect of belief in Big Gods on social complexity in ancient societies. Imagine if these societies randomly omitted or inaccurately recorded details about their beliefs in Big Gods and indicators of social complexity in their records. Alternatively, suppose the preservation of such records varied across cultures for reasons unrelated to these beliefs or social complexities. In these scenarios, the errors in documenting beliefs and social complexity are random and not interconnected. These examples embody settings in which measurement errors are uncorrelated non-differential in respect of the treatments and outcomes.
+
+
+```{tikz}
+#| label: fig-2
+#| fig-cap: "Causal Diagram of Uncorrelated Non-Differential Measurement Error: The figure illustrates that this type of measurement error does not bias estimates under null conditions but can attenuate true effects in the presence of an actual exposure-outcome effect."
+#| out-width: 60%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (UA) at (0, 1) {U$_A$};
+\node [rectangle, draw=white] (UY) at (2, 2) {U$_Y$};
+
+\node [rectangle, draw=white] (A1) at (2, 1) {$A^{\prime}_{1}$};
+\node [rectangle, draw=white] (Y2) at (5, 1) {$Y^{\prime}_{2}$};
+\node [rectangle, draw=white] (Aeta1) at (2, 0) {$A_1$};
+\node [rectangle, draw=white] (Yeta2) at (5, 0) {$Y_2$};
+
+
+\draw [-latex, draw=black] (UA) to (A1);
+\draw [-latex, draw=black] (UY) to (Y2);
+\draw [-latex, draw=black] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+
+\end{tikzpicture}
+```
+
+#### Affect on Causal Inference
+
+Interestingly, this type of measurement error does not induce bias under null conditions, meaning when there is no actual effect of exposure on the outcome. This is evident in our causal diagram @fig-2, where d-separation is maintained, and no backdoor paths are opened from the measurement errors. However, in scenarios where the exposure affects the outcome, such non-differential measurement errors can lead to attenuated causal effect estimates. Therefore, while uncorrelated non-differential (undirected) measurement errors do not structurally bias results under null conditions, their presence can still pose significant challenges to valid causal inference in the presence of true causal effects.
+
+
+### 2. Uncorrelated differential (directed) measurement error
+
+As shown in @fig-dag-indep-d-effect, uncorrelated differential (or directed) measurement error occurs when the measurement errors are related to the level of exposure or outcome but not to each other. For instance, societies with stronger beliefs in Big Gods might have more or less detailed records of social complexity. Suppose that, in the absence of any intervention on beliefs in Gods, there is no association between the measurement errors. Here, the errors are differential as they depend on the intensity of religious beliefs but are uncorrelated as the errors in documenting beliefs in Big Gods and social complexity are otherwise independent. Uncorrelated differential (or directed) measurement error is presented in @fig-dag-indep-d-effect and leads to bias under the null, indicated by the red path. Equivalently, we may say that uncorrelated differential (or directed) measurement error opens a backdoor path between the exposure and the outcome.
+
+Note that the bias presented in @fig-dag-indep-d-effect, an example of directed measurement error, also describes the bias we considered when there is panel attrition and which the exposure affects selection (CITE). In that scenario, the outcome in the selected group is measured with error -- it no longer represents the measurement of the outcome in the source population at baseline -- furthermore, this error is affected by exposure. The previous example described bias in estimation from the vantage point of collider stratification; however, we can also explain the distortion as directed measurement bias.
+
+```{tikz}
+#| label: fig-dag-indep-d-effect
+#| fig-cap: "Directed independent (uncorrelated) measurement error can bias effect estimates under the null. This bias is indicated by the red paths."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+\node [rectangle, draw=white] (UA) at (0, 0) {U$_A$};
+
+\node [rectangle, draw=white] (A1) at (2, 0) {$A^{\prime}_{1}$};
+\node [rectangle, draw=white] (UY) at (4, 0) {U$_Y$};
+
+\node [rectangle, draw=white] (Y2) at (6, 0) {$Y^{\prime}_{2}$};
+\node [rectangle, draw=white] (Aeta1) at (2, -1) {$A_{1}$};
+\node [rectangle, draw=white] (Yeta2) at (6, -1) {$Y_{2}$};
+
+
+\draw [-latex, draw=black] (UA) to (A1);
+\draw [-latex, draw=red] (UY) to (Y2);
+\draw [-latex, draw=red] (Aeta1) to (UY);
+\draw [-latex, draw=red] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+%\draw [cor, draw=black, bend left] (Aeta1) to (UA);
+%\draw [cor, draw=red, bend left] (Yeta2) to (UY);
+\end{tikzpicture}
+```
+
+### 3. Correlated non-differential (undirected) measurement error
+
+As shown, @fig-dag-dep-u-effect correlated non-differential (undirected) measurement error occurs when the errors in measuring both the exposure and outcome are related independently of the exposure. The scenario is presented in @fig-dag-dep-u-effect. Imagine that some societies had more advanced record-keeping systems that resulted in more accurate and detailed accounts of both beliefs in Big Gods and social complexity. Furthermore, imagine that record keepers provide better information about religious beliefs. In this case, the errors between beliefs in Big Gods and social complexity are correlated because the accuracy of records for both variables is influenced by the same underlying factor (the record-keeping abilities). However, the errors are not directed insofar as levels of religious beliefs and social complexity do not affect the assumed bias in record keeping. Correlated non-differential measurement error may induce bias under the null, indicated by the red path in @fig-dag-dep-u-effect.
+
+```{tikz}
+#| label: fig-dag-dep-u-effect
+#| fig-cap: "Correlated undirected measurement error can distort causal effect estimates under the null, indicated by the red path."
+#| out-width: 80%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=white] (UAY) at (0, 2) {U$_{AY}$};
+\node [rectangle, draw=white] (UA) at (2, 1) {U$_A$};
+\node [rectangle, draw=white] (UY) at (2, 3) {U$_Y$};
+
+\node [rectangle, draw=white] (A1) at (4, 1) {$A^{\prime}_{1}$};
+\node [rectangle, draw=white] (Y2) at (7, 1) {$Y^{\prime}_{2}$};
+\node [rectangle, draw=white] (Aeta1) at (4, 0) {$A_{1}$};
+\node [rectangle, draw=white] (Yeta2) at (7, 0) {$Y_{1}$};
+
+
+\draw [-latex, draw=red] (UAY) to (UA);
+\draw [-latex, draw=red] (UAY) to (UY);
+\draw [-latex, draw=red] (UA) to (A1);
+\draw [-latex, draw=red] (UY) to (Y2);
+\draw [-latex, draw=red] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+%\draw [cor, draw=red, bend left] (Aeta1) to (UA);
+%\draw [cor, draw=red, bend left = 5] (Yeta2) to (UY);
+
+
+\end{tikzpicture}
+
+```
+
+### 4. Correlated differential (directed) measurement error
+
+Correlated differential (directed) measurement error occurs when the measurement errors are related independently of the exposure, and the exposure also affects levels of these correlated error terms. The structure of this bias is presented in @fig-dag-d-d. Suppose societies with stronger beliefs in Big Gods tend to record their religious beliefs and social structures more meticulously than others. Suppose further that religious elites conduct this record-keeping. The errors may be both correlated and differential if societies with beliefs in Big Gods tend to favour these religious elites, leading to biased records.
+
+Consider further the three-wave panel design, where we aim to estimate the effect of self-reported religious service attendance on self-reported monthly donations to charity. A set of confounders is included at baseline, comprising previous measures of religious service attendance and monthly donations to charity. Because our measures rely on self-reports, they may be especially prone to measurement error.
+
+Assume there is an unmeasured common cause affecting both the measurement error of religious service attendance and the measurement error of donations to charity. This bias might occur if individuals consistently over- or under-report their religious service attendance and donations due to social desirability bias.
+
+In Part 3, we discussed how including the exposure measured at baseline can reduce confounding in a three-wave panel design. By controlling for the baseline exposure, we effectively adjust for any static characteristics that cause a correlation between the exposure and outcome. Taking this further, including baseline measures in the analysis might mitigate the impact of measurement errors on causal effect estimation, provided the errors meet specific conditions.
+
+Consider a study with two time points: baseline and follow-up. Let $A_0$ and $A_1$ represent the true exposure levels at baseline and follow-up, respectively, and $Y_0$ and $Y_2$ represent the true outcomes at these respective time points. In practice, the observed or measured values may differ from the true values due to measurement error. We use primes to denote these measured values:
+
+-   $A'_0 = A_0 + UA_0$
+-   $A'_1 = A_1 + UA_1$
+-   $Y'_0 = Y_0 + UY_0$
+-   $Y'_2 = Y_2 + UY_2$
+
+Here, $UA_0$, $UA_1$, $UY_0$, and $UY_2$ are the additive measurement errors for exposure and outcome at baseline and follow-up, respectively. The primes on $A$ and $Y$ symbolise the values as they are observed, reflecting their true values and the corresponding measurement errors.
+
+By including $A'_0$ and $Y'_0$ as covariates, we aim better identify the incidence effect of a change in exposure from baseline to follow-up on the outcome. However, to mitigate bias arising from correlated measurement errors, the following conditions must hold:
+
+-   The expectation of the measurement errors is consistent over time: $E(UA_0) = E(UA_1)$ and $E(UY_0) = E(UY_2)$.
+-   The conditional correlation between the errors is zero given baseline measures: $Cov(UA_1, UY_2) = 0 | A'_0,Y'_0,L'_0$.
+
+Including measurements of the baseline exposure and baseline outcome can reduce undirected measurement errors, but the strategy require that the errors are both constant over time and undirected. If the errors vary over time or if the the exposure affects the error of the outcome then controlling for baseline measurements of the exposure and outcome will be inadequate for confounding control (see: [@keogh2020]).
+
+Consider a scenario where individuals attending religious services at wave 1 acquire greater social desirability bias, affecting their reporting. If the outcome at wave 2 is charitable giving, this bias could distort the real level of giving. Directed measurement bias could falsely link the increase in charity to religious service attendance, masking the true effect of over-reporting due to social desirability bias.
+
+In short, controlling for baseline exposure, while powerful for confounding control, is not a panacea. Confounding control requires careful consideration of the quality of measures across time and may require further steps, such as changing the wording of questions, to mitigate directed measurement error bias. For example, to bypass presentation bias, questions about charity from presentation bias that is affected by the exposure may focus on *received help* rather than *offered help*. This approach assumes that a more altruistic religious community would lead to a higher probability of receiving help, that the measure is relatively accurate, and that biases in reporting do not differ by exposure status.
+
+```{tikz}
+#| label: fig-dag-d-d
+#| fig-cap: "Directed dependent (correlated) measurement error leads to bias in causal effect estimates. Here, the exposure affects the measurement error of the outcome. Additionally, the measurement error of the exposure and outcome are correlated. These dynamics open pathways for bias, indicated by the red paths. Sructural sources of bias in measurement error must be evaluated, and sensitivity analyses  should be preformed to assess threats to causal inference."
+#| out-width: 100%
+#| echo: false
+
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+\node [rectangle, draw=white] (UAY) at (0, 0) {U$_{AY}$};
+\node [rectangle, draw=white] (UA) at (2, 0) {U$_A$};
+
+\node [rectangle, draw=white] (A1) at (4, 0)  {$A^{\prime}_{1}$};;
+\node [rectangle, draw=white] (UY) at (6, 0) {$U_Y$};
+
+\node [rectangle, draw=white] (Y2) at (8, 0)  {$Y^{\prime}_{2}$};
+\node [rectangle, draw=white] (Aeta1) at (4, -1)  {$A_{1}$};
+\node [rectangle, draw=white] (Yeta2) at (8, -1) {$Y_{2}$};
+
+
+\draw [-latex, draw=red] (UAY) to (UA);
+\draw [-latex, draw=red, bend left] (UAY) to (UY);
+\draw [-latex, draw=red] (UA) to (A1);
+\draw [-latex, draw=red] (UY) to (Y2);
+\draw [-latex, draw=red] (Aeta1) to (UY);
+\draw [-latex, draw=red] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+%\draw [cor, draw=red, bend left, dashed] (Aeta1) to (UA);
+%\draw [cor, draw=red, bend left] (Yeta2) to (UY);
+
+\end{tikzpicture}
+```
+
+### Using time-ordered causal diagrams to understand threats of correlated measurement error for causal inference comparative cultural research
+
+To comprehend the structural features that might undermine causal inferences in comparative cultural research, consider a simplified scenario. Imagine that before conducting cultural comparisons, the measurement errors of the exposure and outcome variables are uncorrelated, as illustrated in @fig-2. While measurement error can lead to a downward bias off the null, under the null, no bias occurs.
+
+However, when selecting study participants from different cultures -- cultures that inherently vary in interpretations and behaviours --- an unmeasured bias under the null can occur, as shown in @fig-dag-dep-u-effect-selection. To highlight this issue, we modify the causal diagram in @fig-2 to include participant selection. This act of comparative selection creates a new study population in which the error terms of measures become associated. We cannot condition on cultural membership to block these associations, as it was the act of conditioning that induced them in the new study population.
+
+If we did not undertake comparative sampling, the exposure and outcome would be d-separated under the given scenario, yielding no bias for separate studies, as shown in @fig-2. We cannot resort to stratifying on culture to address this bias, as it is the act of stratifying on culture that gives rise to correlated measurement errors. Conducting separate analyses by culture precludes generalisation, yet science seeks to find generalisations wherever it can. Human scientists strive to identify functions supporting transportable inferences wherever possible (see Part 2).
+
+Yet, given the myriad ways the true structures of the world can align with correlational models, we must be cautious when using conventional invariance testing thresholds as the arbiters for cultural science. Such tests should be considered exploratory tools. They can guide comparative research, but must not replace careful scientific thinking, informed by local expertise. In causal inference, decisions must be tailor-made to fit the specific situation at hand.
+
+```{tikz}
+#| label: fig-dag-dep-u-effect-selection
+#| fig-cap: "This figrue illustrates the introduction of measurement bias in comparative cross-cultural research. Selection at the baseline stage induces correlations in the exposure and outcome measurement errors, shown by red paths. The figure underscores the importance of clearly defining the source populationand the target population; in many comparative studies, the source population cannot coherently map onto any coherent targe population. Reserachers will often do better to restrict generalisations within cultures."
+#| out-width: 100%
+#| echo: false
+#| 
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations.markings}
+
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[every node/.append style={draw}]
+
+\node [rectangle, draw=black] (S) at (0, 2) {S};
+\node [rectangle, draw=white] (UAY) at (2, 2) {U$_{AY}$};
+\node [rectangle, draw=white] (UA) at (4, 1) {U$_A$};
+\node [rectangle, draw=white] (UY) at (4, 3) {U$_Y$};
+
+\node [rectangle, draw=white] (A1) at (6, 1) {$A^{\prime}_{1}$};
+\node [rectangle, draw=white] (Y2) at (8, 1) {$Y^{\prime}_{2}$};
+\node [rectangle, draw=white] (Aeta1) at (6, 0) {$A_{1}$};
+\node [rectangle, draw=white] (Yeta2) at (8, 0) {$Y_{2}$};
+
+
+\draw [-latex, draw=red] (UAY) to (UA);
+\draw [-latex, draw=red] (UAY) to (UY);
+\draw [-latex, draw=red] (UA) to (A1);
+\draw [-latex, draw=red, bend left=30] (UY) to (Y2);
+\draw [-latex, draw=red] (Aeta1) to (A1);
+\draw [-latex, draw=black] (Yeta2) to (Y2);
+%\draw [cor, draw=red, bend left] (Aeta1) to (UA);
+\draw [-latex, draw=black] (S) to (UAY);
+
+\end{tikzpicture}
+
+```
+
+### Using time-ordered causal diagrams to understand how post-outcome adjustment may diminish threats of directed measurement error in cultural evolutionary research
+
+Figure @fig-dag-measure-selection-0 illustrates a situation often encountered in the evolutionary science of historical cultures. Let us assume that there is no relationship between the actual exposure, $A$, and actual outcome, $Y$. Further, suppose that the outcome influences the measurement error of the exposure, denoted as $UA$. This influence is assumed to be directional, opening a backdoor path between the measured exposure, $A^{\prime}$, and the measured outcome, $Y'$. (For simplicity, we will not consider that the outcome is measured with error; this assumption does not alter the problem's structure.) Scenarios akin to that shown in @fig-dag-measure-selection-0 frequently emerge in historical evolutionary human science because history written by victors.
+
+```{tikz}
+#| label: fig-dag-measure-selection-0
+#| fig-cap: "The figure illustrates the bias arising measurement error of A' caused by Y. Although A and Y are independent, their measured counterparts, A' and Y', are not. The systematic error introduced by changes in Y opens a biasing path, signified in red."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (A) at (0, 0) {$A$};
+\node [rectangle, draw=white] (Y) at (2, 0) {$Y$};
+\node [rectangle, draw=white] (UA) at (5, 0) {$UA$};
+
+\node [rectangle, draw=white] (Ap) at (8, 0) {$A^\prime$};
+\node [rectangle, draw=white] (Yp) at (10, 0) {$Y^\prime$};
+
+
+\draw [-latex, draw=red, bend left] (Y) to (Yp);
+\draw [-latex, draw=red] (Y) to (UA);
+
+\draw [-latex, draw=red, bend right] (A) to (Ap);
+
+\draw [-latex, draw=red] (UA) to (Ap);
+
+\draw [-latex, draw=red, dotted] (UA) to (Ap);
+
+%\draw [cor, draw=red] (Ap) to (Yp);
+%\draw [cor,  draw=red ] (Ap) to (Yp);
+
+
+\end{tikzpicture}
+
+```
+
+@fig-dag-measure-selection exposes the structure of bias where post-outcome adjustment is necessary to mitigate or eliminate measurement bias instigated by the outcome itself. Assume our interest lies in quantifying the influence of belief in Big gods on social complexity. We assumed that highly complex societies amend history, eliminating traces of beliefs in lesser gods. If traces of beliefs in lesser gods were recoverable through sources such as language, cultural evolutoinary researchers would obtain better effect estimates. @fig-dag-measure-selection clarifies the intuition that recovering echoes of the silenced is worthwhile for enhancing the accuracy of our causal effect estimates.
+
+```{tikz}
+#| label: fig-dag-measure-selection
+#| fig-cap: "Causal diagram elucidates how refined measurements attenuate bias. By recovering measures undistorted by past outcomes, we attenuate the directed measurement error. We repesent this scenario on the graph by removing the path from Y to UA."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (A) at (0, 0) {$A$};
+\node [rectangle, draw=white] (Y) at (2, 0) {$Y$};
+\node [rectangle, draw=white] (UA) at (5, 0) {$UA$};
+
+\node [rectangle, draw=white] (Ap) at (8, 0) {$A^\prime$};
+\node [rectangle, draw=white] (Yp) at (10, 0) {$Y^\prime$};
+
+
+\draw [-latex, draw=black, bend left = 30] (Y) to (Yp);
+
+%\draw [-latex, draw=black, dotted] (Y) to (UA);
+
+\draw [-latex, draw=black, bend right] (A) to (Ap);
+
+\draw [-latex, draw=black] (UA) to (Ap);
+
+\draw [-latex, draw=black] (UA) to (Ap);
+
+
+
+\end{tikzpicture}
+
+
+```
+
+### Using time-ordered causal diagrams to clarify the structural assumptions of latent factor models
+
+Human evolutionary scientists who wish to collect time-series data by measuring individuals over time in panel designs may consider using multi-item constructs in their panel studies. What are the implications of doing so? Multi-item constructs have long been favoured by traditional psychometric theory. However, classical psychometric theory developed without the benefit of causal approaches. VanderWeele argues that difficulties surface when assessing the causal assumptions of formative and reflective latent factor models [@vanderweele2022]. These models are based on statistical formulations. However, the causal inferences they embody cannot be determined solely by statistical models. This discussion will concentrate on reflective models, although the concerns raised are equally applicable to formative models, and I refer interested readers to: [@vanderweele2022].[^21]
+
+[^21]: In formative models, observed variables are perceived to generate the latent variable. This latent variable is assumed to be a composite of the observed variables, $X_i$, mathematically expressed as $\eta = \sum_i\lambda_i X_i$. The structural assumption is that a single latent variable causally influences the observed variables. This structural is depicted in @fig-structural-assumptions-reflective-model.
+
+```{tikz}
+#| label: fig-structural-assumptions-reflective-model
+#| fig-cap: "Structural assumptions of the reflective model imply a univariate reality causes the outcome. These assumptions are strong because they exclude multivariate causes of the indicators for constructs, as well as independent effects of the indicators on outcomes. Blue line indicates assumed causal path. The figure is adapted from VanderWeele 2022."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=black] (L) at (0, 0) {L};
+\node [rectangle, draw=white] (eta) at (2, 0) {$\eta$};
+\node [rectangle, draw=white] (X1) at (4, 1) {X1};
+\node [rectangle, draw=white] (X2) at (4, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (4, -1) {X$_n$};
+\node [rectangle, draw=white] (A) at (6, 0) {A};
+
+\node [rectangle, draw=white] (Y) at (8, 0) {Y};
+
+\draw [-latex, bend right=80, draw=black] (L) to (Y);
+\draw [-latex, draw=black] (L) to (eta);
+\draw [-latex, bend left=90, draw=blue] (eta) to (Y);
+\draw [-latex, draw=black] (eta) to (X1);
+\draw [-latex, draw=black] (eta) to (X2);
+\draw [-latex, draw=black] (eta) to (Xn);
+
+\draw [-latex, draw=black] (X1) to (A);
+\draw [-latex, draw=black] (X2) to (A);
+\draw [-latex, draw=black] (Xn) to (A);
+
+\end{tikzpicture}
+```
+
+However, VanderWeele notes that the statistical model is consistent with multiple causal models. The presumption that a univariate latent reality underlies the reflective (and formative) latent factor models is a stronger assumption than previously acknowledged. For example, an alternative structural model equally compatible with the data is presented in @fig-dag-multivariate-reality-again Here, multivariate reality gives rise to the indicators from which we draw our measures. Indeed, for specific widely used measures, the assumption of a univariate reality is so strong that they make testable assumptions. VanderWeele and Vansteeland test the empirical examination assumptions of widely used depression scales and find the assumptions fail [@vanderweele2022b]. Although we cannot generally determine which structural models are accurate, the data rule out the univariate model in the case that @vanderweele2022b examine.
+
+```{tikz}
+#| label: fig-dag-multivariate-reality-again
+#| fig-cap: "Vanderweele's example of an alternative structural model that is consistent with the statistical model that underpins reflective construct models. Here, a multivariate reality gives rise to the indicators from which we draw our measures. Additional paths from the latent factors to the outcome are presented in Blue. (Confounders are omited for simplicity). This figure is adapted from VanderWeele 2022."
+#| out-width: 60%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+\node [draw=white] (eta1) at (0, 1) {$\eta_1$};
+\node [rectangle, draw=white] (eta2) at (0, 0) {$\vdots$};
+\node [rectangle, draw=white] (etan) at (0, -1) {$\eta_n$};
+\node [rectangle, draw=white] (X1) at (2, 1) {X$_1$};
+\node [rectangle, draw=white] (X2) at (2, 0) {$\vdots$};
+\node [rectangle, draw=white] (Xn) at (2, -1 ) {X$_n$};
+\node [rectangle, draw=white] (A) at (4, 0 ) {A};
+\node [rectangle, draw=white] (Y) at (6, 0 ) {Y};
+
+
+
+\draw [-latex, draw=black] (eta1) to (X1);
+\draw [-latex, draw=black] (eta2) to (X2);
+\draw [-latex, draw=black] (etan) to (Xn);
+
+\draw [-latex, draw=black] (X1) to (A);
+\draw [-latex, draw=black] (X2) to (A);
+\draw [-latex, draw=black] (Xn) to (A);
+\draw [-latex, bend left=80, draw=blue] (eta1) to (Y);
+\draw [-latex, bend right=80, draw=blue] (etan) to (Y);
+
+\end{tikzpicture}
+```
+
+Although the assumptions of a univariate reality that underlie traditional latent factor models are not generally credible, VanderWeele suggests that construct measures can still find application in research. On VanderWeele's view, the key to salvaging latent factor models is to extend the theory of causal inference under multiple interventions to latent factor models [@vanderweele2022]. Specifically, by framing measured variables as functions of indicators that may map onto a complex multivariate underlying reality, we may approach them as coarsened indicators for that reality. As long as the potential outcomes of these coarsened indicators are conditionally independent of their treatment assignments and there is no unmeasured confounding, we may assume the constructs to consistently estimate the causal effects of the complex reality that gives rise to them.
+
+Although we may agree with VanderWeele that the theory of causal inference under multiple interventions might offer some redemption to factor models, we might still exercise caution when using construct measures. Similar to the theory of causal inference under multiple versions of treatments, there are situations where guaranteeing conditional exchangeability might be unfeasible. Furthermore, even when such assurance is possible, difficulties might arise in interpreting the results or endorsing policy interventions. In the following section, I develop a related concern arising from threats to confounding arising from directed measurement error from the potentially multivariate reality that underlies construct measures.
+
+### Causal diagrams highlight biases arising from measurement errors within constructs
+
+Consider a three-wave panel with the assumption that no unmeasured confounding exists. We represent the exposure $A$ as a function of indicators, $A_{f(A_1, A_2, ..., A_n)}$, representing a coarsened state of a multivariate reality. Each component of this reality corresponds to a structural element, represented as $\eta_{A_1}, \eta_{A_2}, ..., \eta_{A_n}$, each with associated error terms, $U\eta_{A_1}, U\eta_{A_2}, ..., U\eta_{A_n}$.
+
+We can similarly conceptualise the outcome $Y$, as a function of indicators, $Y_{f(Y_1, Y_2, ..., Y_n)}$, representing a latent reality. This latent reality is composed of the components $\eta_{Y_1}, \eta_{Y_2}, ..., \eta_{Y_n}$, each with their corresponding error terms $U\eta_{Y_1}, U\eta_{Y_2}, ..., U\eta_{Y_n}$. For simplicity, we leave out baseline confounders and imagine a randomised experiment.
+
+@fig-dag-coarsen-measurement-error depicts this assumed reality and outlines potential confounding paths due to directed measurement error from the indicators of the exposure, measured with error, to the indicators or the outcome, measured with error. Each path consists of a structural component $\eta_{A_n}$ and its associated error term $U\eta_{Y_n}$. We identify three potential confounding paths resulting from directed measurement error.
+
+The potential for confounding from measurement error in panel designs fundamentally relies on the relationships and dependencies among variables, not their quantity. However, it is worth emphasising that, in theory, an increase in the number of latent states or error terms may enhance the potential for confounding. Under simplifying assumptions, the potential direct paths from the exposure to the outcome are given by the product of the number of components of the exposure and the number of error terms associated with the outcome, symbolically represented as $\eta A_n \times U\eta_{Y_n}$. In this simplified scenario, each latent variable connected to exposure could influence every error term of an outcome, creating a complex network of confounding paths.
+
+Causal diagrams, when applied to measurement error in latent factor models, underscore the necessity of thorough scrutiny of construct measures in evolutionary human sciences. Although no universal rule exists, researchers may sometimes choose to use single-item measures. Each case, however, requires a meticulous investigation of the items' definitions, probable interpretations, and potential causal implications over time. Composite scales can enhance efficiency. If their underlying assumptions make sense, it is sensible to use them. Yet, often these assumptions will not hold. Human evolutionary scientists -- as well as other human scientists -- need to cultivate the habits for evaluating the specifics of each research question within its context.
+
+```{tikz}
+#| label: fig-dag-coarsen-measurement-error
+#| fig-cap: "Correlated, undirected measurement error distorts causal effect estimates under the null, depicted by the red path. This distortion is a potential issue with multi-item factor models. Their popularity notwithstanding, a careful consideration of measurement bias underscores the necessity to tailor measurement strategies to specific research contexts."
+#| out-width: 100%
+#| echo: false
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (aa1) at (0, 0) {$\eta_{A1}$};
+\node [rectangle, draw=white] (aa2) at (2, 0) {$\eta_{A2}$};
+\node [rectangle, draw=white] (aa3) at (4, 0) {$\eta_{A3}$};
+
+\node [rectangle, draw=white] (a1) at (0, 1) {$A_1$};
+\node [rectangle, draw=white] (a2) at (2, 1) {$A_2$};
+\node [rectangle, draw=white] (a3) at (4, 1) {$A_3$};
+
+\node [rectangle, draw=white] (Uaa1) at (0, 2) {$U_{A1}$};
+\node [rectangle, draw=white] (Uaa2) at (2, 2) {$U_{A2}$};
+\node [rectangle, draw=white] (Uaa3) at (4, 2) {$U_{A3}$};
+
+\node [rectangle, draw=white] (yy1) at (10, 0) {$\eta_{Y1}$};
+\node [rectangle, draw=white] (yy2) at (12, 0) {$\eta_{Y2}$};
+\node [rectangle, draw=white] (yy3) at (14, 0) {$\eta_{Y3}$};
+
+\node [rectangle, draw=white] (y1) at (10, 1) {$Y_1$};
+\node [rectangle, draw=white] (y2) at (12, 1) {$Y_2$};
+\node [rectangle, draw=white] (y3) at (14, 1) {$Y_3$};
+
+\node [rectangle, draw=white] (Uyy1) at (10, 2) {$U_{Y1}$};
+\node [rectangle, draw=white] (Uyy2) at (12, 2) {$U_{Y2}$};
+\node [rectangle, draw=white] (Uyy3) at (14, 2) {$U_{Y3}$};
+
+\node [rectangle, draw=white] (A) at (6, 1) {$A_{f(A_1,A_2,A_3)}^{\textbf{time 1}}$};
+\node [rectangle, draw=white] (Y) at (16, 1) {$Y_{f(Y_1,Y_2,Y_3)}^{\textbf{time 2}}$};
+
+\draw [-latex, draw=black] (aa1) to (a1);
+\draw [-latex, draw=black] (aa2) to (a2);
+\draw [-latex, draw=red] (aa3) to (a3);
+
+\draw [-latex, draw=black] (Uaa1) to (a1);
+\draw [-latex, draw=black] (Uaa2) to (a2);
+\draw [-latex, draw=black] (Uaa3) to (a3);
+
+\draw [-latex, draw=black] (yy1) to (y1);
+\draw [-latex, draw=black] (yy2) to (y2);
+\draw [-latex, draw=black] (yy3) to (y3);
+
+\draw [-latex, draw=black] (Uyy1) to (y1);
+\draw [-latex, draw=red] (Uyy2) to (y2);
+\draw [-latex, draw=red] (Uyy3) to (y3);
+
+\draw [-latex, draw=red] (a3) to (A);
+\draw [-latex, draw=red] (y3) to (Y);
+
+\draw [-latex, draw=red, bend left = 60] (aa3) to (Uyy2);
+\draw [-latex, draw=red, bend left = 60] (aa3) to (Uyy3);
+
+\end{tikzpicture}
+
+```
+
+### Summary
+
+We describe sources of bias from measurement error in repeated measures data designs. We examined four types of measurement error bias, assessing how each might skew inference. Although adjustments for the baseline exposure and baseline outcome can reduce confounding -- and isolate incidence effects -- the strategy is not a panacea. Often the exposure, or the source of error in its measurement, may plausibly affect the measurement of the outcome. In such cases, the correlations we obtain may be biased indicators of causation.
+
+A host of useful resources exists for addressing measurement error, including the works of @keogh2020 @buonaccorsi2010 @shi2021 @valeri2014 and @bandalos2018. Additionally, specialist knowledge may often indicate the direction of influence in the associations of measurement error terms, whether positive or negative [@suzuki2020; @vanderweele2010; @vanderweele2007a]. In such cases, researchers may sometimes employ causal diagrams with signed paths to improve causal inferences [@vanderweele2012]. Such methods take us beyond the purpose of this section, which has been to review how causal diagrams can be used to reveal sources of counfounding from measurement bias, how measurement bias arises in settings of comparative cultural research, why the latent factor models employed to validate construct measures make exceptionally strong causal claims, and why in some cases single item measures might do better. Chronologically ordered causal diagrams, once more, disclose imperatives not only for data analysis but also for data collection. They underscore the need to devise and use measurement tools that minimise error. And they empower us to reject blind adherence to psychometric tradition by contemplating causality in the context of a specific question at hand.
+
+
+### References 
+
+
+

@@ -81,8 +81,10 @@
 \NewDocumentCommand\citeproctext{}{}
 \NewDocumentCommand\citeproc{mm}{%
   \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
-% avoid brackets around text for \cite:
 \makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
  \def\@biblabel#1{}
  \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
 \makeatother
@@ -90,19 +92,23 @@
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newlength{\cslentryspacing}
-\setlength{\cslentryspacing}{0em}
-\usepackage{enumitem}
-\newlist{CSLReferences}{itemize}{1}
-\setlist[CSLReferences]{label={},
-  leftmargin=\cslhangindent,
-  itemindent=-1\cslhangindent,
-  parsep=\parskip,
-  itemsep=\cslentryspacing}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLBlock}[1]{\hfill\break#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{cancel}
@@ -113,10 +119,6 @@
 \renewcommand*{\Authands}{, }
 \renewcommand\Affilfont{\small}
 \usepackage{cancel}
-\makeatletter
-\makeatother
-\makeatletter
-\makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -153,10 +155,10 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
-\@ifpackageloaded{caption}{}{\usepackage{caption}}
-\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
 \makeatother
 \makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
@@ -256,7 +258,12 @@ define selection bias we require the following definitions:
 L_{t0}\to A_{t1} \to Y_{t2}
 \]
 
+<<<<<<< HEAD
 We are now ready to define selection bias.
+=======
+We are now ready to remove confusion from our definition of selection
+bias.
+>>>>>>> d5790ff5aef4e86dcbbf6f4b3cac47955baeee99
 
 \textbf{Selection bias} occurs when the study group (source population)
 does not accurately represent the group of interest (target population).
@@ -272,9 +279,19 @@ affect the quality and bias of causal inferences:
   Selection bias post-randomisation.
 \end{enumerate}
 
+<<<<<<< HEAD
 By `randomisation', I include the pseudo-randomisation of observational
 studies. {[}Cite other paper.{]}
 
+=======
+By ``randomisation'', I include pseudo-randomisation of observational
+studies. {[}Cite other paper.{]}
+
+Understanding and addressing selection bias is essential for ensuring
+the validity and applicability of research findings beyond the immediate
+study context (\citeproc{ref-hernuxe1n2017}{Hernán 2017}).
+
+>>>>>>> d5790ff5aef4e86dcbbf6f4b3cac47955baeee99
 \subsubsection{Selection Bias Post
 Randomisation}\label{selection-bias-post-randomisation}
 
@@ -297,7 +314,9 @@ Under the null, selection does not induce ``confounding in expectation''
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-1-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-1-1.pdf}
 
 }
 
@@ -305,7 +324,7 @@ Under the null, selection does not induce ``confounding in expectation''
 affects the selection for the study and the outcome. D-separation is
 preserved; there is no confounding in expectation.}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-2} presents a different scenario in which there is
 selection bias for the population parameter: the association in the
@@ -327,7 +346,9 @@ do not generalise as we might hope (\citeproc{ref-suzuki2016}{Suzuki
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-2-1.pdf}
+\centering{
+
+\includegraphics[width=0.6\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-2-1.pdf}
 
 }
 
@@ -336,7 +357,7 @@ affects selection into the study and the outcome. Here the exposure
 affects the outcome. Selection, then, is an effect modifier. Although
 d-separation is preserved.}
 
-\end{figure}
+\end{figure}%
 
 There has been considerable technical research investigating the
 conditions under which causal estimates for a target population may be
@@ -393,7 +414,9 @@ effect estimates that generalise to a clearly defined target population.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-3-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-3-1.pdf}
 
 }
 
@@ -401,7 +424,7 @@ effect estimates that generalise to a clearly defined target population.
 affect attrition. Dashed red path shows correlation of A an Y in the
 absence of causation.}
 
-\end{figure}
+\end{figure}%
 
 \subsubsection{Example of selection bias in a three-wave panel were
 there are systematic differences between the source population at
@@ -419,7 +442,9 @@ not evident in the source population at baseline.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-4-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-4-1.pdf}
 
 }
 
@@ -427,7 +452,7 @@ not evident in the source population at baseline.
 selection bias. Red paths reveal the open backdoor path induced by
 conditioning on the selected sample.}
 
-\end{figure}
+\end{figure}%
 
 \subsubsection{Unmeasured confounder affects outcome and variable that
 affects
@@ -447,7 +472,9 @@ this biasing pathway with red-dashed lines.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-5-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-5-1.pdf}
 
 }
 
@@ -459,21 +486,23 @@ is a descendent of Lt2. Hence selection is a form of conditioning on
 L\_t2. Such conditioning opens a biasing path, indicated by the
 red-dashed lines.}
 
-\end{figure}
+\end{figure}%
 
 \subsubsection{The outcome affects
 selection}\label{the-outcome-affects-selection}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-6-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{notes-selection-bias_files/figure-pdf/fig-6-1.pdf}
 
 }
 
 \caption{\label{fig-6}Y affects attrition, as does an unmeasured
 variable that also effects treatment.}
 
-\end{figure}
+\end{figure}%
 
 \subsubsection{Why regression adjustment fails to address select bias
 from
@@ -590,8 +619,7 @@ robustness and credibility of the research.
 \addcontentsline{toc}{subsection}{References}
 
 \phantomsection\label{refs}
-\setlength{\cslentryspacing}{0em}
-\begin{CSLReferences}
+\begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-bareinboim2022}
 Bareinboim, E, Tian, J, and Pearl, J (2022) Recovering from selection
 bias in causal and statistical inference. In, 1st edn, Vol. 36, New
