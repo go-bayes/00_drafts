@@ -81,10 +81,8 @@
 \NewDocumentCommand\citeproctext{}{}
 \NewDocumentCommand\citeproc{mm}{%
   \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+% avoid brackets around text for \cite:
 \makeatletter
- % allow citations to break across lines
- \let\@cite@ofmt\@firstofone
- % avoid brackets around text for \cite:
  \def\@biblabel#1{}
  \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
 \makeatother
@@ -92,32 +90,33 @@
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
- {\begin{list}{}{%
-  \setlength{\itemindent}{0pt}
-  \setlength{\leftmargin}{0pt}
-  \setlength{\parsep}{0pt}
-  % turn on hanging indent if param 1 is 1
-  \ifodd #1
-   \setlength{\leftmargin}{\cslhangindent}
-   \setlength{\itemindent}{-1\cslhangindent}
-  \fi
-  % set entry spacing
-  \setlength{\itemsep}{#2\baselineskip}}}
- {\end{list}}
+\newlength{\cslentryspacing}
+\setlength{\cslentryspacing}{0em}
+\usepackage{enumitem}
+\newlist{CSLReferences}{itemize}{1}
+\setlist[CSLReferences]{label={},
+  leftmargin=\cslhangindent,
+  itemindent=-1\cslhangindent,
+  parsep=\parskip,
+  itemsep=\cslentryspacing}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{\hfill\break#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{cancel}
+\usepackage{xcolor}
 \usepackage[noblocks]{authblk}
 \renewcommand*{\Authsep}{, }
 \renewcommand*{\Authand}{, }
 \renewcommand*{\Authands}{, }
 \renewcommand\Affilfont{\small}
 \usepackage{cancel}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -154,10 +153,10 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
-\makeatother
-\makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
@@ -188,44 +187,35 @@ Human Scientists}
                   Research
               }
       
-\date{2023-11-17}
+\date{2023-11-30}
 \begin{document}
 \maketitle
 \begin{abstract}
-This article investigates the impact of measurement error on causal
-inference in research, employing causal diagrams to elucidate its
-distinct pathways and effects. Unlike confounding and selection biases,
-measurement error bias stems from inaccuracies in the measurement or
-categorization of variables. We explore four types of measurement
-error---uncorrelated non-differential, uncorrelated differential,
-correlated non-differential, and correlated differential---each with
-unique implications for research design and analysis. Through practical
-examples and detailed illustrations, we demonstrate how these errors can
-skew causal effect estimates, emphasizing the importance of accurate
-measurement, especially of confounders, and the necessity of conducting
-sensitivity analyses. The article also discusses the challenges and
-biases in comparative cultural research and the structural assumptions
-underlying latent factor models in panel designs. By highlighting these
-biases and offering guidance on addressing them, we aim to enhance the
-rigor and reliability of causal inference research.
+This article briefly reviews concepts of measurement error bias in
+causal data science, using causal diagrams to elucidate distinct
+pathways and effects. Measurement error bias stems from inaccuracies in
+the measurement or categorization of variables. I consider four types of
+measurement error --- uncorrelated non-differential, uncorrelated
+differential, correlated non-differential, and correlated differential
+--- each with unique implications for research design and analysis.
+Examples illustrate the challenges of measurement in comparative
+cultural research and the structural assumptions underlying latent
+factor models in panel designs. These results emphasise the importance
+of accurate measurement, especially of confounders, and the importance
+of conducting sensitivity analyses.
 \end{abstract}
 The integrity and accuracy of our measurements is paramount in every
 science. This article focuses on the problems that measurement error
-brings to causal estimatio. Unlike confounding bias (CITE), which arises
-from the presence of a common cause of both the exposure and the
-outcome, and selection bias, which arises from the participant selection
-process or dropout rate (CITE), measurement bias arises from error in
-the measurements or categorisation of variables, often subtly yet
-significantly skewing research findings. Here, we employ causal diagrams
-to examine distinct pathways by which measurement error may affect
-causal inference and propose methods to mitigate their effects.
+brings to causal estimation. I use causal diagrams to examine distinct
+pathways by which measurement error may affect causal inference and
+propose methods to mitigate their effects.
 
 \subsubsection{Measurement Error in the
-Confounder}\label{measurement-error-in-the-confounder}
+confounder}\label{measurement-error-in-the-confounder}
 
-Measurement error is an inescapable aspect of human research,
-influencing even the most meticulously designed studies. To illustrate
-this, consider Figure Figure~\ref{fig-1} which depicts how even flawless
+Measurement error is an inescapable aspect of human research influencing
+even the most meticulously designed studies. To illustrate this,
+consider Figure Figure~\ref{fig-1} which depicts how even flawless
 measurements of exposure and outcome are vulnerable to bias introduced
 by measurement errors in confounders. Accurately measuring confounders
 is critical for limiting bias in in confounding control. Moreover,
@@ -241,9 +231,7 @@ potential impact of these errors.\footnote{A simple yet powerful form of
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-1-1.pdf}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-1-1.pdf}
 
 }
 
@@ -253,7 +241,7 @@ confounders can open bias-inducing paths between exposure and outcome,
 even with perfect measurements of these two variables. The biasing path
 is highlighted in red.}
 
-\end{figure}%
+\end{figure}
 
 Acknowledging the pervasiveness of measurement error and its potential
 influence on our research, we will further explore how structural
@@ -265,9 +253,9 @@ Following Hernán and Cole (\citeproc{ref-hernuxe1n2009}{2009}), we
 define structural concepts of measurement error and utilise causal
 diagrams to understand how such errors may bias causal effect estimates.
 A deeper understanding of these concepts (developed in
-(\citeproc{ref-vanderweele2012}{VanderWeele and Hernán 2012}), will
-equip us to better manage and account for assessing bias from
-measurement error in causal inference.
+(\citeproc{ref-vanderweele2012}{VanderWeele 2012})) will equip us to
+better manage and account for assessing bias from measurement error in
+causal inference.
 
 \subsubsection{Uncorrelated non-differential (undirected) measurement
 error}\label{uncorrelated-non-differential-undirected-measurement-error}
@@ -279,23 +267,20 @@ and outcome are unrelated to each other.
 
 \paragraph{Example}\label{example}
 
-To contextualize this concept, consider the hypothetical task of
-estimating the causal effect of belief in Big Gods on social complexity
-in ancient societies. Imagine if these societies randomly omitted or
-inaccurately recorded details about their beliefs in Big Gods and
-indicators of social complexity in their records. Alternatively, suppose
-the preservation of such records varied across cultures for reasons
-unrelated to these beliefs or social complexities. In these scenarios,
-the errors in documenting beliefs and social complexity are random and
-not interconnected. These examples embody settings in which measurement
-errors are uncorrelated non-differential in respect of the treatments
-and outcomes.
+Consider the hypothetical task of estimating the causal effect of belief
+in Big Gods on social complexity in ancient societies. Imagine if these
+societies randomly omitted or inaccurately recorded details about their
+beliefs in Big Gods and indicators of social complexity in their
+records. Alternatively, suppose the preservation of such records varied
+across cultures for reasons unrelated to these beliefs or social
+complexities. In these scenarios, the errors in documenting beliefs and
+social complexity are random and not interconnected. These examples
+embody settings in which measurement errors are uncorrelated
+non-differential in respect of the treatments and outcomes.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-2-1.pdf}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-2-1.pdf}
 
 }
 
@@ -304,9 +289,9 @@ Measurement Error: The figure illustrates that this type of measurement
 error does not bias estimates under null conditions but can attenuate
 true effects in the presence of an actual exposure-outcome effect.}
 
-\end{figure}%
+\end{figure}
 
-\paragraph{Impact on Causal Inference}\label{impact-on-causal-inference}
+\paragraph{Affect on Causal Inference}\label{affect-on-causal-inference}
 
 Interestingly, this type of measurement error does not induce bias under
 null conditions, meaning when there is no actual effect of exposure on
@@ -351,9 +336,7 @@ we can also explain the distortion as directed measurement bias.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-indep-d-effect-1.pdf}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-indep-d-effect-1.pdf}
 
 }
 
@@ -361,7 +344,7 @@ we can also explain the distortion as directed measurement bias.
 (uncorrelated) measurement error can bias effect estimates under the
 null. This bias is indicated by the red paths.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{3. Correlated non-differential (undirected) measurement
 error}\label{correlated-non-differential-undirected-measurement-error}
@@ -384,9 +367,7 @@ indicated by the red path in Figure~\ref{fig-dag-dep-u-effect}.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-dep-u-effect-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-dep-u-effect-1.pdf}
 
 }
 
@@ -394,7 +375,7 @@ indicated by the red path in Figure~\ref{fig-dag-dep-u-effect}.
 error can distort causal effect estimates under the null, indicated by
 the red path.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{4. Correlated differential (directed) measurement
 error}\label{correlated-differential-directed-measurement-error}
@@ -477,7 +458,7 @@ errors are both constant over time and undirected. If the errors vary
 over time or if the the exposure affects the error of the outcome then
 controlling for baseline measurements of the exposure and outcome will
 be inadequate for confounding control (see:
-(\citeproc{ref-keogh2020}{Keogh \emph{et al.} 2020})).
+(\citeproc{ref-keogh2020}{\textbf{keogh2020?}})).
 
 Consider a scenario where individuals attending religious services at
 wave 1 acquire greater social desirability bias, affecting their
@@ -501,9 +482,7 @@ reporting do not differ by exposure status.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-d-d-1.pdf}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-d-d-1.pdf}
 
 }
 
@@ -515,7 +494,7 @@ dynamics open pathways for bias, indicated by the red paths. Sructural
 sources of bias in measurement error must be evaluated, and sensitivity
 analyses should be preformed to assess threats to causal inference.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{Using time-ordered causal diagrams to understand threats
 of correlated measurement error for causal inference comparative
@@ -526,30 +505,30 @@ To comprehend the structural features that might undermine causal
 inferences in comparative cultural research, consider a simplified
 scenario. Imagine that before conducting cultural comparisons, the
 measurement errors of the exposure and outcome variables are
-uncorrelated, as illustrated in \textbf{?@fig-dag-uu-null}. While
-measurement error can lead to a downward bias off the null, under the
-null, no bias occurs.
+uncorrelated, as illustrated in Figure~\ref{fig-2}. While measurement
+error can lead to a downward bias off the null, under the null, no bias
+occurs.
 
 However, when selecting study participants from different cultures --
 cultures that inherently vary in interpretations and behaviours --- an
 unmeasured bias under the null can occur, as shown in
 Figure~\ref{fig-dag-dep-u-effect-selection}. To highlight this issue, we
-modify the causal diagram in \textbf{?@fig-dag-uu-null} to include
-participant selection. This act of comparative selection creates a new
-study population in which the error terms of measures become associated.
-We cannot condition on cultural membership to block these associations,
-as it was the act of conditioning that induced them in the new study
+modify the causal diagram in Figure~\ref{fig-2} to include participant
+selection. This act of comparative selection creates a new study
+population in which the error terms of measures become associated. We
+cannot condition on cultural membership to block these associations, as
+it was the act of conditioning that induced them in the new study
 population.
 
 If we did not undertake comparative sampling, the exposure and outcome
 would be d-separated under the given scenario, yielding no bias for
-separate studies, as shown in \textbf{?@fig-dag-uu-null}. We cannot
-resort to stratifying on culture to address this bias, as it is the act
-of stratifying on culture that gives rise to correlated measurement
-errors. Conducting separate analyses by culture precludes
-generalisation, yet science seeks to find generalisations wherever it
-can. Human scientists strive to identify functions supporting
-transportable inferences wherever possible (see Part 2).
+separate studies, as shown in Figure~\ref{fig-2}. We cannot resort to
+stratifying on culture to address this bias, as it is the act of
+stratifying on culture that gives rise to correlated measurement errors.
+Conducting separate analyses by culture precludes generalisation, yet
+science seeks to find generalisations wherever it can. Human scientists
+strive to identify functions supporting transportable inferences
+wherever possible (see Part 2).
 
 Yet, given the myriad ways the true structures of the world can align
 with correlational models, we must be cautious when using conventional
@@ -561,9 +540,7 @@ fit the specific situation at hand.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-dep-u-effect-selection-1.pdf}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-dep-u-effect-selection-1.pdf}
 
 }
 
@@ -577,7 +554,7 @@ population cannot coherently map onto any coherent targe population.
 Reserachers will often do better to restrict generalisations within
 cultures.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{Using time-ordered causal diagrams to understand how
 post-outcome adjustment may diminish threats of directed measurement
@@ -599,9 +576,7 @@ evolutionary human science because history written by victors.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-measure-selection-0-1.pdf}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-measure-selection-0-1.pdf}
 
 }
 
@@ -611,7 +586,7 @@ independent, their measured counterparts, A' and Y', are not. The
 systematic error introduced by changes in Y opens a biasing path,
 signified in red.}
 
-\end{figure}%
+\end{figure}
 
 Figure~\ref{fig-dag-measure-selection} exposes the structure of bias
 where post-outcome adjustment is necessary to mitigate or eliminate
@@ -627,9 +602,7 @@ accuracy of our causal effect estimates.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-measure-selection-1.pdf}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-measure-selection-1.pdf}
 
 }
 
@@ -638,7 +611,7 @@ refined measurements attenuate bias. By recovering measures undistorted
 by past outcomes, we attenuate the directed measurement error. We
 repesent this scenario on the graph by removing the path from Y to UA.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{Using time-ordered causal diagrams to clarify the
 structural assumptions of latent factor
@@ -668,9 +641,7 @@ interested readers to: (\citeproc{ref-vanderweele2022}{VanderWeele
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-structural-assumptions-reflective-model-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-structural-assumptions-reflective-model-1.pdf}
 
 }
 
@@ -681,7 +652,7 @@ multivariate causes of the indicators for constructs, as well as
 independent effects of the indicators on outcomes. Blue line indicates
 assumed causal path. The figure is adapted from VanderWeele 2022.}
 
-\end{figure}%
+\end{figure}
 
 However, VanderWeele notes that the statistical model is consistent with
 multiple causal models. The presumption that a univariate latent reality
@@ -702,9 +673,7 @@ examine.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-multivariate-reality-again-1.pdf}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-multivariate-reality-again-1.pdf}
 
 }
 
@@ -716,7 +685,7 @@ measures. Additional paths from the latent factors to the outcome are
 presented in Blue. (Confounders are omited for simplicity). This figure
 is adapted from VanderWeele 2022.}
 
-\end{figure}%
+\end{figure}
 
 Although the assumptions of a univariate reality that underlie
 traditional latent factor models are not generally credible, VanderWeele
@@ -798,9 +767,7 @@ the specifics of each research question within its context.
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-coarsen-measurement-error-1.pdf}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{notes-on-measurement-bias_files/figure-pdf/fig-dag-coarsen-measurement-error-1.pdf}
 
 }
 
@@ -811,7 +778,7 @@ multi-item factor models. Their popularity notwithstanding, a careful
 consideration of measurement bias underscores the necessity to tailor
 measurement strategies to specific research contexts.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{Summary}\label{summary}
 
@@ -825,58 +792,41 @@ affect the measurement of the outcome. In such cases, the correlations
 we obtain may be biased indicators of causation.
 
 A host of useful resources exists for addressing measurement error,
-including the works of Keogh \emph{et al.}
-(\citeproc{ref-keogh2020}{2020}) Buonaccorsi
-(\citeproc{ref-buonaccorsi2010}{2010}) Shi \emph{et al.}
-(\citeproc{ref-shi2021}{2021}) Valeri \emph{et al.}
-(\citeproc{ref-valeri2014}{2014}) and Bandalos
-(\citeproc{ref-bandalos2018}{2018}). Additionally, specialist knowledge
-may often indicate the direction of influence in the associations of
-measurement error terms, whether positive or negative
-(\citeproc{ref-suzuki2020}{Suzuki \emph{et al.} 2020};
+including the works of (\citeproc{ref-keogh2020}{\textbf{keogh2020?}})
+(\citeproc{ref-buonaccorsi2010}{\textbf{buonaccorsi2010?}}) Shi \emph{et
+al.} (\citeproc{ref-shi2021}{2021})
+(\citeproc{ref-valeri2014}{\textbf{valeri2014?}}) and
+(\citeproc{ref-bandalos2018}{\textbf{bandalos2018?}}). Additionally,
+specialist knowledge may often indicate the direction of influence in
+the associations of measurement error terms, whether positive or
+negative (\citeproc{ref-suzuki2020}{Suzuki \emph{et al.} 2020};
 \citeproc{ref-vanderweele2007a}{VanderWeele and Robins 2007},
 \citeproc{ref-vanderweele2010}{2010}). In such cases, researchers may
 sometimes employ causal diagrams with signed paths to improve causal
-inferences (\citeproc{ref-vanderweele2012}{VanderWeele and Hernán
-2012}). Such methods take us beyond the purpose of this section, which
-has been to review how causal diagrams can be used to reveal sources of
-counfounding from measurement bias, how measurement bias arises in
-settings of comparative cultural research, why the latent factor models
-employed to validate construct measures make exceptionally strong causal
-claims, and why in some cases single item measures might do better.
-Chronologically ordered causal diagrams, once more, disclose imperatives
-not only for data analysis but also for data collection. They underscore
-the need to devise and use measurement tools that minimise error. And
-they empower us to reject blind adherence to psychometric tradition by
-contemplating causality in the context of a specific question at hand.
+inferences (\citeproc{ref-vanderweele2012}{VanderWeele 2012}). Such
+methods take us beyond the purpose of this section, which has been to
+review how causal diagrams can be used to reveal sources of counfounding
+from measurement bias, how measurement bias arises in settings of
+comparative cultural research, why the latent factor models employed to
+validate construct measures make exceptionally strong causal claims, and
+why in some cases single item measures might do better. Chronologically
+ordered causal diagrams, once more, disclose imperatives not only for
+data analysis but also for data collection. They underscore the need to
+devise and use measurement tools that minimise error. And they empower
+us to reject blind adherence to psychometric tradition by contemplating
+causality in the context of a specific question at hand.
 
 \subsubsection*{References}\label{references}
 \addcontentsline{toc}{subsubsection}{References}
 
 \phantomsection\label{refs}
-\begin{CSLReferences}{1}{0}
-\bibitem[\citeproctext]{ref-bandalos2018}
-Bandalos, DL (2018) \emph{Measurement theory and applications for the
-social sciences}, Guilford Publications.
-
-\bibitem[\citeproctext]{ref-buonaccorsi2010}
-Buonaccorsi, JP (2010) \emph{Measurement error: Models, methods, and
-applications}, New York: Chapman; Hall/CRC.
-doi:\href{https://doi.org/10.1201/9781420066586}{10.1201/9781420066586}.
-
+\setlength{\cslentryspacing}{0em}
+\begin{CSLReferences}
 \bibitem[\citeproctext]{ref-hernuxe1n2009}
 Hernán, MA, and Cole, SR (2009) Invited commentary: Causal diagrams and
 measurement bias. \emph{American Journal of Epidemiology},
 \textbf{170}(8), 959--962.
 doi:\href{https://doi.org/10.1093/aje/kwp293}{10.1093/aje/kwp293}.
-
-\bibitem[\citeproctext]{ref-keogh2020}
-Keogh, RH, Shaw, PA, Gustafson, P, \ldots{} Freedman, LS (2020) STRATOS
-guidance document on measurement error and misclassification of
-variables in observational epidemiology: Part 1{\textemdash}Basic theory
-and simple methods of adjustment. \emph{Statistics in Medicine},
-\textbf{39}(16), 2197--2231.
-doi:\href{https://doi.org/10.1002/sim.8532}{10.1002/sim.8532}.
 
 \bibitem[\citeproctext]{ref-mathur2018}
 Mathur, MB, Ding, P, Riddell, CA, and VanderWeele, TJ (2018) Website and
@@ -894,24 +844,16 @@ Pitfalls and Tips. \emph{Journal of Epidemiology}, \textbf{30}(4),
 153--162.
 doi:\href{https://doi.org/10.2188/jea.JE20190192}{10.2188/jea.JE20190192}.
 
-\bibitem[\citeproctext]{ref-valeri2014}
-Valeri, L, Lin, X, and VanderWeele, TJ (2014) Mediation analysis when a
-continuous mediator is measured with error and the outcome follows a
-generalized linear model. \emph{Statistics in Medicine},
-\textbf{33}(28), 48754890.
+\bibitem[\citeproctext]{ref-vanderweele2012}
+VanderWeele, TJ (2012) Confounding and Effect Modification: Distribution
+and Measure. \emph{Epidemiologic Methods}, \textbf{1}(1), 55--82.
+doi:\href{https://doi.org/10.1515/2161-962X.1004}{10.1515/2161-962X.1004}.
 
 \bibitem[\citeproctext]{ref-vanderweele2022}
 VanderWeele, TJ (2022) Constructed measures and causal inference:
 Towards a new model of measurement for psychosocial constructs.
 \emph{Epidemiology}, \textbf{33}(1), 141.
 doi:\href{https://doi.org/10.1097/EDE.0000000000001434}{10.1097/EDE.0000000000001434}.
-
-\bibitem[\citeproctext]{ref-vanderweele2012}
-VanderWeele, TJ, and Hernán, MA (2012) Results on differential and
-dependent measurement error of the exposure and the outcome using signed
-directed acyclic graphs. \emph{American Journal of Epidemiology},
-\textbf{175}(12), 1303--1310.
-doi:\href{https://doi.org/10.1093/aje/kwr458}{10.1093/aje/kwr458}.
 
 \bibitem[\citeproctext]{ref-vanderweele2007a}
 VanderWeele, TJ, and Robins, JM (2007) Directed acyclic graphs,

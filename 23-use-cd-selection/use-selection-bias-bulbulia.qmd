@@ -1,7 +1,7 @@
 ---
-title: "Consideration of Selection Bias in the Design of Longitudinal Panel Studies"
+title: "Selection Bias: A Brief Guide for the Perplexed"
 abstract: | 
- This article explains the concept of selection bias, clarifying how it differs from confounding bias. Our aim is to improve research design in evolutionary human science, particularly in longitudinal ethnography. Selection bias arises when the sample used in a study does not accurately represent the target population, leading to skewed or ungeneralisable findings. Unlike confounding bias, which results from unaccounted variables that influence both the treatment and the outcome, selection bias stems from the process of choosing the study sample, or from attrition of a study sample. This distinction is crucial for researchers in evolutionary human sciences, where longitudinal ethnographies often rely on specific, sometimes limited, populations. We discuss strategies to identify, mitigate, and account for selection bias, aiming to improve the validity and reliability of research findings in this field. The article provides insights into the application of these concepts in practical research scenarios, emphasising the importance of careful study design and analysis in overcoming the challenges posed by selection biases.
+ Selection bias arises when the sample used in a study does not accurately represent the target population, skewing causal inferences. I briefly review key concept of selection bias as it is used in the potential outcomes framework in causal data science, and explain their importance for evolutionary human scientists. Unlike confounding bias, which results from unaccounted variables that influence both the treatment and the outcome, selection bias stems from the process of choosing the units in a study sample, or from differential attrition of these units. I explain how these distinctions are useful for applied researchers in the evolutionary human scientists, focussing on research design, data collection, and data analysis in longitudinal studies.
 author: 
   - name: Joseph A. Bulbulia
     affiliation: Victoria University of Wellington, New Zealand
@@ -12,10 +12,6 @@ author:
     country: New Zealand
     url: www.wgtn.ac.nz/cacr 
     corresponding: yes
-  - name: Etsuji Suzuki  
-    orcid: xxx-xxx-xxx-xxx
-    department: Okayama University
-    url: https://www.hsph.harvard.edu/profile/etsuji-suzuki/
 execute:
   warning: false
   eval: true
@@ -46,10 +42,8 @@ format:
        - text: |
            \usepackage{cancel}
 date: last-modified
-bibliography: references.bib
 csl: camb-a.csl
 ---
-
 ```{r}
 #| label: load-libraries
 #| echo: false
@@ -102,47 +96,51 @@ push_mods <-
 # 32 figs
 ```
 
-
 ### Introduction to selection bias
 
-In evolutionary human sciences, especially in longitudinal ethnography, understanding selection bias is crucial for ensuring the validity and generalisability of research outcomes. If not properly addressed, selection bias can lead to significant distortions in study results. To understand selection bias, it is essential to understand the concepts of "source" and "target" populations, as well as the concepts of "generalisability" and "transportability."
+Terminology in causal data science is a dog's breakfast. Researchers are confronted with a confusing array of meanings and distinctions. This is particularly apparent in the concept of 'selection bias.' In this research note, I examine selection bias as it is considered in the potential outcomes framework of causal data science. Understanding and addressing selection bias so conceived is essential for ensuring the validity and applicability of research findings beyond the immediate study context [@hernán2017].
+Before we define selection bias we require the following definitions:
 
-1. **Source Population**: The group from which we collect our data. Think of it as the subset of individuals we are directly studying.
+1. **Source Population:** the population from which individuals are sampled for a study.
 
-2. **Target Population**: The larger group we want to understand better through our study. The more similar the source population is to the target population in characteristics relevant to our study, the more confidently we can apply our findings to the target population.
+2. **Target Population:** the population intended to be understood through the study. The similarity of the source population to the target population in study-relevant characteristics enhances the applicability of the findings to the target population.
 
-3. **Generalisability**: This term pertains to how well the findings from our source population can be applied to the target population. If the effects we observe in our study group also hold true for the larger group, we say our findings are generalisable. We use the term $PATE$ to define the Population Average Treatment Effect in the target population and $ATE_{\text{source}}$ to define the Average Treatment Effect in the source population. If there is a set of characteristics $W$ on which the source and target populations differ, we can model a relationship between the two populations if there is a function such that:
+3. **Generalisability:** the extent to which findings from the source population apply to the target population. Findings are considered generalisable when the effects observed in the study group are also valid in the larger target group. The term  $PATE$ denotes the Population Average Treatment Effect in the target population, and  $ATE_{\text{source}}$ signifies the Average Treatment Effect in the source population. If there are characteristics $W$ by which the source and target populations differ, the relationship between the two populations can be modeled as:
 
    $$PATE = f(ATE_{\text{source}}, W)$$
 
-4. **Transportability**: This concept is an extension of the concept of generalisability. It pertains to how well our study's findings can be applied to different settings or groups that were not part of the original study. Our results are transportable if there is a function such that:
+4. **Transportability:** An extension of generalisability, this concept relates to the applicability of study findings to different settings or groups not included in the original study. The findings are transportable if there is a function such that:
 
    $$ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)$$
 
-   Here, $T$ represents the variables on which the source and target populations differ. 
+   Here, $T$ represents variables differentiating the source and target populations.
 
-In plain terms, selection bias occurs when our study group (source population) does not accurately represent the group we are ultimately interested in (target population) [@hernán2017]. Understanding this bias is crucial for ensuring our research findings are valid and applicable beyond our immediate study.
+5. **Structural Approach**: causation follows the arrow of time. Causal data science adopts a structural approach in which the exposure $A$, outcome $Y$, and pre-exposure confounders $L$ are ordered in time such that: 
 
-### A Structural Approach to Selection Bias
+$$
+L_{t0}\to A_{t1} \to Y_{t2}
+$$
+
+
+We are now ready to define selection bias.
+
+ **Selection bias** occurs when the study group (source population) does not accurately represent the group of interest (target population). There are two intervals in the temporal process that selection bias can affect the quality and bias of causal inferences: 
+ 
+ (1) Selection bias during pre-randomisation; 
+ (2) Selection bias post-randomisation. 
+ 
+ By 'randomisation', I include the pseudo-randomisation of observational studies. [Cite other paper.]
+ 
+
+### Selection Bias Post Randomisation 
 
 <!-- To understand the relationship of selection bias to confounding bias, it is useful to consider the following topology of confounding developed by Suzuki and colleagues [@suzuki2016; @suzuki2014; @suzuki2020].[^18] -->
 
 <!-- [^18]: This typology builds on VanderWeele's work [@vanderweele2012]. -->
 
-<!-- 1.  **Confounding in distribution**: if the sample exposed to each level of exposure is representative of the target population, we say there is no confounding in the distribution of the exposure's effect on the outcome. -->
-
-<!-- 2.  **Confounding in expectation**: if the exposure assignment mechanism balances the confounders across each level of contrast in the exposure, we say there is no confounding in the expectation of the exposure's effect on the outcome. -->
-
-<!-- 3.  **Confounding in measure**: if a specific measure of interest matches the corresponding causal measure in the target population, we say there is no confounding in the measure of the exposure's effect on the outcome. As discussed previously concerning interaction, our inference of a causal effect can depend on the scale of the causal effect measure. -->
-
-<!-- 4.  **Realised confounding**: if a specific exposure assignment leads to balance, irrespective of the exposure assignment mechanism, we say there is no realised confounding of the exposure's effect on the outcome. This concept is essential because, even in randomised experiments, randomisation might not eliminate chance imbalances in the distributions of confounders across the exposures. -->
-
-<!-- Each of these four concepts plays a role in "confounding" discussions, and all are crucial when evaluating a study's scientific merit. However, each concept highlights different issues. -->
-
-Consider @fig-1, which presents a scenario in which there is no marginal causal effect of exposure on the outcome, yet a degree of selection into the study. We will assume randomisation succeeded so there are no arrows into $A$. As @fig-1 shows, randomising from a selected group does not result in confounding bias. Despite selection, the null effect in the source population is not biased for the target population [@hernán2004; @greenland1977].[^1]  Here, selection does not induce "confounding in expectation" [@suzuki2016; @suzuki2014; @suzuki2020]. 
+Consider @fig-1, which presents a scenario in which there is no marginal causal effect of exposure on the outcome, yet a degree of selection into the study. We will assume randomisation succeeded so there are no arrows into $A$. As @fig-1 shows, randomising from a selected group does not result in confounding bias. Despite selection, the null effect in the source population is not biased for the target population [@hernán2004; @greenland1977].[^1]  Under the null, selection does not induce "confounding in expectation" [@suzuki2016; @suzuki2014; @suzuki2020]. 
 
 [^1]: Note we use the term "null effect" as a structural concept. There are no statistical "null effects." Instead there are reliable or unreliable statistical effect estimates according to some measure of evidence and arbitrary threshold [@bulbulia2021].
-
 
 ```{tikz}
 #| label: fig-1
@@ -175,13 +173,11 @@ Consider @fig-1, which presents a scenario in which there is no marginal causal 
 
 ```
 
-
-@fig-2 presents a different scenario in which there is selection bias for the population parameter: the association in the population of selected individuals differs from the causal association for the target population. Hernán calls this scenario "selection bias off the null" [@hernán2017]. Lu et al. call this scenario "Type 2 selection bias" [@lu2022]. Such bias occurs because the selection into the study occurs on an effect modifier for the effect of the exposure on the outcome. Note that although the causal effect of $A\to Y$ is unbiased for the exposed and unexposed in the source population, the effect estimate does not generalise to the exposed and unexposed in the target population: $PATE \cancel{\approx} ATE_{\text{selected sample}}$. Although there is no "confounding in expectation" however there is "confounding in distribution," in the sense that causal inferences in this scenario do not generalise as we might hope [@suzuki2016; @suzuki2014; @suzuki2020]. 
-
+@fig-2 presents a different scenario in which there is selection bias for the population parameter: the association in the population of selected individuals differs from the causal association for the target population. Hernán calls this scenario "selection bias off the null" [@hernán2017]. Lu et al. call this scenario "Type 2 selection bias" [@lu2022]. Such bias occurs because the selection into the study occurs on an effect modifier for the effect of the exposure on the outcome. Note that although the causal effect of $A\to Y$ is unbiased for the exposed and unexposed in the source population, the effect estimate does not generalise to the exposed and unexposed in the target population: $PATE \cancel{\approx} ATE_{\text{selected sample}}$. Although there is no "confounding in expectation" causal inferences in this scenario do not generalise as we might hope [@suzuki2016; @suzuki2014; @suzuki2020]. 
 
 ```{tikz}
 #| label: fig-2
-#| fig-cap: "Selection off the null: an unmeasured variable affects selection into the study and the outcome. Here the exposure affects the outcome. Selection, then, is an effect modifier. Although d-separation is preserved, there is confounding in distribution."
+#| fig-cap: "Selection off the null: an unmeasured variable affects selection into the study and the outcome. Here the exposure affects the outcome. Selection, then, is an effect modifier. Although d-separation is preserved."
 #| out-width: 60%
 #| echo: false
 #| 
@@ -203,17 +199,16 @@ Consider @fig-1, which presents a scenario in which there is no marginal causal 
 \node [rectangle, draw=white] (A) at (4, 0) {A};
 \node [rectangle, draw=white] (Y) at (6, 0) {Y};
 
-\draw [-latex, draw=black, bend left=30] (U) to (Y);
-\draw [-latex, draw=black] (U) to (S);
-\draw [-latex, draw=black] (A) to (Y);
+\draw [-latex, draw=red, bend left=30] (U) to (Y);
+\draw [-latex, draw=red] (U) to (S);
+\draw [-latex, draw=red] (A) to (Y);
 
 \end{tikzpicture}
 ```
 
+There has been considerable technical research investigating the conditions under which causal estimates for a target population may be identified when the source population differs from the target population (see: [@lu2022]). There has also been considerable technical research investigating the conditions in which results might transport to populations that systematically differ from the source population (see: [@bareinboim2022; @pearl2022; @deffner2022]). I briefly review key results.
 
-There has been considerable technical research investigating the conditions under which causal estimates for a target population may be identified when the source population differs from the target population (see: [@lu2022]). There has also been considerable technical research investigating the conditions in which results might transport to populations that systematically differ from the source population (see: [@bareinboim2022; @pearl2022; @deffner2022]).
-
-
+### Selection Bias Post Randomisation 
 
 ### Selection bias in which both the exposure and outcome affect censoring
 
@@ -223,7 +218,6 @@ In panel designs, there is a constant threat of selection occurring *after* enro
 
 
 @fig-3 describes a scenario in which both the exposure and the true outcome affect panel attrition, biasing the observed association between the exposure and the measured outcome in the remaining sample. The problem of selection here is a problem of collider stratification bias. We can equivalently view the problem as one of directed measurement error, described in in @fig-3. Either way, restricting the analysis to the retained sample introduces bias in the causal effect estimate by opening a backdoor path from the exposure to the outcome. @lu2022 call this form of bias: "Type 1 selection bias" and distinguishes between scenarios when causal effects that generalise are recoverable (Type 1a selection bias) and not recoverable (Type 1b selection bias). In both cases, we must develop strategies to evaluate whether we may recover from the subset of the source population that has been censored, causal effect estimates that generalise to a clearly defined target population.
-
 
 ```{tikz}
 #| label: fig-3
@@ -248,9 +242,9 @@ In panel designs, there is a constant threat of selection occurring *after* enro
 \node [ellipse, draw=white] (Y) at (3, 0) {Y$_{2}$};
 \node [rectangle, draw=black] (S) at (6, 0) {S};
 
-\draw [-latex, bend left=80, draw=black] (A) to (S);
-\draw [-latex, draw=black] (Y) to (S);
-\draw [cor, draw=red, dashed] (A) to (Y);
+\draw [-latex, bend left=80, draw=red] (A) to (S);
+\draw [-latex, draw=red] (Y) to (S);
+
 
 
 
@@ -258,11 +252,9 @@ In panel designs, there is a constant threat of selection occurring *after* enro
 
 ```
 
-
 ### Example of selection bias in a three-wave panel were there are systematic differences between the source population at baseline and at follow up.
 
 @fig-4 shows selection bias manifest in a three-wave panel design when loss-to-follow-up results in a systematic disparity between the baseline and follow-up source populations. The red dashed lines in the diagram represent an open backdoor path, revealing a potential indirect association between the exposure and the outcome. Upon considering only the selected sample (i.e., when we condition on the selected sample $\framebox{S}$), we may create or obscure associations not evident in the source population at baseline.
-
 
 ```{tikz}
 #| label: fig-4
@@ -283,13 +275,11 @@ In panel designs, there is a constant threat of selection occurring *after* enro
 
 \begin{tikzpicture}[{every node/.append style}=draw]
 
-\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [ellipse, draw=white] (U) at (0, 0) {U};
 
-\node [rectangle, draw=black, align=left] (L) at (2, 0) {L$_{t0}$ \\A$_{t0}$ \\Y$_{t0}$};
+\node [rectangle, draw=black, align=left] (L) at (2, 0) {L$_{t0}$};
 
 \node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
-
-\node [ellipse, draw=white] (US) at (4, -2) {U};
 
 \node [rectangle, draw=black](S) at (6, 0) {S};
 
@@ -297,31 +287,26 @@ In panel designs, there is a constant threat of selection occurring *after* enro
 
 \draw [-latex, draw=black] (U) to (L);
 
+\draw [-latex, draw=black] (U) to (L);
+
 \draw [-latex, draw=black] (L) to (A);
 
 \draw [-latex, bend left=50, draw=black] (L) to (Y);
 
-\draw [-latex, bend right=50, draw=black, dotted] (U) to (Y);
-
-\draw [-latex, bend left=50, draw=black, dotted] (U) to (A);
+\draw [-latex, bend right=30, draw=red] (U) to (S);
 
 \draw [-latex, draw=red] (A) to (S);
 
-\draw [-latex, draw=red] (US) to (S);
+\draw [-latex, draw=red, bend right = 30] (U) to (Y);
 
-\draw [-latex, draw=red] (US) to (Y);
-
-\draw [cor, draw=red, bend right=20, dashed] (A) to (US);
 
 \end{tikzpicture}
 
 ```
 
-
 ### Unmeasured confounder affects outcome and variable that affects attrition
 
-@fig-5 presents another problem of selection bias in a three-wave panel design. This diagram shows how an unmeasured confounder, U$_S$, can simultaneously influence the outcome variable Y$_{t2}$ and another variable, L$_{t2}$, responsible for attrition (i.e., the drop-out rate, denoted as $\framebox{S}$). Here we present a scenario in which the exposure variable $A_{t1}$ can impact a post-treatment confounder L$_{t2}$, which subsequently affects attrition, $\framebox{S}$. If the study's selected sample descends from L${t2}$, the selection effectively conditions on L$_{t2}$, potentially introducing bias into the analysis. @fig-5 marks this biasing pathway with red-dashed lines. 
-
+@fig-5 presents another problem of selection bias in a three-wave panel design. This diagram shows how an unmeasured confounder, $U_S$, can simultaneously influence the outcome variable $Y_{t2}$ and another variable, $L_{t2}$, responsible for attrition (i.e., the drop-out rate, denoted as $\framebox{S}$). Here we present a scenario in which the exposure variable $A_{t1}$ can impact a post-treatment confounder  $L_{t2}$, which subsequently affects attrition, $\framebox{S}$. If the study's selected sample descends from L${t2}$, the selection effectively conditions on $L_{t2}$, potentially introducing bias into the analysis. @fig-5 marks this biasing pathway with red-dashed lines. 
 
 ```{tikz}
 #| label: fig-5
@@ -342,30 +327,69 @@ In panel designs, there is a constant threat of selection occurring *after* enro
 
 \begin{tikzpicture}[{every node/.append style}=draw]
 \node [rectangle, draw=white] (U) at (0, 0) {U};
-\node [rectangle, draw=black, align=left] (L) at (2, 0) {L$_{t0}$ \\A$_{t0}$ \\Y$_{t0}$};
+\node [rectangle, draw=black, align=left] (L) at (2, 0) {L$_{t0}$};
 \node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
-\node [ellipse, draw=white] (US) at (4, -2) {U$_S$};
 \node [rectangle, draw=white](L2) at (6, 0) {L$_{t2}$};
 \node [rectangle, draw=black](S) at (8, 0) {S};
 \node [ellipse, draw=white] (Y) at (10, 0) {Y$_{t2}$};
 
 \draw [-latex, draw=black] (U) to (L);
+\draw [-latex, draw=red, bend right = 30] (U) to (L2);
+\draw [-latex, draw=red, bend right = 30] (U) to (Y);
 \draw [-latex, draw=black] (L) to (A);
-\draw [-latex, bend left=50, draw=black] (L) to (Y);
-\draw [-latex, bend right=50, draw=black, dotted] (U) to (Y);
-\draw [-latex, bend left=50, draw=black, dotted] (U) to (A);
+\draw [-latex, bend left=30, draw=black] (L) to (Y);
 \draw [-latex, draw=red] (A) to (L2);
 \draw [-latex, draw=red] (L2) to (S);
-\draw [-latex, draw=red] (US) to (L2);
-\draw [-latex, draw=red, bend right=40] (US) to (Y);
 
-\draw [cor, draw=red, bend right=20, dashed] (A) to (US);
 
 
 \end{tikzpicture}
 
 
 ```
+
+
+### The outcome affects selection
+
+
+```{tikz}
+#| label: fig-6
+#| fig-cap: "Y affects attrition, as does an unmeasured variable that also effects treatment."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=white] (U) at (0, -1.5) {U};
+\node [rectangle, draw=black, align=left] (L) at (0, 0) {L$_{t0}$};
+\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [ellipse, draw=white] (Y) at (6, 0) {Y$_{t2}$};
+\node [rectangle, draw=black](S) at (8, 0) {$Y'_{t2}$};
+
+
+\draw [-latex, draw=red, bend right=05] (U) to (S);
+\draw [-latex, draw=red] (U) to (A);
+\draw [-latex, draw=black] (L) to (A);
+\draw [-latex, bend left=30, draw=black] (L) to (Y);
+\draw [-latex, draw=red] (Y) to (S);
+
+
+
+\end{tikzpicture}
+
+
+```
+
 
 
 ### Why regression adjustment fails to address select bias from attrition
@@ -402,12 +426,16 @@ In addressing the challenge of selection bias in evolutionary human sciences, pa
 6. **Conduct sensitivity analysis for robustness**: conduct sensitivity analyses to assess how different assumptions about missing data and other factors impact the study's findings. This is a critical step in ensuring the validity and reliability of the research conclusions.
 
 
-#### Summary
+### Summary
 
-By integrating these strategies into both the design and analysis phases of research, we can effectively address the challenges posed by selection bias, particularly in the context of evolutionary human sciences. This comprehensive approach not only enhances the accuracy and applicability of the findings but also contributes to the overall robustness and credibility of the research.
+By integrating these strategies into both the design and analysis phases of research, we can effectively address the challenges posed by selection bias, particularly in the context of evolutionary human sciences. This  approach will not only enhance the accuracy and applicability of the findings but also contributes to the overall robustness and credibility of the research.
 
 
-## References
+### Acknowledgements
+
+
+## References 
+
 
 
 

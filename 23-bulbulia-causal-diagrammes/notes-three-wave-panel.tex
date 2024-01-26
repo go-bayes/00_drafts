@@ -81,10 +81,8 @@
 \NewDocumentCommand\citeproctext{}{}
 \NewDocumentCommand\citeproc{mm}{%
   \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+% avoid brackets around text for \cite:
 \makeatletter
- % allow citations to break across lines
- \let\@cite@ofmt\@firstofone
- % avoid brackets around text for \cite:
  \def\@biblabel#1{}
  \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
 \makeatother
@@ -92,32 +90,33 @@
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
- {\begin{list}{}{%
-  \setlength{\itemindent}{0pt}
-  \setlength{\leftmargin}{0pt}
-  \setlength{\parsep}{0pt}
-  % turn on hanging indent if param 1 is 1
-  \ifodd #1
-   \setlength{\leftmargin}{\cslhangindent}
-   \setlength{\itemindent}{-1\cslhangindent}
-  \fi
-  % set entry spacing
-  \setlength{\itemsep}{#2\baselineskip}}}
- {\end{list}}
+\newlength{\cslentryspacing}
+\setlength{\cslentryspacing}{0em}
+\usepackage{enumitem}
+\newlist{CSLReferences}{itemize}{1}
+\setlist[CSLReferences]{label={},
+  leftmargin=\cslhangindent,
+  itemindent=-1\cslhangindent,
+  parsep=\parskip,
+  itemsep=\cslentryspacing}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{\hfill\break#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{cancel}
+\usepackage{xcolor}
 \usepackage[noblocks]{authblk}
 \renewcommand*{\Authsep}{, }
 \renewcommand*{\Authand}{, }
 \renewcommand*{\Authands}{, }
 \renewcommand\Affilfont{\small}
 \usepackage{cancel}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -154,10 +153,10 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
-\makeatother
-\makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
@@ -187,7 +186,7 @@ Inference, Confounding, History, Psychology, Panel},
                   Research
               }
       
-\date{2023-11-16}
+\date{2023-11-30}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -306,9 +305,7 @@ Measuring the outcome at both baseline (wave 0) and after the exposure
 
 \begin{figure}
 
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{notes-three-wave-panel_files/figure-pdf/fig-dag-1-1.pdf}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{notes-three-wave-panel_files/figure-pdf/fig-dag-1-1.pdf}
 
 }
 
@@ -322,7 +319,7 @@ by measuring confounders before the exposure and the exposure before the
 outcome, we reduce the potential for reverse causation, collider
 stratification, and mediator biases.}
 
-\end{figure}%
+\end{figure}
 
 \subsubsection{Step 4. Identify Observable Common Causes of the Exposure
 and the
@@ -361,7 +358,7 @@ for accurate causal inference.
   both religious service attendance and charitable giving.
 \item
   \textbf{Use Causal Diagrams}: Causal diagrams allow us to visualise
-  causal relationships among variables (CITE OTHER ARTICLE)
+  causal relationships among variables.
 \item
   \textbf{Minimize Mediation Bias}: Recording confounders before the
   exposure occurs is critical for minimizing mediation bias. Mediation
@@ -502,13 +499,12 @@ Sample retention is mission-critical for preventing bias arising to
 panel attrition in three-wave panel designs. Researchers must be aware
 of it, and combat it.
 
-\subsection{Summary of Advice}\label{summary-of-advice}
-
 \subsection*{References}\label{references}
 \addcontentsline{toc}{subsection}{References}
 
 \phantomsection\label{refs}
-\begin{CSLReferences}{1}{0}
+\setlength{\cslentryspacing}{0em}
+\begin{CSLReferences}
 \bibitem[\citeproctext]{ref-hernuxe1n2016}
 Hernán, MA, Sauer, BC, Hernández-Díaz, S, Platt, R, and Shrier, I (2016)
 Specifying a target trial prevents immortal time bias and other

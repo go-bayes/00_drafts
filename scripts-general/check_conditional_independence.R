@@ -3,7 +3,30 @@
 
 library(dagitty)
 library(ggdag)
+d <- dagify(A ~ UA,
+            Y ~ UY,
+            S ~ UA,
+            S ~ UY,
+            exposure = "A",
+            outcome = "Y"
+)
 
+d%>%
+  ggdag_dseparated("Y", "A",
+                  # controlling_for = c("S"),
+                   collider_lines = TRUE
+  ) + theme_dag_grey()
+
+# Some methods for checking for confounders
+test <- dagitty( "dag {
+    UA -> A
+    UY -> Y
+    S -> A
+    S -> Y
+}")
+
+test
+print( impliedConditionalIndependencies( test ) )
 
 # Some methods for checking for confounders
 g1 <- dagitty( "dag {

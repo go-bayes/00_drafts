@@ -1,0 +1,1708 @@
+---
+title: "Causal Diagrams for the Evolutionary Human Sciences: A Practical Guide"
+abstract: | 
+ Causation inherently unfolds in time. However, quantifying a causal effect relies on contrasting counterfactual states of the world that never occur. As such, causal data science relies on explicit assumptions and careful, multi-stepped workflows. Within this framework, causal diagrams have been developed as powerful tools for evaluating structural assumptions necessary for obtaining consistent causal effect estimates from data. However, outside this framework, causal diagrams may be easily misinterpreted and misused. This guide offers practical advice for creating safe, effective causal diagrams. I begin by reviewing the causal data science framework, clarifying how causal diagrams function within it. Next, I develop a series of examples that illustrate the benefits of chronological order in the spatial organisation of one's graph, both for data analysis and collection. I conclude using chronologically ordered causal diagrams to elucidate the widely misunderstood concepts of interaction (moderation), mediation, and dynamic longitudinal feedback. 
+author: 
+  name: Joseph A. Bulbulia
+  orcid: 0000-0002-5861-2056
+  email: joseph.bulbulia@vuw.ac.nz
+  affiliation: 
+    - name: Victoria University of Wellington, New Zealand, School of Psychology, Centre for Applied Cross-Cultural Research
+      department: Psychology/Centre for Applied Cross-Cultural Research
+      city: Wellington
+      country: New Zealand
+      url: www.wgtn.ac.nz/cacr
+execute:
+  warning: false
+  eval: true
+  echo: false
+  include: true
+keywords:
+  - Directed Acyclic Graph
+  - Causal Inference
+  - Confounding
+  - Feedback
+  - Interaction
+  - Mediation
+  - Moderation
+  - Panel
+format:
+  pdf:
+    sanitize: true
+    keep-tex: true
+    link-citations: true
+    colorlinks: true
+    documentclass: article
+    classoption: [singlecolumn]
+    lof: false
+    lot: false
+    geometry:
+      - top=30mm
+      - left=20mm
+      - heightrounded
+    include-in-header:
+       - text: |
+           \usepackage{cancel}
+           \usepackage{xcolor}
+date: last-modified
+bibliography: ../references.bib
+csl: camb-a.csl
+---
+
+```{r}
+#| label: load-libraries
+#| echo: false
+#| include: false
+#| eval: false
+
+#   html:
+#   html-math-method: katex
+
+# Include in YAML for Latex
+# sanitize: true
+# keep-tex: true
+# include-in-header:
+#       - text: |
+#           \usepackage{cancel}
+
+
+# for making graphs
+library("tinytex")
+library(extrafont)
+loadfonts(device = "all")
+
+#quarto install tinytex --update-path
+
+# libraries for jb (when internet is not accessible)
+# read libraries
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+# read functions
+source("/Users/joseph/GIT/templates/functions/funs.R")
+
+# read data/ set to path in your computer
+pull_path <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/current/nzavs_13_arrow"
+  )
+
+# for saving models. # set path fo your computer
+push_mods <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-causal-dags"
+  )
+
+
+# keywords: potential outcomes, DAGs, causal inference, evolution, religion, measurement, tutorial
+# 10.31234/osf.io/b23k7
+
+#xxx words
+# 75 refs
+# 32 figs
+```
+
+## Introduction
+
+Correlation does not imply causation. This adage is widely known. Nevertheless, many human scientists report manifest correlations and use hedging language that implies causation. I have been guilty. However, such reporting typically lacks justification. Making matters worse, widely adopted analytic strategies for confounding control, such as indiscriminate co-variate adjustment, are known to enhance bias [@mcelreath2020]. Across many human sciences, including the evolutionary human sciences, persistent confusion in the analysis and reporting of correlations continue to impede scientific progress -- suggesting a causality crisis.
+
+We have reasons for hope. First, the open science movement has demonstrated that attention to the problems of replication, analysis, and reporting can bring considerable improvements to the reliability of experimental research within a short period. Although much remains to be done, and it is easy to focus on headroom for improvement, basic corrective practices for open science have become normative. Moreover, the system of rewards that supports research has changed, for example, by the peer review of research designs rather than of results. Again, there is much scope for improvement, but this should not detract from the progress achieved. Second, several decades of active development in the causal data sciences across the health sciences, computer sciences, economics, and several social sciences have yielded both considerable conceptual clarifications and rigorous analytic toolkits for inference [@neyman1923; @rubin1976; @robins1986; @pearl1995; @pearl2009a; @vanderweele2015; @hernan2023]. Although causal data science is still evolving [@vansteelandt2022; @hoffman2023; @díaz2021], a substantial foundation exists. Importantly, this foundation is written in a system of mathematical proofs that bring confidence. Indeed, there are encouraging examples of convergent evolution across pockets of development. Most debates within causal data science are peripheral to its core conceptual framework. We can, with reasonable justification, speak of causal data science in the singular. Although exciting developments remain ahead, essential concepts, theories, and tools have already been worked out. We should be optimistic that rapid uptake of these tools is feasible. The articles in this special issue of *Evolutionary Human Sciences* testify to this hope.
+
+Within the framework of causal data science, causal diagrams, also known as 'directed acyclic graphs' or 'DAGs,' have been developed as powerful inferential tools. Their applications rest on a robust system of formal mathematical proofs that should instil confidence. Nevertheless, they do not require mathematical training and are broadly accessible. This accessibility is a great advantage.
+
+However, the accessibility that empowers causal diagrams to improve our causal inferences also invites risks. The tool acquires its significance when integrated within the broader theoretical frameworks of causal data science. This framework distinguishes itself from traditional data science by attempting to estimate pre-specified contrasts, or 'estimands', among counterfactual states of the world. However, we assume these counterfactual states to be real they never occur. Instead, the required counterfactual scenarios are simulated from data under explicit assumptions that must be justified [@vansteelandt2012; @robins1986; @edwards2015]. These *structural assumptions* differ from the statistical assumptions familiar to traditionally trained data scientists and computer scientists. Because causal data scientists must eventually use statistical models, careful statistical validations must also enter the workflow. We cannot assume that traditionally trained human scientists, even those with excellent statistical trading, have familiarity with the demands of counterfactual inference, in which the data we observe provide inherently partial insights into the targeted counterfactual contrasts and their uncertainties [@ogburn2021; @bulbulia2023]. Using causal diagrams without understanding their role within the framework of theory and assumptions that underpin causal data science risks inadvertently worsen the causality crisis by fostering misguided confidence where none is due.
+
+Here, I offer readers of *Evolutionary Human Science* practical guidance for creating causal diagrams that work as we hope while mitigating risks of overreaching.
+
+**Part 1** introduces certain core concepts and theories in causal data science, emphasising fundamental assumptions and the demands they impose on inferential workflows. Although this overview is brief, it provides an orientation to the broader context in which causal diagrams possess their utility, outside of which the application of causal diagrams offers no guarantees.
+
+**Part 2** introduces *chronologically ordered causal diagrams* and considers elementary use cases. Here, I illustrate how maintaining 'chronological hygiene' in the spatial layout of a causal diagram is helpful not only for the tasks of developing sound data-analytic strategies but also for research planning and data collection. Although chronological ordering is not strictly essential and indeed is not widely practised, the examples I consider demonstrate its advantages in common scenarios.
+
+**Part 3** uses chronologically ordered causal diagrams, applied within the broader framework of causal data science, to demystify misunderstood concepts of interaction (moderation), mediation, and longitudinal data analysis. Again, the frameworks of causal data science are indispensable for clarifying the quantities researchers hope to understand when applying statistical models to questions of interaction, mediation, and dynamic longitudinal feedback. We again discover that maintaining good chronological hygiene in one's causal diagram benefits data analysis and collection. We also discover that in many commonplace settings, seemingly accessible questions, such as 'How much of total effect is mediated?' cannot be directly evaluated by the data, even at the limit of perfect data collection. Unfortunately, questions of interaction, mediation, and longitudinal feedback remain poorly served by analytic traditions in which many human scientists and statisticians were trained, such as the structural equation modelling tradition (SEM). These traditions continue to dominate, yet we can do better and should.
+
+There are numerous excellent resources available for learning causal diagrams, which I recommend to readers [@rohrer2018; @hernan2023; @cinelli2022; @barrett2021; @mcelreath2020; @greenland1999; @suzuki2020; @pearl2009].[^1] I hope to contribute to these resources, first by providing additional conceptual orientation to the frameworks and workflows of causal data science, outside of which the application of causal diagrams is risky; second, by underscoring the benefits of chronological hygiene in one's causal diagrams for common problems; and third by applying this orientation to concepts of interaction, mediation, and longitudinal feedback, about which there remains considerable confusions.
+
+[^1]: An excellent resource is Miguel Hernán's free online course, here: <https://pll.harvard.edu/course/causal-diagrams-draw-your-assumptions-your-conclusions>.
+
+## Part 1. Overview of Causal Data Science
+
+In causal data science, the critical first step in answering a causal question is to ask it [@hernán2016]. Causal diagrams come later when we consider which forms of data might enable us to address our pre-specified causal questions. This section introduces the key concepts and broader workflows within which causal diagrams find their purposes and utilities. It begins by considering what is at stake when we ask a causal question.
+
+<!-- First, we must consider the specific treatments or interventions of interest, the specific outcomes we seek to contrast and their timing, the scale on which the causal contrasts will be made, and the populations of units to which we hope our inferences to generalise. Causal diagrams come later, as we consider which forms of data might enable us to address our pre-specified causal questions. This section introduces fundamental concepts in causal data science, and locates the place of causal diagrams within a larger workflow that moves from stating a causal question to answering it with data. -->
+
+### The Fundamental Problem of Causal Inference
+
+To ask a causal question, we must consider the concept of causality itself. Consider an intervention, $A$, and its effect, $Y$. We say that $A$ causes $Y$ if altering $A$ would lead to a change in $Y$ [@hume1902; @lewis1973]. If altering $A$ would not change $Y$, we say that $A$ has no causal effect on $Y$.
+
+In causal data science, we aim to quantitatively contrast in a well-defined outcome $Y$ when subjected to different levels of a well-defined intervention $A$. Commonly, we refer to these interventions as 'exposures' or 'treatments;' we refer to the possible effects of interventions as 'potential outcomes.'
+
+Let us assume that $A$ exists in two states: $A \in \{0,1\}$. If $A$ is set to $0$ we denote the potential outcome as $Y(0)$. If $A$ is set to 1, we denote the potential outcome as $Y(1)$. We call $Y(1), Y(0)$ 'potential outcomes' because, until realised, the outcomes are counterfactual. 
+
+Next suppose we have stated a well-defined exposure and outcome. Each unit, $i \dots, n$, can either experience $Y_i|A_i = 1$ or $Y_i|A_i = 0$.  For any realised intervention we cannot observe the unrealised intervention. As a result, we cannot directly calculate a contrast between $Y_i(1)$ and $Y_i(0)$ from observable data.:
+
+-If $A_i = 1$, the outcome under treatment is observed ($Y_i(1)|A_i=1$), but the outcome under no treatment remains unobserved ($Y_i(0)|A_i=1$). This can be expressed as:
+    
+
+
+$$
+Y_i|A_i = 1 \implies Y_i(1)|A_i=0~ \text{is counterfactual}
+$$
+
+Conversely, if $A = 0$, the outcome under no treatment is observed: $Y_i(0)|A=0$, but the outcome under treatment is unobserved: $Y_i(1)|A=0$. This constraint can be expressed as:
+    
+$$
+Y_i|A_i = 0 \implies Y(0)|A=1~ \text{is counterfactual} 
+$$
+
+
+Where $\delta_i$ is the quantity of interest,
+
+$$
+\delta_i = Y_i(1) - Y_i(0)
+$$
+
+We discover $\delta_i$ is unobservable: each unit can receive only one exposure at one time.
+
+This framework highlights the fundamental challenge of causal inference, where one of the potential outcomes is always missing. The fact that individual causal effects are not identified from observations is "*the fundamental problem of causal inference*" [@rubin1976; @holland1986].
+
+We are familiar with the inaccessibility of counterfactuals. It may be tempting to ask, 'What if Isaac Newton had not observed the falling apple?' 'What if Leonardo da Vinci had never pursued art?' or 'What if Archduke Ferdinand had not been assassinated?' We have many examples from literature. Frost contemplates, 'Two roads diverged in a yellow wood, and sorry I could not travel both, and be one traveller, long I stood...'[^frost] We have examples from personal experience, 'What if I had had not interviewed for that job?' 'What if I had stayed in that relationship?' We may speculate, with reasons, but we cannot directly observe the answers. The physics of middle-sized dry goods prevents the joint realisations of the facts required for comparisons.
+
+[^frost]: see: Robert Frost, "The Road Not Taken": https://www.poetryfoundation.org/poems/44272/the-road-not-taken
+
+A distinctive feature of causal data science is the assumption that, although never jointly realised, the potential outcomes $Y(1),Y(0)$ must nevertheless be assumed to be real, and to exist independently of data collection.[^2]  As such, causal data science faces a unique type of missing data problem in which the 'full data' needed to compute any causal contrast are missing at least half of their values [@ogburn2021; @westreich2015; @edwards2015]. This challenge is distinct from typical missing data scenarios where data could have been recorded but were not. The missing information crucial for computing causal contrasts is intrinsically linked to the irreversible nature of time.
+
+[^2]: As Hernán and Robins point out: "Sometimes we abbreviate the expression individual $i$ has outcome $Y^a = 1$ by writing $Y^a_i = 1$. Technically, when $i$ refers to a specific individual, such as Zeus, $Y^a_i$ is not a random variable because we are assuming that individual counterfactual outcomes are deterministic... Causal effect for individual $i: Y^{a=1}\neq Y^{a=0}$" [@hernan2023, p.6]
+
+
+<!-- To quantitatively evaluate evidence for causality requires specifying an intervention, here a binary exposure $A \in \{0,1\}$; specifying an the potential outcome under different realisations of the intervention, here: $Y(0)$ and $Y(1)$; and specifying a scale of contrast, such as the difference scale or the ratio scale.To quantitatively evaluate whether altering $A$ would make a difference to an outcome $Y$, we must compute contrasts for the potential outcomes under different exposures. For instance, $Y(1) - Y(0)$ calculates this contrast under a binary exposure on the difference scale, while $\frac{Y(1)}{Y(0)}$ does so on the ratio scale. Importantly, we must specify some unit or set of units on which the interventions to be evaluated occur, and are to be measured. Doing so reveals that causal data science cannot rely on ordinary data science. -->
+
+
+### Obtaining Average Causal Effects From Observations
+
+In typical scenarios, computing individual causal effects is not feasible. However, it is possible to calculate average causal effects under certain assumptions. That is, we may obtain *average* treatment effects by contrasting groups that have received different levels of treatment. On a difference scale, the average treatment effect ($\Delta_{ATE}$)) may be expressed,
+
+$$
+\Delta_{ATE}  = \mathbb{E}[Y(1)] - \mathbb{E}[Y(0)]
+$$
+
+Rearranging, $\mathbb{E[(Y(1)-Y(0))|A]}$ denotes the expected average difference in the responses of all individuals within an exposure group, and $Y(1)$ and $Y(0)$ represent the potential outcomes under interventions $A = 1$ and $A = 0$, respectively. (We drop the subscripts to simplify notation).
+
+Given that individual causal effects are not observable -- they are missing -- how might we compute these averages? We do so with assumptions. To understand how it is helpful to consider how randomised experiments obtain contrasts of averages between treatment assignment groups.
+
+First, let us state the problem in terms of the 'full data' we would need to base these contrasts on observations. Where ATE denotes the "Average Treatment Effect":
+
+$$
+\Delta_{ATE} = \left(\underbrace{\underbrace{\mathbb{E}[Y(1)|A = 1]}_{\text{observed for } A = 1} + \underbrace{\mathbb{E}[Y(1)|A = 0]}_{\text{unobserved for } A = 0}}_{\text{effect among treated}}\right) - \left(\underbrace{\underbrace{\mathbb{E}[Y(0)|A = 0]}_{\text{observed for } A = 0} + \underbrace{\mathbb{E}[Y(0)|A = 1]}_{\text{unobserved for } A = 1}}_{\text{effect among untreated}}\right)
+$$
+
+In each treatment condition assignment, the potential outcome for each unit that did not receive the opposite level of treatment they, in fact received is missing. However, when researchers randomise units into treatment conditions, the distributions of the confounders of the potential outcomes cancel each other out. When treatments are randomly assigned, and randomisation is effective, the outcomes under different treatment conditions should be identical in expectation.
+
+$$
+ \mathbb{E}[Y(0) | A = 1] = \mathbb{E}[Y(0) | A = 0] 
+$$
+
+$$
+\mathbb{E}[Y(1) | A = 1] = \mathbb{E}[Y(1) | A = 0] 
+$$
+
+And thus,
+
+$$
+  \widehat{\Delta_{ATE}} = \mathbb{E}[Y | A = 1] - \mathbb{E}[Y | A = 0]
+$$
+
+Here, $\widehat{\Delta_{ATE}}$ provides an unbiased estimate of average treatment effect on the difference scale.
+
+Although randomisation can fail, it provides a means to identify group-level causal effects using a Sherlock-Holmes-like process of inference by elimination. The distribution of potential outcomes must the same across treatment groups because randomisation in an ideally conducted experiment exhausts every other explanation except the treatment. For this reason, we should prefer experiments for addressing causal questions that experiments can address.
+
+Alas, randomised experiments cannot address many of the most important scientific questions. This limitation is acutely felt when evolutionary human scientists confront 'what if?' scenarios rooted in the unidirectional nature of human history. However, understanding how randomisation obtains missing counterfactual outcomes clarifies the tasks of causal inference in non-experimental settings [@hernán2008a; @hernán2006; @hernán2022]. We must obtain balance across observed variables that might account for treatment-level differences [@greifer2023]. This task of obtaining balance presents a significant challenge [@stuart2015]. Observations typically cannot in themselves verify no-unmeasured confounding.
+
+Moreover, we must satisfy ourselves with additional assumptions, which, although nearly automatic in randomised experimental settings, impose substantial restrictions on causal effect estimation where the exposure is not randomised. We next discuss a subset of these assumptions and group them into two categories: (1) Fundamental identification assumptions; (2) Practical assumptions. We will locate the primary functions of causal diagrams within a workflow that must explicitly clarify a pathway for satisfying them.
+
+### Fundamental Identification Assumptions
+
+There are three fundamental identification assumptions that must be satisfied to consistently estimate causal effects with data.
+#### Assumption 1: Causal Consistency
+
+The causal consistency assumption posits that for any given level of exposure, $A_i=a$, the observed outcome, $Y_i|A_i=a$, is interchangeable with the counterfactual outcome: $Y(a)|A = a$. To illustrate, we use the subscript $i$ to represent individual $i, 1 \dots n$. We define the observed outcome when treatment is $A_i = a$ as $Y_i^{observed}|A_i = a$. When the causal consistency assumption is satisfied, we say the observed outcome for each $i, 1 \dots n$ corresponds to one of the counterfactual outcomes necessary for calculating a causal contrast:
+
+$$
+Y_i^{observed}|A_i = 
+\begin{cases} 
+Y_i(a^*) & \text{if } A_i = a^* \\
+Y_i(a) & \text{if } A_i = a
+\end{cases}
+$$
+
+The consistency assumption implies that the observed outcome at a specific exposure level mirrors the counterfactual outcome for that individual. Although it seems straightforward to equate an individual's observed outcome with their counterfactual outcome, treatment conditions vary, and treatment heterogeneity poses considerable challenges in satisfying this assumption.
+
+To better understand the threat, consider a question that has been discussed in the evolutionary human science literature question about whether a society's beliefs in Big Gods affects its development of Social Complexity [@whitehouse2023; @slingerland; @beheim2021; @watts2015]. Historians and anthropologists report that such beliefs vary over time and across cultures in intensity, interpretations, institutional management, and ritual embodiments [@decoulanges1903; @wheatley1971; @geertz2013]. Knowing nothing else, we might expect that variation in content and settings in which these beliefs are realised could influence social complexity. Moreover, the treatments as they are realised in one society might affect the treatments realised in other societies through spill-over effects. In practice, we might be unclear about how to address the treatment independence assumption using a conditioning strategy. (Appendix 1 considers these problems in more depth). 
+
+The theory of causal inference under multiple versions of treatment, developed by VanderWeele and Hernán, formally addresses the challenge of treatment heterogeneity [@vanderweele2009; @vanderweele2013; @vanderweele2018]. VanderWeele proved that if the treatment variations ($K$) are conditionally independent of the outcome $Y(k)$ given covariates $L$, then conditioning on $L$ allows us to consistently estimate a causal contrast over the heterogeneous treatments [@vanderweele2009].
+
+Where $\coprod$ denotes independence, causal consistency is formally preserved if
+
+$$
+K \coprod Y(k) | L
+$$
+
+Under the theory of causal inference under multiple versions of treatment, we think of $K$ as a 'coarsened indicator' for $A$. That is, we obtain an average effect estimate for the multiple treatment versions $K$ on $Y(k)$.
+
+Although the theory of causal inference under multiple versions of treatment provides a formal solution to the problem of treatment effect heterogeneity, interpreting causal effect estimates under this theory can be challenging. Consider the question of whether a reduction in Body Mass Index (BMI) affects health [@hernán2008]. Weight loss can occur through various methods, each with different health implications. Specific methods, such as regular exercise or a calorie-reduced diet, benefit health. However, weight loss might result from adverse conditions such as infectious diseases, cancers, depression, famine, or even amputations, which are not beneficial to health. Even if causal effects can be consistently estimated when adjusting for covariates $L$, the true nature and implications of the changes in BMI might remain unclear. This uncertainty highlights the need for precise and well-defined causal questions. For example, rather than stating the intervention as "weight loss", we state the intervention as weight loss achieved through aerobic exercise over at least five years, compared with no weight loss. This level of specificity in our exposure and outcomes helps ensure that the causal estimates we obtain are not only statistically sound but also interpretable (for discussion see: [@hernán2022a; @murray2021a; @hernán2008].
+
+Beyond interpretation, there is the additional problem that we cannot know whether the measured covariates $L$ suffice to render the multiple versions of treatment independent of the counterfactual outcomes. This problem is acute when there is *interference*, which occurs when treatment effects are relative to the density and distribution of treatment effects in a population. Scope for interference will often make it difficult to satisfy ourselves that the potential outcomes are independent of many versions of treatment that have been realised, dependently, on the administration of previous versions of treatments across the population [@bulbulia2023a; @ogburn2022; @vanderweele2013].
+
+In short, *treatment heterogeneity* is an essential threat to the assumption of conditional exchangeability. Causal diagrams might occasionally help us assess the conditional independence of the many treatment versions, but they cannot save inferences where *treatment heterogeneity* compromises understanding.
+
+In many settings, causal consistency should be presumed unrealistic until proven tenable. What initially appeared to be a near truism -- that each units observed outcome may be assumed to correspond to that unit's counterfactual outcome -- may be, in context, a strong and untenable assumption. 
+
+For now, the causal consistency assumption provides a theoretical starting point for recovering the missing counterfactuals essential for computing causal contrasts. It identifies half of these missing counterfactuals directly from observed data. The concept of conditional exchangeability, which we will explore next, offers a means to derive the remaining half.
+
+#### Assumption 2: Conditional Exchangeability (No Unmeasured Confounding)
+
+We satisfy the conditional exchangeability assumption when the treatment groups conditionally balanced in the variables that could affect the potential outcomes. In experimental designs, random assignment facilitates conditional exchangeability. In observational studies more effort is required. We must control for any covariate that could account for observed correlations between $A$ and $Y$ in the absence of a causal effect of $A$ on $Y$.
+
+Let $L$ denote the set of covariates necessary to ensure this conditional independence. Let $\coprod$ again denote independence. We satisfy conditional exchangeability when:
+
+$$
+Y(a) \coprod A | L \quad \text{or equivalently} \quad A \coprod Y(a) | L
+$$
+
+Assuming conditional exchangeability and our other assumptions hold, we may compute the average treatment effect ($\Delta_{ATE}$) on the difference scale:
+
+$$
+\Delta_{ATE} = \mathbb{E}[Y(1) | L] - \mathbb{E}[Y(0) | L]
+$$
+
+In the disciplines of cultural evolution, where experimental control is impractical, causal inferences hinge on the plausibility of satisfying this 'no unmeasured confounding' assumption.(Appendix 1 uses a worked example to critique this assumption).
+
+Importantly, *the **primary** purpose of a causal diagram within a causal inference workflow is to evaluate the conditional exchangeability assumption.* Causal diagrams enable researchers to represent crucial structural assumptions necessary for achieving balance in the confounders across levels of the exposure stated in a pre-specified causal contrast.
+
+Moreover, it is essential to recognise that in this setting, causal diagrams function to *highlight those aspects of the assumed causal order pertinent to the assessment of 'no-unmeasured confounding.'* A common mistake when creating a causal diagram is to provide too much detail, obscuring rather than clarifying structural sources of bias. We return to this point below.
+
+Finally, we must realise that we can rarely ensure "no-unmeasured" confounding. For this reason, the workflows of causal data science must rely on sensitivity analyses to clarify how much unmeasured confounding would be required to compromise a study's findings (@vanderweele2019).
+
+#### Assumption 3: Positivity
+
+We say the positivity assumption is met when there exists a non-zero probability that each level of exposure occurs within every level of the covariates needed to ensure conditional exchangeability. Where $A$ is the exposure and $L$ a vector of covariates, positivity is only achieved where:
+
+$$
+0 < \Pr(A = a | L = l) < 1, ~ \forall a \in A, ~ \forall l \in L
+$$
+
+There are two types of positivity violation:
+
+1.  **Random non-positivity** occurs when an exposure is theoretically possible, but specific exposure levels are not represented in the data. Notably, random non-positivity is the only identifiability assumption verifiable with data.
+
+2.  **Deterministic non-positivity** occurs when the exposure is implausible by nature. For instance, a hysterectomy in biological males would appear biologically implausible.
+
+Satisfying the positivity assumption may present considerable data challenges [@westreich2010]. Consider estimating the effects of church attendance on charity. Suppose we aim to assess the one-year effect on charitable donations following a shift from no church attendance to weekly attendance. Assume we have access to extensive panel data that has tracked 20,000 individuals randomly sampled from the target population over three years. Let us assume that the natural transition rate from no attendance to weekly attendance is low. Suppose the rate of change is one in a thousand annually. In that case, the effective sample for the treatment condition when the exposure is measured in the second wave, conditioning on the exposure level in the pre-exposure baseline, dwindles to 20. Attention to the positivity assumptions reveals the data required for valid contrasts is sparse. Every evolutionary human scientists attempting to collect longitudinal data should know this demand at the research design phase.  
+
+For our purposes, note that where positivity is violated, causal diagrams will be of limited utility because the data do not support valid causal inferences.  (Appendix 1 raises an example revealing difficulties in satisfying the fundamental assumptions of causal inference.)
+
+### Practical Assumptions and Considerations
+
+Beyond the three fundamental identification assumptions that must be satisfied to estimate causal effects with data, numerous practical considerations enter into every causal data science workflow.
+
+#### 1. Overly ambitious estimands
+
+In causal inference, the notion of assessing Average Treatment Effects (ATE) through the comparison $E[Y(a^*) - Y(a)|L]$ is often flawed. This is evident in the context of continuous exposures, where such an estimand will simplify the complexity of real-world phenomena into a low dimensional summary, such as a contrast of a one-standard-deviation difference in the mean, or a comparison of a one to another quartile. In practice, the requirements for targeting such contrasts for continuous data impose stronger reliance on statistical models, which introduce further opportunities for bias (see below). Again, such comparisons might strain the positivity assumption because the relevant events occur infrequently or are absent within the strata of covariates required to satisfy conditional exchangeability. The real-world simplifications required for standard causal estimands do not operate in neatly defined exposure levels, rendering these comparisons artificial and potentially misleading [@vansteelandt2022].
+
+Moreover, the assumption of a monotonic relationship between treatment and effect may be equally naive [@calonico2022; @ogburn2021]. Real-life treatment effects are rarely linear, and the functional forms of interactions with baseline covariates are unknown. Comparing arbitrary points on a continuous scale while relying on modelling specifications to carry inference, risks erroneous conclusions about a treatment's actual effect. 
+
+Focusing on average treatment effect (ATE) may mask scientifically interesting heterogeneity in treatment effects [@wager2018]. In practice, such heterogeneity is not merely a statistical nuisance; it is the essence of understanding causal mechanisms. Recognising and elucidating this heterogeneity may be a primary goal, yet methods for valid inference in this setting, although promising, remain inchoate (see: @tchetgen2012; @wager2018; @cui2020; @foster2023; @foster2023; @kennedy2023; @nie2021]).
+
+
+Recently, new classes of estimands, such as modified treatment policies (shift interventions) [@hoffman2023; @díaz2021; @vanderweele2018; @williams2021] and optimal treatment policies [@athey2021; @kitagawa2018] have become prominent areas of research and development. These advances allow researchers to specify and examine a broader range of causal contrasts. For example, they enable the evaluation of population contrasts that arise from (pseudo)-random treatments administered differently across specific population segments. While an in-depth review of these developments is beyond the scope of this discussion, readers should understand that although standard $Y(1) - Y(0)$ causal estimands help to build intuition about the role of counterfactual contrasts in causal data science, the practice of contrasting specific counterfactual outcomes for the entire population, simulated at two levels of the exposure, may sometimes yield results that are artificial or lack clear interpretability, even when underlying assumptions are satisfied. 
+
+#### 2. Measurement Error Bias
+
+Measurement error refers to the discrepancy between a variable's true value and its observed or recorded value. Such errors can stem from various sources, including instrument calibration issues, respondent misreporting, or coding errors. Unfortunately, measurement error is both common and capable of distorting causal inferences.
+
+Measurement error can be broadly categorised into two main types: random and systematic.
+
+**Random measurement error:** this type of error occurs from fluctuations in the measurement process and does not consistently bias data in any one direction. While random measurement errors can increase data variability and reduce statistical power, they typically do not introduce bias in estimates of causal effects when the effects are nonexistent. However, they can lead to attenuated estimates of causal effects, systematically weakening the observed effect of an exposure on an outcome when a true effect exists.
+
+**Systematic measurement error:** his type of error occurs when measurements consistently deviate from true values in a specific direction. Such errors can lead to biased estimates of causal effects by consistently overestimating or underestimating the true causal magnitudes.
+
+Addressing measurement error bias is best addressed by improving data quality. When this is not feasible, sensitivity analyses are necessary to gauge the impact of measurement errors on conclusions [@hernan2023].
+
+Causal diagrams can be useful in assessing structural sources of bias arising from different forms of measurement error [@hernán2009; @vanderweele2012a; @hernan2023]. While we will not develop this application here, it is important to note that simple causal diagrams, with direct arrows between variables, often abstract from structural biases arising from measurement error. This simplification can lead to misplaced confidence.[^3]
+
+[^3]: There is an inherent tension in addressing structural sources of bias. Simple causal diagrams are needed, but these do not encompass the complexities associated with measurement errors, necessitating more intricate diagrams. Hernán and Robins recommend a two-step approach where separate diagrams are used to address different threats to valid causal inference [@hernan2023].
+
+
+#### 3. Selection Bias
+
+Selection bias occurs when the observed sample does not represent the population for which we intend causal inference. This bias primarily manifests in two forms: bias resulting from initial sample selection and bias resulting from attrition or non-response [@bareinboim2022a; @suzuki2020a; @hernán2004a; @hernán2017; @lu2022].[^4]
+
+[^4]: Note that economists use the term 'selection on observables' differently than epidemiologists. In economics, it often refers to non-random treatment assignments in observational data. In such cases, if all variables influencing both the selection process and the outcome are observed and controlled for, the associated bias can be managed in the analysis. This example reveals the scope of terminological dialects in causal data science to produce confusion and the need to clarify the meanings of one's jargon.
+ 
+**Selection prior to observation.** This bias occurs when the study sample does not accurately represent the target population of interest. It might stem from specific inclusion or exclusion criteria or non-random selection methods. Such bias can create systematic differences between treatment and control groups, limiting the generalizability of the findings. As a result, the causal effects estimated may not truly reflect those in the intended population.
+
+**Post-treatment selection bias.** This bias occurs when participants or units drop out of a study post-treatment, or there are missing values for observations from non-response. If loss of information is related to both the treatment and the outcome causal inferences can be distorted. Unlike typical confounding bias, we cannot adequately address post-treatment selection bias by conditioning on a set of baseline covariates $L$.
+
+Causal diagrams are valuable tools for identifying and illustrating the nature of selection bias [@hernán2017]. Measurement bias and post-treatment selection bias are varieties of confounding bias,  in the following sections, we will apply causal diagrams to clarify the fundamental structural sources of confounding bias.
+
+#### 4. Model misspecification bias
+
+After meeting the essential and practical assumptions necessary for valid causal inference, the next step involves deriving an estimate of our pre-defined causal contrasts from the data. Human scientists predominantly use parametric models for statistical analysis, defined by user-defined functional forms and distributional assumptions. A reliance on parametric models introduces the risk of biased inferences from model misspecification. The adverse impacts of model misspecification manifest in several important ways.
+
+a.  **Standard statistical tests do not establish causation:** because statistical models are not structural models [@vanderweele2022a], even when a model seemingly fits the data well, it may fail to accurately capture causation [@mcelreath2020]. This highlights the limitations of relying solely on goodness-of-fit metrics and underscores the need for more comprehensive evaluations [@vansteelandt2022].
+
+b.  **Regularisation bias.** Parametric models may bias estimates of causal effects when the true inter-variable relationships are more complex or divergent than those assumed in the user-specified model. Given reality is complex, we should presume that parametric models are misspecified [@wager2018; @vansteelandt2022].
+
+c. **Overstated precision.** A misaligned model can erroneously indicate a higher degree of precision by inaccurately estimating the locations and standard errors of parameter estimates, thereby fostering undue confidence in the results [@díaz2021; @vansteelandt2022]. When a model is misspecified, it becomes unclear where it is converging. Again, this uncertainty raises concerns about the validity of the model's estimates, as we cannot be sure if the model is capturing the intended causal relationships or latching on to spurious patterns in the data.
+
+Recent developments in non-parametric and doubly robust estimation that rely on machine learning to model both the exposure and outcome, offer some promise for addressing threats to valid inference [@vanderlaan2011;@athey2019; @díaz2021; @vanderlaan2018; @hahn2020; @künzel2019; @wager2018; @williams2021]. These methods can provide valid estimates even if only one of the models is correctly specified. It is important to note that non-parametric methods, including various machine learning techniques, typically provide convergence guarantees under certain assumptions and rely on large sample sizes. Despite these efforts to ensure robustness, the risk of invalid conclusions persists; it is early days, and these areas remain under active development [@hoffman2022; @vansteelandt2022; @muñoz2012; @díaz2021; @williams2021; @wager2018; @cui2020].
+
+Causal diagrams can powerfully assist with the workflows of causal inference, but their role is limited. Causal diagrams are model-free qualitative tools for assessing structural sources of bias. They cannot address the bias of model misspecification. 
+
+### Summary of Part 1
+
+Causal data science is not ordinary data science. It begins with a requirement to precisely state a causal question concerning a well-specified exposure and outcome and a specific population of interest. Classical estimands involve quantifying the effect of an intervention (exposure or treatment) $A$, expressed as a contrast between potential outcomes on some scale (such as the difference scale $Y(1) - Y(0)$). The central challenge arises from the inherent limitation of observing, at most, only one of the potential outcomes required to compute this contrast for each unit that is observed.
+
+A solution to this challenge is implicit in randomised experimental design. Randomisation allows us to balance confounders in the treatment conditions, leaving only the treatment as the best explanation for any observed differences in the treatment averages. 
+
+We considered the three fundamental assumptions required for causal inference, which are implicit in ideally conducted randomised experiments:
+causal consistency: ensuring outcomes at a specific exposure level align with their counterfactual counterparts;
+conditional exchangeability: the absence of unmeasured confounding;
+positivity: the existence of a non-zero probability for each exposure level across all covariate stratifications.
+Fulfilling all of these assumptions is crucial for valid causal inference. We noted that causal diagrams primarily assist researchers in assessing the assumption of no unmeasured confounding.
+
+Furthermore, we examined a set of practical considerations that might undermine confidence in causal inferences and that must be made explicit, such as the need for interpretable causal estimands, inferential threats from measurement error and selection bias (problems that overlap each other and with problems of confounding bias), and model misspecification bias. However, model misspecification can profoundly alter the precision and relevance of our causal conclusions. To address these and other threats to causal inference, causal data science requires an intricate, multi-step workflow. This work extends beyond creating causal diagrams and analysing patterns in observed data. We should not short-circuit these steps by (1) drafting a causal diagram and (2) launching into data analysis.
+
+Having outlined the crucial aspects of the causal inferential workflow, we are now positioned to use causal diagrams to elucidate elemental sources of confounding bias.
+
+## Part 2. Applications of Chronologically Ordered Causal Diagrams for Understanding Confounding Bias
+
+This section focuses on applying chronologically ordered causal diagrams to elemental problems of confounding bias [@pearl1995; @pearl2009; @greenland1999]. We begin by defining our terminology.
+
+### Variable naming conventions 
+
+In the context of this discussion, we will use the following notation:
+
+-   $A$: represents the treatment or intervention of interest.
+-   $Y$: denotes the outcome of interest.
+-   $L$: denotes a confounder or confounder set.
+-   $U$: denotes an unmeasured confounder.
+-   $L'$; denotes the measured descendant of either a measured confounder $L$ or an unmeasured confounder $U$.
+
+### Definitions
+
+**Nodes**: a variable -- observed, latent (unobserved), or composite of multiple variables. 
+
+**Arrows**: a sybol that for denotes an *assumed* causal relationship or pathway.  A causal diagram evaluates whether the causal relationship between exposure and outcome can be identified. Although we do not assume the $A\to Y$ path, all other paths are *stipulated* before data collection. Outside of mediation and multiple treatment estimation, these paths are nuisance parameters of no intrinsic interest. It is generally inadvisable to report coefficients for these paths because there is generally no assurance that these estimates accurately reflect causation.  
+
+**Ancestors (parents)**: nodes with a direct or indirect influence on others, positioned upstream in the causal chain.
+
+**Descendants (children)**: nodes influenced, directly or indirectly, by other nodes, located downstream in the causal chain.
+
+**D-separation**: we call a path "blocked," or "d-separated," if a node along it prevents the transmission of influence. Two variables are considered d-separated if all paths between them are blocked; otherwise, they are d-connected [@pearl1995;@pearl2009].
+
+**Identification problem**: the challenge of estimating the causal effect of a variable using observed data. Causal diagrams were developed to address the identification problem by application of the rules of d-separation (below) to a causal graph.
+
+**Conditioning**: the process of explicitly accounting for a variable in our statistical analysis to address the identification problem. In causal diagrams, we often represent conditioning by drawing a box around a node of the conditioned variable. We do not typically box measured exposures and outcomes (conditioning is assumed). Depending on the setting, we may condition by regression stratification, propensity score weighting, g-methods, or doubly robust machine learning algorithms.
+
+**Markov Factorisation** mathematically states that the joint probability distribution of a set of variables can be decomposed into a product of conditional distributions. Each conditional distribution depends solely on the immediate parent variables of a given node in the causal diagram. This concept underpins the confidence that one can apply simple rules to a correctly specified graph to solve the identification problem.[^5]
+
+[^5]: Formally, if $X_1, X_2, \ldots, X_n$ are the nodes in a causal diagram, the joint distribution $P(X_1, X_2, \ldots, X_n)$ can be expressed as: 
+$P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^{n} P(X_i | \text{Parents}(X_i))$
+Here, $\text{Parents}(X_i)$ denotes the set of direct predecessors of $X_i$ in the causal graph. Markov Factorisation enables the simplification of complex joint distributions into more tractable components. This decomposition empowers a causal model to clarify strategies for causal identification and confounding control[@lauritzen1990; @pearl1988].
+    
+**Causal Markov assumption** states that when conditioned on its direct antecedents, any given variable is rendered independent from all other variables that it does not cause [@hernan2023]. Thus, once we account for a variable's immediate causes, it ceases to provide additional causal information about any other variables in the system, except for those it directly causes. This assumption allows for inferring the causal effects of interventions in systems, as represented by causal diagrams [@pearl2009a].
+    
+**Compatibility**:  the joint distribution of the variables is said to be compatible with the graph if it upholds the conditional independencies the graph implies [@pearl2009a].
+
+**Faithfulness**: a graph is said to be faithful if the conditional independencies found in the data are reflected in the graph, and conversely, if the dependencies suggested by the graph can be observed in the data [@pearl1995a].[^faith]
+
+[^faith]: Although the assumption of faithfulness or "weak faithfulness" allows for the possibility that some of the independences in the data might occur by coincidence (i.e., because of a cancellation of different effects), the assumption of strong faithfulness does not. The strong faithfulness condition assumes that the observed data's statistical relationships directly reflect the underlying causal structure, with no independence relationships arising purely by coincidental cancellations. This is a stronger assumption than (weak) faithfulness and is often more practical in real-world applications of causal inference. Note that the faithfulness assumption (whether weak or strong) is not testable by observed data -- it is an assumption about the relationship between the observed data and the underlying causal structure.
+
+**Acyclic**: Causal diagrams must be acyclic -- they cannot contain feedback loops. More precisely, no variable can be an ancestor or descendant of itself. *Therefore, with repeated measurements, nodes must be indexed by time.*. To represent the nodes of this design on a graph we must index them by time because the nodes are repeated.
+
+**Total, direct and indirect effects**. In the presence of mediating variables, it is helpful to differentiate the total effect (the overall effect of a variable $A$ on an outcome $Y$), direct effect (the effect of $A$ on $Y$ not via any mediator), and indirect effect (the effect of $A$ on $Y$ via mediator). We consider the assumptions of causal mediation below [@vanderweele2015].
+
+**Time-varying confounding:**  occurs when a confounder that changes over time also acts as a mediator or collider in the causal pathway between exposure and outcome. Controlling for such a confounder can introduce bias. Not controlling for it retains bias. We discuss time-varying confounding in Part 3. 
+
+**Statistical model:** a mathematical representation of the relationships between variables. It provides a framework to quantify how changes in one variable correspond with changes in others. Importantly, statistical models such as the reflective latent factor model used in psychometric theory can correspond to multiple causal structures [@wright1920; @wright1923; @pearl2018;  @vanderweele2022b; @hernan2023].
+
+**Structural model:** defines assumptions about causal relationships. Although statistical models capture relationships among variables, inferring causal relationships necessitates additional assumptions or information. Causal diagrams graphically encode these assumptions, effectively representing the structural model [@hernan2023]. These assumptions should be developed in consultation with experts.[^structuralmodels]
+
+[^structuralmodels]: Statistical models capture relationships, focusing on "how much?" Conversely, structural models, in the context of causal diagrams, address "what if?" questions by elucidating strategies for causal identification. Notably, a correlation identified by a statistical model does not imply a causal relationship. In observational settings, typically, many structural (causal) relationships are consistent with observed correlations. Therefore, a structural model is needed to interpret the statistical findings in causal terms. (The role of structural assumptions in interpreting statistical results remains poorly understood across many human sciences and forms the motivation for my work here.)
+
+**Backdoor criterion**: a set of conditions under which the effect of a treatment on an outcome can be obtained by controlling for a specific set of variables. The backdoor criterion guides the selection of **adjustment sets** [@pearl1995].[^bd]
+
+[^bd]: There is also a Front-Door Criterion, which provides another way to estimate causal effects, even in the presence of unmeasured confounding variables. It relies on identifying a variable (or set of variables) that mediates the entire effect of the treatment on the outcome. The front-door criterion is rarely used in practice.
+
+**Adjustment set**: a collection of variables we must either condition upon or deliberately avoid conditioning upon to obtain a consistent causal estimate for the effect of interest [@pearl2009].
+
+**Confounder**: a member of an adjustment set. Notice a variable is a 'confounder' in relation to a specific adjustment set. "Confounder" is a relative concept [@lash2020].
+
+**Modified Disjunctive Cause Criterion**: I recommend a *Modified Disjunctive Cause Criterion* for controlling for confounding, as introduced by @vanderweele2019. According to this criterion, a member of any set of variables that can reduce or remove the bias caused by confounding is deemed a member of this confounder set. The strategy is as follows:
+
+a.  Control for any variable that causes the exposure, the outcome, or both.
+b.  Control for any proxy for an unmeasured variable that is a shared cause of both exposure and outcome.
+c.  Define an instrumental variable as a variable associated with the exposure but does not influence the outcome independently, except through the exposure. Exclude any instrumental variable that is not a proxy for an unmeasured confounder from the confounder set [ @vanderweele2019.].
+
+Note that the concept of a "confounder set" is broader than an "adjustment set." Every adjustment set is a member of a confounder set. So, the Modified Disjunctive Cause Criterion will eliminate confounding when the data permit. However, a confounder set includes variables that will reduce confounding in cases where confounding cannot be eliminated. 
+
+Why do I recommend this strategy? Confounding can rarely be eliminated with certainty. The *Modified Disjunctive Cause Criterion* allows us to do our best, and because we cannot do more than our best, to perform sensitivity analyses to check the robustness of our results. It is important to note that software tools like `Dagitty` and `ggdag`, though beneficial, may overlook optimal strategies involving open paths [@textor2011; @barrett2021]. This software will not select the best confounder set where unmeasured confounding persists. Therefore, reliance on these tools should be balanced with independent diagram interpretation skills. For this reason, I recommend learning to visually inspect graphs to identify these sources of bias and strategies for bias reduction, even when bias cannot be eliminated. Again, chronologically ordered graphs greatly benefit such inspection, as we will consider shortly.
+
+**Instrumental variable**: an ancestor of the exposure but not of the outcome. This variable affects the outcome only through its effect on the exposure and not otherwise. Whereas conditioning on a variable causally associated with the outcome but not with the exposure will generally increase modelling precision, we should avoid conditioning on instrumental variables [@cinelli2022]. There are two exceptions to this rule. First, we may be interested in instrumental variable analysis (see XXY this issue). Second, following the modified disjunctive cause criterion, when an instrumental variable is the descendant of an unmeasured confounder, we should generally condition the instrumental variable to block the unmeasured confounding partially.
+
+### The rules of D-separation
+
+The rules for obtaining conditional and unconditional dependencies between nodes in a causal diagram are as follows:
+
+1.  **Fork Rule** ($A \leftarrow L \rightarrow Y$): This represents a common cause structure. $A$ and $Y$ are independent by default in this structure, and conditioning on $L$ maintains their independence. Mathematically, this is expressed as $A \coprod Y|L$, signifying that conditioning on $L$ keeps $A$ and $Y$ independent.
+
+2.  **Chain Rule** ($A \rightarrow L \rightarrow Y$): In this chain structure, conditioning on $L$ blocks the path between $A$ and $Y$. This rule can be expressed as $A \coprod Y | L$, indicating that $A$ and $Y$ are conditionally independent given $L$.
+
+3.  **Collider Rule** ($A \rightarrow L \leftarrow Y$): Initially, $A$ and $Y$ are independent in this structure, as the path is blocked at the collider $L$. This rule can be expressed as $A \coprod Y$. However, conditioning on $L$ opens the path and introduces dependence between $A$ and $Y$. This change in dependence that does not arise from conditioning is represented as $A \cancel{\coprod} Y | L$, indicating that $A$ and $Y$ become dependent when conditioning on $L$ or $L'$.
+
+
+### Local graphical conventions
+
+I adopt the following unique conventions:
+
+**Red arrow**: denotes an open path between exposure and outcome from a suboptimal conditioning strategies.
+
+**Dashed red arrow**: denotes paths where confounding bias has been mitigated. 
+
+**Departure from conventions when describing causal mediation**: When using causal diagrams in Part III, I depart from these colouring conventions because the conditions in which there is biasing for the mediator differ from the conditions in which there is biasing for the exposure.
+
+### Advice for drawing a chronologically ordered graph
+
+A causal diagram is intended to succinctly depict structural sources of bias, rather than to represent data statistically. This distinction is fundamental because the structure suggested by a causal diagram is often not verifiable by data, making it 'structural' in nature, as distinct from the graphs used in structural equation modelling [@pearl2009a; @greenland1999c; @hernan2023; @bulbulia2021]. Misunderstanding this difference between structural and statistical models has led to considerable confusion across the human sciences [@vanderweele2015; @vanderweele2022; @vanderweele2022b].
+
+Although a chronologically ordered causal diagram is mathematically identical to one without such order, the following examples reveal that "chronological hygiene" in a diagram's layout can considerably enhance the understanding of causal relationships. A chronologically hygienic graph aligns the arrangement of nodes and arrows to reflect the assumed temporal sequence of events. The conventions I adopt for maintaining chronological hygiene are:
+
+**Clearly define all nodes on the graph**: ambiguity leads to confusion.
+
+**Simplify the graph by combining nodes where this is possible.** Keep only those nodes and edges essential for clarifying the identification problem at hand.
+
+**Maintain chronological order spatially:** Generally arrange nodes in *relative* temporal sequence, usually from left to right or top to bottom. Although drawing the sequence to scale is unnecessary, the order of events should be clear from the layout. This provides an intuitive visual representation of how one event is assumed to precede another in time.
+
+**Time-index all nodes**: nodes are indexed according to their occurrence or measurement in time. This explicit indexing helps in demarcating the temporal relationship between variables, adding precision to the diagram with the organisation:
+
+$$L_{t0} \to A_{t1} \to Y_{t2}$$
+
+This arrangement clearly illustrates the temporal sequence of these variables, setting the stage for effectively applying chronologically ordered diagrams in confounding control.
+
+**Define any novel convention in a causal diagram explicitly**: do not assume familiarity.
+
+**Ensure acyclicity in the graph**: This guarantees that a node cannot be its own ancestor, thereby eliminating circular paths.
+
+**Draw nodes for unmeasured confounders**: assume unmeasured confounding always exists, whether depicted on the graph or not. This assumption reveals the importance of sensitivity analyses when estimating causal effects.
+
+**Illustrate nodes for post-treatment selection.** This facilitates understanding of potential sources of selection bias.
+
+**Apply a two-step strategy**: initially, isolate confounding bias and selection bias, then contemplate measurement bias using a secondary graph. This approach will foster clarity. Again, I do not address measurement and selection bias here. However, we may require multiple graphs to retain focus when addressing these structural sources of bias.[^8]
+
+[^8]: See @hernan2023 p.125
+
+**Do not attempt to draw non-linear associations between variables**: Causal diagrams are qualitative tools encoding assumptions about causal relationships. They are compasses, not comprehensive atlases. We will return to this imperative in Part 3 when considering interaction.
+
+### The four elemental confounding conditions
+
+We have reviewed key terminology, conventions, and rules. It is time to put causal diagrams into action, focussing on what Richard McElreath calls the 'four fundamental confounders' [@mcelreath2020 p.185]. [^smallpoint] 
+
+[^smallpoint]: Because we distinguish between the concepts of 'confounders' and 'confounding', we examine the four elemental confounding conditions.
+
+### 1. The elemental confounding of an unadjusted common cause
+
+The first elemental confounding condition arises when there is a common cause $L$ of the exposure $A$ and outcome $Y$. In this setting, $L$ may create a statistical association between $A$ and $Y$, implying causation in its absence.
+
+Consider an example where smoking ($L$) is a common cause of both yellow fingers ($A$) and cancer ($Y$). Here, $A$ and $Y$ may show an association without causation. If we were to intervene to scrub the hands of smokers, this would not affect their cancer rates. @fig-dag-common-cause represents this elemental confounding condition scenario, where the red arrow signifies the bias from the open path connecting $A$ and $Y$, caused by their common cause $L$.
+
+```{tikz}
+#| label: fig-dag-common-cause
+#| fig-cap: "Confounding by a common cause. The red path indicates bias from the open backdoor path from A to Y."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [ellipse, draw=white] (L) at (0, 0) {L$_{t0}$};
+\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, bend left, draw =red] (L) to (Y);
+\draw [-latex, red] (L) to (A);
+\end{tikzpicture}
+```
+
+### Advice: condition on $L$.
+
+To address confounding by a common cause, we should adjust for it by blocking the backdoor path from the exposure to the outcome. Such adjustment will restore balance across the levels of $A$ in the distribution of confounders that might affect the potential outcomes $Y(a*), Y(a)$ under different levels of $Y(a)$. Again, standard methods for this adjustment include regression, matching, inverse probability of treatment weighting, classical G-methods [@hernan2023], and more recent targeted learning frameworks [@hoffman2023]. 
+
+@fig-dag-common-cause-solution quickly reveals what is needed: 
+
+1. Ensure $A$ occurs before $Y$.
+2. Ensure $L$ occurs before $Y$.
+3. Condition on $L$.
+
+After time-indexing the nodes on the graph, it becomes evident that control of confounding generally requires accurate time-series data. Our chronologically ordered causal diagram serves as a warning for causal inferences in settings where researchers lack accurately well-recorded time series data. For example, we often cannot ensure against $Y\to A$ or $Y \to L$ with cross-sectional data.
+
+```{tikz}
+#| label: fig-dag-common-cause-solution
+#| fig-cap: "Solution: adjust for pre-exposure confounder. The implication: obtain time series data that ensure confounders occur before the exposure."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=black] (L) at (0, 0) {L$_{t0}$};
+\node [ellipse, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, draw=white] (A) to (Y);
+\draw [-latex, bend left, draw =black] (L) to (Y);
+\draw [-latex, black] (L) to (A);
+\end{tikzpicture}
+
+```
+
+### 2. The elemental confounding from conditioning on a mediator
+
+If we condition on $L$ and it forms part of the causal pathway linking the treatment and the outcome, conditioning on $L$ may bias the effect of $A$ on $Y$. Here, we focus on *mediator bias*.
+
+Take 'beliefs in Big Gods' to be the treatment $A_{t0}$, 'Social Complexity' to be the outcome $Y_{t2}$, and 'economic trade' to be the stratified mediator $L_{t1}$.
+
+In this example, beliefs in Big Gods $A_{t0}$ directly influence economic trade $L_{t1}$, which then affects social complexity $Y_{t2}$. Conditioning on economic trade $L_{t1}$ will downwardly bias estimates of the total effect of beliefs in Big Gods $A$ on social complexity $Y_{t2}$. @fig-dag-mediator presents this problem.
+
+```{tikz}
+#| label: fig-dag-mediator
+#| fig-cap: "Confounding by conditioning on a mediator. The dashed red arrow indicates bias arising from partially blocking the path between A and Y. Here, a true effect of A on Y is attenuated."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [ellipse, draw=white] (A) at (0, 0) {A$_{t0}$};
+\node [rectangle, draw=black] (L) at (4, 0) {L$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, bend left, draw=red, dotted] (A) to (Y);
+\draw [-latex, draw =black] (L) to (Y);
+\draw [-latex, black] (A) to (L);
+\end{tikzpicture}
+```
+
+### Advice: do not condition on the mediator by ensuring $L$ occurs before $A$
+
+@fig-dag-common-effect-solution-2 presents the solution. We have encountered the solution before. To avoid mediator bias:
+
+1. Ensure $A$ occurs before $Y$.
+2. Ensure $L$ occurs before $Y$.
+3. Condition on $L$.
+
+Our chronologically ordered causal diagram shows demands on data collection and integrity. If we are interested in estimating the total effect of $A\to Y$, we must ensure we have measured the relative timing in the occurrences of $L$, $A$, and $Y$.
+
+
+```{tikz}
+#| label: fig-dag-common-effect-solution-2
+#| fig-cap: "Solution:  we avoid mediator bias by ensuring the correct temporal measurement of the confounder. Here, we draw the black path between A and Y, because we wish to ensure that this path is unbiased if there is a true causal effect of A and Y."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=black] (L) at (0, 0) {L$_{t0}$};
+\node [ellipse, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, draw=black] (A) to (Y);
+\draw [-latex, bend left, draw =black] (L) to (Y);
+\draw [-latex, black] (L) to (A);
+\end{tikzpicture}
+
+```
+
+### 3. The elemental confounding from conditioning on a common effect (collider stratification)
+
+1. **Case when the collider is a common effect of the exposure and outcome**
+
+Consider a scenario in which a variable $L$ is affected by the treatment $A$ and outcome $Y$ [@cole2010]. According to the rules of d-separation, conditioning on a common effect, $L$, will open a non-causal association between $A$ and $Y$.[^9]
+
+[^9]: In mathematical terms, when $A$ and $Y$ are independent, their joint probability should equal the product of their individual probabilities: $P(A, Y) = P(A)P(Y)$. However, conditioning on $L$ alters this relationship. The joint probability of $A$ and $Y$ given $L$, $P(A, Y | L)$, does not equal the product of $P(A | L)$ and $P(Y | L)$. Thus, the common effect $L$ creates an apparent association between $A$ and $Y$, which is not causal.
+
+```{tikz}
+#| label: fig-dag-common-effect
+#| fig-cap: "Confounding by conditioning on a collider. The red path indicates bias from the open backdoor path from A to Y."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=white] (A) at (0, 0) {A$_{t0}$};
+\node [ellipse, draw=white] (Y) at (4, 0) {Y$_{t1}$};
+\node [rectangle, draw=black] (L) at (8, 0) {L$_{t2}$};
+\draw [-latex, draw=red, bend right] (A) to (L);
+\draw [-latex, draw=red] (Y) to (L);
+
+
+\end{tikzpicture}
+
+```
+
+### Advice: do not condition on a common effect. Ensure $L$ occurs before $A$.
+
+We have encountered the solution to this problem before. To avoid collider bias:
+
+1. Ensure $A$ occurs before $Y$.
+2. Ensure $L$ occurs before $Y$.
+3. Condition on $L$.
+
+@fig-dag-common-effect-solution-3 repeats the previous solutions given in @fig-dag-common-cause-solution, @fig-dag-common-effect, and @fig-dag-common-effect-solution-2. We are again directed to demands for ensuring the relative timing in the occurrence of the variables we need to model. To quantitatively model causality, we must accurately locate the relative occurrence of $L$, $A$, and $Y$ in time.
+
+```{tikz}
+#| label: fig-dag-common-effect-solution-3
+#| fig-cap: "Solution: we ensure that A and Y are d-separated by ensuring L occurs before A occurs."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=black] (L) at (0, 0) {L$_{t0}$};
+\node [ellipse, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, draw=white] (A) to (Y);
+\draw [-latex, bend left, draw =black] (L) to (Y);
+\draw [-latex, black] (L) to (A);
+\end{tikzpicture}
+
+```
+
+
+2. **Case when the collider is the effect of exposure**
+
+We have considered how mediator bias may attenuate the total effect estimate of $A$ on $Y$. However, we should not imagine that conditioning on the effect of an exposure will always bias effect estimates downward. Consider a scenario in which $L$ is affected by both the exposure $A$ and an unmeasured variable $U$ related to the outcome $Y$ but not to $A$. Assume that there is no causal effect of $A$ on $Y$. In this scenario, conditioning on $L$ introduces bias by opening a backdoor path between $A$ and $Y$. @fig-dag-descendent presents these paths, coloured in red. 
+
+```{tikz}
+#| label: fig-dag-descendent
+#| fig-cap: "Confounding by descent: the red path illustrates the biasing path introduced by conditioning on the descendant of a confounder U that is affected by the exposure, opening a backdoor path between A and Y."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [ellipse, draw=white] (A) at (2, 0) {$A_{t0}$};
+\node [rectangle, draw=black](L) at (4, 0) {$L_{t1}$};
+\node [ellipse, draw=white] (Y) at (6, 0) {$Y_{t2}$};
+\draw [-latex, bend right=50, draw = red] (U) to (L);
+\draw [-latex, bend left, draw=red] (U) to (Y);
+\draw [-latex,draw=red] (A) to (L);
+
+\end{tikzpicture}
+```
+
+ @fig-dag-descendent shows the setting of post-exposure *collider bias*. Conditioning on the collider $L_{t1}$ in the analysis induces a non-causal association between $A_{t0}$ and $Y_{t2}$. 
+
+### Advice: do not condition on a common effect. Rather, ensure $L$ is measured before $A$
+
+The strategy builds on the strategy presented in @fig-dag-common-cause-solution, @fig-dag-common-effect, and @fig-dag-common-effect-solution-2 and @fig-dag-common-effect-solution-3. We will not present it again: 
+
+1. Ensure $A$ occurs before $Y$.
+2. Ensure $L$ occurs before $Y$.
+3. Condition on $L$ to block the effect of the unmeasured confounder $U$ on $A$ and $Y$
+
+
+```{tikz}
+#| label: fig-dag-descendent-solution
+#| fig-cap: "Confounding by descent: the red path illustrates the biasing path introduced by conditioning on the descendant of a confounder U that is affected by the exposure, opening a backdoor path between A and Y."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (L) at (2, 0) {$L_{t0}$};
+\node [rectangle, draw=white](A) at (4, 0) {$A_{t1}$};
+\node [ellipse, draw=white] (Y) at (6, 0) {$Y_{t2}$};
+\draw [-latex, draw = black] (U) to (L);
+\draw [-latex, bend left, draw=black] (U) to (Y);
+\draw [-latex,draw=black] (L) to (A);
+
+\end{tikzpicture}
+```
+
+
+#### Case of conditioning on a pre-exposure collider (M-bias)
+```{tikz}
+#| label: fig-m-bias
+#| fig-cap: "M-bias: Confounding control by including previous outcome measures. The dashed red path indicates bias from the open backdoor path from A to Y by conditioning on pre-exposure variable L. The problem arises because L is a collider of unmeasured confounders U1 and U2, and conditioning on L opens a path from A to U2 to U1 (by conditioning on L) to Y. This path is shown in red."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzstyle{DoubleArrow} = [-, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U1) at (0, 2) {U1};
+\node [rectangle, draw=white] (U2) at (0, -2) {U2};
+\node [rectangle, draw=black, align=left] (L) at (4, 0) {L$_{t0}$};
+\node [rectangle, draw=white] (A) at (8, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (12, 0) {Y$_{t2}$};
+
+\draw [-latex, draw=red] (U1) to (L);
+\draw [-latex, draw =red] (U2) to (L);
+\draw [-latex, draw=red, bend left] (U1) to (Y);
+\draw [-latex, draw =red, bend right] (U2) to (A);
+
+\end{tikzpicture}
+```
+
+One must be cautious not to over-condition on pre-exposure variables. In settings where we condition on a variable that is itself not associated with the exposure or outcome but is the descendent of an unmeasured instrumental variable as well as of an unmeasured cause of the outcome, we may inadvertently induce confounding known as 'M-bias', illustrated in @fig-m-bias,
+
+M-bias can arise even though a variable $L$ that induces it occurs before the treatment $A$. Conditioning on $L$ creates a spurious association between $A$ and $Y$ by opening the path between the unmeasured confounders. We assume that $A$ and $Y$ might be unconditionally independent ($A \coprod Y(a)$). However, when stratified by $L$, this independence is violated: ($A \cancel{\coprod} Y(a)| L$). This form of bias is another manifestation of collider stratification bias. This manifestation pertains to conditioning on pre-exposure variables in certain structural scenarios.[^10]
+
+[^10]: When the path is ordered chronologically from left to right, the "M" shape, giving M-bias its name, changes to an "E" shape. However, the term "M-bias" is retained.
+
+### Advice: avoid the "causal salad"
+
+```{tikz}
+#| label: fig-m-bias-solution
+#| fig-cap: "M-bias is avoided when by not conditioning on pre-exposure variable L. Doing so reveals all open backdoor paths are blocked. They are blocked because L is a collider of the unmeasured variables U1 and U2. If we do not condition on L, the path between U1 and U2 remains closed."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzstyle{DoubleArrow} = [-, preaction = {decorate}]
+\tikzset{>=latex}
+
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U1) at (0, 2) {U1};
+\node [rectangle, draw=white] (U2) at (0, -2) {U2};
+\node [rectangle, draw= white, align=left] (L) at (4, 0) {L$_{t0}$};
+\node [rectangle, draw=white] (A) at (8, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (12, 0) {Y$_{t2}$};
+
+\draw [-latex, draw=black] (U1) to (L);
+\draw [-latex, draw = black] (U2) to (L);
+\draw [-latex, draw= black, bend left] (U1) to (Y);
+\draw [-latex, draw = black, bend right] (U2) to (A);
+\end{tikzpicture}
+```
+
+
+Do not adopt an indiscriminate approach to confounding control, what Richard McElreath aptly calls the "causal salad" [@mcelreath2020]. Even if we can accurately measure the occurrence of our variables in time, conditioning on a pre-exposure variable may induce bias. The best-lights of subject-matter experts must inform our graphs.
+
+ @fig-m-bias-solution shows the solution to conditioning on a pre-exposure collider where doing so evokes M-bias. 
+
+### 4. Conditioning on a descendant (for good or bad).
+
+Recall that by conditioning on a descendent, we partially conditioning on its parents. We next consider a case in which conditioning on a descendent amplifies bias, followed by a case in which conditioning on a descendent reduces bias. 
+
+#### 1. Case When Conditioning on a Descendant Amplifies Bias
+
+Suppose a team of anthropologists studies the relationship between the use of a specific social ritual $A$ and the level of technological advancement $Y$ in different human societies.
+
+Let $U$ represent ancestral language families, which influence the development of unique social rituals $A$. For instance, isolated language families may develop distinct cultural practices. We assume $U$ is unmeasured. Now, let $S$ denote the sample of available cultures. Here, we consider that $S$ is affected by language families in such a way that anthropologists may prefer studying cultures from certain ancestral language families. This preference leads to a sample that is representative of only some cultures. Suppose there is no direct causal link between ancestral language family $U$ and technological advancement $Y$. However, we posit that technologically advanced societies ($Y$) are more likely to be documented due to better accessibility and more comprehensive documentation. This documentation bias affects the sample $S$. We also assume no causal association exists between $A$ and $Y$.
+
+In this scenario, as depicted in @fig-dag-selection-outcome, if anthropological studies focus only on societies that have been extensively studied and documented ($S$), we inadvertently condition on an effect of $Y$ and an unmeasured confounder $U$. This conditioning introduces a non-causal path between the social ritual $A$ and technological advancement $Y$, leading to an instance of *selection bias*. This bias is particularly problematic because it arises from the data collection process itself and cannot be resolved by simply adjusting for measured variables.
+
+By conditioning on $S$ (extent of study), a spurious association between the social ritual and technological advancement is introduced. As a result, we may incorrectly infer a direct link between certain social rituals and levels of technological development. This observed correlation could arise because less isolated societies, which are more likely to be studied, independently develop specific social rituals and acquire technologies for reasons unrelated to $A$.
+
+To mitigate this bias, alternative strategies such as collecting a more diverse and representative sample or using advanced statistical methods tailored for selection bias are required. It's crucial to approach such studies with an awareness of these potential biases and to design research methodologies that can account for or minimize their effects.
+
+```{tikz}
+#| label: fig-dag-selection-outcome
+#| fig-cap: "Confounding by descendant of the outcome: the red path illustrates the biasing path introduced by conditioning on the descendant of a confounder U that is affected by the outcome Y, leading to a non-causal association of between A and Y. This is an example of selection bias. It cannot be undone by conditioning. To remove this bias, we must accurately measure Y."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+% Define a simple decoration
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [ellipse, draw=white] (A) at (2, 0) {$A_{t0}$};
+\node [rectangle, draw=white](Y) at (4, 0) {$Y_{t1}$};
+\node [rectangle, draw=black] (S) at (6, 0) {$S_{t2}$};
+\draw [-latex, bend right=50, draw = red] (U) to (S);
+\draw [-latex, draw=red] (U) to (A);
+\draw [-latex,draw=red] (Y) to (S);
+
+\end{tikzpicture}
+```
+
+
+#### Advice: we cannot address this form of selection bias by conventional means
+
+We cannot address this form of selection bias through confounding control. Here, our causal diagram is helpful because it tells us we need to stop and consider how to recover unbiased measurements of $Y$. 
+
+#### Case when conditioning on a descendant reduces bias
+
+Consider a scenario where adjusting for a post-treatment descendant variable, denoted as $L^\prime$, can help mitigate bias. Imagine an unmeasured confounder $U$ that influences $A$, $Y$, and $L^\prime$, with the effect on $L^\prime$ occurring after both $A$ and $Y$. In this context, adjusting for $L^\prime$ could lessen the confounding caused by the unmeasured confounder $U$. This approach aligns with the modified disjunctive cause criterion for confounding control, which suggests including as a covariate any proxy for an unmeasured variable that is a common cause of both the exposure and the outcome [@vanderweele2019]. As illustrated in @fig-dag-descendent-solution-2, although $L^\prime$ occurs after the exposure and possibly even after the outcome, conditioning on it can reduce confounding.
+
+How does this work in practice? For example, consider a genetic factor that influences both the exposure and the outcome early in life but is expressed later. Adjusting for this later-life expression of the genetic factor can help control for the effect of the unmeasured confounding, which influenced both $A$ and $Y$. Even though $L'$ occurs after the outcome, conditioning on $L'$ is sensible strategy because $L'$ provides information about $U$. This example illustrates the prospect of post-outcome confounding control. @fig-dag-descendent-solution-2 presents this desirable form of post-outcome conditioning.
+
+```{tikz}
+#| label: fig-dag-descendent-solution-2
+#| fig-cap: "Solution: Conditioning on a confounder that occurs after both the exposure and the outcome can address unmeasured confounding if the confounder is a descendant of a prior common cause of the exposure and outcome. The red dotted paths underscore that the effect of U on A and Y is partially adjusted by conditioning on L', even though L' occurs after the outcome. The paths are dotted to represent the bias reduction achieved by conditioning on the post-outcome descendant of an unmeasured common cause of the exposure and outcome. An example is a genetic factor affecting the exposure and outcome early in life, which can be measured later in life. Adjusting for such an indicator is an example of post-outcome confounding control."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (L) at (6, -1) {$L^{\prime}_{t3}$};
+\node [rectangle, draw=white](A) at (2, 0) {A$_{t1}$};
+\node [ellipse, draw=white] (Y) at (4, 0) {Y$_{t2}$};
+
+\draw [-latex, bend right = 10, draw=black] (U) to (L);
+\draw [-latex, bend right=20, draw =red, dotted] (U) to (Y);
+\draw [-latex, draw =red, dotted] (U) to (A);
+
+\end{tikzpicture}
+```
+
+
+#### Advice: when developing a conditioning set, adopt the modified disjunctive cause criterion
+
+The prospect that we may use descendants for confounding control reveals that even if for a causal diagram, "timing is everything," when analysing a problem, **structure is everything**. Our chronologically hygienic graph reveals the scope for conditioning on confounders that occcur after the exposure and outcome occur. It brings home the point that we should think of the concept of a confounder as meaningful relative the adjustment set in which it forms a part.
+
+We are now in a position to understand why VanderWeele's modified disjunctive cause criteria for selecting this confounder set it desirable. This advice will lead us to remove every instrumental variable unless it is a descendant of an unmeasured confounder of the exposure and outcome. Neither U1 nor U2 satisfy this property.
+
+Practically speaking, determining which variables belong in the confounder set can be challenging. We take instruction from the best lights of experts. However, science is the practice of revising expert opinion. We assume experts may be wrong. For this reason, we should perform sensitivity analyses.
+
+
+
+## Part 3. Interaction, Mediation, and Longitudinal Feedback
+
+ We may wish to understand whether how effects vary across sub-populations or how the joint effect of two interventions differs from their individual effects or no intervention at all. How shall we conceive of these interventions? How shall we represent them on a graph?
+
+
+#### Graphical presentation of causal interactions: do not attempt
+
+When depicting causal interactions on graphs, it is essential to focus on their primary purpose: examining confounding. It is not the function of a causal diagram to represent non-linear relationships or interactions. Instead, they should help us understand whether and how unbiased estimates may be obtained from data. We should avoid unnecessary complexities in these diagrams, such as trying to represent additive or multiplicative interactions visually. Such complexities distract researchers from a focus on identifying potential sources of bias. Including nodes and paths should be strictly limited to what is necessary for assessing the specified causal contrasts.
+
+#### Types of Causal Contrasts in Interaction Studies
+The concept of interaction varies based on the causal question at hand. Here, we consider two distinct approaches to framing questions about causal interaction:
+
+##### 1. Double Exposure Interaction
+Causal interaction can refer to the combined versus separate effects of two distinct exposures. We consider evidence of causal interaction at a given scale when one exposure's effect on an outcome is contingent on the level of another exposure. 
+
+For instance, consider the effect of beliefs in Big Gods (exposure $A$) on social complexity (outcome $Y$), potentially influenced by a culture's monumental architecture (exposure $B$). To assess the individual and combined effects of $A$ and $B$, we look for evidence of causal interaction on the difference scale. Evidence for interaction is present if the following inequality holds:
+
+$$\bigg(\underbrace{\mathbb{E}[Y(1,1)]}_{\text{joint exposure}} - \underbrace{\mathbb{E}[Y(0,0)]}_{\text{neither exposed}}\bigg) - \bigg[ \bigg(\underbrace{\mathbb{E}[Y(1,0)]}_{\text{only A exposed}} - \underbrace{\mathbb{E}[Y(0,0)]}_{\text{neither exposed}}\bigg) + \bigg(\underbrace{\mathbb{E}[Y(0,1)]}_{\text{only B exposed}} - \underbrace{\mathbb{E}[Y(0,0)]}_{\text{neither exposed}} \bigg)\bigg] \neq 0 $$
+
+This equation simplifies to
+
+$$ \underbrace{\mathbb{E}[Y(1,1)]}_{\text{joint exposure}} - \underbrace{\mathbb{E}[Y(1,0)]}_{\text{only A exposed}} - \underbrace{\mathbb{E}[Y(0,1)]}_{\text{only B exposed}} + \underbrace{\mathbb{E}[Y(0,0)]}_{\text{neither exposed}} \neq 0 $$
+
+A positive value suggests additive interaction. A negative value suggests sub-additive interaction. A value near zero implies no reliable evidence for interaction.
+
+It is important to understand that evidence for causal interaction can differ by the scale one chooses to assess it.[^11] 
+
+[^11]  Causal effect estimates for interaction give different interpretations when measured on the ratio scale. This discrepancy can have significant policy implications, see: [@vanderweele2014]. Although beyond the scope of this article, it is worth emphasising again that when evaluating evidence for causality,  in addition to specifying the exposure and outcome, we must specify the measure of effect in which we are interested, as well as the target population for whom we wish to generalise [@hernán2004; @tripepi2007]. 
+
+Lastly, causal diagrams, being non-parametric, do not directly represent interactions. However, they can suggest the presence of an interaction by showing two exposures jointly influencing an outcome while maintaining their independence. Figure @fig-dag-interaction illustrates this concept.[^11]
+
+
+
+```{tikz}
+#| label: fig-dag-interaction
+#| fig-cap: "Causal Diagram Illustrating Interaction: This diagram represents the individual and joint effects of two exposures, A and B, on outcome Y. We assume that A and B are causally independent. The diagram includes confounders L1 and L2, which are necessary for controlling backdoor paths related to both exposures. The counterfactual outcome is Y(a,b), and evidence for additive or subadditive interaction is indicated if E[Y(1,1) - Y(0,1) - Y(1,0) + Y(0,0)] ≠ 0. If B cannot be conceptualised as a variable amenable to intervention, we may focus on effect modification but not interaction. Note: paths should be distinct and not intersect each other."
+#| out-width: 60%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=black] (LA) at (0, .5) {L1$_{t0}$};
+\node [rectangle, draw=black] (LB) at (0, -.5) {L2$_{t0}$};
+\node [rectangle, draw=white] (A) at (2, .5) {A$_{t1}$};
+\node [rectangle, draw=white] (B) at (2, -.5) {B$_{t1}$};
+\node [rectangle, draw=white] (Y) at (5, 0) {Y$_{t1}$};
+
+
+\draw [-latex, draw=black] (LA) to (A);
+\draw [-latex, draw=black] (LB) to (B);
+\draw [-latex, draw=black, bend left] (LA) to (Y);
+\draw [-latex, draw=black, bend right] (LB) to (Y);
+
+\draw [-latex, draw=black] (A) to (Y);
+\draw [-latex, draw=black] (B) to (Y);
+
+
+\end{tikzpicture}
+
+```
+
+
+Note that the chronological order in @fig-dag-interaction reveals demands on data collection. Ensuring that $A$ and $B$ do not affect each other requires (1) expert knowledge about  $A$ and $B$  (2) measurements of $A$ and $B$ at intervals in which there can be no directed effects.
+
+#### Distinction 2: Causal Effect Modification under a Single Exposure
+
+Effect modification analysis seeks to understand how the effect of an exposure varies across different strata of another variable or in more complex cases, across strata of multiple variables. A stratum where the exposure's effect differs is termed an 'effect modifier.'
+
+For example, consider again a study assessing the causal effect of beliefs in Big Gods on social complexity. Suppose we are interested in whether this effect varies by region, geography becomes our 'effect modifier.' Imagine contrasting North American societies with Continental societies. Here, we do not treat geography as an intervention— it is conceptually implausible to do so. Instead, we investigate whether geography modifies the effect of a defined exposure (beliefs in Big Gods) on a specific outcome (social complexity).
+
+$$\hat{E}[Y(a)|G=g]$$
+
+This quantity represents the expected outcome under exposure $a$ for group $g$.
+
+Similarly, the expected outcome for exposure level $A = a^*$ among individuals in the same group ($G = g$) is expressed:
+
+$$\hat{E}[Y(a^*)|G=g]$$
+
+The causal effect of shifting the exposure level from $a^*$ to $a$ within group $g$ is thus expressed:
+
+$$\hat{\delta}_g = \hat{E}[Y(a)|G=g] - \hat{E}[Y(a^*)|G=g]$$
+
+The quantity on the left computes the change in the expected outcome from altering the exposure from $a^*$ to $a$ within group $g$.
+
+Likewise, the causal effect of changing the exposure from $a^*$ to $a$ within group $g'$ is expressed:
+
+$$\hat{\delta}_{g'} = \hat{E}[Y(a)|G=g'] - \hat{E}[Y(a^*)|G=g']$$
+
+Here, $\hat{\delta}_{g'}$ captures the analogous effect of the exposure within group $g'$.
+
+To understand effect modification, we compare the conditional causal effect estimate on a difference scale between these two groups, which we calculate as:
+
+$$\hat{\gamma} = \hat{\delta}_g - \hat{\delta}_{g'}$$
+
+The value of $\hat{\gamma}$ quantifies the differential effect of shifting the exposure from $a^*$ to $a$ between groups $g$ and $g'$. $\hat{\gamma} \neq 0$ would suggest variability in the effect of the exposure based on group characteristics.[^12]
+
+[^12]: For distinctions within varieties of effect modification relevant to strategies of confounding control, see [@vanderweele2007].
+
+```{tikz}
+#| label: fig-dag-effect-modfication
+#| fig-cap: "A simple graph depicting effect-modification in which there are no confounders. G is an effect modifier of A on Y. We draw a box around G to indicate we are conditioning on this variable."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=black] (G) at (0, 0) {G$_{t0}$};
+\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y) at (8, 0) {Y$_{t2}$};
+\draw [-latex, draw=black] (A) to (Y);
+\draw [-latex, bend left, draw =black] (G) to (Y);
+\end{tikzpicture}
+```
+
+### Causal Mediation: The limitations of standard approaches 
+
+In the human sciences, mediation analysis is often mired in confusion, a situation exacerbated by the complex nature of causal relationships it aims to reveal. Beyond the intrinsic challenges of mediation analysis, much of the prevailing confusion stems from the prevalent use of structural equation models (SEMs). These models generally lack a systematic way of conceiving and modelling the counterfactual contrasts, that are relevant to evaluating causality. In most cases is unclear what SEM (so-called structural equation modelling) delivers. Attempts at mediation using regression generally do no better [@vanderweele2015]. 
+This disconnect between the modelling tradition and the demands of causal data science produces statistic models that are conceptually adrift from the causal structures they intend to represent. Lacking a clear conceptual framework to assess the relevant structural relationships,  traditional approaches frequently yield ambiguous and scientifically questionable results.   The counterfactual framework of causal data science allows us to do better. We must do better. 
+
+#### Defining the estimands
+
+In order to gain a clearer understanding of what causal mediation entails, it is helpful to deconstruct the total effect into the natural direct and indirect effects.
+
+The total effect of treatment $A$ on outcome $Y$ is defined as the aggregate difference between the potential outcomes when the treatment is applied versus when it is not. The estimand for the total effect (TE) can be expressed as follows:
+
+
+$$
+\Delta_{ATE} = TE = Y(1) - Y(0)
+$$
+
+This total effect can further decomposed into direct and indirect effects, which allow us to address questions of mediation.
+
+The potential outcome $Y(1)$ is decomposed as:
+
+$$ 
+Y(1) = Y(1, M(1))
+$$
+
+Here, the effect of the exposure, set to $A = 1$, is considered along with the effect of the mediator at its natural value when $A = 1$
+
+Similarly, the potential outcome $Y(0)$ is decomposed as:
+
+$$ 
+Y(0) = Y(0, M(0))
+$$
+
+This gives us the effect when the exposure is inactive, $A = 0$, with the mediator taking its natural value in this scenario.
+
+Now, let us further detail these components:
+
+**Natural Direct Effect (NDE):** This represents the effect of the treatment on the outcome while maintaining the mediator at the level it would have been if the treatment had *not* been applied. The unique portion of this counterfactual quantity is highlighted in blue for emphasis.
+
+The NDE is expressed as:
+
+ $$
+ NDE = \textcolor{blue}{Y(1, M(0))} - Y(0, M(0))
+ $$
+
+**Natural Indirect Effect (NIE):** This reflects the portion of the treatment's effect on the outcome that is mediated. It compares the potential outcome under treatment (where the mediator assumes its natural level under treatment) with the potential outcome where the mediator assumes its natural value under no treatment. This part of the counterfactual quantity is highlighted in blue; it is the same quantity previously highlighted in blue.
+
+The NIE is expressed as:
+
+$$
+ NIE = Y(1, M(1)) - \textcolor{blue}{Y(1, M(0))}
+$$
+
+By rearranging this decomposition, we can demonstrate that the total effect (TE) is the sum of the NDE and NIE. To achieve this, we add and subtract the term $\textcolor{blue}{Y(1, M(0))}$, highlighted in blue:
+
+$$
+TE = NDE + NIE = [Y(1, M(1)) - \textcolor{blue}{Y(1, M(0))}] + [\textcolor{blue}{Y(1, M(0))} - Y(0, M(0))]
+$$
+
+This decomposition of the total effect into natural direct and indirect effects clarifies a set of typical estimands in causal mediation analysis. These are the quantities we often seek. However, to express these quantities requires conceptualising them in relation to counterfactuals. Lacking these estimands it is unclear what we are estimating. Contrary to their name, structural equation models typically lack an inherent structural basis for interpretation. They would be aptly described as 'un-structural equation models.'
+
+Approaching mediation from a structural perspective, as enabled by causal data science, allows for the decomposition of the Total Effect into parts mediated by changes in the mediator arising from the treatment (NIE) and those that are unmediated (NDE). Only with these targeted counterfactual contrasts in mind can we effectively address causal mediation questions and draw valid inferences. Furthermore, we need these statements to evaluate sources of confounding. Chronologically ordered causal diagrams help assess the stringent demands for satisfying assumptions of 'no unmeasured confounding' in this setting.
+
+### Chronological Causal Diagrams in Causal Mediation Analysis
+
+Consider again the hypothesis that cultural beliefs in 'Big Gods' influence social complexity, with political authority serving as a mediator. Let's assume these broad concepts are well-defined. What requirements are necessary to answer this hypothesis? 
+
+1.  **No Unmeasured Exposure-Outcome Confounder**
+
+This requirement is expressed: $Y(a,m) \coprod A | L1$. After accounting for the covariates in set $L1$, there must be no unmeasured confounders influencing cultural beliefs in Big Gods ($A$) and social complexity ($Y$). For example, if our study examines the causal effect of cultural beliefs in Big Gods (the exposure) on social complexity (the outcome), and the covariates in $L1$ include factors like geographic location and historical context, we need to ensure that these covariates effectively block any confounding paths between $A$ and $Y$. @fig-dag-mediation-assumptions shows this confounding path in brown.
+
+
+2.  **No unmeasured mediator-outcome confounder**
+
+This requirement is expressed: $Y(a,m) \coprod M | L2$. After controlling for the covariate set $L2$, we must ensure that no other unmeasured confounders affect the political authority $M$ and social complexity $Y$. For instance, if trade networks impact political authority and social complexity, to obstruct the unblocked path linking our mediator and outcome we must account for trade networks. Furthermore, we must be entitled to assume the absence of any other confounders for the mediator-outcome path. @fig-dag-mediation-assumptions shows this confounding path is represented in blue.
+
+3.  **No unmeasured exposure-mediator confounder**
+
+This requirement is expressed: $M(a) \coprod A | L3$. After controlling for the covariate set $L3$, we must ensure that no additional unmeasured confounders affect cultural beliefs in Big Gods $A$ and political authority $M$. For example, the capability to construct large ritual theatres may influence the belief in Big Gods and the level of political authority. If we have indicators for this technology measured prior to the emergence of Big Gods (these indicators being $L3$), we must assume that accounting for $L3$ closes the backdoor path between the exposure and the mediator. @fig-dag-mediation-assumptions shows this confounding path in green. 
+
+4.  **No mediator-outcome confounder affected by the exposure**
+
+This requirement is expressed: $Y(a,m) \coprod M(a^*) | L$. We must ensure that no variables confounding the relationship between political authority and social complexity in $L2$ are themselves influenced by the cultural beliefs in Big Gods ($A$). For example, when studying the effect of cultural beliefs in Big Gods ($A$, the exposure) on social complexity ($Y$, the outcome) as mediated by political authority (mediator), there can be no factors, such as trade networks ($L2$), that influence both political authority and social complexity and are affected by the belief in Big Gods. @fig-dag-mediation-assumptions shows this confounding path in red. 
+
+**Note: the assumption of no exposure-induced confounding in the mediator-outcome relationship is often a substantial obstacle for causal mediation analysis.** Where the exposure influences a confounder of the mediator and outcome, we face a dilemma. Without accounting for this confounder, a backdoor path between the mediator and the outcome would remain open. However, by accounting for it, we partially obstruct the path between the exposure and the mediator, leading to bias. In this setting, we cannot recover the natural direct and indirect effects directly from any observational data [@vanderweele2015].
+
+Notice again that the requirements for counterfactual data analysis are considerably stricter than has been appreciated in the structural equation modelling traditions. Unfortunately, a generation of researchers must unlearn the habit of leaping from a description of a statistical process as embodied in a structural equation diagram to the analysis of the data. It has been over three decades since Robins and Greenland demonstrated that we cannot understand the quantities we are estimating in mediation analysis without first specifying the estimands of interest in terms of the targeted counterfactuals of interest [@robins1992]. Moreover, where the Natural Direct and Indirect Effects are of interest, such estimands require conceptualising a rather unusual counterfactual that is *never* directly observed from the data, namely: $\textcolor{blue}{Y(1, M(0))}$, and, only after stringent assumptions are satisfied, simulating it from data (for an extensive discussion, see:@vanderweele2015).
+
+```{tikz}
+#| label: fig-dag-mediation-assumptions
+#| fig-cap: "This causal diagram illustrates the four fundamental assumptions needed for causal mediation analysis. The first assumption pertains to the brown paths. It requires the absence of an unmeasured exposure-outcome confounder, and assumes that conditioning on L1 is sufficient for such confounding control. The second assumption pertains to the blue paths. It requires the absence of an unmeasured mediator-outcome confounder and assumes that conditioning on L2 is sufficient for such confounding control. The third assumption pertains to the green paths. It requires the absence of an unmeasured exposure-mediator confounder and assumes that conditioning on L3 is sufficient for such confounding control. The fourth and final assumption pertains to the red paths. It requires the absence of a mediator-outcome confounder that is affected by the exposure and assumes that there is no path from the exposure to L2 to M. If the exposure were to affect L2, then conditioning on L2 would block the exposure's effect on the mediator, as indicated by dashed red path. Causal diagrams not only clarify how different types of confounding bias may converge (here mediation bias and confounder bias), but also reveal the limitations of common methods such as structural equation models and multi-level models for handling time-series data where the fourth assumption fails -- that is, where there is treatment-confounder feedback. Such feedback is common in time-series data, but not widely understood. For example, structural equation models and multi-level models cannot address causal questions in the presence of such feedback, but these models remain widely favoured."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+
+\node [rectangle, draw=black] (L1) at (0, 2) {L1$_{t0}$};
+\node [rectangle, draw=black] (L3) at (0, -3) {L3$_{t0}$};
+\node [ellipse, draw=white] (A) at (3, 0) {A$_{t1}$};
+\node [rectangle, draw=black](L2) at (6, -3) {L2$_{t2}$};
+\node [rectangle, draw=white](M) at (9, 0) {M$_{t2}$};
+\node [rectangle, draw=white](Y) at (12, 0) {Y$_{t3}$};
+
+
+\draw [-latex, draw=brown] (L1) to (A);
+\draw [-latex, draw=brown, bend left] (L1) to (Y);
+\draw [-latex, draw=green] (L3) to (A);
+\draw [-latex, draw=green] (L3) to (M);
+\draw [-latex, draw= red, dashed] (A) to (M);
+\draw [-latex, draw= black, bend left] (A) to (Y);
+\draw [-latex, draw=red] (A) to (L2);
+\draw [-latex, draw=blue] (L2) to (M);
+\draw [-latex, draw=blue] (L2) to (Y);
+\draw [-latex, draw= black] (M) to (Y);
+
+\end{tikzpicture}
+
+```
+
+### Case 3: Longitudinal Feedback 
+
+Our discussion on causal mediation primarily focuses on how effects from two sequential exposures may combine to influence an outcome. This concept can be expanded to investigate the causal effects of multiple sequential exposures. In such cases, researchers often gravitate towards longitudinal growth models. However, a critical question arises: Where do counterfactuals fit within these models? Without incorporating counterfactuals, the conclusions we derive become questionable. Chronologically ordered causal diagrams can be instrumental in highlighting the challenges and opportunities in these scenarios. 
+
+For instance, let us consider multiple exposures fixed in time. There are four distinct counterfactual outcomes, each corresponding to a fixed treatment regime:
+
+1.  **Always Treat (Y(1,1))**
+2.  **Never Treat (Y(0,0))**
+3.  **Treat Once First (Y(1,0))**
+4.  **Treat Once Second (Y(0,1))**
+
+| Type     | Description                            | Counterfactual Outcome |
+|----------|----------------------------------------|------------------------|
+| Regime   | Always treat                           | Y(1,1)                 |
+| Regime   | Never treat                            | Y(0,0)                 |
+| Regime   | Treat once first                       | Y(1,0)                 |
+| Regime   | Treat once second                      | Y(0,1)                 |
+| Contrast | Always treat vs. Never treat           | E\[Y(1,1) - Y(0,0)\]   |
+| Contrast | Always treat vs. Treat once first      | E\[Y(1,1) - Y(1,0)\]   |
+| Contrast | Always treat vs. Treat once second     | E\[Y(1,1) - Y(0,1)\]   |
+| Contrast | Never treat vs. Treat once first       | E\[Y(0,0) - Y(1,0)\]   |
+| Contrast | Never treat vs. Treat once second      | E\[Y(0,0) - Y(0,1)\]   |
+| Contrast | Treat once first vs. Treat once second | E\[Y(1,0) - Y(0,1)\]   |
+
+: Table outlines four fixed treatment regimes and six causal contrasts in time-series data where exposure varies. {#tbl-regimes}
+
+We can compute six causal contrasts for these four fixed regimes, as shown in @tbl-regimes.[^14]
+
+[^14]: The number of possible contrast combinations can be calculated as $C(n, r) = \frac{n!}{(n-r)! \cdot r!}$
+
+Treatment assignments may be modelled as conditional shift functions of previous outcomes, a concept known as "time-varying treatment regimes." Comparisons between relevant counterfactual quantities are necessary to estimate the causal effects of time-varying treatment regimes. In mediation analysis  time-varying confounding was a concern (recall condition 4: exposure must not affect mediator/outcome confounders). This principle of confounding control applies to sequential time-varying treatments. Unlike traditional causal mediation analysis, however, we might be interested in treatment sequences over extended periods, i.e. $Y(00011)$ contrasted with $Y(00000)$. Which estimand we consider should depend on the context of our scientific question.
+
+Chronological causal diagrams are valuable tools for identifying problems with traditional multi-level regression analysis and structural equation modelling. For example, let us examine the impact of belief in Big Gods on social complexity. Start by estimating a fixed treatment regime. Assume we have well-defined concepts of Big Gods and social complexity, and assume we have accurate measurements over time. Suppose we assess the effects of beliefs in Big Gods on a well-defined, well-measured measure of social complexity two centuries after a shift to big-Gods has occurred. 
+
+Fixed treatment strategies include comparing "always believing in big Gods" versus "never believing in big Gods" and their effects on social complexity conceived as a counterfactual contrast across conditionally exchangeable groups of 'treated' and 'untreated' societies. Refer to @fig-dag-9. Here, $A_{tx}$ represents the belief in Big Gods at time $tx$, and $Y_{tx}$ denotes the outcome, social complexity, at time $x$. Imagine economic trade, represented as $L_{tx}$, is a time-varying confounder with changing effects over time, influencing economic trade. An unmeasured confounder, $U$, such as oral traditions, might also influence belief in Big Gods and social complexity.
+
+In a scenario where we can reasonably infer that the level of economic trade at time $0$ ($L_{t0}$) impacts beliefs in Big Gods at time $1$ ($A_{t1}$), we draw an arrow from $L_{t0}$ to $A_{t1}$. Conversely, if belief in Big Gods at time $1$ ($A_{t1}$) affects future levels of economic trade ($L_{t2}$), an arrow from $A_{t1}$ to $L_{t2}$ is warranted. This causal diagram demonstrates a feedback process between the time-varying exposure $A$ and the time-varying confounder $L$. @fig-dag-9 displays this exposure-confounder feedback loop. In practical scenarios, the diagram might include more arrows, but our goal here is to illustrate the issue of exposure-confounder feedback with the minimal necessary arrows.
+
+What if we were to condition on the time-varying confounder $L_{t3}$? To consequences emerge: first, we block all backdoor paths between the exposure $A_{t2}$ and the outcome $Y$, which is crucial for eliminating confounding. This result of our confounding strategy is positive: we exert confounding control. However, this conditioning also closes previously open paths, introducing structural sources of bias. For example, the path $A_{t1}, L_{t2}, U, Y_{t4}$, previously open, would now be activated as the time-varying confounder becomes a common effect of $A_{t1}$ and $U$. This result of our confounding strategy is negative: we lose confounding control. Conditioning on a time-varying confounder is a double-edged sword: essential for blocking backdoor paths but potentially opening other problematic pathways. This conundrum when conditioning on a confounder affected by prior exposure —being damned if we do, damned if we don't — is a critical consideration in longitudinal feedback analysis. We may assume it to be the rule, rather than the exception. 
+
+```{tikz}
+#| label: fig-dag-9
+#| fig-cap: "Exposure confounder feedback is a problem for time-series models. If we do not condition on L_t2, a backdoor path is open from A_t3 to Y_t4. However, if conditioning on L_t2 introduces collider bias, opening a path, coloured in red,  between A_t2 and Y_t4. Here, we may not use conventional methods to estimate the effects of multiple exposures. Instead, at best, we may obtain controlled effects using special methods, such G-methods, TMLE, SDR and others. Multi-level models will not eliminate bias here."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black] (L0) at (2, 0) {L$_{t0}$};
+\node [rectangle, draw=white] (A1) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y2) at (6, 0) {Y$_{t2}$};
+\node [rectangle, draw=black] (L2) at (8, 0) {L$_{t2}$};
+\node [rectangle, draw=white] (A3) at (10, 0) {A$_{t3}$};
+\node [rectangle, draw=white] (Y4) at (12, 0) {Y$_{t4}$};
+
+\draw [-latex, draw=black] (U) to (L0);
+\draw [-latex, draw=black] (L0) to (A1);
+\draw [-latex, draw=black] (L2) to (A3);
+
+\draw [-latex, bend left, draw=red] (A1) to (L2);
+
+\draw [-latex, bend right, draw=black] (U) to (Y2);
+\draw [-latex, bend right, draw=red] (U) to (L2);
+\draw [-latex, bend right, draw=red] (U) to (Y4);
+
+
+
+\draw [-latex, draw=black] (A1) to (Y2);
+\draw [-latex,  draw=black] (A3) to (Y4);
+
+\end{tikzpicture}
+```
+
+There is scope for time varying confounding in the absence of treatment-confounder feedback. When a time-varying exposure and a time-varying confounder share a common cause, even in cases where the exposure does not directly influence the confounder, a backdoor path is opened because the time-varying confounder is a common effect of two unmeasured confounders, one of which affects the previous exposure.   @fig-dag-time-vary-common-cause-A1-l1 presents this scenario. Standard methods cannot such as regression and structural equation modelling (SEM) cannot recover unbiased causal effects.
+
+```{tikz}
+#| label: fig-dag-time-vary-common-cause-A1-l1
+#| fig-cap: "Exposure confounder feedback is a problem for time-series models. Here, we do not assume that A_t1 affects L_t2. However, if an unmeasured variable (U_2) affects both the exposure A_t1 and the cofounder L_2, an unblocked path opens, linking exposure to outcome (shown in red). Again, we cannot infer causal effects using regression-based methods: if we are 'damed-if-we-do-damned-if-we-do-not' condition on L_t2. In this setting, to address causal questions, we require simulation-based estimators."
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=white] (U1) at (0, 0) {U1};
+\node [rectangle, draw=white] (U2) at (0, -2) {U2};
+\node [rectangle, draw=black] (L0) at (2, 0) {L$_{t0}$};
+\node [rectangle, draw=white] (A1) at (4, 0) {A$_{t1}$};
+\node [rectangle, draw=white] (Y2) at (6, 0) {Y$_{t2}$};
+\node [rectangle, draw=black] (L2) at (8, 0) {L$_{t2}$};
+\node [rectangle, draw=white] (A3) at (10, 0) {A$_{t3}$};
+\node [rectangle, draw=white] (Y4) at (12, 0) {Y$_{t4}$};
+
+\draw [-latex, draw=black] (U1) to (L0);
+\draw [-latex, draw=black] (L0) to (A1);
+\draw [-latex, draw=black] (L2) to (A3);
+
+\draw [-latex, draw=black] (A1) to (Y2);
+\draw [-latex, draw=black] (A3) to (Y4);
+
+
+\draw [-latex, bend right, draw=black] (U1) to (Y2);
+\draw [-latex, bend right, draw=red] (U1) to (L2);
+\draw [-latex, bend right, draw=red] (U1) to (Y4);
+
+%draw [-latex, bend right, draw=red, dashed] (A1) to (Y4);
+\draw [-latex, draw=red] (U2) to (L2);
+\draw [-latex, draw=red] (U2) to (A1);
+
+\end{tikzpicture}
+```
+
+
+The issue of treatment confounder feedback poses significant challenges in evolutionary human science. Again, this problem is not adequately addressed by conventional regression-based methods, including multi-level models and SEM (so-called structural equation models) [@hernán2006; @robins1999; @robins1986]. The failure of regression stems from the necessity to condition on downstream confounders, which opens the door to a mix of collider and mediation biases in our estimates. Recent advances in targeted learning and other semi-parametric estimation methods also hold promise [@williams2021; @díaz2021; @breskin2021; @vanderlaan2018; @díaz2021; @wager2018; : @hernan2023 @díaz2021 @vanderweele2015 @hoffman2022 @hoffman2023 @chatton2020 @shiba2021; @sjölander2016; @breskin2020; @vanderweele2009a; @vansteelandt2012; @shi2021]; however, these methods have not yet gained widespread acceptance in human evolutionary sciences. Causal diagrams help to clarify the structure of this problems, and the demand both for accurately measured time-series data and appropriate methods for counterfactual recovery.[^help] [^15]  I hope this article encourages the readers of *Evolutionary Human Sciences* to learn more about these methods, the need for which chronologically ordered causal diagrams make evident. 
+
+[^help]: Useful overviews include: @hernan2023 @díaz2021 @vanderweele2015 @hoffman2022 @hoffman2023 @chatton2020 @shiba2021 @sjölander2016 @breskin2020 @vanderweele2009a @vansteelandt2012 @shi2021.
+
+[^15]: It is worth noting that the identification of controlled effect estimates can benefit from graphical methods like 'Single World Intervention Graphs'(SWIGs), which visually represent counterfactual outcomes. However, SWIGs should be seen more as templates rather than causal diagrams in their general form. Their use goes beyond the scope of this tutorial, but for those interested, more information can be found in @richardson2013.
+
+
+### Summary
+
+**Part 1:** introduced the counterfactual framework in causal data science. We learned that causal inference requires estimating contrasts between counterfactuals. Such estimation requires clear, explicit assumptions, and specialised multi-stepped workflows. It is only within the framework of assumptions and workflows of counterfactual data science that causal diagrams enable the assessment of structural assumptions. Outside this framework, causal diagrams risk tempting false confidence.
+
+**Part 2:** described essential concepts and introduced core strategies for applying causal diagrams to elemental problems of control confounding. I emphasised the value of maintaining chronological order in causal diagrams to mirror assumed causal sequences accurately. This approach deepens our understanding of confounding and highlights requirements for time series data. For instance, by measuring confounders prior to exposures, we can avert common issues like mediator bias and post-stratification bias.  (Appendix 2 how we might collect time series data of the kind chronological causal diagrams direct us to collect.)
+
+**Part 3:** merged attention to the counterfactual framework with chronologically ordered causal diagrams to clarify the concepts of causal interaction, causal mediation, and dynamic longitudinal feedback. We discovered that causal interaction can either mean a combined effect of joint interventions or an effect-modification across subpopulations. To properly interpret 'interaction', it is crucial to specify our causal estimands in advance. We found that causal mediation involves a dual exposure and that the identification problems of causal mediation are subject to stringent assumptions. We considered that confounder-treatment feedback in settings where we are interested in multiple interventions can lead to identification problems that elude standard methods for complex time series data. Throughout these discussions causal diagrams elucidated the prospects and challenges for addressing inference.
+
+Despite their power and relevance, causal data science is not widely practiced in many human sciences. Instead, traditional correlational methods continue to hold sway. A broader shift towards teaching and using causal methodologies is essential for advancing scientific research in these areas. That much of the foundational work has already been accomplished offers hope for a broader revolution. Again, the articles in this special issue of *Evolutionary Human Sciences* evidence this hope.
+
+However, the need for many researchers to 're-tool', and heavy demands for collecting accurate time-series data, carry implications for research design, funding, and the tolerated pace of scientific discovery. For the causal reforms to take hold, the human sciences must transition from output-focused research models to funding that prioritises comprehensive retraining and substantial time-series data collection. Considerable change in the incentives will be essential for the rapid update of causal data science and for enhancing our understanding of complex psychological and cultural phenomena.
+
+However, the necessity for numerous researchers to adapt their skillset, alongside the considerable demands from collecting precise time-series data, bears consequences for research design, funding, and the accepted speed of scientific progression. For causal data science reforms to be effectively implemented, the human sciences need to shift from a research model centred on outputs to one that prioritises extensive retraining and robust time-series data collection. A substantial shift in incentives is crucial for the swift adoption of causal data science methodologies and for deepening our comprehension of intricate psychological and cultural phenomena
+
+{{< pagebreak >}}
+
+
+
+## Funding
+
+This work is supported by a grant from the Templeton Religion Trust (TRT0418). JB received support from the Max Planck Institute for the Science of Human History. The funders had no role in preparing the manuscript or the decision to publish it.
+
+## References
+
+::: {#refs}
+:::
+
+{{< pagebreak >}}
+
+## Appendix 1: The difficulty of satisfying the three fundamental assumptions of causal inference when asking causal questions of history
+
+Consider the Protestant Reformation of the 16th century, which initiated religious change throughout much of Europe. Historians have argued that Protestantism caused social, cultural, and economic changes in those societies where it took hold (see: [@weber1905; @weber1993; @swanson1967; @swanson1971; @basten2013], for an overview see: [@becker2016]).
+
+Suppose we are interested in estimating the "Average Treatment Effect" of the Protestant Reformation. Let $A = a^*$ denote the adoption of Protestantism. We compare this effect with that of remaining Catholic, represented as $A = a$. We assume that both the concepts of "adopting Protestantism" and of "economic development" are well-defined (e.g. GDP +1 century after a country has a Protestant majority contrasted with remaining Catholic). The causal effect for any individual country is $Y_i(a^*) - Y_i(a)$. Although we cannot identify this effect, if the basic assumptions of causal inference are met, we can estimate the average or marginal effect as
+
+$$
+\frac{1}{n} \sum_i^{n} \left[ Y_i(a^*) - Y_i(a) \right]
+$$
+
+which, conditioning the confounding effects of $L$ gives us
+
+$$ATE_{\textnormal{economic~development}} = \mathbb{E}[Y(\textnormal{Became~Protestant}|L) - Y(\textnormal{Remained~Catholic}|L)]$$
+
+When asking causal questions about the economic effect of adopting Protestantism versus remaining Catholic, there are indeed several challenges that arise in relation to the three fundamental assumptions required for causal inference.
+
+**Causal Consistency**: requires the outcome under each level of exposure is well-defined. In this context, defining what "adopting Protestantism" and "remaining Catholic" mean may present challenges. The practices and beliefs associated with each religion might vary significantly across countries and time periods, and it may be difficult to create a consistent, well-defined exposure. Furthermore, the outcome - economic development - may also be challenging to measure consistently across different countries and time periods.
+
+There is undoubtedly considerable heterogeneity in the "Protestant exposure." In England, Protestantism was closely tied to the monarchy [@collinson2007]. In Germany, Martin Luther's teachings emphasised individual faith in scripture, which, it has been claimed, supported economic development by promoting literacy [@gawthrop1984]. In England, King Henry VIII abolished Catholicism [@collinson2007]. The Reformation, then, occurred differently in different places. The exposure needs to be better-defined.
+
+There is also ample scope for interference: 16th century societies were interconnected through trade, diplomacy, and warfare. Thus, the religious decisions of one society were unlikely to have been independent from those of other societies.
+
+**Exchangeability**: requires that given the confounders, the potential outcomes are independent of the treatment assignment. It might be difficult to account for all possible confounders in this context. For example, historical, political, social, and geographical factors could influence both a country's religious affiliations and its economic development. If these factors are not properly controlled, it could lead to confounding bias.
+
+**Positivity**: requires that there is a non-zero probability of every level of exposure for every strata of confounders. If we consider various confounding factors such as geographical location, historical events, or political circumstances, some countries might only ever have the possibility of either remaining Catholic or becoming Protestant, but not both. For example, it is unclear under which conditions 16th century Spain could have been randomly assigned to Protestantism [@nalle1987].
+
+Perhaps a more credible measure of effect in the region of our interests is the Average Treatment Effect in the Treated (ATT) expressed
+
+$$ATT_{\textnormal{economic~development}} = \mathbb{E}[(Y(a*)- Y(a))|A = a*,L]$$
+
+Here, the ATT defines the expected difference in economic success for cultures that became Protestant compared with the expected economic success if those cultures had not become Protestant, conditional on measured confounders $L$, among the exposed ($A = a^*$). To estimate this contrast, our models would need to match Protestant cultures with comparable Catholic cultures effectively. By estimating the ATT, we would avoid the assumption of non-deterministic positivity for the untreated. However, whether matching is conceptually plausible remains debatable. Ostensibly, it would seem that assigning a religion to a culture a religion is not as easy as administering a pill [@watts2018].
+
+## Appendix 3: Review of VanderWeele's theory of causal inference under multiple versions of treatment
+
+We denote an average causal effect as the change in the expected potential outcomes when all units receive one level of treatment compared to another.
+
+Let $\delta$ denote the causal estimand on the difference scale $(\mathbb{E}[Y^1 - Y^0])$. The causal effect identification can be expressed as:
+
+$$ \delta = \sum_l \left( \mathbb{E}[Y|A=a,l] - \mathbb{E}[Y|A=a^*,l] \right) P(l)$$
+
+The theory of causal inference with multiple treatment versions provides a conceptual framework for causal inference in observational studies. Suppose we can assume that for each treatment version, the outcome under that version equals the observed outcome when that version is administered, conditional on baseline covariates and satisfaction of other assumptions. In that case, we can consistently estimate causal contrasts, even when treatments vary.
+
+This approach interprets treatment indicator $A$ as multiple actual treatment versions $K$. Furthermore, if we can assume conditional independence, meaning there is no confounding for the effect of $K$ on $Y$ given $L$, we have: $Y(k)\coprod A|K,L$.
+
+This condition implies that, given $L$, $A$ adds no additional information about $Y$ after accounting for $K$ and $L$. If $Y = Y(k)$ for $K = k$ and $Y(k)$ is independent of $K$, conditional on $L$, we can interpret $A$ as a simplified indicator of $K$ [@vanderweele2013]. This scenario is depicted in @fig-dag-multiple-version-treatment-dag.
+
+With the necessary assumptions in place, Vandeweele shows that can derive consistent causal effects by proving:
+
+$$\delta = \sum_{k,l} \left( \mathbb{E}[Y(k)|l] P(k|a,l) P(l) - \mathbb{E}[Y(k)|l] P(k|a^*,l) P(l) \right) $$
+
+This setup is akin to a randomised trial where individuals, stratified by covariate $L$, are assigned a treatment version $K$. This assignment comes from the distribution of $K$ for the $(A = 1, L = l)$ subset. The control group receives a randomly assigned $K$ version from the $(A = 0, L = l)$ distribution.
+
+```{tikz}
+#| label: fig-dag-multiple-version-treatment-dag
+#| fig-cap: "Causal inference under multiple versions of treatment. Here, (A) may be regarded as a coarseneed indicator of (K)"
+#| out-width: 100%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+
+\node [rectangle, draw=black] (L0) at (0, 0) {L};
+\node [rectangle, draw=white] (K1) at (2, 0) {K};
+\node [rectangle, draw=white] (A1) at (4, 0) {A};
+\node [rectangle, draw=white] (Y2) at (6, 0) {Y$_k$};
+
+\draw [-latex, draw=black] (L0) to (K1);
+\draw [-latex, bend right, draw=black] (L0) to (Y2);
+\draw [-latex, draw=black] (K1) to (A1);
+\draw [-latex, draw=black, bend left] (K1) to (Y2);
+
+\end{tikzpicture}
+```
+
+The theory of causal inference under multiple versions of treatment reveal that consistent causal effect estimates are possible even when treatments exhibit variability [@vanderweele2013]. In Part 5, I explored VanderWeele's application of this theory to latent factor models, where the presumption of a single underlying reality for the items that constitute constructs can be challenged. VandnerWeele shows that we may nevertheless, under assumptions of exchangeability, consistenty estimate causal effects using a logic that parrallels the theory of causal inference under multiple versions of treatment [@vanderweele2022]. I noted that the possibility that directed or correlated error terms for the exposure and outcome might nevertheless undermine inferences, and that such threats may become more exaggerated with multiple items for our measures. I noted that in place of general rules, researchers should be encouraged to consider the problems of measurement in context.
+
+<!-- @tbl-consistency expresses the relationship between observable and counterfactual outcomes as a contingency table (This table is modified from a table in [@morgan2014]). -->
+
+<!-- ```{r } -->
+
+<!-- #| echo: false -->
+
+<!-- #| code-fold: true -->
+
+<!-- #| warnings: false -->
+
+<!-- #| message: false -->
+
+<!-- #| label: tbl-consistency -->
+
+<!-- #| tbl-cap: Causal estimation as a missing data problem. -->
+
+<!-- library(tidyverse) -->
+
+<!-- library(knitr) -->
+
+<!-- library(kableExtra) -->
+
+<!-- # create data frame -->
+
+<!-- my_data <- tibble( -->
+
+<!--   Group = c( -->
+
+<!--     "Y(1)", -->
+
+<!--     "Y(0)" -->
+
+<!--   ), -->
+
+<!--   "Units that receive exposure (A=1)" = c("Observable", "Counterfactual"), -->
+
+<!--   "Units that recieve no exposure (A=0)" = c("Counterfactual", "Observable"), -->
+
+<!-- ) -->
+
+<!-- # create table  -->
+
+<!-- my_data %>% -->
+
+<!--   kbl(format = "markdown") -->
+
+<!-- ``` -->
+
+
+{{< pagebreak >}}
+
+## Funding
+
+This work is supported by a grant from the Templeton Religion Trust (TRT0418). JB received support from the Max Planck Institute for the Science of Human History. The funders had no role in preparing the manuscript or the decision to publish it.
+
+## References
+
+::: {#refs}
+:::
+
+{{< pagebreak >}}
+
+## Appendix 1: The difficulty of satisfying the three fundamental assumptions of causal inference when asking causal questions of history
+
+Consider the Protestant Reformation of the 16th century, which initiated religious change throughout much of Europe. Historians have argued that Protestantism caused social, cultural, and economic changes in those societies where it took hold (see: [@weber1905; @weber1993; @swanson1967; @swanson1971; @basten2013], for an overview see: [@becker2016]).
+
+Suppose we are interested in estimating the "Average Treatment Effect" of the Protestant Reformation. Let $A = a^*$ denote the adoption of Protestantism. We compare this effect with that of remaining Catholic, represented as $A = a$. We assume that both the concepts of "adopting Protestantism" and of "economic development" are well-defined (e.g. GDP +1 century after a country has a Protestant majority contrasted with remaining Catholic). The causal effect for any individual country is $Y_i(a^*) - Y_i(a)$. Although we cannot identify this effect, if the basic assumptions of causal inference are met, we can estimate the average or marginal effect as
+
+$$
+\frac{1}{n} \sum_i^{n} \left[ Y_i(a^*) - Y_i(a) \right]
+$$
+
+which, conditioning the confounding effects of $L$ gives us
+
+$$ATE_{\textnormal{economic~development}} = \mathbb{E}[Y(\textnormal{Became~Protestant}|L) - Y(\textnormal{Remained~Catholic}|L)]$$
+
+When asking causal questions about the economic effect of adopting Protestantism versus remaining Catholic, there are indeed several challenges that arise in relation to the three fundamental assumptions required for causal inference.
+
+**Causal Consistency**: requires the outcome under each level of exposure is well-defined. In this context, defining what "adopting Protestantism" and "remaining Catholic" mean may present challenges. The practices and beliefs associated with each religion might vary significantly across countries and time periods, and it may be difficult to create a consistent, well-defined exposure. Furthermore, the outcome - economic development - may also be challenging to measure consistently across different countries and time periods.
+
+There is undoubtedly considerable heterogeneity in the "Protestant exposure." In England, Protestantism was closely tied to the monarchy [@collinson2007]. In Germany, Martin Luther's teachings emphasised individual faith in scripture, which, it has been claimed, supported economic development by promoting literacy [@gawthrop1984]. In England, King Henry VIII abolished Catholicism [@collinson2007]. The Reformation, then, occurred differently in different places. The exposure needs to be better-defined.
+
+There is also ample scope for interference: 16th century societies were interconnected through trade, diplomacy, and warfare. Thus, the religious decisions of one society were unlikely to have been independent from those of other societies.
+
+**Exchangeability**: requires that given the confounders, the potential outcomes are independent of the treatment assignment. It might be difficult to account for all possible confounders in this context. For example, historical, political, social, and geographical factors could influence both a country's religious affiliations and its economic development. If these factors are not properly controlled, it could lead to confounding bias.
+
+**Positivity**: requires that there is a non-zero probability of every level of exposure for every strata of confounders. If we consider various confounding factors such as geographical location, historical events, or political circumstances, some countries might only ever have the possibility of either remaining Catholic or becoming Protestant, but not both. For example, it is unclear under which conditions 16th century Spain could have been randomly assigned to Protestantism [@nalle1987].
+
+Perhaps a more credible measure of effect in the region of our interests is the Average Treatment Effect in the Treated (ATT) expressed
+
+$$ATT_{\textnormal{economic~development}} = \mathbb{E}[(Y(a*)- Y(a))|A = a*,L]$$
+
+Here, the ATT defines the expected difference in economic success for cultures that became Protestant compared with the expected economic success if those cultures had not become Protestant, conditional on measured confounders $L$, among the exposed ($A = a^*$). To estimate this contrast, our models would need to match Protestant cultures with comparable Catholic cultures effectively. By estimating the ATT, we would avoid the assumption of non-deterministic positivity for the untreated. However, whether matching is conceptually plausible remains debatable. Ostensibly, it would seem that assigning a religion to a culture a religion is not as easy as administering a pill [@watts2018].
+
+
+## Appendix 2: How to collect time series data: example of the three-wave panel Design
+
+Causal diagrams point the need for collecting time-series data. How might we do it? This appendix offers advice for a three-wave panel design. I do not intend this advice to be complete. However, I believe it is important to give readers a concrete example for how data collection for causal inference might occure.
+
+### Step 1. Ask a Causal Question
+
+To answer a causal question we must first ask it [@hernán2016]. This question must clearly specify the exposure (cause) and the outcome (effect), as well as their temporal relationship, within a defined context.
+
+Suppose we are interested in the effect of religious service attendance on charitable giving, the causal question should be structured to clearly delineate these elements.
+
+For example, the question could be framed as: "Does increasing attendance at religious services from infrequent (less than once a month) to frequent (weekly or more) lead to a rise in charitable giving over a one-year period?" This question distinctly identifies the nature of the exposure (increase in frequency of attending religious services) and the outcome (rise in charitable giving), along with a specific time frame (one year).
+
+In a three-wave panel design, the timing of the measurements becomes integral to the study (see: [@vanderweele2020]). The question must ensure that the temporal order aligns with the objective of inferring causality. In our case, this could translate to: "How does a change in religious service attendance, measured from the beginning of the year (baseline) to mid-year (wave 1), influence the levels of charitable giving at the end of the year (wave 2)?" Here, the change in religious service attendance is captured between the first and second waves, while the outcome, charitable giving, is measured in the third wave, establishing a chronological sequence that tracks the sequence of cause and effect. Ensuring such temporal ordering is essential to every causal analysis.
+
+Formulating the causal question with such precision is imperative, and must guide the entire study design, including which variables to measure and when. It ensures that the study is tailored to address the specific causal relationship of interest, laying a robust foundation for the subsequent steps in the causal inference process.
+
+### Step 2. Ensure that the Exposure is Measured at Wave 0 (Baseline) and Wave 1 (An Interval Following Baseline)
+
+Measuring the exposure at both baseline (wave 0) and a subsequent timepoint (wave 1) is crucial in causal inference studies. This approach provides several key benefits:
+
+1. **Incidence Effect Interpretation**: By including baseline data, we can distinguish between incidence (new occurrences) and prevalence (existing states) effects. For instance, in a study on religious service attendance, this approach allows us to differentiate the effect of starting to attend services regularly from the effect of ongoing attendance.
+
+2. **Confounding Control**: Measuring exposure at baseline helps control for time-invariant confounders. These are factors that do not change over time and might affect both the exposure and the outcome. In the context of religious service attendance, personal attributes like inherent religiosity could influence both attendance and related outcomes.
+
+3. **Sample Adequacy Evaluation**: For rare exposures, baseline measurements can assess sample size adequacy. If a change in exposure is infrequent (e.g., infrequent to weekly religious service attendance), a larger sample may be needed to detect causal effects. By measuring exposure at baseline, researchers can better evaluate whether their sample is representative and large enough to detect such rare changes.
+
+### Step 3. Ensure that the Outcome is Measured at Wave 0 (Baseline) and Wave 2 (An Interval Following Wave 1)
+
+Measuring the outcome at both baseline (wave 0) and after the exposure (wave 2) is essential for several reasons:
+
+1. **Temporal Ordering**: Measuring the outcome at baseline and then again after the exposure (wave 2) ensures the correct temporal sequence. This approach helps to establish that the exposure precedes the outcome, which is fundamental in establishing a causal relationship.
+
+2. **Confounding Control**: Including the baseline measure of both the exposure and outcome allows for better control of confounding. This approach helps to isolate the effect of the exposure on the outcome from wave 1 to wave 2, independent of their baseline levels. It reduces the risk of confounding, where unmeasured factors might influence both the exposure and the outcome.
+
+3. **Robustness Checks**: Baseline outcome measurements provide a basis for conducting robustness checks and sensitivity analyses. These checks are essential for detecting outliers, errors in data collection, and understanding the stability of the measured phenomena over time.
+
+
+
+```{tikz}
+#| label: fig-dag-1
+#| fig-cap: "Causal diagram adapted from Vanderweele et al.'s three-wave panel design (VanderWeele et al. 2020). The dotted line indicates a reduction in bias arising from including baseline measures for the exposure and outcome. For an unmeasured confounder U to bias the exposure-outcome association, it would need to do so independently of these outcome and exposure baseline measures. The graph clarifies that by measuring confounders before the exposure and the exposure before the outcome, we reduce the potential for reverse causation, collider stratification, and mediator biases."
+#| out-width: 80%
+#| echo: false
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+\usetikzlibrary{decorations}
+\tikzstyle{Arrow} = [->, thin, preaction = {decorate}]
+\tikzset{>=latex}
+\tikzstyle{cor} = [-, dashed, preaction = {decorate}]
+
+
+\begin{tikzpicture}[{every node/.append style}=draw]
+\node [rectangle, draw=white] (U) at (0, 0) {U};
+\node [rectangle, draw=black, align=left] (L) at (2, 0) {L$_{t0}$ \\A$_{t0}$ \\Y$_{t0}$};
+\node [rectangle, draw=white] (A) at (4, 0) {A$_{t1}$};
+\node [ellipse, draw=white] (Y) at (6, 0) {Y$_{t2}$};
+\draw [-latex, draw=black] (U) to (L);
+\draw [-latex, draw=black] (L) to (A);
+\draw [cor, draw = black, dotted] (A) to (Y);
+\draw [-latex, bend left=50, draw =black] (L) to (Y);
+\draw [-latex, bend right=50, draw =black, dotted] (U) to (Y);
+\draw [-latex, bend left=50, draw =black, dotted] (U) to (A);
+
+
+
+
+\end{tikzpicture}
+```
+
+### Step 4. Identify Observable Common Causes of the Exposure and the Outcome
+
+Next, we must identify and record at wave 0 (baseline) all potential confounders that could influence both the exposure (e.g., frequency of attending religious services) and the outcome (e.g., charitable giving). Proper identification and adjustment for these confounders are crucial for accurate causal inference. 
+
+1. **Defining Confounders**: Confounders are variables that are associated with either the exposure or the outcome, or that might be a descendent of a common cause of both. We should exclude from this set any variable that is an instrumental variable.  For example, in the context of religious service attendance and charitable giving, socioeconomic status (SES) could be a confounder. Individuals with higher SES might be more likely to attend religious services regularly and also have greater financial capacity for charitable giving. We should ensure that good measures of SES are obtained at baseline.
+
+2. **Measurement of Confounders**: Confounders should be measured at baseline (wave 0) to ensure that their relationship with both the exposure and outcome is properly understood and accounted for. This measurement helps in disentangling the true effect of the exposure on the outcome from the effects of these confounding variables.
+
+3. **Grouping Confounders for Efficiency**: To maintain clarity in analysis, it is advisable to group confounders under standard labels when they have similar functional roles in the causal diagram. For instance, demographic factors like age, gender, and education level can be grouped together if they serve similar roles in influencing both religious service attendance and charitable giving.
+
+4. **Use Causal Diagrams**: Causal diagrams allow us to visualise causal relationships among variables.
+
+5. **Minimize Mediation Bias**: Recording confounders before the exposure occurs is critical for minimizing mediation bias. Mediation bias can arise when a variable is both a confounder and a mediator in the causal pathway. By identifying and adjusting for these variables at baseline, we can reduce the risk of incorrectly attributing the effect of the exposure to a mediator.
+
+
+### Step 5. Gather data for proxy variables of unmeasured common causes at the baseline wave
+
+If any unmeasured confounders influence both the exposure and outcome, but we lack direct measurements, we should make efforts to include proxies for them. Even if this strategy cannot eliminate all bias from unmeasured confounding, it will generally reduce bias.
+
+### Step 6. State the target population for whom the causal question applies
+
+We need to define for whom our causal inference applies. For this purpose, it is helpful to distinguish the concepts of source population and target population and between the concepts of generalisability and transportability.
+
+1.  **The source population** is the population from whom our sample is drawn.
+
+2.  **The target population** is the larger population for whom we aim to apply our study's results. The closer the source population matches the target population in structural features relevant to our causal questions, the stronger our causal inferences about the target population will be.
+
+3.  **Generalisability**: when the causal effect estimated from a sample applies to the target population beyond the sample population, we say the causal effect estimates are generalisable. This concept is also known as "external validity."
+
+Let $PATE$ denote the population average treatment effect for the target population. Let $ATE_{\text{source}}$ denote the average treatment effect in the source population. Let $W$ denote a set of variables upon which the source and target population structurally differ. We say that results *generalise* if there is a function such that:
+
+$$PATE =  f(ATE_{\text{source}}, W)$$
+
+4.  **Transportability**: when causal effects estimates may generalise to different settings and populations from which the source population was sampled, we say effects are transportable. Where $T$ denotes a set of variables upon which the source and the target population structurally differ, we say that results are transportable if there is a function such that
+
+$$ATE_{\text{target}} \approx f(ATE_{\text{source}}, T)$$
+
+This function similarly maps the average treatment effect from the source population to a target population. The function over $T$ might be more complex, as it must handle potential heterogeneity of effects and unobserved sources of bias. To assess transportability, we generally require information about the source and target populations and a specialist understanding.
+
+### Step 7. Retain Sample
+
+Maintaining a stable sample over the course of a three-wave panel study is critical for ensuring the validity of causal inferences. Panel attrition, where participants drop out of the study over time, can introduce significant biases. Therefore, strategies for sample retention are essential for data collection that is purpose built for causal inference.
+
+1. **Developing Tracking Protocols**: Establish robust systems for tracking participants over the study period. This involves keeping updated records of contact information such as addresses, emails, phone numbers, and names, and accounting for changes over time. Advanced tracking methods might include periodic contact or follow-ups to keep the records current.
+
+2. **Motivational Strategies for Retention**: Implement strategies to encourage ongoing participation. This can involve regular communication about the study's progress and impact, providing incentives for continued participation, or making the process as convenient as possible for participants. The key is to engage the participants in a way that motivates them to stay involved.
+
+3. **Inclusivity in Participant Engagement**: Ensure that retention strategies are inclusive and cater to the diverse needs of the population under study. This might involve tailoring communication or incentives to different subgroups within the population or addressing specific barriers to continued participation that certain groups might face.
+
+4. **Use Local Knowledge**: Engage with specialists who have in-depth knowledge of the population under study. They can provide insights into the most effective strategies for retaining different groups within the population.
+
+5. **Participant Feedback and Adaptation**: Incorporate feedback from participants to improve retention strategies. This could involve regular surveys or feedback sessions to understand participants' experiences and adjust the study procedures accordingly.
+
+6. **Addressing Potential Bias from Attrition**: Even with robust retention strategies, some degree of attrition is often inevitable. Plan for potential attrition from the outset by over-sampling and always include methods for adjusting for it at the analysis phase. 
+
+7. **Continual Monitoring and Response**: Continuously monitor the rate and patterns of attrition throughout the study and implement responsive strategies as needed. This could involve targeted re-engagement efforts or adjustments in study procedures to address emerging challenges.
+
+8. **Documentation and Reporting**: Carefully document all retention efforts and the patterns of attrition that occur in the study. This documentation is crucial for interpreting the study results and for informing future research.
+
+
+Sample retention is mission-critical for preventing bias arising to panel attrition in three-wave panel designs. Researchers must be aware of it, and combat it.
+
+
+
+## References
