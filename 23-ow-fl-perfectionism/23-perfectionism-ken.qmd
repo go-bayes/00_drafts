@@ -1937,6 +1937,68 @@ outcome_vars_embodied
 # [7] "kessler_restless"  "kessler_worthless"
 
 # add composite t2_kessler_6
+#' Compute Causal Contrasts
+#'
+#' Estimates causal contrasts using generalized linear models (GLM) for different types of treatment effects (ATE, ATT)
+#' and outcomes (RR, RD). Supports handling multiply imputed datasets (`mids`) and allows flexibility in model specification.
+#'
+#' @param df Data frame or `mids` object containing the data.
+#' @param Y Response variable name as a string.
+#' @param X Treatment or exposure variable name as a string.
+#' @param baseline_vars Vector of baseline covariate names.
+#' @param treat_0 Reference level of the treatment variable.
+#' @param treat_1 Treatment level of interest for comparison.
+#' @param estimand Type of causal estimand ("ATE", "ATT"); defaults to both.
+#' @param type Type of effect size ("RR" for Risk Ratio, "RD" for Risk Difference); defaults to both.
+#' @param nsims Number of simulations for bootstrap; defaults to 200.
+#' @param cores Number of cores for parallel processing; uses all available cores by default.
+#' @param family Model family as a string or family object; defaults to "gaussian".
+#' @param weights Whether to use sample weights; defaults to TRUE.
+#' @param continuous_X Whether X is a continuous variable; defaults to FALSE.
+#' @param splines Whether to apply spline transformation to X; defaults to FALSE.
+#' @param vcov Type of variance-covariance matrix for standard error estimation; defaults to "HC2".
+#' @param verbose Whether to print detailed output; defaults to FALSE.
+#' @return Depending on the configuration, returns a summary object containing estimated causal contrasts, confidence intervals, and potentially other diagnostics.
+#' @export
+#' @importFrom stats glm
+#' @importFrom rlang expr sym
+#' @importFrom glue glue
+#' @importFrom parallel detectCores
+causal_contrast_engine <- function(df, Y, X, baseline_vars, treat_0, treat_1, estimand = c("ATE", "ATT"), type = c("RR", "RD"), nsims = 200, cores = parallel::detectCores(), family = "gaussian", weights = TRUE, continuous_X = FALSE, splines = FALSE, vcov = "HC2", verbose = FALSE) {
+    # Check required packages
+    required_packages <- c("clarify", "rlang", "glue", "parallel")
+    for (pkg in required_packages) {
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+            stop("Package '", pkg, "' is needed but not installed.")
+        }
+    }
+  
+    # Validate the family argument
+    if (is.character(family) && !family %in% c("gaussian", "binomial", "Gamma", "inverse.gaussian", "poisson", "quasibinomial", "quasipoisson", "quasi")) {
+        stop("Invalid 'family' argument. Please specify a valid family function.")
+    }
+    family_fun <- if (is.character(family)) get(family, mode = "function", envir = parent.frame()) else family
+
+    # Use the construct_formula function to build the formula string
+    formula_str <- construct_formula(Y, X, baseline_vars, continuous_X, splines)
+
+    # Fit models using the complete datasets (all imputations) or single dataset
+    model_fits <- if ("wimids" %in% class(df)) {
+        purrr::map(complete(df, "all"), function(d) {
+            glm(as.formula(formula_str), family = family_fun, data = d, weights = if (weights) d$weights else NULL)
+        })
+    } else {
+        list(glm(as.formula(formula_str), family = family_fun, data = df, weights = if (weights) df$weights else NULL))
+    }
+
+    # Process simulation for marginal effects
+    sim.imp <- misim(model_fits, n = nsims, vcov = vcov)
+    sim_estimand <- sim_ame(sim.imp, var = X, cl = cores, verbose = verbose)
+
+    # Generate and return the summary of simulated estimands
+    sim_estimand_summary <- summary(sim_estimand)
+    return(sim_estimand_summary)
+}
 
 
 mod_embodied_hlth_fatigue  <- gcomp_sim(
