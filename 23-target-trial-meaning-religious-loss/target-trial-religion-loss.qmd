@@ -1,6 +1,5 @@
 ---
 title: "Causal effects of religious de-identification on multi-dimensional well-being"
-subtitle: "An outcome-wide study"
 abstract: |
   Max Weber described the loss of religion as "the disenchantment of the world." Yet, cross-sectional data fail to adequately measure the scale of this disenchantment, if it indeed exists. Our research combines extensive and representative national panel data with advanced causal inference. We quantify the one-year impact of religious disaffiliation on various facets of well-being. The most profound consequences of religious disaffiliation are declines in charitable giving and volunteering. Frequency of alcohol consumption increases. Disaffiliation is causally associated with greater vengeful rumination, decreased desire for self-control, and reduced clarity of purpose. Interestingly, we find that an individual's sense of meaning remains constant, irrespective of changes in religious affiliation. Across other dimensions we find no evidence for change in average well-being. This findings suggest future investigations into the behavioral repercussions of religious disaffiliation on charitable behaviours. How change in religious behaviors affect people also merits further study.
 author: 
@@ -71,7 +70,7 @@ csl: /Users/joseph/GIT/templates/csl/camb-a.csl
 library("tinytex")
 library(extrafont)
 loadfonts(device = "all")
-
+conflicted::conflicts_prefer(stats::filter)
 
 # uncomment and use these links to load your functions
 # source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
@@ -536,7 +535,7 @@ saveRDS(dt_positivity_full, here::here(push_mods,"dt_positivity_full"))
 
 ```{r}
 #| label: prepare-data
-
+#| eval: false
 # prepare on basis of positivity chack
 dat_long_t  <- dat_long %>%
   # mutate(
@@ -586,8 +585,8 @@ saveRDS(dat_long_t, here::here(push_mods, "dat_long_t"))
 ```
 
 ```{r}
-#|label: data-wrangling-for-imputatons
-
+#| label: data-wrangling-for-imputatons
+#| eval: false
 # Create wide data frame
 baseline_vars = c(
     "male",
@@ -619,7 +618,7 @@ baseline_vars = c(
     "honesty_humility",
     "openness",
     "neuroticism",
-    "modesty",0
+    "modesty",
     "total_siblings",# sum siblings
     "family_time",
     "friends_time",
@@ -677,9 +676,9 @@ outcome_vars_practical = c(
     "self_control_wish_more_r",#I wish I had more self-discipline.(r)
     "emotion_regulation_out_control", # When I feel negative emotions, my emotions feel out of control. w10 - w13
     "emotion_regulation_hide_neg_emotions", # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
-    "emotion_regulation_change_thinking_to_calm",#, # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
+    "emotion_regulation_change_thinking_to_calm"#,#, # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
    # "emp_work_life_balance"# I have a good balance between work and other important things in my life.
-    "respect_self"
+   # "respect_self"
   )
   
 outcome_vars_reflective = c(
@@ -5141,7 +5140,7 @@ APPENDIX B. Sample {.appendix}
 #| eval: true
 
 prep_reflective <- readRDS(here::here(push_mods, "prep_reflective"))
-rm(dt_tab_p)
+#rm(dt_tab_p)
 dt_tab_p <- prep_reflective |>
   dplyr::mutate(t0_Male = as.factor(as.character(t0_male)),
           t0_Born_NZ = as.factor(t0_born_nz),
@@ -5153,7 +5152,7 @@ dt_tab_p <- prep_reflective |>
 dt_tab <- dt_tab_p|> 
     dplyr::select(sort(names(dt_tab_p)))
 
-baseline_table(dt_tab)
+#baseline_table(dt_tab)
 ```
 
 {{< pagebreak >}}

@@ -4,7 +4,8 @@
 \PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
 %
 \documentclass[
-  singlecolumn]{report}
+  singlecolumn,
+  9pt]{article}
 
 \usepackage{amsmath,amssymb}
 \usepackage{iftex}
@@ -38,18 +39,32 @@
   \KOMAoptions{parskip=half}}
 \makeatother
 \usepackage{xcolor}
-\usepackage[top=30mm,left=20mm,heightrounded]{geometry}
+\usepackage[top=30mm,bottom=30mm,left=20mm,heightrounded]{geometry}
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 % Make \paragraph and \subparagraph free-standing
+\makeatletter
 \ifx\paragraph\undefined\else
   \let\oldparagraph\paragraph
-  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
 \fi
 \ifx\subparagraph\undefined\else
   \let\oldsubparagraph\subparagraph
-  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
 \fi
+\makeatother
 
 \usepackage{color}
 \usepackage{fancyvrb}
@@ -69,7 +84,7 @@
 \newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
 \newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
 \newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
-\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
 \newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
 \newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
 \newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
@@ -79,7 +94,7 @@
 \newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
 \newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
 \newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
-\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
 \newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
 \newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
 \newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
@@ -116,28 +131,38 @@
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
 \newlength{\cslhangindent}
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newlength{\cslentryspacingunit} % times entry-spacing
-\setlength{\cslentryspacingunit}{\parskip}
-\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
- {% don't indent paragraphs
-  \setlength{\parindent}{0pt}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
   % turn on hanging indent if param 1 is 1
   \ifodd #1
-  \let\oldpar\par
-  \def\par{\hangindent=\cslhangindent\oldpar}
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
   \fi
   % set entry spacing
-  \setlength{\parskip}{#2\cslentryspacingunit}
- }%
- {}
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{booktabs}
@@ -155,10 +180,13 @@
 \usepackage{makecell}
 \usepackage{xcolor}
 \usepackage{cancel}
-\makeatletter
-\makeatother
-\makeatletter
-\makeatother
+\usepackage{xcolor}
+\usepackage[noblocks]{authblk}
+\renewcommand*{\Authsep}{, }
+\renewcommand*{\Authand}{, }
+\renewcommand*{\Authands}{, }
+\renewcommand\Affilfont{\small}
+\input{/Users/joseph/GIT/latex/latex-for-quarto.tex}
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -195,29 +223,21 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
+\makeatother
+\makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
-\makeatother
-\makeatletter
-\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
-\makeatother
-\makeatletter
-\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
-\makeatother
-\makeatletter
-\makeatother
-\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
-\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\usepackage{bookmark}
+
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
   pdftitle={Causal effects of religious de-identification on multi-dimensional well-being},
   pdfauthor={Joseph A. Bulbulia; Don E Davis; Ken Rice; Geoffrey Troughton; Daryl Van Tongeren; Chris G. Sibley},
-  pdfkeywords={Author order TBA.},
   colorlinks=true,
   linkcolor={blue},
   filecolor={Maroon},
@@ -227,19 +247,36 @@
 
 \title{Causal effects of religious de-identification on
 multi-dimensional well-being}
-\usepackage{etoolbox}
-\makeatletter
-\providecommand{\subtitle}[1]{% add subtitle to \maketitle
-  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
-}
-\makeatother
-\subtitle{An outcome-wide study}
-\author{Joseph A. Bulbulia \and Don E Davis \and Ken Rice \and Geoffrey
-Troughton \and Daryl Van Tongeren \and Chris G. Sibley}
-\date{}
 
+
+  \author{Joseph A. Bulbulia}
+            \affil{%
+                  Victoria University of Wellington, New Zealand
+              }
+        \author{Don E Davis}
+            \affil{%
+                  Georgia State University
+              }
+        \author{Ken Rice}
+            \affil{%
+                  Georgia State University
+              }
+        \author{Geoffrey Troughton}
+            \affil{%
+                  Victoria University of Wellington
+              }
+        \author{Daryl Van Tongeren}
+            \affil{%
+                  Hope College
+              }
+        \author{Chris G. Sibley}
+            \affil{%
+                  School of Psychology, University of Auckland
+              }
+      
+\date{2024-08-13}
 \begin{document}
-\make title
+\maketitle
 \begin{abstract}
 Max Weber described the loss of religion as ``the disenchantment of the
 world.'' Yet, cross-sectional data fail to adequately measure the scale
@@ -258,55 +295,47 @@ findings suggest future investigations into the behavioral repercussions
 of religious disaffiliation on charitable behaviours. How change in
 religious behaviors affect people also merits further study.
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, enhanced, borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, frame hidden, sharp corners, breakable]}{\end{tcolorbox}}\fi
 
-\listoffigures
-\listoftables
-\hypertarget{introduction}{%
-\section{Introduction}\label{introduction}}
+\subsection{Introduction}\label{introduction}
 
 Max Weber famously described the loss of religion as ``the
-disenchantment of the world''
-(\protect\hyperlink{ref-wilson2014}{Wilson, J., and Sibley 2014}).
-However, it is unclear whether, and in which ways, disaffiliation causes
-disenchantment.
-
-Cross-sectional data can sometimes be useful for prediction, however
-they are generally ill-equipped for insights into causality. Take, for
-example, a scenario where individuals with lower levels of life meaning
-are observed to detach from their religious affiliations more frequently
-than those reporting higher life meaning. Cross-sectional data fall
-short in conclusively disentangling such complex relationships. It is
-conceivable that those experiencing a sense of life's futility may
-self-select out of religious institutions, resulting in a
-disproportionate representation of disenchanted individuals among
-non-religious groups in such surveys. Hence, if interventions were
-employed to encourage these disenchanted individuals to rejoin religious
-communities, they could potentially amplify feelings of life's
-meaninglessness. That is, correlations can mislead us to the opposite
-conclusions about true causation. Indeed the `hints' suggested in
-cross-sectional data are known to strongly bias regression coefficients,
-whose true causal effects may run contrary to manifest correlations
-(\protect\hyperlink{ref-westreich2013}{Westreich and Greenland 2013}).
-However, a persistent habit of suggesting that cross-sectional data may
-`hint' at causality presents a serious challenge to psychological
-science {[}J. A. Bulbulia
-(\protect\hyperlink{ref-bulbulia2022}{2022}){]}(\protect\hyperlink{ref-bulbulia2021}{J.
-Bulbulia et al. 2021}),
+disenchantment of the world'' (\citeproc{ref-wilson2014}{Wilson \emph{et
+al.} 2014}). However, it is unclear whether, and in which ways,
+disaffiliation causes disenchantment.\footnote{Cross-sectional data can
+  sometimes be useful for prediction, however they are generally
+  ill-equipped for insights into causality. Take, for example, a
+  scenario where individuals with lower levels of life meaning are
+  observed to detach from their religious affiliations more frequently
+  than those reporting higher life meaning. Cross-sectional data fall
+  short in conclusively disentangling such complex relationships. It is
+  conceivable that those experiencing a sense of life's futility may
+  self-select out of religious institutions, resulting in a
+  disproportionate representation of disenchanted individuals among
+  non-religious groups in such surveys. Hence, if interventions were
+  employed to encourage these disenchanted individuals to rejoin
+  religious communities, they could potentially amplify feelings of
+  life's meaninglessness. That is, correlations can mislead us to the
+  opposite conclusions about true causation. Indeed the `hints'
+  suggested in cross-sectional data are known to strongly bias
+  regression coefficients, whose true causal effects may run contrary to
+  manifest correlations (\citeproc{ref-westreich2013}{Westreich and
+  Greenland 2013}). However, a persistent habit of suggesting that
+  cross-sectional data may `hint' at causality presents a serious
+  challenge to psychological science {[}Bulbulia
+  (\citeproc{ref-bulbulia2022}{2022}){]}(\citeproc{ref-bulbulia2021}{Bulbulia
+  \emph{et al.} 2021}),}
 
 To gain clearer insights into the causal effects of religious
 disaffiliation, we apply longitudinal data in this study. Our approach
 aims to replicate an idealized experiment, thereby providing a more
 transparent understanding of causality
-(\protect\hyperlink{ref-hernuxe1n2016}{Hernán et al. 2016};
-\protect\hyperlink{ref-bulbulia2022}{J. A. Bulbulia 2022};
-\protect\hyperlink{ref-hernan2023}{Hernan and Robins 2023}).
+(\citeproc{ref-bulbulia2022}{Bulbulia 2022};
+\citeproc{ref-hernan2023}{Hernan and Robins 2023};
+\citeproc{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016}).
 
-\hypertarget{method}{%
-\section{Method}\label{method}}
+\subsection{Method}\label{method}
 
-\hypertarget{sample}{%
-\subsection{Sample}\label{sample}}
+\subsubsection{Sample}\label{sample}
 
 Data were collected as part of The New Zealand Attitudes and Values
 Study (NZAVS) is an annual longitudinal national probability panel study
@@ -322,8 +351,7 @@ New Zealand and around the world. The NZAVS is university-based, not-
 for-profit and independent of political or corporate
 funding.https://doi.org/10.17605/OSF.IO/75SNB
 
-\hypertarget{eligibility-criteria}{%
-\subsection{Eligibility Criteria}\label{eligibility-criteria}}
+\subsubsection{Eligibility Criteria}\label{eligibility-criteria}
 
 The sample consisted of respondents to NZAVS waves Time 10, 11, and 12
 (years 2018-2021) (See Appendix A.)
@@ -343,9 +371,21 @@ selected:
 
 There were 12,600 NZAVS participants who met these criteria.
 
-\hypertarget{the-exposure-religious-disaffiation}{%
-\subsection{The Exposure: Religious
-Disaffiation}\label{the-exposure-religious-disaffiation}}
+\subsubsection{The Exposure: Religious
+Disaffiation}\label{the-exposure-religious-disaffiation}
+
+\begin{verbatim}
+The table presents a transition matrix that describes stability and movement between the treatment from the baseline wave to the treatment wave. Entries on the diagonal (in bold) indicate the number of individuals who stayed in their initial state. In contrast, the off-diagonal shows the transitions from the initial state (bold) to another state the following wave (off diagnal). A cell located at the intersection of row $i$ and column $j$, where $i 
+eq j$, presents the count of individuals moving from state $i$ to state $j$.
+\end{verbatim}
+
+\begin{verbatim}
+
+
+|        From         | religious affiliate | religious dis-affiliate |
+|:-------------------:|:-------------------:|:-----------------------:|
+| religious affiliate |      **10623**      |          1977           |
+\end{verbatim}
 
 As indicated in Table~\ref{tbl-transition}, of the 12600 people who were
 religious at baseline, 1977 people dis-affiliated participants one year
@@ -353,9 +393,8 @@ later (NZAVS wave 2019), at the measurement year.\footnote{Cite our
   Markov paper showing that much religious change is probably
   artifactual.}
 
-\hypertarget{tbl-transition}{}
 \begin{longtable}[]{@{}ccc@{}}
-\caption{\label{tbl-transition}Transition matrix}\tabularnewline
+\caption{Transition matrix}\label{tbl-transition}\tabularnewline
 \toprule\noalign{}
 From & To: stay affiliated & disaffiliate \\
 \midrule\noalign{}
@@ -369,39 +408,36 @@ From & To: stay affiliated & disaffiliate \\
 religious affiliate & 10623 & 1977 \\
 \end{longtable}
 
-\hypertarget{indicators-of-well-being.}{%
-\subsection{Indicators of well-being.}\label{indicators-of-well-being.}}
+\subsubsection{Indicators of
+well-being.}\label{indicators-of-well-being.}
 
-We assessed ``disenchantment'' following Tyler J. VanderWeele, Mathur,
-and Chen (\protect\hyperlink{ref-vanderweele2020}{2020}) outcome-wide
-template. Outcomewide studies argue that, rather than cherry-picking one
-or several domains of well-being, science may advance more rapidly, and
+We assessed ``disenchantment'' following VanderWeele \emph{et al.}
+(\citeproc{ref-vanderweele2020}{2020}) outcome-wide template.
+Outcomewide studies argue that, rather than cherry-picking one or
+several domains of well-being, science may advance more rapidly, and
 with greater hope for replication, by assess well-being across as many
 range of indicators the data may afford. To assist with interpretation,
-Tyler J. VanderWeele, Mathur, and Chen
-(\protect\hyperlink{ref-vanderweele2020}{2020}) groups well-being into
-larger dimensions of interest. Here, we identify five-domains: health,
-embodied well-being, practical well-being, reflective well-being, and
-social well-being (see Appendix A.)
+VanderWeele \emph{et al.} (\citeproc{ref-vanderweele2020}{2020}) groups
+well-being into larger dimensions of interest. Here, we identify
+five-domains: health, embodied well-being, practical well-being,
+reflective well-being, and social well-being (see Appendix A.)
 
-\hypertarget{assumptions-for-causal-inference}{
-\subsection{Assumptions for causal
-inference}\label{assumptions-for-causal-inference}}
+\subsubsection{Assumptions for causal
+inference}\label{assumptions-for-causal-inference}
 
 To assess a causal effect we must contrast how the world would turn out
 if we were to intervene. Generally, we cannot observe individual causal
 effects because for any individual case, we only observe the
 intervention or its absence. We cannot both intervene and not-intervene
 at once. This is called the fundamental problem of causal inference
-(\protect\hyperlink{ref-rubin1976}{Rubin 1976};
-\protect\hyperlink{ref-holland1986}{Holland 1986};
-\protect\hyperlink{ref-bulbulia2022}{J. A. Bulbulia 2022}). Although we
-cannot generally observe unit-level causal effects, it may be possible
-to estimate average causal effects. We do this by contrasting the
-average effect in the exposed group with the average effect in the
-unexposed unexposed group. For example, average of the contrast (or
-equivalently the contrast of the the averages)\footnote{Note that
-  mathematically, the difference in the average expectation is
+(\citeproc{ref-bulbulia2022}{Bulbulia 2022};
+\citeproc{ref-holland1986}{Holland 1986}; \citeproc{ref-rubin1976}{Rubin
+1976}). Although we cannot generally observe unit-level causal effects,
+it may be possible to estimate average causal effects. We do this by
+contrasting the average effect in the exposed group with the average
+effect in the unexposed unexposed group. For example, average of the
+contrast (or equivalently the contrast of the the averages)\footnote{Note
+  that mathematically, the difference in the average expectation is
   equivalent to the average of the differences in expectation.} on the
 difference scale may be expressed:
 
@@ -421,9 +457,8 @@ as:
 
 Our causal inference is grounded on three critical assumptions:
 
-\hypertarget{identification-assumption-1-causal-consistency}{%
-\subsubsection{Identification assumption 1: Causal
-consistency}\label{identification-assumption-1-causal-consistency}}
+\paragraph{Identification assumption 1: Causal
+consistency}\label{identification-assumption-1-causal-consistency}
 
 Causal consistency assumes the observed outcome aligns with the
 potential outcome for a given exposure level:
@@ -460,9 +495,8 @@ unknown ways of becoming religiously disaffiliated the interpretation of
 would not know how to intervene to \emph{make} a religiously affiliated
 person disaffiliate. We will return to this question in the discussion.
 
-\hypertarget{identification-assumption-2-exchangability}{%
-\subsubsection{Identification assumption 2:
-Exchangability}\label{identification-assumption-2-exchangability}}
+\paragraph{Identification assumption 2:
+Exchangability}\label{identification-assumption-2-exchangability}
 
 Exchangability assumes treatment assignment is independent of potential
 outcomes, given observed covariates. This is the ``no-confounding''
@@ -484,9 +518,8 @@ ATE = E[Y(a*)|L = l] - E[Y(a)|L = l]
 Put differently, conditioning on confounders ensures \emph{balance} in
 their distribution across exposures.
 
-\hypertarget{identification-assumption-3-positivity}{%
-\subsubsection{Identification assumption 3:
-Positivity}\label{identification-assumption-3-positivity}}
+\paragraph{Identification assumption 3:
+Positivity}\label{identification-assumption-3-positivity}
 
 Positivity is satisfied if there is a positive probability of receiving
 or not receiving exposure at all covariate levels. Expressed as:
@@ -508,17 +541,15 @@ There are two types of positivity violation.
   biological males violates deterministic non-positivity.
 \end{itemize}
 
-\hypertarget{causal-identification-strategy}{%
-\subsection{Causal identification
-Strategy}\label{causal-identification-strategy}}
+\subsubsection{Causal identification
+Strategy}\label{causal-identification-strategy}
 
 Effects must follow causes. To avoid the problems of reverse causation,
 we measured outcomes during the year following the exposure (NZAVS wave
-2020). The causal graph presented in Figure~\ref{fig-outcomewide-dag}
-describes our method for confouding control. We follow Tyler J.
-VanderWeele, Mathur, and Chen
-(\protect\hyperlink{ref-vanderweele2020}{2020}) in adopting a modified
-disjunctive cause criterion whisch states:
+2020). The causal graph presented in \textbf{?@fig-outcomewide-dag}
+describes our method for confouding control. We follow VanderWeele
+\emph{et al.} (\citeproc{ref-vanderweele2020}{2020}) in adopting a
+modified disjunctive cause criterion whisch states:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -543,16 +574,16 @@ disjunctive cause criterion whisch states:
   \textbf{Control for prior exposure}: Controlling for prior exposure
   assesses the effects of ``incident exposure'' rather than ``prevalent
   exposure'' - and is a critical step in causal
-  inference(\protect\hyperlink{ref-danaei2012}{Danaei, Tavakkoli, and
-  Hernán 2012}; \protect\hyperlink{ref-hernan2023}{Hernan and Robins
-  2023}). By including prior exposure in the analysis, we can more
-  effectively emulate a controlled trial. This approach not only helps
-  interpret the effect of exposure changes but also strengthens
-  confounding control. It aids in avoiding reverse causation and
-  managing other forms of unmeasured confounding. This setup ensures
-  that any unmeasured confounder would have to influence both the
-  outcome and initial exposure, irrespective of previous exposure
-  levels, to explain an observed exposure-outcome association.
+  inference(\citeproc{ref-danaei2012}{Danaei \emph{et al.} 2012};
+  \citeproc{ref-hernan2023}{Hernan and Robins 2023}). By including prior
+  exposure in the analysis, we can more effectively emulate a controlled
+  trial. This approach not only helps interpret the effect of exposure
+  changes but also strengthens confounding control. It aids in avoiding
+  reverse causation and managing other forms of unmeasured confounding.
+  This setup ensures that any unmeasured confounder would have to
+  influence both the outcome and initial exposure, irrespective of
+  previous exposure levels, to explain an observed exposure-outcome
+  association.
 \item
   \textbf{Control for prior outcome}: It is also vital to control for
   the outcome measured at baseline -- the `baseline outcome'. This
@@ -565,8 +596,7 @@ disjunctive cause criterion whisch states:
   control assumption as plausible as possible. It is often the strongest
   confounder affecting both the exposure and subsequent outcome. (For a
   detailed account of confounding control in three-wave panel designs
-  see Tyler J. VanderWeele, Mathur, and Chen
-  (\protect\hyperlink{ref-vanderweele2020}{2020}))
+  see VanderWeele \emph{et al.} (\citeproc{ref-vanderweele2020}{2020}))
 \end{enumerate}
 
 To avoid bias, we must also handle missing data arising from
@@ -574,33 +604,62 @@ non-response or panel attrition (loss-to-follow up). Selection bias
 occurs when\ldots{} To address selection bias we perform multiple
 imputation \emph{separately} by each exposure condition, and combine the
 imputations after modelling missingness conditional on the observed
-covariates (see: (\protect\hyperlink{ref-zhang2023}{Zhang et al. 2023};
-\protect\hyperlink{ref-westreich2015}{Westreich et al. 2015})) . We
+covariates (see: (\citeproc{ref-westreich2015}{Westreich \emph{et al.}
+2015}; \citeproc{ref-zhang2023}{Zhang \emph{et al.} 2023})) . We
 implement multiple imputation using the \texttt{mice} package in R
-(\protect\hyperlink{ref-vanbuuren2018}{Van Buuren 2018}). We imputed 10
-x missing data sets which were passed separately to the the
-\texttt{MatchThem} and \texttt{WeightIt} packages for propensity score
-matching. There are several ways in which selection bias can occur from
-missing responses and loss to follow up (see
-(\protect\hyperlink{ref-hernuxe1n2016}{Hernán et al. 2016};
-\protect\hyperlink{ref-hernan2023}{Hernan and Robins 2023}),
-Figure~\ref{fig-outcomewide-dag} presents a scenario in which the
-exposure \(A\) affects the process of selection. For example \ldots{}
-(say more).
+(\citeproc{ref-vanbuuren2018}{Van Buuren 2018}). We imputed 10 x missing
+data sets which were passed separately to the the \texttt{MatchThem} and
+\texttt{WeightIt} packages for propensity score matching. There are
+several ways in which selection bias can occur from missing responses
+and loss to follow up (see (\citeproc{ref-hernan2023}{Hernan and Robins
+2023}; \citeproc{ref-hernuxe1n2016}{Hernán \emph{et al.} 2016}),
+\textbf{?@fig-outcomewide-dag} presents a scenario in which the exposure
+\(A\) affects the process of selection. For example \ldots{} (say more).
 
-\begin{figure}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{\#| label: fig{-}outcomewide{-}dag}
+\NormalTok{\#| fig{-}cap: "Causal graph: three{-}wave panel design with selection bias"}
+\NormalTok{\#| out{-}width: 80}\CommentTok{\%}
+\NormalTok{\#| echo: false}
+\NormalTok{\#| include: true}
+\NormalTok{\#| eval: true}
 
-%{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-outcomewide-dag-1.pdf}
+\FunctionTok{\textbackslash{}usetikzlibrary}\NormalTok{\{positioning\}}
+\FunctionTok{\textbackslash{}usetikzlibrary}\NormalTok{\{shapes.geometric\}}
+\FunctionTok{\textbackslash{}usetikzlibrary}\NormalTok{\{arrows\}}
+\FunctionTok{\textbackslash{}usetikzlibrary}\NormalTok{\{decorations\}}
+\FunctionTok{\textbackslash{}tikzstyle}\NormalTok{\{Arrow\} = [{-}\textgreater{}, thin, preaction = \{decorate\}]}
+\FunctionTok{\textbackslash{}tikzset}\NormalTok{\{\textgreater{}=latex\}}
+\CommentTok{\% Define a simple decoration}
+\FunctionTok{\textbackslash{}tikzstyle}\NormalTok{\{cor\} = [{-}, dotted, preaction = \{decorate\}]}
 
-}
+\KeywordTok{\textbackslash{}begin}\NormalTok{\{}\ExtensionTok{tikzpicture}\NormalTok{\}[\{every node/.append style\}=draw]}
 
-\caption{\label{fig-outcomewide-dag}Causal graph: three-wave panel
-design with selection bias}
+\FunctionTok{\textbackslash{}node}\NormalTok{ [rectangle, draw=white] (U) at (0, 0) \{U\};}
+\FunctionTok{\textbackslash{}node}\NormalTok{ [rectangle, draw=black, align=left] (L) at (2, 0) \{L}\SpecialStringTok{$\_\{t0\}$} \FunctionTok{\textbackslash{}\textbackslash{}}\NormalTok{A}\SpecialStringTok{$\_\{t0\}$} \FunctionTok{\textbackslash{}\textbackslash{}}\NormalTok{Y}\SpecialStringTok{$\_\{t0\}$}\NormalTok{\};}
+\FunctionTok{\textbackslash{}node}\NormalTok{ [rectangle, draw=white] (A) at (4, 0) \{A}\SpecialStringTok{$\_\{t1\}$}\NormalTok{\};}
+\FunctionTok{\textbackslash{}node}\NormalTok{ [ellipse, draw=white] (US) at (4, {-}2) \{U\};}
+\FunctionTok{\textbackslash{}node}\NormalTok{ [rectangle, draw=black](S) at (6, 0) \{S\};}
+\FunctionTok{\textbackslash{}node}\NormalTok{ [ellipse, draw=white] (Y) at (8, 0) \{Y}\SpecialStringTok{$\_\{t2\}$}\NormalTok{\};}
 
-\end{figure}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, draw=black] (U) to (L);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, draw=black] (L) to (A);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, bend left=50, draw=black] (L) to (Y);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, bend right=50, draw=black, dotted] (U) to (Y);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, bend left=50, draw=black, dotted] (U) to (A);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, draw=black] (A) to (S);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, draw=black] (US) to (S);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, draw=black] (US) to (Y);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [{-}latex, bend left = 40, draw=red, dashed] (A) to (Y);}
+\FunctionTok{\textbackslash{}draw}\NormalTok{ [cor, draw=red, bend right=20, dashed] (A) to (US);}
 
-\hypertarget{causal-estimation}{%
-\subsection{Causal estimation}\label{causal-estimation}}
+\KeywordTok{\textbackslash{}end}\NormalTok{\{}\ExtensionTok{tikzpicture}\NormalTok{\}}
+
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Causal estimation}\label{causal-estimation}
 
 To obtain causal contrasts we use doubly robust methods. These combine
 inverse probability of treatment weights (propensity scores) with
@@ -651,15 +710,14 @@ In this model, \(f_Y\) is a function (in our case a weighted regression
 model) with parameters \(θ_Y\). The weights \(V\) are incorporated into
 the estimation process, affecting the contribution of each observation
 to the estimation of \(θ_Y\), but they are not an additional variable in
-the model. Additionally, following {``Agnostic Notes on Regression
-Adjustments to Experimental Data: Reexamining Freedman{'}s Critique''}
-(\protect\hyperlink{ref-agnostic}{n.d.}), we take the interaction of the
-exposure and baseline covariates when estimating our regression model.
-For binary outcomes we model the rate ratio using Poisson regression.
-Although binomial regression is acceptable when the outcome is rare
-(less than 10\%), non-collapsability leads means that we cannot
-interpret results as marginal causal effects. For consistency we use the
-Poisson model with robust standard errors.
+the model. Additionally, following {``Agnostic notes on regression
+adjustments to experimental data''} (\citeproc{ref-agnostic}{n.d.}), we
+take the interaction of the exposure and baseline covariates when
+estimating our regression model. For binary outcomes we model the rate
+ratio using Poisson regression. Although binomial regression is
+acceptable when the outcome is rare (less than 10\%), non-collapsability
+leads means that we cannot interpret results as marginal causal effects.
+For consistency we use the Poisson model with robust standard errors.
 
 \textbf{Step 3} The third step is to simulate the potential outcome for
 each individual under the hypothetical scenario where everyone is
@@ -681,12 +739,11 @@ The difference \(\delta\) represents the average causal effect of
 changing the exposure from level \(a'\) to level \(a\).
 
 For standard errors and confidence intervals, we use simulation-based
-inference methods (\protect\hyperlink{ref-greifer2023}{Greifer et al.
+inference methods (\citeproc{ref-greifer2023}{Greifer \emph{et al.}
 2023}).
 
-\hypertarget{baseline-confounders-exposure-and-outcome-measures}{%
-\subsection{Baseline confounders, exposure, and outcome
-measures}\label{baseline-confounders-exposure-and-outcome-measures}}
+\subsubsection{Baseline confounders, exposure, and outcome
+measures}\label{baseline-confounders-exposure-and-outcome-measures}
 
 ( \emph{Say more.} \emph{Tables here} )
 
@@ -695,14 +752,11 @@ stronger than people are aware, and that -- despite a loss of efficiency
 -- it is often best to use single item measures except when there are
 clear} conceptual* reasons to do otherwise.* ))
 
-\textbf{SEE}: (\protect\hyperlink{ref-vanderweele2022}{Tyler J.
-VanderWeele 2022})
+\textbf{SEE}: (\citeproc{ref-vanderweele2022}{VanderWeele 2022})
 
-\hypertarget{results}{%
-\section{Results}\label{results}}
+\subsection{Results}\label{results}
 
-\hypertarget{effects-on-health}{%
-\subsection{Effects on health}\label{effects-on-health}}
+\subsubsection{Effects on health}\label{effects-on-health}
 
 As indicate in Figure~\ref{fig-results-health}, the expected + one-year
 effect of religious disaffiliation does not reliably affect health as
@@ -716,16 +770,17 @@ here translate to other domains.
 
 \begin{figure}
 
-{\centering \includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-health-1.pdf}
+\centering{
+
+\includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-health-1.pdf}
 
 }
 
 \caption{\label{fig-results-health}Causal effects of religious loss on
 reported physical health}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{tbl-results-health}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3704}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1975}}
@@ -733,23 +788,12 @@ reported physical health}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0864}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0988}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1481}}@{}}
+
 \caption{\label{tbl-results-health}Table of results for the health
-domain}\tabularnewline
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E{[}Y(1){]}-E{[}Y(0){]}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-2.5 \%
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-97.5 \%
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E\_Value
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E\_Val\_bound
-\end{minipage} \\
-\midrule\noalign{}
-\endfirsthead
+domain}
+
+\tabularnewline
+
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -776,6 +820,7 @@ Get sick easier (reversed sd) & 0.0289 & -0.0243 & 0.0821 & 1.192 &
 1.000 \\
 Expect worse health (sd) & -0.0143 & -0.0673 & 0.0366 & 1.128 & 1.000 \\
 Sleep hours (sd) & 0.0037 & -0.0465 & 0.0525 & 1.062 & 1.000 \\
+
 \end{longtable}
 
 Table~\ref{tbl-results-health} presents the Population Average Treatment
@@ -817,24 +862,23 @@ outcome confirms the causal contrast is unreliable.
 
 \begin{figure}
 
-{\centering \includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-health-rr-1.pdf}
+\centering{
+
+\includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-health-rr-1.pdf}
 
 }
 
 \caption{\label{fig-results-health-rr}Causal effects of religious loss
 on smoking (risk ratio)}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{tbl-results-health-rr}{}
 \begin{longtable}[]{@{}lrrrrr@{}}
-\caption{\label{tbl-results-health-rr}Table of results for
-smoking}\tabularnewline
-\toprule\noalign{}
-& E{[}Y(1){]}/E{[}Y(0){]} & 2.5 \% & 97.5 \% & E\_Value &
-E\_Val\_bound \\
-\midrule\noalign{}
-\endfirsthead
+
+\caption{\label{tbl-results-health-rr}Table of results for smoking}
+
+\tabularnewline
+
 \toprule\noalign{}
 & E{[}Y(1){]}/E{[}Y(0){]} & 2.5 \% & 97.5 \% & E\_Value &
 E\_Val\_bound \\
@@ -843,28 +887,29 @@ E\_Val\_bound \\
 \bottomrule\noalign{}
 \endlastfoot
 Smoker y/n & 1.0116 & 0.7867 & 1.2838 & 1.12 & 1 \\
+
 \end{longtable}
 
 For the outcome `Smoker y/n', the PATE causal contrast is 1.012. The
 confidence interval ranges from 0.787 to 1.284. The E-value for this
 outcome confirms the causal contrast unreliable.
 
-\hypertarget{effects-on-embodied-well-being}{%
-\subsection{Effects on embodied
-well-being}\label{effects-on-embodied-well-being}}
+\subsubsection{Effects on embodied
+well-being}\label{effects-on-embodied-well-being}
 
 \begin{figure}
 
-{\centering \includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-embodied-1.pdf}
+\centering{
+
+\includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-embodied-1.pdf}
 
 }
 
 \caption{\label{fig-results-embodied}Causal effects of religious loss on
 embodied well-being}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{tbl-results-embodied}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3108}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2162}}
@@ -872,23 +917,12 @@ embodied well-being}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0946}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1081}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1622}}@{}}
+
 \caption{\label{tbl-results-embodied}Table of results for the embodied
-well-being domain}\tabularnewline
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E{[}Y(1){]}-E{[}Y(0){]}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-2.5 \%
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-97.5 \%
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E\_Value
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E\_Val\_bound
-\end{minipage} \\
-\midrule\noalign{}
-\endfirsthead
+well-being domain}
+
+\tabularnewline
+
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -914,6 +948,7 @@ Kessler hopeless (sd) & 0.0208 & -0.0267 & 0.0695 & 1.159 & 1.000 \\
 Kessler nervous (sd) & -0.0157 & -0.0620 & 0.0296 & 1.135 & 1.000 \\
 Kessler restless (sd) & 0.0268 & -0.0228 & 0.0740 & 1.184 & 1.000 \\
 Kessler worthless (sd) & -0.0357 & -0.0808 & 0.0084 & 1.218 & 1.000 \\
+
 \end{longtable}
 
 Table~\ref{tbl-results-embodied} presents the Population Average
@@ -951,22 +986,22 @@ For the outcome `Kessler effort (sd)', the PATE causal contrast is
 -0.052. The confidence interval ranges from -0.098 to 0.003. The E-value
 for this outcome confirms the causal contrast is unreliable.
 
-\hypertarget{effects-on-practical-well-being}{%
-\subsection{Effects on practical
-well-being}\label{effects-on-practical-well-being}}
+\subsubsection{Effects on practical
+well-being}\label{effects-on-practical-well-being}
 
 \begin{figure}
 
-{\centering \includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-practical-well-being-1.pdf}
+\centering{
+
+\includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-practical-well-being-1.pdf}
 
 }
 
 \caption{\label{fig-results-practical-well-being}Causal effects of
 religious loss on practical well-being}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{tbl-results-practical}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.4457}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1739}}
@@ -974,23 +1009,12 @@ religious loss on practical well-being}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0761}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0870}}
   >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1304}}@{}}
+
 \caption{\label{tbl-results-practical}Table of results for the practical
-well-being domain}\tabularnewline
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E{[}Y(1){]}-E{[}Y(0){]}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-2.5 \%
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-97.5 \%
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E\_Value
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
-E\_Val\_bound
-\end{minipage} \\
-\midrule\noalign{}
-\endfirsthead
+well-being domain}
+
+\tabularnewline
+
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
@@ -1031,7 +1055,7 @@ Emotion reg hide neg emotions (sd) & 0.0189 & -0.0315 & 0.0719 & 1.150 &
 1.000 \\
 Emotion reg change thinking to calm (sd) & 0.0312 & -0.0217 & 0.0863 &
 1.201 & 1.000 \\
-NZSEI13 (sd) & -0.0183 & -0.0531 & 0.0161 & 1.147 & 1.000 \\
+
 \end{longtable}
 
 Table~\ref{tbl-results-practical} presents the Population Average
@@ -1083,37 +1107,39 @@ For the outcome `NZSEI13 (sd)', the PATE causal contrast is -0.018. The
 confidence interval ranges from -0.053 to 0.016. The E-value for this
 outcome confirms the causal contrast is unreliable.
 
-\hypertarget{effects-on-reflective-well-being}{%
-\subsection{Effects on reflective
-well-being}\label{effects-on-reflective-well-being}}
+\subsubsection{Effects on reflective
+well-being}\label{effects-on-reflective-well-being}
 
 \begin{figure}
 
-{\centering \includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-reflective-well-being-1.pdf}
+\centering{
+
+\includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-reflective-well-being-1.pdf}
 
 }
 
 \caption{\label{fig-results-reflective-well-being}Causal effects of
 religious loss on reflective well-being}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{effects-social-well-being}{%
-\subsection{Effects social well-being}\label{effects-social-well-being}}
+\subsubsection{Effects social
+well-being}\label{effects-social-well-being}
 
 \begin{figure}
 
-{\centering \includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-social-well-being-1.pdf}
+\centering{
+
+\includegraphics{target-trial-religion-loss_files/figure-pdf/fig-results-social-well-being-1.pdf}
 
 }
 
 \caption{\label{fig-results-social-well-being}Causal effects of
 religious loss on reflective well-being}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{discussion}{%
-\section{Discussion}\label{discussion}}
+\subsection{Discussion}\label{discussion}
 
 Here, we combined rigorous methods from causal epidemiology with
 national scale time-series data to estimate the causal effects of
@@ -1149,9 +1175,8 @@ reduction in charitable giving and volunteering (consistent {[}cite a
 different study{]}). However we do not find that disaffiliation as such
 reduces other aspects of social well-being.
 
-\hypertarget{generalisability-and-transportability}{%
-\subsection{Generalisability and
-Transportability}\label{generalisability-and-transportability}}
+\subsubsection{Generalisability and
+Transportability}\label{generalisability-and-transportability}
 
 \begin{itemize}
 \tightlist
@@ -1160,9 +1185,8 @@ Transportability}\label{generalisability-and-transportability}}
   results transport elsewhere is unclear.
 \end{itemize}
 
-\hypertarget{assumptions-and-limitations}{%
-\subsection{Assumptions and
-Limitations}\label{assumptions-and-limitations}}
+\subsubsection{Assumptions and
+Limitations}\label{assumptions-and-limitations}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1188,8 +1212,7 @@ Also
   Loss to follow up attrition (requires modelling assumptions.)
 \end{enumerate}
 
-\hypertarget{theoretical-relevance}{%
-\subsection{Theoretical Relevance}\label{theoretical-relevance}}
+\subsubsection{Theoretical Relevance}\label{theoretical-relevance}
 
 This study is important both for its methods and findings.
 
@@ -1205,8 +1228,7 @@ This study is important both for its methods and findings.
   one-year.
 \end{enumerate}
 
-\hypertarget{future-research}{%
-\subsection{Future Research}\label{future-research}}
+\subsubsection{Future Research}\label{future-research}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1217,19 +1239,16 @@ This study is important both for its methods and findings.
   might be less charitable still. Future research\ldots{}
 \item
   Previous research shows differences in these comparison groups
-  (\protect\hyperlink{ref-vantongeren2020}{Van Tongeren et al. 2020};
-  \protect\hyperlink{ref-sibley2012a}{Chris G. Sibley and Bulbulia
-  2012}).
+  (\citeproc{ref-sibley2012a}{Sibley and Bulbulia 2012};
+  \citeproc{ref-vantongeren2020}{Van Tongeren \emph{et al.} 2020}).
 \end{enumerate}
 
-\hypertarget{real-world-implications}{%
-\subsection{Real-world Implications}\label{real-world-implications}}
+\subsubsection{Real-world Implications}\label{real-world-implications}
 
 In practical terms, the real-world implications of the findings, are
 \ldots{}
 
-\hypertarget{ethics-approval-details}{%
-\subsection{Ethics Approval Details}\label{ethics-approval-details}}
+\subsubsection{Ethics Approval Details}\label{ethics-approval-details}
 
 The NZAVS is reviewed every three years by the University of Auckland
 Human Participants Ethics Committee. Our most recent ethics approval
@@ -1238,8 +1257,7 @@ approved by the University of Auckland Human Participants Ethics
 Committee on 26/05/2021 for six years until 26/05/2027, Reference Number
 UAHPEC22576.
 
-\hypertarget{acknowledgements}{%
-\subsection{Acknowledgements}\label{acknowledgements}}
+\subsubsection{Acknowledgements}\label{acknowledgements}
 
 The New Zealand Attitudes and Values Study is supported by a grant from
 the TempletoReligion Trust (TRT0196; TRT0418). JB received support from
@@ -1248,30 +1266,25 @@ had no role in preparing the manuscript or the decision to publish.
 
 \newpage{}
 
-\hypertarget{appendix-a.-measures}{%
-\section{Appendix A. Measures}\label{appendix-a.-measures}}
+\subsection{Appendix A. Measures}\label{appendix-a.-measures}
 
-\hypertarget{baseline-confounding-control}{%
-\subsection{Baseline confounding
-control}\label{baseline-confounding-control}}
+\subsubsection{Baseline confounding
+control}\label{baseline-confounding-control}
 
-\hypertarget{age-waves-1-15}{%
-\subsubsection{Age (waves: 1-15)}\label{age-waves-1-15}}
+\paragraph{Age (waves: 1-15)}\label{age-waves-1-15}
 
 We asked participants' age in an open-ended question (``What is your
 age?'' or ``What is your date of birth'').
 
-\hypertarget{disability-waves-5-15}{%
-\subsubsection{Disability (waves: 5-15)}\label{disability-waves-5-15}}
+\paragraph{Disability (waves: 5-15)}\label{disability-waves-5-15}
 
 We assessed disability with a one item indicator adapted from Verbrugge
-(\protect\hyperlink{ref-verbrugge1997}{1997}), that asks ``Do you have a
-health condition or disability that limits you, and that has lasted for
-6+ months?'' (1 = Yes, 0 = No).
+(\citeproc{ref-verbrugge1997}{1997}), that asks ``Do you have a health
+condition or disability that limits you, and that has lasted for 6+
+months?'' (1 = Yes, 0 = No).
 
-\hypertarget{education-attainment-waves-1-4-15}{%
-\subsubsection{Education Attainment (waves: 1,
-4-15)}\label{education-attainment-waves-1-4-15}}
+\paragraph{Education Attainment (waves: 1,
+4-15)}\label{education-attainment-waves-1-4-15}
 
 Participants were asked ``What is your highest level of
 qualification?''. We coded participans highest finished degree according
@@ -1280,24 +1293,21 @@ codes (with overseas school quals coded as Level 3, and all other
 ancillary categories coded as missing)
 See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
 
-\hypertarget{employment-waves-1-3-4-11}{%
-\subsubsection{Employment (waves: 1-3,
-4-11)}\label{employment-waves-1-3-4-11}}
+\paragraph{Employment (waves: 1-3,
+4-11)}\label{employment-waves-1-3-4-11}
 
 We asked participants ``Are you currently employed? (This includes
 self-employed or casual work)''. * note: This question disappeared in
 the updated NZAVS Technical documents (Data Dictionary).
 
-\hypertarget{european-waves-1-15}{%
-\subsubsection{European (waves: 1-15)}\label{european-waves-1-15}}
+\paragraph{European (waves: 1-15)}\label{european-waves-1-15}
 
 Participants were asked ``Which ethnic group do you belong to (NZ census
 question)?'' or ``Which ethnic group(s) do you belong to? (Open-ended)''
 (wave: 3). Europeans were coded as 1, whereas other ethnicities were
 coded as 0.
 
-\hypertarget{ethnicity-waves-3}{%
-\subsubsection{Ethnicity (waves: 3)}\label{ethnicity-waves-3}}
+\paragraph{Ethnicity (waves: 3)}\label{ethnicity-waves-3}
 
 Based on the New Zealand Cencus, we asked participants ``Which ethnic
 group(s) do you belong to?''. The responses were: (1) New Zealand
@@ -1307,86 +1317,77 @@ TOKELAUAN. Please state:. We coded their answers into four groups:
 Maori, Pacific, Asian, and Euro (except for Time 3, which used an
 open-ended measure).
 
-\hypertarget{gender-waves-1-15}{%
-\subsubsection{Gender (waves: 1-15)}\label{gender-waves-1-15}}
+\paragraph{Gender (waves: 1-15)}\label{gender-waves-1-15}
 
 We asked participants' gender in an open-ended question: ``what is your
 gender?'' or ``Are you male or female?'' (waves: 1-5). Female was coded
 as 0, Male was coded as 1, and gender diverse coded as 3
-(\protect\hyperlink{ref-fraser_coding_2020}{Fraser et al. 2020}). (or
-0.5 = neither female nor male)
+(\citeproc{ref-fraser_coding_2020}{Fraser \emph{et al.} 2020}). (or 0.5
+= neither female nor male)
 
-\hypertarget{income-waves-1-3-4-15}{%
-\subsubsection{Income (waves: 1-3, 4-15)}\label{income-waves-1-3-4-15}}
+\paragraph{Income (waves: 1-3, 4-15)}\label{income-waves-1-3-4-15}
 
 Participants were asked ``Please estimate your total household income
 (before tax) for the year XXXX''. To stablise this indicator, we first
 took the natural log of the response + 1, and then centred and
 standardised the log-transformed indicator.
 
-\hypertarget{job-security-waves-1-34-79-15}{%
-\subsubsection{Job Security (waves:
-1-3,4-7,9-15)}\label{job-security-waves-1-34-79-15}}
+\paragraph{Job Security (waves:
+1-3,4-7,9-15)}\label{job-security-waves-1-34-79-15}
 
 Participants indicated their feeling of job security by answering ``How
 secure do you feel in your current job?'' on a scale from 1 (not secure)
 to 7 (very secure).
 
-\hypertarget{parent-waves-5-15}{%
-\subsubsection{Parent (waves: 5-15)}\label{parent-waves-5-15}}
+\paragraph{Parent (waves: 5-15)}\label{parent-waves-5-15}
 
 Participants were asked ``If you are a parent, what is the birth date of
 your eldest child?'' or ``If you are a parent, in which year was your
 eldest child born?'' (waves: 10-15). Parents were coded as 1, while the
 others were coded as 0.
 
-\hypertarget{number-of-children-waves-1-3-4-15}{%
-\subsubsection{Number of Children (waves: 1-3,
-4-15)}\label{number-of-children-waves-1-3-4-15}}
+\paragraph{Number of Children (waves: 1-3,
+4-15)}\label{number-of-children-waves-1-3-4-15}
 
-We measured number of children using one item from S. Bulbulia J. A.
-(\protect\hyperlink{ref-Bulbulia_2015}{2015}). We asked participants
-``How many children have you given birth to, fathered, or adopted. How
-many children have you given birth to, fathered, or adopted?'' or
-````How many children have you given birth to, fathered, or adopted. How
-many children have you given birth to, fathered, and/or parented?''
-(waves: 12-15).
+We measured number of children using one item from Bulbulia \emph{et
+al.} (\citeproc{ref-Bulbulia_2015}{2015}). We asked participants ``How
+many children have you given birth to, fathered, or adopted. How many
+children have you given birth to, fathered, or adopted?'' or ``\,``How
+many children have you given birth to, fathered, or adopted. How many
+children have you given birth to, fathered, and/or parented?'' (waves:
+12-15).
 
-\hypertarget{political-orientation}{%
-\subsubsection{Political Orientation}\label{political-orientation}}
+\paragraph{Political Orientation}\label{political-orientation}
 
 We measured participants' political orientation using a single item
-adapted from Jost (\protect\hyperlink{ref-jost_end_2006-1}{2006}).
+adapted from Jost (\citeproc{ref-jost_end_2006-1}{2006}).
 
 ``Please rate how politically liberal versus conservative you see
 yourself as being.''
 
 (1 = Extremely Liberal to 7 = Extremely Conservative)
 
-\hypertarget{nzsei-13-waves-8-15}{%
-\subsubsection{NZSEI-13 (waves: 8-15)}\label{nzsei-13-waves-8-15}}
+\paragraph{NZSEI-13 (waves: 8-15)}\label{nzsei-13-waves-8-15}
 
 We assessed occupational prestige and status using the New Zealand
-Socio-economic Index 13 (NZSEI-13)
-(\protect\hyperlink{ref-fahy2017}{Fahy, Lee, and Milne 2017}). This
-index uses the income, age, and education of a reference group, in this
-case the 2013 New Zealand census, to calculate an score for each
-occupational group. Scores range from 10 (Lowest) to 90 (Highest). This
-list of index scores for occupational groups was used to assign each
-participant a NZSEI-13 score based on their occupation.
+Socio-economic Index 13 (NZSEI-13) (\citeproc{ref-fahy2017}{Fahy
+\emph{et al.} 2017}). This index uses the income, age, and education of
+a reference group, in this case the 2013 New Zealand census, to
+calculate an score for each occupational group. Scores range from 10
+(Lowest) to 90 (Highest). This list of index scores for occupational
+groups was used to assign each participant a NZSEI-13 score based on
+their occupation.
 
 Participants were asked ``If you are a parent, what is the birth date of
 your eldest child?''.
 
-\hypertarget{living-with-partner}{%
-\subsubsection{Living with Partner}\label{living-with-partner}}
+\paragraph{Living with Partner}\label{living-with-partner}
 
 Participants were asekd ``Do you live with your partner?'' (1 = Yes, 0 =
 No).
 
-\hypertarget{living-in-an-urban-area-waves-1-15}{%
-\subsubsection{Living in an Urban Area (waves:
-1-15)}\label{living-in-an-urban-area-waves-1-15}}
+\paragraph{Living in an Urban Area (waves:
+1-15)}\label{living-in-an-urban-area-waves-1-15}
 
 We coded whether they are living in an urban or rural area (1 = Urban, 0
 = Rural) based on the addresses provided.
@@ -1394,33 +1395,28 @@ We coded whether they are living in an urban or rural area (1 = Urban, 0
 We coded whether they are living in an urban or rural area (1 = Urban, 0
 = Rural) based on the addresses provided.
 
-\hypertarget{nz-deprivation-index-waves-1-15}{%
-\subsubsection{NZ Deprivation Index (waves:
-1-15)}\label{nz-deprivation-index-waves-1-15}}
+\paragraph{NZ Deprivation Index (waves:
+1-15)}\label{nz-deprivation-index-waves-1-15}
 
 We used the NZ Deprivation Index to assign each participant a score
-based on where they live (\protect\hyperlink{ref-atkinson2019}{Atkinson,
-Salmond, and Crampton 2019}). This score combines data such as income,
-home ownership, employment, qualifications, family structure, housing,
-and access to transport and communication for an area into one
-deprivation score.
+based on where they live (\citeproc{ref-atkinson2019}{Atkinson \emph{et
+al.} 2019}). This score combines data such as income, home ownership,
+employment, qualifications, family structure, housing, and access to
+transport and communication for an area into one deprivation score.
 
-\hypertarget{nz-born-waves-1-24-15}{%
-\subsubsection{NZ-Born (waves: 1-2,4-15)}\label{nz-born-waves-1-24-15}}
+\paragraph{NZ-Born (waves: 1-2,4-15)}\label{nz-born-waves-1-24-15}
 
 We asked participants ``Which country were you born in?'' or ``Where
 were you born? (please be specific, e.g., which town/city?)'' (waves:
 6-15).
 
-\hypertarget{mini-ipip-6-waves-1-34-15}{%
-\subsubsection{Mini-IPIP 6 (waves:
-1-3,4-15)}\label{mini-ipip-6-waves-1-34-15}}
+\paragraph{Mini-IPIP 6 (waves:
+1-3,4-15)}\label{mini-ipip-6-waves-1-34-15}
 
 We measured participants personality with the Mini International
-Personality Item Pool 6 (Mini-IPIP6)
-(\protect\hyperlink{ref-sibley2011}{Chris G. Sibley et al. 2011}) which
-consists of six dimensions and each dimensions is measured with four
-items:
+Personality Item Pool 6 (Mini-IPIP6) (\citeproc{ref-sibley2011}{Sibley
+\emph{et al.} 2011}) which consists of six dimensions and each
+dimensions is measured with four items:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1521,15 +1517,14 @@ Each dimension was assessed with four items and participants rated the
 accuracy of each item as it applies to them from 1 (Very Inaccurate) to
 7 (Very Accurate). Items marked with (r) are reverse coded.
 
-\hypertarget{honesty-humility-modesty-facet-waves-10-14}{%
-\subsubsection{Honesty-Humility-Modesty Facet (waves:
-10-14)}\label{honesty-humility-modesty-facet-waves-10-14}}
+\paragraph{Honesty-Humility-Modesty Facet (waves:
+10-14)}\label{honesty-humility-modesty-facet-waves-10-14}
 
 Participants indicated the extent to which they agree with the following
-four statements from Campbell et al.
-(\protect\hyperlink{ref-campbell2004}{2004}) , and Chris G. Sibley et
-al. (\protect\hyperlink{ref-sibley2011}{2011}) (1 = Strongly Disagree to
-7 = Strongly Agree)
+four statements from Campbell \emph{et al.}
+(\citeproc{ref-campbell2004}{2004}) , and Sibley \emph{et al.}
+(\citeproc{ref-sibley2011}{2011}) (1 = Strongly Disagree to 7 = Strongly
+Agree)
 
 \begin{verbatim}
 i.  I want people to know that I am an important person of high status, (Waves: 1, 10-14)
@@ -1538,60 +1533,52 @@ iii. I wouldn't want people to treat me as though I were superior to them.
 iv. I think that I am entitled to more respect than the average person is.
 \end{verbatim}
 
-\hypertarget{exposure-variable}{%
-\subsection{Exposure variable}\label{exposure-variable}}
+\subsubsection{Exposure variable}\label{exposure-variable}
 
-\hypertarget{religious-identification-waves-1-15}{%
-\subsubsection{Religious Identification (waves:
-1-15)}\label{religious-identification-waves-1-15}}
+\paragraph{Religious Identification (waves:
+1-15)}\label{religious-identification-waves-1-15}
 
 If participants answered \emph{yes} to ``Do you identify with a religion
 and/or spiritual group? we asked''How important is your religion to how
 you see yourself?'' (1 = Not important, 7 = Very important). Those
 participants who were not religious were imputed a score of ``1''.
 
-\hypertarget{health-well-being-outcomes}{%
-\subsection{Health well-being
-outcomes}\label{health-well-being-outcomes}}
+\subsubsection{Health well-being
+outcomes}\label{health-well-being-outcomes}
 
-\hypertarget{alcohol-frequency-waves-6-15}{%
-\subsubsection{Alcohol Frequency (waves:
-6-15)}\label{alcohol-frequency-waves-6-15}}
+\paragraph{Alcohol Frequency (waves:
+6-15)}\label{alcohol-frequency-waves-6-15}
 
 We measured participants' frequency of drinking alcohol using one item
-adapted from Health
-(\protect\hyperlink{ref-Ministry_of_Health_2013}{2013}) . Participants
-were asked ``How often do you have a drink containing alcohol?'' (1 =
-Never - I don't drink, 2 = Monthly or less, 3 = Up to 4 times a month, 4
-= Up to 3 times a week, 5 = 4 or more times a week, 6 = Don't know).
+adapted from Health (\citeproc{ref-Ministry_of_Health_2013}{2013}) .
+Participants were asked ``How often do you have a drink containing
+alcohol?'' (1 = Never - I don't drink, 2 = Monthly or less, 3 = Up to 4
+times a month, 4 = Up to 3 times a week, 5 = 4 or more times a week, 6 =
+Don't know).
 
-\hypertarget{alcohol-intensity-waves-6-15}{%
-\subsubsection{Alcohol Intensity (waves:
-6-15)}\label{alcohol-intensity-waves-6-15}}
+\paragraph{Alcohol Intensity (waves:
+6-15)}\label{alcohol-intensity-waves-6-15}
 
 We measured participants' intensity of drinking alcohol using one item
-adapted from (\protect\hyperlink{ref-Ministry_of_Health_2013}{Health
-2013}). Participants were asked ``How many drinks containing alcohol do
-you have on a typical day when drinking alcohol? (number of drinks on a
-typical day when drinking)''
+adapted from (\citeproc{ref-Ministry_of_Health_2013}{Health 2013}).
+Participants were asked ``How many drinks containing alcohol do you have
+on a typical day when drinking alcohol? (number of drinks on a typical
+day when drinking)''
 
-\hypertarget{body-mass-index-waves-2-3-4-15}{%
-\subsubsection{Body Mass Index (waves: 2-3,
-4-15)}\label{body-mass-index-waves-2-3-4-15}}
+\paragraph{Body Mass Index (waves: 2-3,
+4-15)}\label{body-mass-index-waves-2-3-4-15}
 
 Participants were asked ``What is your height? (metres)'' and ``What is
 your weight? (kg)''. Based on participants indication of their height
 and weight we calculated the BMI by dividing the weight in kilograms by
 the square of the height in meters.
 
-\hypertarget{short-form-subjective-health-waves-5-15}{%
-\subsubsection{Short-Form Subjective Health (waves:
-5-15)}\label{short-form-subjective-health-waves-5-15}}
+\paragraph{Short-Form Subjective Health (waves:
+5-15)}\label{short-form-subjective-health-waves-5-15}
 
 Participants' subjective health was assessed by three items selected
 from the MOS 36-item short-form health survey
-(\protect\hyperlink{ref-warejr1992}{Ware Jr and Sherbourne 1992}). The
-items were
+(\citeproc{ref-warejr1992}{Ware Jr and Sherbourne 1992}). The items were
 
 \begin{verbatim}
 1.  "In general, would you say your health is...";
@@ -1602,47 +1589,40 @@ items were
 The second and third items were negatively-worded, so we reversed the
 responses.
 
-\hypertarget{hours-of-exercise-waves-1-4-15}{%
-\subsubsection{Hours of Exercise (waves: 1,
-4-15)}\label{hours-of-exercise-waves-1-4-15}}
+\paragraph{Hours of Exercise (waves: 1,
+4-15)}\label{hours-of-exercise-waves-1-4-15}
 
-We measured hours of exercising using one item from Chris G. Sibley et
-al. (\protect\hyperlink{ref-sibley2011}{2011}). We asked participants to
-estimate and report how many hours they spend in exercise/physical
-activity last week. To stablise this indicator, we first took the
-natural log of the response + 1, and then centred and standardised the
-log-transformed indicator.
+We measured hours of exercising using one item from Sibley \emph{et al.}
+(\citeproc{ref-sibley2011}{2011}). We asked participants to estimate and
+report how many hours they spend in exercise/physical activity last
+week. To stablise this indicator, we first took the natural log of the
+response + 1, and then centred and standardised the log-transformed
+indicator.
 
-\hypertarget{hours-of-sleep-waves-5-15}{%
-\subsubsection{Hours of Sleep (waves:
-5-15)}\label{hours-of-sleep-waves-5-15}}
+\paragraph{Hours of Sleep (waves:
+5-15)}\label{hours-of-sleep-waves-5-15}
 
 Participants were asked ``During the past month, on average, how many
 hours of \emph{actual sleep} did you get per night''.
 
-\hypertarget{smoker-waves-4-15}{%
-\subsubsection{Smoker (waves: 4-15)}\label{smoker-waves-4-15}}
+\paragraph{Smoker (waves: 4-15)}\label{smoker-waves-4-15}
 
 We asked participants whether they are currently smoking or not (1 = Yes
 or 0 = No), using a single item: ``Do you currently smoke?'' or ``Do you
-currently smoke tobacco cigarettes?'' (waves: 10-15) from Muriwai,
-Houkamau, and Sibley
-(\protect\hyperlink{ref-muriwai_looking_2018}{2018}).
+currently smoke tobacco cigarettes?'' (waves: 10-15) from Muriwai
+\emph{et al.} (\citeproc{ref-muriwai_looking_2018}{2018}).
 
-\hypertarget{embodied-well-being-outcomes}{%
-\subsection{Embodied well-being
-outcomes}\label{embodied-well-being-outcomes}}
+\subsubsection{Embodied well-being
+outcomes}\label{embodied-well-being-outcomes}
 
-\hypertarget{kessler-6-waves-2-34-15}{%
-\subsubsection{Kessler-6 (waves:
-2-3,4-15)}\label{kessler-6-waves-2-34-15}}
+\paragraph{Kessler-6 (waves: 2-3,4-15)}\label{kessler-6-waves-2-34-15}
 
 We measured psychological distress using the Kessler-6 scale
-(\protect\hyperlink{ref-kessler2002}{R. ~C. Kessler et al. 2002}), which
-exhibits strong diagnostic concordance for moderate and severe
-psychological distress in large, cross-cultural samples
-(\protect\hyperlink{ref-kessler2010}{R. C. Kessler et al. 2010};
-\protect\hyperlink{ref-prochaska2012}{Prochaska et al. 2012}).
+(\citeproc{ref-kessler2002}{Kessler \emph{et al.} 2002}), which exhibits
+strong diagnostic concordance for moderate and severe psychological
+distress in large, cross-cultural samples
+(\citeproc{ref-kessler2010}{Kessler \emph{et al.} 2010};
+\citeproc{ref-prochaska2012}{Prochaska \emph{et al.} 2012}).
 Participants rated during the past 30 days, how often did\ldots{} (
 
 \begin{verbatim}
@@ -1658,16 +1638,14 @@ Ordinal response options for the Kessler-6 are: ``None of the time'';
 ``A little of the time''; ``Some of the time''; ``Most of the time'';
 ``All of the time.''
 
-\hypertarget{fatigue-waves-5-15}{%
-\subsubsection{Fatigue (waves: 5-15)}\label{fatigue-waves-5-15}}
+\paragraph{Fatigue (waves: 5-15)}\label{fatigue-waves-5-15}
 
 We assessed subjective fatigue by asking participants, ``During the last
 30 days, how often did \ldots{} you feel exhausted?'' Responses were
 collected on an ordinal scale (0 = None of The Time, 1 = A little of The
 Time, 2 = Some of The Time, 3 = Most of The Time, 4 = All of The Time).
 
-\hypertarget{rumination}{%
-\subsubsection{Rumination}\label{rumination}}
+\paragraph{Rumination}\label{rumination}
 
 ``During the last 30 days, how often did\ldots. you have negative
 thoughts that repeated over and over?''
@@ -1676,27 +1654,24 @@ Ordinal response options for the Kessler-6 are: ``None of the time'';
 ``A little of the time''; ``Some of the time''; ``Most of the time'';
 ``All of the time.''
 
-\hypertarget{practical-well-being-outcomes}{%
-\subsection{Practical well-being
-outcomes}\label{practical-well-being-outcomes}}
+\subsubsection{Practical well-being
+outcomes}\label{practical-well-being-outcomes}
 
-\hypertarget{body-satisfaction-waves-2-3-4-15}{%
-\subsubsection{Body Satisfaction (waves: 2-3,
-4-15)}\label{body-satisfaction-waves-2-3-4-15}}
+\paragraph{Body Satisfaction (waves: 2-3,
+4-15)}\label{body-satisfaction-waves-2-3-4-15}
 
-We measured body satisfaction with one item from Stronge et al.
-(\protect\hyperlink{ref-stronge_facebook_2015}{2015}): ``I am satisfied
-with the appearance, size and shape of my body'', which participants
-rated from 1 (very inaccurate) to 7 (very accurate).
+We measured body satisfaction with one item from Stronge \emph{et al.}
+(\citeproc{ref-stronge_facebook_2015}{2015}): ``I am satisfied with the
+appearance, size and shape of my body'', which participants rated from 1
+(very inaccurate) to 7 (very accurate).
 
-\hypertarget{emotional-regulation-waves-10-13}{%
-\subsubsection{Emotional Regulation (waves:
-10-13)}\label{emotional-regulation-waves-10-13}}
+\paragraph{Emotional Regulation (waves:
+10-13)}\label{emotional-regulation-waves-10-13}
 
 We measured participants' levels of emotional regulation using three
 items adpated from Gratz and Roemer
-(\protect\hyperlink{ref-gratz_multidimensional_2004}{2004}) and Gross
-and John (\protect\hyperlink{ref-gross_individual_2003}{2003}):
+(\citeproc{ref-gratz_multidimensional_2004}{2004}) and Gross and John
+(\citeproc{ref-gross_individual_2003}{2003}):
 
 \begin{verbatim}
 1.  "When I feel negative emotions, my emotions feel out of control.";
@@ -1707,19 +1682,17 @@ and John (\protect\hyperlink{ref-gross_individual_2003}{2003}):
 Participants were asked to indicate the extent to which they agree with
 these items (1 = Strongly Disagree to 7 = Strongly Agree).
 
-\hypertarget{perfectionism-waves-10-15}{%
-\subsubsection{Perfectionism (waves:
-10-15)}\label{perfectionism-waves-10-15}}
+\paragraph{Perfectionism (waves:
+10-15)}\label{perfectionism-waves-10-15}
 
-We assessed participants' perfectionism using three items from Rice,
-Richardson, and Tueller (\protect\hyperlink{ref-rice_short_2014}{2014}):
-(1) Doing my best never seems to be enough; (2) My performance rarely
-measures up to my standards; (3) I am hardly ever satisfied with my
-performance. Participants indicated the extent to which they agree with
-these items (1 = Strongly Disagree to 7 = Strongly Agree).
+We assessed participants' perfectionism using three items from Rice
+\emph{et al.} (\citeproc{ref-rice_short_2014}{2014}): (1) Doing my best
+never seems to be enough; (2) My performance rarely measures up to my
+standards; (3) I am hardly ever satisfied with my performance.
+Participants indicated the extent to which they agree with these items
+(1 = Strongly Disagree to 7 = Strongly Agree).
 
-\hypertarget{power-dependence}{%
-\subsubsection{Power Dependence}\label{power-dependence}}
+\paragraph{Power Dependence}\label{power-dependence}
 
 Participants' Power dependence was measured using two items:
 
@@ -1731,9 +1704,7 @@ Participants' Power dependence was measured using two items:
 Participants indicated their agreement with these items'' (1 = Strongly
 Disagree to 7 = Strongly Agree).
 
-\hypertarget{self-control-waves-5-15}{%
-\subsubsection{Self-Control (waves:
-5-15)}\label{self-control-waves-5-15}}
+\paragraph{Self-Control (waves: 5-15)}\label{self-control-waves-5-15}
 
 Participants were asked to indicate the extent to which they endorse the
 two items
@@ -1743,18 +1714,17 @@ two items
 2.  "I wish I had more self-discipline"
 \end{verbatim}
 
-The scale is from Tangney, Baumeister, and Boone
-(\protect\hyperlink{ref-tangney_high_2004}{2004}). The responses to the
-items ranged from 1 (Strongly Disagree) to 7 (Strongly Agree).
+The scale is from Tangney \emph{et al.}
+(\citeproc{ref-tangney_high_2004}{2004}). The responses to the items
+ranged from 1 (Strongly Disagree) to 7 (Strongly Agree).
 
-\hypertarget{self-esteem-waves-1-3-4-15}{%
-\subsubsection{Self-Esteem (waves: 1-3,
-4-15)}\label{self-esteem-waves-1-3-4-15}}
+\paragraph{Self-Esteem (waves: 1-3,
+4-15)}\label{self-esteem-waves-1-3-4-15}
 
 We measured participants' self-esteem using three items adapted from
-Rosenberg (\protect\hyperlink{ref-Rosenberg1965}{1965}). Participants
-were instructed to circle the number that best represents how accurately
-each statement describes them. Participants responded to the items
+Rosenberg (\citeproc{ref-Rosenberg1965}{1965}). Participants were
+instructed to circle the number that best represents how accurately each
+statement describes them. Participants responded to the items
 
 \begin{verbatim}
 1.  "On the whole am satisfied with myself"
@@ -1762,37 +1732,33 @@ each statement describes them. Participants responded to the items
 3.  "Am inclined to feel that I am a failure") on a likert-type scale (1 = Very inaccurate to 7 = Very accurate).
 \end{verbatim}
 
-\hypertarget{sexual-satisfaction-waves-10-15}{%
-\subsubsection{Sexual Satisfaction (waves:
-10-15)}\label{sexual-satisfaction-waves-10-15}}
+\paragraph{Sexual Satisfaction (waves:
+10-15)}\label{sexual-satisfaction-waves-10-15}
 
 Participants were asked ``How satisfied are you with your sex life?'' (1
 = Not satisfied to 7 = Very satisfied).
 
-\hypertarget{vengeful-rumination-waves-10-15}{%
-\subsubsection{Vengeful Rumination (waves:
-10-15)}\label{vengeful-rumination-waves-10-15}}
+\paragraph{Vengeful Rumination (waves:
+10-15)}\label{vengeful-rumination-waves-10-15}
 
 We assessed participants' vengeful rumination using three items,
 respectively adapted from Caprara
-(\protect\hyperlink{ref-caprara_indicators_1986}{1986}) and Berry et al.
-(\protect\hyperlink{ref-berry_forgivingness_2005}{2005}), and developed
-for NZAVS: (1) Sometimes I can't sleep because of thinking about past
-wrongs I have suffered; (2) I can usually forgive and forget when
-someone does me wrong; (3) I find myself regularly thinking about past
-times that I have been wronged. Participants indicated their agreement
-with these items (1 = Strongly Disagree to 7 = Strongly Agree). The
-values for the second item were reversely coded.
+(\citeproc{ref-caprara_indicators_1986}{1986}) and Berry \emph{et al.}
+(\citeproc{ref-berry_forgivingness_2005}{2005}), and developed for
+NZAVS: (1) Sometimes I can't sleep because of thinking about past wrongs
+I have suffered; (2) I can usually forgive and forget when someone does
+me wrong; (3) I find myself regularly thinking about past times that I
+have been wronged. Participants indicated their agreement with these
+items (1 = Strongly Disagree to 7 = Strongly Agree). The values for the
+second item were reversely coded.
 
-\hypertarget{reflective-well-being}{%
-\subsection{Reflective well-being}\label{reflective-well-being}}
+\subsubsection{Reflective well-being}\label{reflective-well-being}
 
-\hypertarget{meaning-of-life-waves-10-15}{%
-\subsubsection{Meaning of Life (waves:
-10-15)}\label{meaning-of-life-waves-10-15}}
+\paragraph{Meaning of Life (waves:
+10-15)}\label{meaning-of-life-waves-10-15}
 
 We assessed participants' levels of life meaning using two items from
-Steger et al. (\protect\hyperlink{ref-steger_meaning_2006}{2006}):
+Steger \emph{et al.} (\citeproc{ref-steger_meaning_2006}{2006}):
 
 \begin{verbatim}
 1.  My life has a clear sense of purpose;
@@ -1802,13 +1768,12 @@ Steger et al. (\protect\hyperlink{ref-steger_meaning_2006}{2006}):
 Participants indicated their agreement with these items (1 = Strongly
 Disagree to 7 = Strongly Agree).
 
-\hypertarget{satisfaction-with-life-waves-1-34-15}{%
-\subsubsection{Satisfaction with Life (waves:
-1-3,4-15)}\label{satisfaction-with-life-waves-1-34-15}}
+\paragraph{Satisfaction with Life (waves:
+1-3,4-15)}\label{satisfaction-with-life-waves-1-34-15}
 
 We measured life satisfaction with two items adapted from the
-Satisfaction with Life Scale (\protect\hyperlink{ref-diener1985}{Diener
-et al. 1985}):
+Satisfaction with Life Scale (\citeproc{ref-diener1985}{Diener \emph{et
+al.} 1985}):
 
 \begin{verbatim}
 1.  "I am satisfied with my life" and
@@ -1818,13 +1783,12 @@ et al. 1985}):
 Participants responded on a scale from 1 (Strongly Disagree) to 7
 (Strongly Agree).
 
-\hypertarget{personal-wellbeing-waves-1-3-4-15}{%
-\subsubsection{Personal Wellbeing (waves: 1-3,
-4-15)}\label{personal-wellbeing-waves-1-3-4-15}}
+\paragraph{Personal Wellbeing (waves: 1-3,
+4-15)}\label{personal-wellbeing-waves-1-3-4-15}
 
 We measured participants' subjective wellbeing using three items from
 the Australian Unity Wellbeing Index
-(\protect\hyperlink{ref-cummins_developing_2003}{Cummins et al. 2003}):
+(\citeproc{ref-cummins_developing_2003}{Cummins \emph{et al.} 2003}):
 
 \begin{verbatim}
 1.  your health;
@@ -1837,12 +1801,11 @@ current satisfaction with different aspects of your life and aspects of
 New Zealand more generally'') and indicated their satisfaction with
 those items (0 = Completely Dissatisfied to 10 = Completely Satisfied).
 
-\hypertarget{standard-living}{%
-\subsubsection{Standard Living}\label{standard-living}}
+\paragraph{Standard Living}\label{standard-living}
 
 We measured participants' satisfaction with their standard of living
 using an item from the Australian Unity Wellbeing Index
-(\protect\hyperlink{ref-cummins_developing_2003}{Cummins et al. 2003}).
+(\citeproc{ref-cummins_developing_2003}{Cummins \emph{et al.} 2003}).
 Participants read an instruction (``Please rate your level of
 satisfaction with the following aspects of your life and New Zealand.'')
 and responded to an item
@@ -1854,26 +1817,23 @@ and responded to an item
 on a 10-point scale (0 = completely dissatisfied to 10 = completely
 satisfied).
 
-\hypertarget{social-well-being-outcomes}{%
-\subsection{Social well-being
-outcomes}\label{social-well-being-outcomes}}
+\subsubsection{Social well-being
+outcomes}\label{social-well-being-outcomes}
 
-\hypertarget{charity-donation-waves-1-3-4-15}{%
-\subsubsection{Charity Donation (waves: 1-3,
-4-15)}\label{charity-donation-waves-1-3-4-15}}
+\paragraph{Charity Donation (waves: 1-3,
+4-15)}\label{charity-donation-waves-1-3-4-15}
 
 We asked participants ``How much money have you donated to charity in
 the last year?''. To stablise this indicator, we first took the natural
 log of the response + 1, and then centred and standardised the
 log-transformed indicator.
 
-\hypertarget{felt-belongingness-waves-1-3-4-15}{%
-\subsubsection{Felt Belongingness (waves: 1-3,
-4-15)}\label{felt-belongingness-waves-1-3-4-15}}
+\paragraph{Felt Belongingness (waves: 1-3,
+4-15)}\label{felt-belongingness-waves-1-3-4-15}
 
 We assessed felt belongingness with three items adapted from the Sense
-of Belonging Instrument (\protect\hyperlink{ref-hagerty1995}{Hagerty and
-Patusky 1995}):
+of Belonging Instrument (\citeproc{ref-hagerty1995}{Hagerty and Patusky
+1995}):
 
 \begin{verbatim}
 1.  "Know that people in my life accept and value me";
@@ -1891,40 +1851,34 @@ Patusky 1995}):
 Participants responded on a scale from 1 (Very Inaccurate) to 7 (Very
 Accurate). The second item was reversely coded.
 
-\hypertarget{ethnic-group-impermeability-waves-9-13}{%
-\subsubsection{Ethnic group impermeability (waves:
-9-13)}\label{ethnic-group-impermeability-waves-9-13}}
+\paragraph{Ethnic group impermeability (waves:
+9-13)}\label{ethnic-group-impermeability-waves-9-13}
 
 The current income gap between New Zealand Europeans and other ethnic
 groups would be very hard to change.
 
-\hypertarget{individual-permeability-waves-9-13}{%
-\subsubsection{Individual Permeability (waves:
-9-13)}\label{individual-permeability-waves-9-13}}
+\paragraph{Individual Permeability (waves:
+9-13)}\label{individual-permeability-waves-9-13}
 
 Participants indicated the extent to which they agree with the
 statement, ``I believe I am capable, as an individual of improving my
-status in society.'', from Tausch, Saguy, and Bryson
-(\protect\hyperlink{ref-tausch2015}{2015}) (1 = Strongly Disagree to 7 =
-Strongly Agree).
+status in society.'', from Tausch \emph{et al.}
+(\citeproc{ref-tausch2015}{2015}) (1 = Strongly Disagree to 7 = Strongly
+Agree).
 
-\hypertarget{sense-of-community-waves-6-15}{%
-\subsubsection{Sense of Community (waves:
-6-15)}\label{sense-of-community-waves-6-15}}
+\paragraph{Sense of Community (waves:
+6-15)}\label{sense-of-community-waves-6-15}
 
-We measured sense of community with a single item from Sengupta et al.
-(\protect\hyperlink{ref-sengupta2013}{2013}): ``I feel a sense of
-community with others in my local neighbourhood.'' Participants answered
-on a scale of 1 (strongly disagree) to 7 (strongly agree).
+We measured sense of community with a single item from Sengupta \emph{et
+al.} (\citeproc{ref-sengupta2013}{2013}): ``I feel a sense of community
+with others in my local neighbourhood.'' Participants answered on a
+scale of 1 (strongly disagree) to 7 (strongly agree).
 
-\hypertarget{support-waves-1-3-4-15}{%
-\subsubsection{Support (waves: 1-3,
-4-15)}\label{support-waves-1-3-4-15}}
+\paragraph{Support (waves: 1-3, 4-15)}\label{support-waves-1-3-4-15}
 
 Participants' perceived social support was measured using three items
-from Cutrona and Russell (\protect\hyperlink{ref-cutrona1987}{1987}) and
-Williams, Cheung, and Choi
-(\protect\hyperlink{ref-williams_cyberostracism_2000}{2000}):
+from Cutrona and Russell (\citeproc{ref-cutrona1987}{1987}) and Williams
+\emph{et al.} (\citeproc{ref-williams_cyberostracism_2000}{2000}):
 
 \begin{verbatim}
 1.  "There are people I can depend on to help me if I really need it";
@@ -1938,172 +1892,34 @@ Participants indicated the extent to which they agree with those items
 The second item was negatively-worded, so we reversely recorded the
 responses to this item.
 
-\hypertarget{volunteers-waves-1-4-15}{%
-\subsubsection{Volunteers (waves: 1,
-4-15)}\label{volunteers-waves-1-4-15}}
+\paragraph{Volunteers (waves: 1, 4-15)}\label{volunteers-waves-1-4-15}
 
 Participants were asked,``Please estimate how many hours you spent doing
 each of the following things last week'' and responded to an item
-(``voluntary/charitable work''), from
-(\protect\hyperlink{ref-sibley2011}{Chris G. Sibley et al. 2011}).
+(``voluntary/charitable work''), from (\citeproc{ref-sibley2011}{Sibley
+\emph{et al.} 2011}).
 
 \newpage{}
 
 APPENDIX B. Sample \{.appendix\}
 
-\begin{verbatim}
-
-
-|                        |baseline            |
-|:-----------------------|:-------------------|
-|                        |(N=12600)           |
-|AGE                     |                    |
-|Mean (SD)               |52.9 (12.9)         |
-|Median [Min, Max]       |55.7 [18.2, 95.5]   |
-|AGREEABLENESS           |                    |
-|Mean (SD)               |5.46 (0.943)        |
-|Median [Min, Max]       |5.50 [1.00, 7.00]   |
-|Missing                 |123 (1.0%)          |
-|BORN_NZ                 |                    |
-|0                       |2806 (22.3%)        |
-|1                       |9761 (77.5%)        |
-|Missing                 |33 (0.3%)           |
-|CONSCIENTIOUSNESS       |                    |
-|Mean (SD)               |5.19 (1.03)         |
-|Median [Min, Max]       |5.25 [1.00, 7.00]   |
-|Missing                 |118 (0.9%)          |
-|EDUCATION_LEVEL_COARSEN |                    |
-|Mean (SD)               |3.48 (1.45)         |
-|Median [Min, Max]       |3.00 [1.00, 7.00]   |
-|Missing                 |74 (0.6%)           |
-|EMPLOYED                |                    |
-|Mean (SD)               |0.776 (0.417)       |
-|Median [Min, Max]       |1.00 [0, 1.00]      |
-|Missing                 |28 (0.2%)           |
-|ETH_CAT                 |                    |
-|Mean (SD)               |1.35 (0.807)        |
-|Median [Min, Max]       |1.00 [1.00, 4.00]   |
-|Missing                 |112 (0.9%)          |
-|EXTRAVERSION            |                    |
-|Mean (SD)               |3.91 (1.17)         |
-|Median [Min, Max]       |4.00 [1.00, 7.00]   |
-|Missing                 |118 (0.9%)          |
-|GRATITUDE               |                    |
-|Mean (SD)               |6.03 (0.842)        |
-|Median [Min, Max]       |6.33 [1.33, 7.00]   |
-|Missing                 |3 (0.0%)            |
-|HONESTY_HUMILITY        |                    |
-|Mean (SD)               |5.51 (1.16)         |
-|Median [Min, Max]       |5.75 [1.00, 7.00]   |
-|Missing                 |120 (1.0%)          |
-|HOUSEHOLD_INC_LOG       |                    |
-|Mean (SD)               |11.4 (0.787)        |
-|Median [Min, Max]       |11.4 [0.693, 14.5]  |
-|Missing                 |632 (5.0%)          |
-|LIFESAT_IDEAL           |                    |
-|Mean (SD)               |4.98 (1.41)         |
-|Median [Min, Max]       |5.00 [1.00, 7.00]   |
-|Missing                 |743 (5.9%)          |
-|LIFESAT_SATLIFE         |                    |
-|Mean (SD)               |5.82 (1.15)         |
-|Median [Min, Max]       |6.00 [1.00, 7.00]   |
-|Missing                 |166 (1.3%)          |
-|MALE                    |                    |
-|0                       |4196 (33.3%)        |
-|1                       |8404 (66.7%)        |
-|MEANING_PURPOSE         |                    |
-|Mean (SD)               |5.49 (1.33)         |
-|Median [Min, Max]       |6.00 [1.00, 7.00]   |
-|Missing                 |344 (2.7%)          |
-|MEANING_SENSE           |                    |
-|Mean (SD)               |5.93 (1.12)         |
-|Median [Min, Max]       |6.00 [1.00, 7.00]   |
-|Missing                 |49 (0.4%)           |
-|MODESTY                 |                    |
-|Mean (SD)               |6.00 (0.921)        |
-|Median [Min, Max]       |6.25 [1.00, 7.00]   |
-|Missing                 |9 (0.1%)            |
-|NEUROTICISM             |                    |
-|Mean (SD)               |3.41 (1.13)         |
-|Median [Min, Max]       |3.25 [1.00, 7.00]   |
-|Missing                 |123 (1.0%)          |
-|NZ_DEP2018              |                    |
-|Mean (SD)               |4.77 (2.75)         |
-|Median [Min, Max]       |4.00 [1.00, 10.0]   |
-|Missing                 |65 (0.5%)           |
-|NZSEI13                 |                    |
-|Mean (SD)               |55.0 (16.3)         |
-|Median [Min, Max]       |56.0 [10.0, 90.0]   |
-|Missing                 |124 (1.0%)          |
-|OPENNESS                |                    |
-|Mean (SD)               |4.90 (1.12)         |
-|Median [Min, Max]       |5.00 [1.00, 7.00]   |
-|Missing                 |120 (1.0%)          |
-|PARENT                  |                    |
-|0                       |2779 (22.1%)        |
-|1                       |9821 (77.9%)        |
-|PARTNER                 |                    |
-|0                       |2846 (22.6%)        |
-|1                       |9219 (73.2%)        |
-|Missing                 |535 (4.2%)          |
-|POL_ORIENT              |                    |
-|Mean (SD)               |4.03 (1.36)         |
-|Median [Min, Max]       |4.00 [1.00, 7.00]   |
-|Missing                 |774 (6.1%)          |
-|PWI_HEALTH              |                    |
-|Mean (SD)               |6.78 (2.32)         |
-|Median [Min, Max]       |7.00 [0, 10.0]      |
-|Missing                 |57 (0.5%)           |
-|PWI_RELATIONSHIPS       |                    |
-|Mean (SD)               |7.89 (2.16)         |
-|Median [Min, Max]       |8.00 [0, 10.0]      |
-|Missing                 |48 (0.4%)           |
-|PWI_SECURITY            |                    |
-|Mean (SD)               |6.37 (2.33)         |
-|Median [Min, Max]       |7.00 [0, 10.0]      |
-|Missing                 |47 (0.4%)           |
-|PWI_STANDARDLIVING      |                    |
-|Mean (SD)               |7.67 (2.02)         |
-|Median [Min, Max]       |8.00 [0, 10.0]      |
-|Missing                 |57 (0.5%)           |
-|RELIGION_RELIGIOUS_NOT  |                    |
-|0                       |12600 (100%)        |
-|1                       |0 (0%)              |
-|SAMPLE_ORIGIN_YEAR      |                    |
-|1-2                     |913 (7.2%)          |
-|3-3.5                   |559 (4.4%)          |
-|4                       |786 (6.2%)          |
-|5-6-7                   |1181 (9.4%)         |
-|8-9                     |1511 (12.0%)        |
-|10                      |7650 (60.7%)        |
-|SAMPLE_WEIGHTS          |                    |
-|Mean (SD)               |0.997 (0.529)       |
-|Median [Min, Max]       |0.892 [0.617, 2.59] |
-|URBAN                   |                    |
-|Mean (SD)               |1.81 (0.391)        |
-|Median [Min, Max]       |2.00 [1.00, 2.00]   |
-|Missing                 |65 (0.5%)           |
-\end{verbatim}
-
 \newpage{}
 
-\hypertarget{appendix-c-propensity-score-analysis}{%
-\section{Appendix C Propensity score
-analysis}\label{appendix-c-propensity-score-analysis}}
+\subsection{Appendix C Propensity score
+analysis}\label{appendix-c-propensity-score-analysis}
 
-\hypertarget{propensity-score-analysis-for-health}{%
-\subsection{Propensity score analysis for
-health}\label{propensity-score-analysis-for-health}}
+\subsubsection{Propensity score analysis for
+health}\label{propensity-score-analysis-for-health}
 
-Following (\protect\hyperlink{ref-thoemmes2011}{Thoemmes and Kim 2011})
-we describe our method for obtaining and verifying our propensity score
+Following (\citeproc{ref-thoemmes2011}{Thoemmes and Kim 2011}) we
+describe our method for obtaining and verifying our propensity score
 analysis using the WeightIt and Cobalt packages in R. z
 
 \textbf{1. Information about data collection}
 
 Information about data collection in the New Zealand Attitudes and
-Values Study can be obtained from
-(\protect\hyperlink{ref-sibley2021}{Chris G. Sibley 2021}).
+Values Study can be obtained from (\citeproc{ref-sibley2021}{Sibley
+2021}).
 
 \textbf{2. List of all covariates used to estimate the propensity score}
 
@@ -2158,10 +1974,9 @@ did not consider expanding it given the effective sample size of about
   \textbf{Inclusion of polynomial or interaction terms}
 \end{enumerate}
 
-Following the guidance of {``Agnostic Notes on Regression Adjustments to
-Experimental Data: Reexamining Freedman{'}s Critique''}
-(\protect\hyperlink{ref-agnostic}{n.d.}), we included an interaction
-term for the exposure and baseline covariates.
+Following the guidance of {``Agnostic notes on regression adjustments to
+experimental data''} (\citeproc{ref-agnostic}{n.d.}), we included an
+interaction term for the exposure and baseline covariates.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -2258,10 +2073,10 @@ These are reported in the main results.
 All those used in the exposure (propensity score model), interacted with
 the exposure (religious disaffiliation). Additionally, we weighted the
 regression using the final output of the \texttt{WeightIt} and
-\texttt{MatchThem}`package (\protect\hyperlink{ref-greifer2023a}{Greifer
-2023b}, \protect\hyperlink{ref-greifer2023b}{2023a};
-\protect\hyperlink{ref-pishgar2021}{Pishgar et al. 2021}), which
-multiplies propensity scores x census weights.
+\texttt{MatchThem}`package (\citeproc{ref-greifer2023a}{Greifer 2023b},
+\citeproc{ref-greifer2023b}{2023a}; \citeproc{ref-pishgar2021}{Pishgar
+\emph{et al.} 2021}), which multiplies propensity scores x census
+weights.
 
 Figure~\ref{fig-results-health-propensity-scores} shows strong evidence
 for imbalance at baseline in the confounders for the health domain. We
@@ -2269,14 +2084,16 @@ restore balance using entropy weighting.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-results-health-propensity-scores-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-results-health-propensity-scores-1.pdf}
 
 }
 
 \caption{\label{fig-results-health-propensity-scores}Love plot for
 propensity score analysis: health outcomes.}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-results-health-propensity-dis} shows propensity score
 weights in the unexposed group (remained religiously affiliated) and the
@@ -2284,18 +2101,19 @@ exposed group (disasffiated)
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-results-health-propensity-dis-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-results-health-propensity-dis-1.pdf}
 
 }
 
 \caption{\label{fig-results-health-propensity-dis}Distribution of
 propensity scores by condition: health domain}
 
-\end{figure}
+\end{figure}%
 
 \textbf{Summary of propensity score weights: health well-being domain}
 
-\hypertarget{tbl-summary-propensity-health}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
@@ -2303,8 +2121,8 @@ propensity scores by condition: health domain}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
-\caption{\label{tbl-summary-propensity-health}Summary of propensity
-scores: health well-being domain.}\tabularnewline
+\caption{Summary of propensity scores: health well-being
+domain.}\label{tbl-summary-propensity-health}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Group}
@@ -2347,7 +2165,7 @@ scores: health well-being domain.}\tabularnewline
 
 As illustrated in Table~\ref{tbl-summary-propensity-health}, the
 propensity score weights generated through the \texttt{WeightIt} package
-in R (\protect\hyperlink{ref-greifer2023}{Greifer et al. 2023}) for the
+in R (\citeproc{ref-greifer2023}{Greifer \emph{et al.} 2023}) for the
 health well-being domain demonstrate a similar trend to those in the
 practical well-being domain. For both groups (Group 0 and Group 1), the
 five most extreme weights are reported.
@@ -2377,9 +2195,8 @@ control groups for political orientation is somewhat more substantial
 than for most other variables. However in absolute terms the variance
 ratio is modest.
 
-\hypertarget{propensity-score-analysis-for-embodied-well-being}{%
-\subsection{Propensity score analysis for embodied
-well-being}\label{propensity-score-analysis-for-embodied-well-being}}
+\subsubsection{Propensity score analysis for embodied
+well-being}\label{propensity-score-analysis-for-embodied-well-being}
 
 Figure~\ref{fig-love-embodied} shows strong evidence for imbalance at
 baseline in the confounders for the embodied well-being domain. We again
@@ -2387,14 +2204,16 @@ restore balance using entropy weighting.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-embodied-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-embodied-1.pdf}
 
 }
 
 \caption{\label{fig-love-embodied}Love plot for propensity score
 analysis: embodied domain}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-propensity-dis-embodied} shows propensity score weights
 in the unexposed group (remained religiously affiliated) and the exposed
@@ -2402,18 +2221,19 @@ group (disasffiated) in the embodied condition.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-embodied-1.pdf}
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-embodied-1.pdf}
 
 }
 
 \caption{\label{fig-propensity-dis-embodied}Distribution of propensity
 scores by condition: embodied domain}
 
-\end{figure}
+\end{figure}%
 
 \textbf{Summary of propensity score weights: embodied well-being domain}
 
-\hypertarget{tbl-summary-propensity-embodied}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
@@ -2421,8 +2241,8 @@ scores by condition: embodied domain}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
-\caption{\label{tbl-summary-propensity-embodied}Summary of propensity
-scores: embodied well-being domain.}\tabularnewline
+\caption{Summary of propensity scores: embodied well-being
+domain.}\label{tbl-summary-propensity-embodied}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Group}
@@ -2466,7 +2286,7 @@ scores: embodied well-being domain.}\tabularnewline
 Table Table~\ref{tbl-summary-propensity-embodied} presents the
 propensity score weights for the embodied well-being domain, as
 generated by the \texttt{WeightIt} package in R
-(\protect\hyperlink{ref-greifer2023}{Greifer et al. 2023}). The weight
+(\citeproc{ref-greifer2023}{Greifer \emph{et al.} 2023}). The weight
 range for each group (Group 0 and Group 1) is provided, along with the
 five most extreme weights in each group.
 
@@ -2503,9 +2323,8 @@ unadjusted group is 10623, and for the adjusted group it's 10568.65. For
 the group with id 1, the values are 1977 for the unadjusted and 1646.84
 for the adjusted group.
 
-\hypertarget{propensity-score-analysis-for-practical-well-being}{%
-\subsection{Propensity score analysis for practical
-well-being}\label{propensity-score-analysis-for-practical-well-being}}
+\subsubsection{Propensity score analysis for practical
+well-being}\label{propensity-score-analysis-for-practical-well-being}
 
 Figure~\ref{fig-love-practical} shows strong evidence for imbalance at
 baseline in the confounders for the practical well-being domain. We
@@ -2513,14 +2332,16 @@ again restore balance using entropy weighting.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-practical-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-practical-1.pdf}
 
 }
 
 \caption{\label{fig-love-practical}Love plot for propensity score
 analysis: practical domain}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-propensity-dis-practical} shows propensity score weights
 in the unexposed group (remained religiously affiliated) and the exposed
@@ -2528,19 +2349,20 @@ group (disasffiliated) in the practical domain.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-practical-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-practical-1.pdf}
 
 }
 
 \caption{\label{fig-propensity-dis-practical}Distribution of propensity
 scores by condition: practical domain}
 
-\end{figure}
+\end{figure}%
 
 \textbf{Summary of propensity score weights: Practical well-being
 domain}
 
-\hypertarget{tbl-summary-propensity-practical}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
@@ -2548,8 +2370,8 @@ domain}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
-\caption{\label{tbl-summary-propensity-practical}Summary of propensity
-scores: practical domain.}\tabularnewline
+\caption{Summary of propensity scores: practical
+domain.}\label{tbl-summary-propensity-practical}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Group}
@@ -2592,7 +2414,7 @@ scores: practical domain.}\tabularnewline
 
 Table~\ref{tbl-summary-propensity-practical} summarises the propensity
 score weights generated through the \texttt{WeightIt} package in R
-(\protect\hyperlink{ref-greifer2023}{Greifer et al. 2023}). The weight
+(\citeproc{ref-greifer2023}{Greifer \emph{et al.} 2023}). The weight
 range for each group (Group 0 and Group 1) show the five most extreme
 weights in each group.
 
@@ -2636,9 +2458,8 @@ ratios, the propensity score matching method has overall produced a
 reasonable match across most variables, ensuring comparability between
 the treatment and control groups.
 
-\hypertarget{propensity-score-analysis-for-reflective-well-being}{%
-\subsection{Propensity score analysis for reflective
-well-being}\label{propensity-score-analysis-for-reflective-well-being}}
+\subsubsection{Propensity score analysis for reflective
+well-being}\label{propensity-score-analysis-for-reflective-well-being}
 
 Figure~\ref{fig-love-reflective} shows strong evidence for imbalance at
 baseline in the confounders for the reflective well-being domain. We
@@ -2646,14 +2467,16 @@ again restore balance using entropy weighting.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-reflective-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-reflective-1.pdf}
 
 }
 
 \caption{\label{fig-love-reflective}Love plot for propensity score
 analysis: reflective domain}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-propensity-dis-reflective} shows propensity score
 weights in the unexposed group (remained religiously affiliated) and the
@@ -2661,19 +2484,20 @@ exposed group (disasffiliated) in the reflective domain.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-reflective-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-reflective-1.pdf}
 
 }
 
 \caption{\label{fig-propensity-dis-reflective}Distribution of propensity
 scores by condition: reflective domain}
 
-\end{figure}
+\end{figure}%
 
 \textbf{Summary of propensity score weights: reflective well-being
 domain}
 
-\hypertarget{tbl-summary-propensity-reflective}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
@@ -2681,8 +2505,8 @@ domain}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
-\caption{\label{tbl-summary-propensity-reflective}Summary of propensity
-scores: reflective well-being domain.}\tabularnewline
+\caption{Summary of propensity scores: reflective well-being
+domain.}\label{tbl-summary-propensity-reflective}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Group}
@@ -2725,10 +2549,10 @@ scores: reflective well-being domain.}\tabularnewline
 
 The propensity score weights for the reflective well-being domain, as
 generated using the \texttt{WeightIt} package in R
-(\protect\hyperlink{ref-greifer2023}{Greifer et al. 2023}), are
-summarized in Table~\ref{tbl-summary-propensity-reflective}. For each
-group (Group 0 and Group 1), the weight range and the five most extreme
-weights are reported.
+(\citeproc{ref-greifer2023}{Greifer \emph{et al.} 2023}), are summarized
+in Table~\ref{tbl-summary-propensity-reflective}. For each group (Group
+0 and Group 1), the weight range and the five most extreme weights are
+reported.
 
 The Coefficient of Variation (CoV) for each group is below the threshold
 of 2, indicating satisfactory weight variation. The CoV for Group 0
@@ -2768,9 +2592,8 @@ ratios, the propensity score matching method has overall produced a
 reasonable match across most variables, ensuring comparability between
 the treatment and control groups.
 
-\hypertarget{propensity-score-analysis-for-social-well-being}{%
-\subsection{Propensity score analysis for social
-well-being}\label{propensity-score-analysis-for-social-well-being}}
+\subsubsection{Propensity score analysis for social
+well-being}\label{propensity-score-analysis-for-social-well-being}
 
 Figure~\ref{fig-love-social} shows strong evidence for imbalance at
 baseline in the confounders for the social well-being domain. We again
@@ -2778,14 +2601,16 @@ restore balance using entropy weighting.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-social-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-love-social-1.pdf}
 
 }
 
 \caption{\label{fig-love-social}Love plot for propensity score analysis:
 social domain}
 
-\end{figure}
+\end{figure}%
 
 Figure~\ref{fig-propensity-dis-social} shows propensity score weights in
 the unexposed group (remained religiously affiliated) and the exposed
@@ -2793,18 +2618,19 @@ group (disasffiliated) in the practical domain.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-social-1.pdf}
+\centering{
+
+\includegraphics[width=1\textwidth,height=\textheight]{target-trial-religion-loss_files/figure-pdf/fig-propensity-dis-social-1.pdf}
 
 }
 
 \caption{\label{fig-propensity-dis-social}Distribution of propensity
 scores by condition: practical domain}
 
-\end{figure}
+\end{figure}%
 
 \textbf{Summary of propensity score weights: social well-being domain}
 
-\hypertarget{tbl-summary-propensity-social}{}
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
@@ -2812,8 +2638,8 @@ scores by condition: practical domain}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
-\caption{\label{tbl-summary-propensity-social}Summary of propensity
-scores: social well-being domain.}\tabularnewline
+\caption{Summary of propensity scores: social well-being
+domain.}\label{tbl-summary-propensity-social}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Group}
@@ -2857,9 +2683,9 @@ scores: social well-being domain.}\tabularnewline
 Table Table~\ref{tbl-summary-propensity-social} summarizes the
 propensity score weights for the social well-being domain, generated
 using the \texttt{WeightIt} package in R
-(\protect\hyperlink{ref-greifer2023}{Greifer et al. 2023}). For each
-group (Group 0 and Group 1), it provides the weight range and the five
-most extreme weights.
+(\citeproc{ref-greifer2023}{Greifer \emph{et al.} 2023}). For each group
+(Group 0 and Group 1), it provides the weight range and the five most
+extreme weights.
 
 The Coefficient of Variation (CoV) for each group is beneath the
 threshold of 2, denoting an acceptable weight variation. The CoV for
@@ -2904,15 +2730,13 @@ the treatment and control groups.
 
 \newpage{}
 
-\hypertarget{appendix-d.-multiple-comparisons-in-outcomewide-studies}{%
-\section{Appendix D. Multiple comparisons in outcomewide
-studies}\label{appendix-d.-multiple-comparisons-in-outcomewide-studies}}
+\subsection{Appendix D. Multiple comparisons in outcomewide
+studies}\label{appendix-d.-multiple-comparisons-in-outcomewide-studies}
 
 The concern for multiple comparisons is legitimate in many research
 settings. However, there are compelling reasons not to adjust for it in
 the case of outcome-wide science, as proposed by Tyler VanderWeele
-(\protect\hyperlink{ref-vanderweele2020}{Tyler J. VanderWeele, Mathur,
-and Chen 2020}).
+(\citeproc{ref-vanderweele2020}{VanderWeele \emph{et al.} 2020}).
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -2959,354 +2783,312 @@ confounding.
 
 \newpage{}
 
-\hypertarget{appendix-e.-population-average-treatment-effect}{%
-\section{Appendix E. Population Average Treatment
-Effect}\label{appendix-e.-population-average-treatment-effect}}
+\subsection*{References}\label{references}
+\addcontentsline{toc}{subsection}{References}
 
-As indicated in the main manuscript, the Average Treatment Effects is
-obtained by contrasting the expected outcome when a population sampled
-is exposed to an exposure level, \(E[Y(A = a)]\), with the expected
-outcome under a different exposure level, \(E[Y(A=a')]\).
-
-For a binary treatment with levels \(A=0\) and \(A=1\), the Average
-Treatment Effect (ATE), on the difference scale, is expressed:
-
-\[ATE_{\text{risk difference}} = E[Y(1)|L] - E[Y(0)|L]\]
-
-On the risk ratio scale, the ATE is expressed:
-
-\[ATE_{\text{risk ratio}} = \frac{E[Y(1)|L]}{E[Y(0)|L]}\]
-
-Other effect scales, such as the incidence rate ratio, incidence rate
-difference, or hazard ratio, might also be of interest.
-
-Here we estimate the Population Average Treatment Effect (PATE), which
-denotes the effect the treatment would have on the New Population if
-applied universally. This quantity can be expressed:
-
-\[PATE_{\text{risk difference}} = f(E[Y(1) - Y(0)|L], W)\]
-
-\[PATE_{\text{risk ratio}} = f\left(\frac{E[Y(1)|L]}{E[Y(0)|L]}, W\right)\]
-
-where \(f\) is a function that incorporates post-stratification weights
-\(W\) into the estimation of the expected outcomes from which we obtain
-causal contrasts. Because the NZAVS is national probability sample,
-i.e.~inverse probability of being sampled 1. However, to incorporate
-gender, age, and ethnic differences we include post-stratification
-weight into our outcome wide models.
-
-\hypertarget{references}{%
-\section*{References}\label{references}}
-\addcontentsline{toc}{section}{References}
-
-\hypertarget{refs}{}
+\phantomsection\label{refs}
 \begin{CSLReferences}{1}{0}
-\leavevmode\vadjust pre{\hypertarget{ref-agnostic}{}}%
-{``Agnostic Notes on Regression Adjustments to Experimental Data:
-Reexamining Freedman{'}s Critique.''} n.d.
-\url{https://projecteuclid.org/journals/annals-of-applied-statistics/volume-7/issue-1/Agnostic-notes-on-regression-adjustments-to-experimental-data--Reexamining/10.1214/12-AOAS583.full}.
+\bibitem[\citeproctext]{ref-agnostic}
+Agnostic notes on regression adjustments to experimental data:
+Reexamining freedman{'}s critique (n.d.). Retrieved from
+\url{https://projecteuclid.org/journals/annals-of-applied-statistics/volume-7/issue-1/Agnostic-notes-on-regression-adjustments-to-experimental-data--Reexamining/10.1214/12-AOAS583.full}
 
-\leavevmode\vadjust pre{\hypertarget{ref-atkinson2019}{}}%
-Atkinson, J, C Salmond, and P Crampton. 2019. {``NZDep2018 Index of
-Deprivation, User{'}s Manual.''} Wellington.
+\bibitem[\citeproctext]{ref-atkinson2019}
+Atkinson, J, Salmond, C, and Crampton, P (2019) \emph{NZDep2018 index of
+deprivation, user{'}s manual.}, Wellington.
 
-\leavevmode\vadjust pre{\hypertarget{ref-berry_forgivingness_2005}{}}%
-Berry, Jack W., Everett L. Worthington Jr., Lynn E. O'Connor, Les
-Parrott III, and Nathaniel G. Wade. 2005. {``Forgivingness, Vengeful
-Rumination, and Affective Traits.''} \emph{Journal of Personality} 73
-(1): 183--226. \url{https://doi.org/10.1111/j.1467-6494.2004.00308.x}.
+\bibitem[\citeproctext]{ref-berry_forgivingness_2005}
+Berry, JW, Worthington Jr., EL, O'Connor, LE, Parrott III, L, and Wade,
+NG (2005) Forgivingness, vengeful rumination, and affective traits.
+\emph{Journal of Personality}, \textbf{73}(1), 183--226.
+doi:\href{https://doi.org/10.1111/j.1467-6494.2004.00308.x}{10.1111/j.1467-6494.2004.00308.x}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-bulbulia2022}{}}%
-Bulbulia, Joseph A. 2022. {``A Workflow for Causal Inference in
-Cross-Cultural Psychology.''} \emph{Religion, Brain \& Behavior} 0 (0):
-1--16. \url{https://doi.org/10.1080/2153599X.2022.2070245}.
+\bibitem[\citeproctext]{ref-bulbulia2022}
+Bulbulia, JA (2022) A workflow for causal inference in cross-cultural
+psychology. \emph{Religion, Brain \& Behavior}, \textbf{0}(0), 1--16.
+doi:\href{https://doi.org/10.1080/2153599X.2022.2070245}{10.1080/2153599X.2022.2070245}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-bulbulia2021}{}}%
-Bulbulia, Joseph, Uffe Schjoedt, John H Shaver, Richard Sosis, and
-Wesley J Wildman. 2021. {``Causal Inference in Regression: Advice to
-Authors.''} \emph{Religion, Brain \& Behavior} 11 (4): 353360.
+\bibitem[\citeproctext]{ref-Bulbulia_2015}
+Bulbulia, JA, Shaver, JH, Greaves, L, Sosis, R, and Sibley, CG (2015)
+Religion and parental cooperation: An empirical test of slone's sexual
+signaling model. In S. J. D. amd Van Slyke J., ed., \emph{The attraction
+of religion: A sexual selectionist account}, Bloomsbury Press, 29--62.
 
-\leavevmode\vadjust pre{\hypertarget{ref-Bulbulia_2015}{}}%
-Bulbulia, Shaver, J. A. 2015. {``Religion and Parental Cooperation: An
-Empirical Test of Slone's Sexual Signaling Model.''} In \emph{The
-Attraction of Religion: A Sexual Selectionist Account}, edited by \& Van
-Slyke J. Slone D., 29--62. Bloomsbury Press.
+\bibitem[\citeproctext]{ref-bulbulia2021}
+Bulbulia, J, Schjoedt, U, Shaver, JH, Sosis, R, and Wildman, WJ (2021)
+Causal inference in regression: Advice to authors. \emph{Religion, Brain
+\& Behavior}, \textbf{11}(4), 353--360.
 
-\leavevmode\vadjust pre{\hypertarget{ref-campbell2004}{}}%
-Campbell, W. Keith, Angelica M. Bonacci, Jeremy Shelton, Julie J.
-Exline, and Brad J. Bushman. 2004. {``Psychological entitlement:
-interpersonal consequences and validation of a self-report measure.''}
-\emph{Journal of Personality Assessment} 83 (1): 29--45.
-\url{https://doi.org/10.1207/s15327752jpa8301_04}.
+\bibitem[\citeproctext]{ref-campbell2004}
+Campbell, WK, Bonacci, AM, Shelton, J, Exline, JJ, and Bushman, BJ
+(2004) Psychological entitlement: Interpersonal consequences and
+validation of a self-report measure. \emph{Journal of Personality
+Assessment}, \textbf{83}(1), 29--45.
 
-\leavevmode\vadjust pre{\hypertarget{ref-caprara_indicators_1986}{}}%
-Caprara, Gian Vittorio. 1986. {``Indicators of Aggression: The
-Dissipation-Rumination Scale.''} \emph{Personality and Individual
-Differences} 7 (6): 763--69.
-\url{https://doi.org/10.1016/0191-8869(86)90074-7}.
+\bibitem[\citeproctext]{ref-caprara_indicators_1986}
+Caprara, GV (1986) Indicators of aggression: The dissipation-rumination
+scale. \emph{Personality and Individual Differences}, \textbf{7}(6),
+763--769.
+doi:\href{https://doi.org/10.1016/0191-8869(86)90074-7}{10.1016/0191-8869(86)90074-7}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-cummins_developing_2003}{}}%
-Cummins, Robert A., Richard Eckersley, Julie Pallant, Jackie van Vugt,
-and RoseAnne Misajon. 2003. {``Developing a National Index of Subjective
-Wellbeing: The Australian Unity Wellbeing Index.''} \emph{Social
-Indicators Research} 64 (2): 159--90.
-\url{https://doi.org/10.1023/A:1024704320683}.
+\bibitem[\citeproctext]{ref-cummins_developing_2003}
+Cummins, RA, Eckersley, R, Pallant, J, Vugt, J van, and Misajon, R
+(2003) Developing a national index of subjective wellbeing: The
+australian unity wellbeing index. \emph{Social Indicators Research},
+\textbf{64}(2), 159--190.
+doi:\href{https://doi.org/10.1023/A:1024704320683}{10.1023/A:1024704320683}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-cutrona1987}{}}%
-Cutrona, Carolyn E, and Daniel Wayne Russell. 1987. {``The Provisions of
-Social Relationships and Adaptation to Stress.''} \emph{Advances in
-Personal Relationships} 1: 37--67.
+\bibitem[\citeproctext]{ref-cutrona1987}
+Cutrona, CE, and Russell, DW (1987) The provisions of social
+relationships and adaptation to stress. \emph{Advances in Personal
+Relationships}, \textbf{1}, 37--67.
 
-\leavevmode\vadjust pre{\hypertarget{ref-danaei2012}{}}%
-Danaei, Goodarz, Mohammad Tavakkoli, and Miguel A. Hernán. 2012. {``Bias
-in observational studies of prevalent users: lessons for comparative
-effectiveness research from a meta-analysis of statins.''}
-\emph{American Journal of Epidemiology} 175 (4): 250--62.
-\url{https://doi.org/10.1093/aje/kwr301}.
+\bibitem[\citeproctext]{ref-danaei2012}
+Danaei, G, Tavakkoli, M, and Hernán, MA (2012) Bias in observational
+studies of prevalent users: lessons for comparative effectiveness
+research from a meta-analysis of statins. \emph{American Journal of
+Epidemiology}, \textbf{175}(4), 250--262.
+doi:\href{https://doi.org/10.1093/aje/kwr301}{10.1093/aje/kwr301}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-diener1985}{}}%
-Diener, Ed, Robert A Emmons, Randy J Larsen, and Sharon Griffin. 1985.
-{``The Satisfaction With Life Scale.''} \emph{Journal of Personality
-Assessment} 49 (1): 71--75.
+\bibitem[\citeproctext]{ref-diener1985}
+Diener, E, Emmons, RA, Larsen, RJ, and Griffin, S (1985) The
+Satisfaction With Life Scale. \emph{Journal of Personality Assessment},
+\textbf{49}(1), 71--75.
 
-\leavevmode\vadjust pre{\hypertarget{ref-fahy2017}{}}%
-Fahy, Katie M., Alan Lee, and Barry J. Milne. 2017. \emph{New Zealand
-Socio-Economic Index 2013}. Wellington, New Zealand: Statistics New
-Zealand-Tatauranga Aotearoa.
+\bibitem[\citeproctext]{ref-fahy2017}
+Fahy, KM, Lee, A, and Milne, BJ (2017) \emph{New Zealand socio-economic
+index 2013}, Wellington, New Zealand: Statistics New Zealand-Tatauranga
+Aotearoa.
 
-\leavevmode\vadjust pre{\hypertarget{ref-fraser_coding_2020}{}}%
-Fraser, Gloria, Joseph Bulbulia, Lara M. Greaves, Marc S. Wilson, and
-Chris G. Sibley. 2020. {``Coding Responses to an Open-Ended Gender
-Measure in a New Zealand National Sample.''} \emph{The Journal of Sex
-Research} 57 (8): 979--86.
-\url{https://doi.org/10.1080/00224499.2019.1687640}.
+\bibitem[\citeproctext]{ref-fraser_coding_2020}
+Fraser, G, Bulbulia, J, Greaves, LM, Wilson, MS, and Sibley, CG (2020)
+Coding responses to an open-ended gender measure in a {N}ew {Z}ealand
+national sample. \emph{The Journal of Sex Research}, \textbf{57}(8),
+979--986.
+doi:\href{https://doi.org/10.1080/00224499.2019.1687640}{10.1080/00224499.2019.1687640}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-gratz_multidimensional_2004}{}}%
-Gratz, Kim L., and Lizabeth Roemer. 2004. {``Multidimensional Assessment
-of Emotion Regulation and Dysregulation: Development, Factor Structure,
-and Initial Validation of the Difficulties in Emotion Regulation
-Scale.''} \emph{Journal of Psychopathology and Behavioral Assessment} 26
-(1): 41--54. \url{https://doi.org/10.1023/B:JOBA.0000007455.08539.94}.
+\bibitem[\citeproctext]{ref-gratz_multidimensional_2004}
+Gratz, KL, and Roemer, L (2004) Multidimensional assessment of emotion
+regulation and dysregulation: Development, factor structure, and initial
+validation of the difficulties in emotion regulation scale.
+\emph{Journal of Psychopathology and Behavioral Assessment},
+\textbf{26}(1), 41--54.
+doi:\href{https://doi.org/10.1023/B:JOBA.0000007455.08539.94}{10.1023/B:JOBA.0000007455.08539.94}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-greifer2023b}{}}%
-Greifer, Noah. 2023a. \emph{Cobalt: Covariate Balance Tables and Plots}.
+\bibitem[\citeproctext]{ref-greifer2023b}
+Greifer, N (2023a) \emph{Cobalt: Covariate balance tables and plots}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-greifer2023a}{}}%
----------. 2023b. \emph{WeightIt: Weighting for Covariate Balance in
-Observational Studies}.
+\bibitem[\citeproctext]{ref-greifer2023a}
+Greifer, N (2023b) \emph{WeightIt: Weighting for covariate balance in
+observational studies}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-greifer2023}{}}%
-Greifer, Noah, Steven Worthington, Stefano Iacus, and Gary King. 2023.
-\emph{Clarify: Simulation-Based Inference for Regression Models}.
-\url{https://iqss.github.io/clarify/}.
+\bibitem[\citeproctext]{ref-greifer2023}
+Greifer, N, Worthington, S, Iacus, S, and King, G (2023) \emph{Clarify:
+Simulation-based inference for regression models}. Retrieved from
+\url{https://iqss.github.io/clarify/}
 
-\leavevmode\vadjust pre{\hypertarget{ref-gross_individual_2003}{}}%
-Gross, James J., and Oliver P. John. 2003. {``Individual Differences in
-Two Emotion Regulation Processes: Implications for Affect,
-Relationships, and Well-Being.''} \emph{Journal of Personality and
-Social Psychology} 85 (2): 348--62.
-\url{https://doi.org/10.1037/0022-3514.85.2.348}.
+\bibitem[\citeproctext]{ref-gross_individual_2003}
+Gross, JJ, and John, OP (2003) Individual differences in two emotion
+regulation processes: Implications for affect, relationships, and
+well-being. \emph{Journal of Personality and Social Psychology},
+\textbf{85}(2), 348--362.
+doi:\href{https://doi.org/10.1037/0022-3514.85.2.348}{10.1037/0022-3514.85.2.348}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-hagerty1995}{}}%
-Hagerty, Bonnie M. K., and Kathleen Patusky. 1995. {``Developing a
-Measure Of Sense of Belonging:''} \emph{Nursing Research} 44 (1): 9--13.
-\url{https://doi.org/10.1097/00006199-199501000-00003}.
+\bibitem[\citeproctext]{ref-hagerty1995}
+Hagerty, BMK, and Patusky, K (1995) Developing a Measure Of Sense of
+Belonging: \emph{Nursing Research}, \textbf{44}(1), 9--13.
+doi:\href{https://doi.org/10.1097/00006199-199501000-00003}{10.1097/00006199-199501000-00003}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-Ministry_of_Health_2013}{}}%
-Health, Ministry of. 2013. {``The New Zealand Health Survey: Content
-Guide 2012-2013.''} Princeton University Press.
+\bibitem[\citeproctext]{ref-Ministry_of_Health_2013}
+Health, M of (2013) \emph{The new zealand health survey: Content guide
+2012-2013}, Princeton University Press.
 
-\leavevmode\vadjust pre{\hypertarget{ref-hernan2023}{}}%
-Hernan, M. A., and J. M. Robins. 2023. \emph{Causal Inference}. Chapman
-\& Hall/CRC Monographs on Statistics \& Applied Probab. Taylor \&
-Francis. \url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}.
+\bibitem[\citeproctext]{ref-hernan2023}
+Hernan, MA, and Robins, JM (2023) \emph{Causal inference}, Taylor \&
+Francis. Retrieved from
+\url{https://books.google.co.nz/books?id=/_KnHIAAACAAJ}
 
-\leavevmode\vadjust pre{\hypertarget{ref-hernuxe1n2016}{}}%
-Hernán, Miguel A, Brian C Sauer, Sonia Hernández-Díaz, Robert Platt, and
-Ian Shrier. 2016. {``Specifying a Target Trial Prevents Immortal Time
-Bias and Other Self-Inflicted Injuries in Observational Analyses.''}
-\emph{Journal of Clinical Epidemiology} 79: 7075.
+\bibitem[\citeproctext]{ref-hernuxe1n2016}
+Hernán, MA, Sauer, BC, Hernández-Díaz, S, Platt, R, and Shrier, I (2016)
+Specifying a target trial prevents immortal time bias and other
+self-inflicted injuries in observational analyses. \emph{Journal of
+Clinical Epidemiology}, \textbf{79}, 70--75.
 
-\leavevmode\vadjust pre{\hypertarget{ref-holland1986}{}}%
-Holland, Paul W. 1986. {``Statistics and Causal Inference.''}
-\emph{Journal of the American Statistical Association} 81 (396): 945960.
+\bibitem[\citeproctext]{ref-holland1986}
+Holland, PW (1986) Statistics and causal inference. \emph{Journal of the
+American Statistical Association}, \textbf{81}(396), 945--960.
 
-\leavevmode\vadjust pre{\hypertarget{ref-jost_end_2006-1}{}}%
-Jost, John T. 2006. {``The End of the End of Ideology.''} \emph{American
-Psychologist} 61 (7): 651--70.
-\url{https://doi.org/10.1037/0003-066X.61.7.651}.
+\bibitem[\citeproctext]{ref-jost_end_2006-1}
+Jost, JT (2006) The end of the end of ideology. \emph{American
+Psychologist}, \textbf{61}(7), 651--670.
+doi:\href{https://doi.org/10.1037/0003-066X.61.7.651}{10.1037/0003-066X.61.7.651}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-kessler2002}{}}%
-Kessler, R.~C., G. Andrews, L.~J. Colpe, E. Hiripi, D.~K. Mroczek,
-S.-L.~T. Normand, E.~E. Walters, and A.~M. Zaslavsky. 2002. {``Short
-Screening Scales to Monitor Population Prevalences and Trends in
-Non-Specific Psychological Distress.''} \emph{Psychological Medicine} 32
-(6): 959--76. \url{https://doi.org/10.1017/S0033291702006074}.
+\bibitem[\citeproctext]{ref-kessler2002}
+Kessler, R~C, Andrews, G, Colpe, L~J, \ldots{} Zaslavsky, A~M (2002)
+Short screening scales to monitor population prevalences and trends in
+non-specific psychological distress. \emph{Psychological Medicine},
+\textbf{32}(6), 959--976.
+doi:\href{https://doi.org/10.1017/S0033291702006074}{10.1017/S0033291702006074}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-kessler2010}{}}%
-Kessler, Ronald C., Jennifer Greif Green, Michael J. Gruber, Nancy A.
-Sampson, Evelyn Bromet, Marius Cuitan, Toshi A. Furukawa, et al. 2010.
-{``Screening for Serious Mental Illness in the General Population with
-the K6 Screening Scale: Results from the WHO World Mental Health (WMH)
-Survey Initiative.''} \emph{International Journal of Methods in
-Psychiatric Research} 19 (S1): 4--22.
-\url{https://doi.org/10.1002/mpr.310}.
+\bibitem[\citeproctext]{ref-kessler2010}
+Kessler, RC, Green, JG, Gruber, MJ, \ldots{} Zaslavsky, AM (2010)
+Screening for serious mental illness in the general population with the
+K6 screening scale: results from the WHO World Mental Health (WMH)
+survey initiative. \emph{International Journal of Methods in Psychiatric
+Research}, \textbf{19}(S1), 4--22.
+doi:\href{https://doi.org/10.1002/mpr.310}{10.1002/mpr.310}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-muriwai_looking_2018}{}}%
-Muriwai, E., C. A. Houkamau, and C. G. Sibley. 2018. {``Looking Like a
-Smoker, a Smokescreen to Racism? Māori Perceived Appearance Linked to
-Smoking Status.''} \emph{Ethnicity \& Health} 23 (4): 353--66.
-\url{https://doi.org/10.1080/13557858.2016.1263288}.
+\bibitem[\citeproctext]{ref-muriwai_looking_2018}
+Muriwai, E, Houkamau, CA, and Sibley, CG (2018) Looking like a smoker, a
+smokescreen to racism? Māori perceived appearance linked to smoking
+status. \emph{Ethnicity \& Health}, \textbf{23}(4), 353--366.
+doi:\href{https://doi.org/10.1080/13557858.2016.1263288}{10.1080/13557858.2016.1263288}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-pishgar2021}{}}%
-Pishgar, Farhad, Noah Greifer, Clémence Leyrat, and Elizabeth Stuart.
-2021. {``MatchThem:: Matching and Weighting After Multiple
-Imputation.''} \emph{The R Journal} 13 (2): 292305.
-\url{https://doi.org/10.32614/RJ-2021-073}.
+\bibitem[\citeproctext]{ref-pishgar2021}
+Pishgar, F, Greifer, N, Leyrat, C, and Stuart, E (2021) MatchThem::
+Matching and weighting after multiple imputation. \emph{The R Journal},
+\textbf{13}(2), 292--305.
+doi:\href{https://doi.org/10.32614/RJ-2021-073}{10.32614/RJ-2021-073}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-prochaska2012}{}}%
-Prochaska, Judith J., Hai-Yen Sung, Wendy Max, Yanling Shi, and Michael
-Ong. 2012. {``Validity Study of the K6 Scale as a Measure of Moderate
-Mental Distress Based on Mental Health Treatment Need and Utilization:
-The K6 as a Measure of Moderate Mental Distress.''} \emph{International
-Journal of Methods in Psychiatric Research} 21 (2): 88--97.
-\url{https://doi.org/10.1002/mpr.1349}.
+\bibitem[\citeproctext]{ref-prochaska2012}
+Prochaska, JJ, Sung, H-Y, Max, W, Shi, Y, and Ong, M (2012) Validity
+study of the K6 scale as a measure of moderate mental distress based on
+mental health treatment need and utilization: The K6 as a measure of
+moderate mental distress. \emph{International Journal of Methods in
+Psychiatric Research}, \textbf{21}(2), 88--97.
+doi:\href{https://doi.org/10.1002/mpr.1349}{10.1002/mpr.1349}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-rice_short_2014}{}}%
-Rice, Kenneth G., Clarissa M. E. Richardson, and Stephen Tueller. 2014.
-{``The Short Form of the Revised Almost Perfect Scale.''} \emph{Journal
-of Personality Assessment} 96 (3): 368--79.
-\url{https://doi.org/10.1080/00223891.2013.838172}.
+\bibitem[\citeproctext]{ref-rice_short_2014}
+Rice, KG, Richardson, CME, and Tueller, S (2014) The short form of the
+revised almost perfect scale. \emph{Journal of Personality Assessment},
+\textbf{96}(3), 368--379.
+doi:\href{https://doi.org/10.1080/00223891.2013.838172}{10.1080/00223891.2013.838172}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-Rosenberg1965}{}}%
-Rosenberg, M. 1965. \emph{Society and the Adolescent Self-Image}.
+\bibitem[\citeproctext]{ref-Rosenberg1965}
+Rosenberg, M (1965) \emph{Society and the adolescent self-image},
 Princeton, NJ: Princeton University Press.
 
-\leavevmode\vadjust pre{\hypertarget{ref-rubin1976}{}}%
-Rubin, D. B. 1976. {``Inference and Missing Data.''} \emph{Biometrika}
-63 (3): 581--92. \url{https://doi.org/10.1093/biomet/63.3.581}.
+\bibitem[\citeproctext]{ref-rubin1976}
+Rubin, DB (1976) Inference and missing data. \emph{Biometrika},
+\textbf{63}(3), 581--592.
+doi:\href{https://doi.org/10.1093/biomet/63.3.581}{10.1093/biomet/63.3.581}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-sengupta2013}{}}%
-Sengupta, Nikhil K, Nils Luyten, Lara M Greaves, Danny Osborne, Andrew
-Robertson, Colmar Brunton, Gavin Armstrong, and Chris G Sibley. 2013.
-{``Sense of Community in New Zealand Neighbourhoods: A Multi-Level Model
-Predicting Social Capital.''} \emph{New Zealand Journal of Psychology}
-42 (1): 36--45.
+\bibitem[\citeproctext]{ref-sengupta2013}
+Sengupta, NK, Luyten, N, Greaves, LM, \ldots{} Sibley, CG (2013) Sense
+of Community in New Zealand Neighbourhoods: A Multi-Level Model
+Predicting Social Capital. \emph{New Zealand Journal of Psychology},
+\textbf{42}(1), 36--45.
 
-\leavevmode\vadjust pre{\hypertarget{ref-sibley2021}{}}%
-Sibley, Chris G. 2021. {``Sampling Procedure and Sample Details for the
-New Zealand Attitudes and Values Study.''}
-\url{https://doi.org/10.31234/osf.io/wgqvy}.
+\bibitem[\citeproctext]{ref-sibley2021}
+Sibley, CG (2021)
+\emph{\href{https://doi.org/10.31234/osf.io/wgqvy}{Sampling procedure
+and sample details for the new zealand attitudes and values study}}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-sibley2012a}{}}%
-Sibley, Chris G, and Joseph Bulbulia. 2012. {``Faith After an
-Earthquake: A Longitudinal Study of Religion and Perceived Health Before
-and After the 2011 Christchurch New Zealand Earthquake.''} \emph{PloS
-One} 7 (12): e49648.
+\bibitem[\citeproctext]{ref-sibley2012a}
+Sibley, CG, and Bulbulia, J (2012) Faith after an earthquake: A
+longitudinal study of religion and perceived health before and after the
+2011 {C}hristchurch {N}ew {Z}ealand earthquake. \emph{PloS One},
+\textbf{7}(12), e49648.
 
-\leavevmode\vadjust pre{\hypertarget{ref-sibley2011}{}}%
-Sibley, Chris G, Nils Luyten, Missy Purnomo, Annelise Mobberley, Liz W
-Wootton, Matthew D Hammond, Nikhil Sengupta, et al. 2011. {``The
-Mini-IPIP6: Validation and Extension of a Short Measure of the Big-Six
-Factors of Personality in New Zealand.''} \emph{New Zealand Journal of
-Psychology} 40 (3): 142--59.
+\bibitem[\citeproctext]{ref-sibley2011}
+Sibley, CG, Luyten, N, Purnomo, M, \ldots{} Robertson, A (2011) The
+Mini-IPIP6: Validation and extension of a short measure of the Big-Six
+factors of personality in New Zealand. \emph{New Zealand Journal of
+Psychology}, \textbf{40}(3), 142--159.
 
-\leavevmode\vadjust pre{\hypertarget{ref-steger_meaning_2006}{}}%
-Steger, Michael F., Patricia Frazier, Shigehiro Oishi, and Matthew
-Kaler. 2006. {``The Meaning in Life Questionnaire: Assessing the
-Presence of and Search for Meaning in Life.''} \emph{Journal of
-Counseling Psychology} 53 (1): 80--93.
-\url{https://doi.org/10.1037/0022-0167.53.1.80}.
+\bibitem[\citeproctext]{ref-steger_meaning_2006}
+Steger, MF, Frazier, P, Oishi, S, and Kaler, M (2006) The meaning in
+life questionnaire: Assessing the presence of and search for meaning in
+life. \emph{Journal of Counseling Psychology}, \textbf{53}(1), 80--93.
+doi:\href{https://doi.org/10.1037/0022-0167.53.1.80}{10.1037/0022-0167.53.1.80}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-stronge_facebook_2015}{}}%
-Stronge, Samantha, Lara M. Greaves, Petar Milojev, Tim West-Newman,
-Fiona Kate Barlow, and Chris G. Sibley. 2015. {``Facebook Is Linked to
-Body Dissatisfaction: Comparing Users and Non-Users.''} \emph{Sex Roles:
-A Journal of Research} 73 (5): 200--213.
-\url{https://doi.org/10.1007/s11199-015-0517-6}.
+\bibitem[\citeproctext]{ref-stronge_facebook_2015}
+Stronge, S, Greaves, LM, Milojev, P, West-Newman, T, Barlow, FK, and
+Sibley, CG (2015) Facebook is linked to body dissatisfaction: Comparing
+users and non-users. \emph{Sex Roles: A Journal of Research},
+\textbf{73}(5), 200--213.
+doi:\href{https://doi.org/10.1007/s11199-015-0517-6}{10.1007/s11199-015-0517-6}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-tangney_high_2004}{}}%
-Tangney, June P., Roy F. Baumeister, and Angie Luzio Boone. 2004.
-{``High Self-Control Predicts Good Adjustment, Less Pathology, Better
-Grades, and Interpersonal Success.''} \emph{Journal of Personality} 72
-(2): 271--324. \url{https://doi.org/10.1111/j.0022-3506.2004.00263.x}.
+\bibitem[\citeproctext]{ref-tangney_high_2004}
+Tangney, JP, Baumeister, RF, and Boone, AL (2004) High self-control
+predicts good adjustment, less pathology, better grades, and
+interpersonal success. \emph{Journal of Personality}, \textbf{72}(2),
+271--324.
+doi:\href{https://doi.org/10.1111/j.0022-3506.2004.00263.x}{10.1111/j.0022-3506.2004.00263.x}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-tausch2015}{}}%
-Tausch, Nicole, Tamar Saguy, and Jeff Bryson. 2015. {``How Does
-Intergroup Contact Affect Social Change? Its Impact on Collective Action
-and Individual Mobility Intentions Among Members of a Disadvantaged
-Group.''} \emph{Journal of Social Issues} 71 (3): 536--53.
-\url{https://doi.org/10.1111/josi.12127}.
+\bibitem[\citeproctext]{ref-tausch2015}
+Tausch, N, Saguy, T, and Bryson, J (2015) How does intergroup contact
+affect social change? its impact on collective action and individual
+mobility intentions among members of a disadvantaged group.
+\emph{Journal of Social Issues}, \textbf{71}(3), 536--553.
+doi:\href{https://doi.org/10.1111/josi.12127}{10.1111/josi.12127}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-thoemmes2011}{}}%
-Thoemmes, Felix J., and Eun Sook Kim. 2011. {``A Systematic Review of
-Propensity Score Methods in the Social Sciences.''} \emph{Multivariate
-Behavioral Research} 46 (1): 90--118.
-\url{https://doi.org/10.1080/00273171.2011.540475}.
+\bibitem[\citeproctext]{ref-thoemmes2011}
+Thoemmes, FJ, and Kim, ES (2011) A systematic review of propensity score
+methods in the social sciences. \emph{Multivariate Behavioral Research},
+\textbf{46}(1), 90--118.
+doi:\href{https://doi.org/10.1080/00273171.2011.540475}{10.1080/00273171.2011.540475}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-vanbuuren2018}{}}%
-Van Buuren, Stef. 2018. \emph{Flexible Imputation of Missing Data}. CRC
+\bibitem[\citeproctext]{ref-vanbuuren2018}
+Van Buuren, S (2018) \emph{Flexible imputation of missing data}, CRC
 press.
 
-\leavevmode\vadjust pre{\hypertarget{ref-vantongeren2020}{}}%
-Van Tongeren, Daryl R, C Nathan DeWall, Zhansheng Chen, Chris G Sibley,
-and Joseph Bulbulia. 2020. {``Religious Residue: Cross-Cultural Evidence
-That Religious Psychology and Behavior Persist Following
-Deidentification.''} \emph{Journal of Personality and Social
-Psychology}.
+\bibitem[\citeproctext]{ref-vantongeren2020}
+Van Tongeren, DR, DeWall, CN, Chen, Z, Sibley, CG, and Bulbulia, J
+(2020) Religious residue: Cross-cultural evidence that religious
+psychology and behavior persist following deidentification.
+\emph{Journal of Personality and Social Psychology}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2022}{}}%
-VanderWeele, Tyler J. 2022. {``Constructed Measures and Causal
-Inference: Towards a New Model of Measurement for Psychosocial
-Constructs.''} \emph{Epidemiology} 33 (1): 141.
-\url{https://doi.org/10.1097/EDE.0000000000001434}.
+\bibitem[\citeproctext]{ref-vanderweele2022}
+VanderWeele, TJ (2022) Constructed measures and causal inference:
+Towards a new model of measurement for psychosocial constructs.
+\emph{Epidemiology}, \textbf{33}(1), 141.
+doi:\href{https://doi.org/10.1097/EDE.0000000000001434}{10.1097/EDE.0000000000001434}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-vanderweele2020}{}}%
-VanderWeele, Tyler J, Maya B Mathur, and Ying Chen. 2020.
-{``Outcome-Wide Longitudinal Designs for Causal Inference: A New
-Template for Empirical Studies.''} \emph{Statistical Science} 35 (3):
-437466.
+\bibitem[\citeproctext]{ref-vanderweele2020}
+VanderWeele, TJ, Mathur, MB, and Chen, Y (2020) Outcome-wide
+longitudinal designs for causal inference: A new template for empirical
+studies. \emph{Statistical Science}, \textbf{35}(3), 437--466.
 
-\leavevmode\vadjust pre{\hypertarget{ref-verbrugge1997}{}}%
-Verbrugge, Lois M. 1997. {``A Global Disability Indicator.''}
-\emph{Journal of Aging Studies} 11 (4): 337--62.
-\url{https://doi.org/10.1016/S0890-4065(97)90026-8}.
+\bibitem[\citeproctext]{ref-verbrugge1997}
+Verbrugge, LM (1997) A global disability indicator. \emph{Journal of
+Aging Studies}, \textbf{11}(4), 337--362.
+doi:\href{https://doi.org/10.1016/S0890-4065(97)90026-8}{10.1016/S0890-4065(97)90026-8}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-warejr1992}{}}%
-Ware Jr, John E, and Cathy Donald Sherbourne. 1992. {``The MOS 36-Item
-Short-Form Health Survey (SF-36): I. Conceptual Framework and Item
-Selection.''} \emph{Medical Care}, 473483.
+\bibitem[\citeproctext]{ref-warejr1992}
+Ware Jr, JE, and Sherbourne, CD (1992) The MOS 36-item short-form health
+survey (SF-36): I. Conceptual framework and item selection.
+\emph{Medical Care}, 473--483.
 
-\leavevmode\vadjust pre{\hypertarget{ref-westreich2015}{}}%
-Westreich, Daniel, Jessie K Edwards, Stephen R Cole, Robert W Platt,
-Sunni L Mumford, and Enrique F Schisterman. 2015. {``Imputation
-Approaches for Potential Outcomes in Causal Inference.''}
-\emph{International Journal of Epidemiology} 44 (5): 17311737.
+\bibitem[\citeproctext]{ref-westreich2015}
+Westreich, D, Edwards, JK, Cole, SR, Platt, RW, Mumford, SL, and
+Schisterman, EF (2015) Imputation approaches for potential outcomes in
+causal inference. \emph{International Journal of Epidemiology},
+\textbf{44}(5), 1731--1737.
 
-\leavevmode\vadjust pre{\hypertarget{ref-westreich2013}{}}%
-Westreich, Daniel, and Sander Greenland. 2013. {``The Table 2 Fallacy:
-Presenting and Interpreting Confounder and Modifier Coefficients.''}
-\emph{American Journal of Epidemiology} 177 (4): 292298.
+\bibitem[\citeproctext]{ref-westreich2013}
+Westreich, D, and Greenland, S (2013) The table 2 fallacy: Presenting
+and interpreting confounder and modifier coefficients. \emph{American
+Journal of Epidemiology}, \textbf{177}(4), 292--298.
 
-\leavevmode\vadjust pre{\hypertarget{ref-williams_cyberostracism_2000}{}}%
-Williams, Kipling D., Christopher K. T. Cheung, and Wilma Choi. 2000.
-{``Cyberostracism: Effects of Being Ignored over the Internet.''}
-\emph{Journal of Personality and Social Psychology} 79 (5): 748--62.
-\url{https://doi.org/10.1037/0022-3514.79.5.748}.
+\bibitem[\citeproctext]{ref-williams_cyberostracism_2000}
+Williams, KD, Cheung, CKT, and Choi, W (2000) Cyberostracism: Effects of
+being ignored over the internet. \emph{Journal of Personality and Social
+Psychology}, \textbf{79}(5), 748--762.
+doi:\href{https://doi.org/10.1037/0022-3514.79.5.748}{10.1037/0022-3514.79.5.748}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-wilson2014}{}}%
-Wilson, M. S., J., and C. G. Sibley. 2014. {``Differences and
-Similarities in Religious and Paranormal Beliefs: A Typology of Distinct
-Faith Signatures.''} \emph{Religion, Brain \& Behavior} 4 (2): 104126.
-\url{https://doi.org/d4q5}.
+\bibitem[\citeproctext]{ref-wilson2014}
+Wilson, MS, Bulbulia, J. A., and Sibley, CG (2014) Differences and
+similarities in religious and paranormal beliefs: A typology of distinct
+faith signatures. \emph{Religion, Brain \& Behavior}, \textbf{4}(2),
+104--126. doi:\href{https://doi.org/d4q5}{d4q5}.
 
-\leavevmode\vadjust pre{\hypertarget{ref-zhang2023}{}}%
-Zhang, Jiaxin, S. Ghazaleh Dashti, John B. Carlin, Katherine J. Lee, and
-Margarita Moreno-Betancur. 2023. {``Should Multiple Imputation Be
-Stratified by Exposure Group When Estimating Causal Effects via Outcome
-Regression in Observational Studies?''} \emph{BMC Medical Research
-Methodology} 23 (1): 42.
-\url{https://doi.org/10.1186/s12874-023-01843-6}.
+\bibitem[\citeproctext]{ref-zhang2023}
+Zhang, J, Dashti, SG, Carlin, JB, Lee, KJ, and Moreno-Betancur, M (2023)
+Should multiple imputation be stratified by exposure group when
+estimating causal effects via outcome regression in observational
+studies? \emph{BMC Medical Research Methodology}, \textbf{23}(1), 42.
+doi:\href{https://doi.org/10.1186/s12874-023-01843-6}{10.1186/s12874-023-01843-6}.
 
 \end{CSLReferences}
 
